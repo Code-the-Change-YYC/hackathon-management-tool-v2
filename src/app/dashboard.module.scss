@@ -1,0 +1,59 @@
+@use "../styles/variables" as v;
+
+.main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: v.$pale-grey;
+    color: v.$dark-grey;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.header {
+    background-color: v.$awesomer-purple;
+    padding: 1rem 2rem;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.content {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+    border: 1px solid v.$light-grey;
+}
+
+.welcome {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: v.$grey-purple;
+    font-weight: 600;
+}
+
+.roleBadge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-left: 1rem;
+    background-color: rgba(255, 255, 255, 0.2);
+}
