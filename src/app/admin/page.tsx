@@ -1,6 +1,6 @@
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
-import styles from "../dashboard.module.scss";
 import { Role } from "@/types/types";
+import styles from "../dashboard.module.scss";
 
 export default async function AdminPage() {
   const session = await requireRole([Role.ADMIN]);

@@ -1,3 +1,7 @@
+import type { UserSelectType } from "@/server/db/auth-schema";
+
+export type User = UserSelectType;
+
 export enum Role {
   ADMIN = "admin",
   JUDGE = "judge",
