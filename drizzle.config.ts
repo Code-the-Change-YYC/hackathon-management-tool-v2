@@ -6,6 +6,7 @@ export default {
 	schema: [
 		"./src/server/db/schema.ts", // data schema
 		"./src/server/db/auth-schema.ts", // auth schema
+		"./src/server/db/scores-schema.ts", //scores schema
 	],
 	dialect: "postgresql",
 	dbCredentials: {

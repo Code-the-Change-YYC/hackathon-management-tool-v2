@@ -52,19 +52,6 @@ export const judgingAssignments = createTable("judging_assignment", {
 		.notNull(),
 });
 
-export const scores = createTable("score", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	assignmentId: uuid("assignment_id")
-		.notNull()
-		.references(() => judgingAssignments.id, { onDelete: "cascade" }),
-	criteria: text("criteria").notNull(), // e.g., "Innovation", "Technical Difficulty"
-	score: integer("score").notNull(),
-	feedback: text("feedback"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.defaultNow()
-		.notNull(),
-});
-
 // Relations
 export const judgingRoundRelations = relations(judgingRounds, ({ many }) => ({
 	assignments: many(judgingAssignments),
@@ -85,13 +72,5 @@ export const judgingAssignmentRelations = relations(
 			fields: [judgingAssignments.roundId],
 			references: [judgingRounds.id],
 		}),
-		scores: many(scores),
 	}),
 );
-
-export const scoreRelations = relations(scores, ({ one }) => ({
-	assignment: one(judgingAssignments, {
-		fields: [scores.assignmentId],
-		references: [judgingAssignments.id],
-	}),
-}));
