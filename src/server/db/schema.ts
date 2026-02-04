@@ -32,7 +32,7 @@ export const judgingRooms = createTable("judging_room", {
 	roundId: uuid("round_id")
 		.references(() => judgingRounds.id, { onDelete: "cascade" })
 		.notNull(),
-	roomLink: text("room_link").notNull(), // link to the video meeting
+	roomLink: text("room_link").notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
@@ -117,7 +117,6 @@ export const judgingRoundRelations = relations(judgingRounds, ({ many }) => ({
 	assignments: many(judgingAssignments)
 }));
 
-// each judging room can have many admins and many judges
 export const judgingRoomRelations = relations(judgingRooms, ({ many }) => ({
 	admins: many(judgingRoomAdmins),
 	judges: many(judgingRoomJudges),
