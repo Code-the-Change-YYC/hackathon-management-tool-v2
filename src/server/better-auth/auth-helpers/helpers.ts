@@ -5,32 +5,32 @@ import type { Role } from "@/types/types";
 
 // session helpers for server components and API routes
 export async function getSession(): Promise<Session | null> {
-    const session = await auth.api.getSession({
-        headers: await headers(),
-    });
-    return session;
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
+	return session;
 }
 
 // this isn't the same as the one below.
 // this will just redirect if no session is found, not based on role
 export async function requireAuth() {
-    const session = await getSession();
-    if (!session) {
-        redirect("/");
-    }
-    return session;
+	const session = await getSession();
+	if (!session) {
+		redirect("/");
+	}
+	return session;
 }
 
 // if the role isn't in the allowedRoles array, redirect to unauthorized
 export async function requireRole(allowedRoles: Role[]) {
-    const session = await requireAuth();
-    const userRole = session.user.role as Role;
+	const session = await requireAuth();
+	const userRole = session.user.role as Role;
 
-    if (!allowedRoles.includes(userRole)) {
-        redirect("/");
-    }
+	if (!allowedRoles.includes(userRole)) {
+		redirect("/");
+	}
 
-    return session;
+	return session;
 }
 
 // check if the user has a specific permission based on their role

@@ -11,5 +11,5 @@ export default {
 	dbCredentials: {
 		url: env.DATABASE_URL,
 	},
-	tablesFilter: ["hackathon-management-tool-v2_*"],
+	tablesFilter: ["hackathon_*"],
 } satisfies Config;
