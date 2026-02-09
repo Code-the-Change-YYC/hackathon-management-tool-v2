@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	createTRPCRouter,
@@ -6,6 +6,7 @@ import {
 	publicProcedure
 } from "@/server/api/trpc";
 import { judgingAssignments, scores } from "@/server/db/schema";
+import { criteria } from "@/server/db/scores-schema";
 
 export const scoresRouter = createTRPCRouter({
 	// Get all scores
@@ -113,12 +114,10 @@ export const scoresRouter = createTRPCRouter({
 				)
 				.groupBy(judgingAssignments.teamId);
 
-			if (input.roundId) {
-				query.where(eq(judgingAssignments.roundId, input.roundId));
-			}
+			const normalScores = await buildQuery(false);
+			const sidepotScores = await buildQuery(true);
 
-			const aggregated = await query;
-			return aggregated;
+			return { normalScores, sidepotScores };
 		}),
 
 	// Submit a score

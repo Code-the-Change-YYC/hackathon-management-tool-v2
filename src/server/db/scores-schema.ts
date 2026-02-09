@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+	boolean,
 	integer,
 	pgTableCreator,
 	text,
@@ -17,6 +18,7 @@ export const criteria = createTable("criteria", {
 	name: text("name").notNull(),
 	maxScore: integer("max_score").notNull(),
 	description: text("description"),
+	isSidepot: boolean("is_sidepot").default(false).notNull(),
 });
 
 export const scores = createTable(
