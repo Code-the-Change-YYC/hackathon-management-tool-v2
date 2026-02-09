@@ -102,8 +102,8 @@ export const scoresRouter = createTRPCRouter({
 			const query = ctx.db
 				.select({
 					teamId: judgingAssignments.teamId,
-					totalScore: sql<number>`SUM(${scores.score})`.as("total_score"),
-					averageScore: sql<number>`AVG(${scores.score})`.as("average_score"),
+					totalScore: sql<number>`SUM(${scores.value})`.as("total_score"),
+					averageScore: sql<number>`AVG(${scores.value})`.as("average_score"),
 					scoreCount: sql<number>`COUNT(${scores.id})`.as("score_count"),
 				})
 				.from(scores)
@@ -126,13 +126,21 @@ export const scoresRouter = createTRPCRouter({
 		.input(
 			z.object({
 				assignmentId: z.string().uuid(),
-				criteria: z.string().min(1),
+				criteriaId: z.string().uuid(),
 				score: z.number().int().min(0),
 				feedback: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [newScore] = await ctx.db.insert(scores).values(input).returning();
+			const [newScore] = await ctx.db
+				.insert(scores)
+				.values({
+					assignmentId: input.assignmentId,
+					criteriaId: input.criteriaId,
+					value: input.score,
+					feedback: input.feedback,
+				})
+				.returning();
 			return newScore;
 		}),
 
