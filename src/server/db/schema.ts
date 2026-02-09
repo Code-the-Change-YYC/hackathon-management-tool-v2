@@ -8,6 +8,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth-schema";
+import { scores } from "./scores-schema";
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
@@ -61,7 +62,7 @@ export const judgingRoundRelations = relations(judgingRounds, ({ many }) => ({
 
 export const judgingAssignmentRelations = relations(
 	judgingAssignments,
-	({ one }) => ({
+	({ one, many }) => ({
 		judge: one(user, {
 			fields: [judgingAssignments.judgeId],
 			references: [user.id],
@@ -74,5 +75,7 @@ export const judgingAssignmentRelations = relations(
 			fields: [judgingAssignments.roundId],
 			references: [judgingRounds.id],
 		}),
+		scores: many(scores),
 	}),
 );
+export { scores };
