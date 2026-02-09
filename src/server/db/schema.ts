@@ -11,16 +11,6 @@ import { organization, user } from "./auth-schema";
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
-// Singleton table for hackathon settings
-export const hackathonSettings = createTable("hackathon_settings", {
-	id: integer("id").primaryKey().default(1), // Enforce singleton by always using ID 1
-	startDate: timestamp("start_date", { withTimezone: true }),
-	endDate: timestamp("end_date", { withTimezone: true }),
-	isActive: boolean("is_active").default(true).notNull(),
-	currentRoundId: uuid("current_round_id"), // Reference to active judging round
-	metadata: text("metadata"), // JSON string for extra settings
-});
-
 export const judgingRounds = createTable("judging_round", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
@@ -50,6 +40,18 @@ export const judgingAssignments = createTable("judging_assignment", {
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
+});
+
+// Singleton table for hackathon settings
+export const hackathonSettings = createTable("hackathon_settings", {
+	id: integer("id").primaryKey().default(1), // Enforce singleton by always using ID 1
+	startDate: timestamp("start_date", { withTimezone: true }),
+	endDate: timestamp("end_date", { withTimezone: true }),
+	isActive: boolean("is_active").default(true).notNull(),
+	currentRoundId: uuid("current_round_id").references(() => judgingRounds.id, {
+		onDelete: "set null",
+	}), // Reference to active judging round
+	metadata: text("metadata"), // JSON string for extra settings
 });
 
 // Relations

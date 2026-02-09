@@ -77,3 +77,7 @@ export const scoreRelations = relations(scores, ({ one }) => ({
 		references: [criteria.id],
 	}),
 }));
+
+export const sidepotRelations = relations(sidepots, ({ many }) => ({
+	votes: many(sidepotVotes),
+}));
