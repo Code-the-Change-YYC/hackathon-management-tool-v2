@@ -59,7 +59,7 @@ export const judgingRoundRelations = relations(judgingRounds, ({ many }) => ({
 
 export const judgingAssignmentRelations = relations(
 	judgingAssignments,
-	({ one, many }) => ({
+	({ one }) => ({
 		judge: one(user, {
 			fields: [judgingAssignments.judgeId],
 			references: [user.id],
