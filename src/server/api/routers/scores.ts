@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	createTRPCRouter,
@@ -6,6 +6,7 @@ import {
 	publicProcedure,
 } from "@/server/api/trpc";
 import { judgingAssignments, scores } from "@/server/db/schema";
+import { criteria } from "@/server/db/scores-schema";
 
 export const scoresRouter = createTRPCRouter({
 	// Get all scores
@@ -98,27 +99,34 @@ export const scoresRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ ctx, input }) => {
-			// This is a more complex query that aggregates scores by team
-			const query = ctx.db
-				.select({
-					teamId: judgingAssignments.teamId,
-					totalScore: sql<number>`SUM(${scores.value})`.as("total_score"),
-					averageScore: sql<number>`AVG(${scores.value})`.as("average_score"),
-					scoreCount: sql<number>`COUNT(${scores.id})`.as("score_count"),
-				})
-				.from(scores)
-				.innerJoin(
-					judgingAssignments,
-					eq(scores.assignmentId, judgingAssignments.id),
-				)
-				.groupBy(judgingAssignments.teamId);
+			const buildQuery = (isSidepot: boolean) => {
+				const conditions = [eq(criteria.isSidepot, isSidepot)];
 
-			if (input.roundId) {
-				query.where(eq(judgingAssignments.roundId, input.roundId));
-			}
+				if (input.roundId) {
+					conditions.push(eq(judgingAssignments.roundId, input.roundId));
+				}
 
-			const aggregated = await query;
-			return aggregated;
+				return ctx.db
+					.select({
+						teamId: judgingAssignments.teamId,
+						totalScore: sql<number>`SUM(${scores.value})`.as("total_score"),
+						averageScore: sql<number>`AVG(${scores.value})`.as("average_score"),
+						scoreCount: sql<number>`COUNT(${scores.id})`.as("score_count"),
+					})
+					.from(scores)
+					.innerJoin(
+						judgingAssignments,
+						eq(scores.assignmentId, judgingAssignments.id),
+					)
+					.innerJoin(criteria, eq(scores.criteriaId, criteria.id))
+					.where(and(...conditions))
+					.groupBy(judgingAssignments.teamId);
+			};
+
+			const normalScores = await buildQuery(false);
+			const sidepotScores = await buildQuery(true);
+
+			return { normalScores, sidepotScores };
 		}),
 
 	// Submit a score
