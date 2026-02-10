@@ -88,15 +88,12 @@ export const judgingRoomAdmins = createTable(
 
 export const judgingAssignments = createTable("judging_assignment", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	judgeId: text("judge_id")
-		.notNull()
-		.references(() => user.id, { onDelete: "cascade" }),
 	teamId: text("team_id")
 		.notNull()
 		.references(() => organization.id, { onDelete: "cascade" }),
-	roundId: uuid("round_id")
+	roomId: uuid("room_id")
 		.notNull()
-		.references(() => judgingRounds.id, { onDelete: "cascade" }),
+		.references(() => judgingRooms.id, { onDelete: "cascade" }),
 	timeSlot: timestamp("time_slot", { withTimezone: true }),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
@@ -129,17 +126,13 @@ export const judgingRoomRelations = relations(judgingRooms, ({ many }) => ({
 export const judgingAssignmentRelations = relations(
 	judgingAssignments,
 	({ one, many }) => ({
-		judge: one(user, {
-			fields: [judgingAssignments.judgeId],
-			references: [user.id]
-		}),
 		team: one(organization, {
 			fields: [judgingAssignments.teamId],
 			references: [organization.id]
 		}),
-		round: one(judgingRounds, {
-			fields: [judgingAssignments.roundId],
-			references: [judgingRounds.id]
+		room: one(judgingRooms, {
+			fields: [judgingAssignments.roomId],
+			references: [judgingRooms.id],
 		}),
 		scores: many(scores)
 	})
