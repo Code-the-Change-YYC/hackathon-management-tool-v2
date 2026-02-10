@@ -12,8 +12,8 @@ export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
 export const meal = createTable("meal", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	title: text("title").notNull(), // can be breakfast, lunch, dinner, breakfast leftovers...
-	startTime: timestamp("start_time", { withTimezone: true }).notNull(),
+	title: text("title").notNull().unique(), // can be breakfast, lunch, dinner, breakfast leftovers...
+	startTime: timestamp("start_time", { withTimezone: true }).notNull().unique(),
 	endTime: timestamp("end_time", { withTimezone: true }).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()

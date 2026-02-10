@@ -5,11 +5,16 @@ import { meal } from "@/server/db/meal-schema";
 export const mealsRouter = createTRPCRouter({
 	addMeal: publicProcedure
 		.input(
-			z.object({
-				title: z.string(),
-				startTime: z.string(),
-				endTime: z.string(),
-			}),
+			z
+				.object({
+					title: z.string(),
+					startTime: z.string(),
+					endTime: z.string(),
+				})
+				.refine((data) => new Date(data.endTime) > new Date(data.startTime), {
+					message: "End time must be after start time.",
+					path: ["endTime"],
+				}),
 		)
 		.mutation(async ({ input, ctx }) => {
 			const [newMeal] = await ctx.db
