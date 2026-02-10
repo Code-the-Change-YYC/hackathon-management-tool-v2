@@ -1,14 +1,14 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { meal } from "@/server/db/meal-schema";
 
 export const mealsRouter = createTRPCRouter({
-	addMeal: protectedProcedure
+	addMeal: publicProcedure
 		.input(
 			z.object({
 				title: z.string(),
-				startTime: z.string().datetime(),
-				endTime: z.string().datetime(),
+				startTime: z.string(),
+				endTime: z.string(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {

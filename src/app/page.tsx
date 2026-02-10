@@ -53,6 +53,10 @@ export default async function Home() {
 							<h3 className={styles.cardTitle}>Participant →</h3>
 							<div className={styles.cardText}>Participant dashboard.</div>
 						</Link>
+						<Link className={styles.card} href="/meal">
+							<h3 className={styles.cardTitle}>Meal →</h3>
+							<div className={styles.cardText}>Meal dashboard.</div>
+						</Link>
 					</div>
 					<div className={styles.showcaseContainer}>
 						<p className={styles.showcaseText}>Hackathon Management Tool</p>
