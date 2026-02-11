@@ -1,10 +1,13 @@
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
+	adminProcedure,
 	createTRPCRouter,
+	judgeProcedure,
 	protectedProcedure,
 	publicProcedure,
 } from "@/server/api/trpc";
+import { organization } from "@/server/db/auth-schema";
 import { judgingAssignments, scores } from "@/server/db/schema";
 import { criteria } from "@/server/db/scores-schema";
 
@@ -99,44 +102,41 @@ export const scoresRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ ctx, input }) => {
-			const buildQuery = (isSidepot: boolean) => {
-				const conditions = [eq(criteria.isSidepot, isSidepot)];
+			const results = await ctx.db
+				.select({
+					teamId: judgingAssignments.teamId,
+					teamName: organization.name,
 
-				if (input.roundId) {
-					conditions.push(eq(judgingAssignments.roundId, input.roundId));
-				}
+					normalTotal: sql<number>`SUM(CASE WHEN ${criteria.isSidepot} = false THEN ${scores.value} ELSE 0 END)`,
+					normalAvg: sql<number>`AVG(CASE WHEN ${criteria.isSidepot} = false THEN ${scores.value} ELSE NULL END)`,
 
-				return ctx.db
-					.select({
-						teamId: judgingAssignments.teamId,
-						totalScore: sql<number>`SUM(${scores.value})`.as("total_score"),
-						averageScore: sql<number>`AVG(${scores.value})`.as("average_score"),
-						scoreCount: sql<number>`COUNT(${scores.id})`.as("score_count"),
-					})
-					.from(scores)
-					.innerJoin(
-						judgingAssignments,
-						eq(scores.assignmentId, judgingAssignments.id),
-					)
-					.innerJoin(criteria, eq(scores.criteriaId, criteria.id))
-					.where(and(...conditions))
-					.groupBy(judgingAssignments.teamId);
-			};
+					sidepotTotal: sql<number>`SUM(CASE WHEN ${criteria.isSidepot} = true THEN ${scores.value} ELSE 0 END)`,
+					sidepotAvg: sql<number>`AVG(CASE WHEN ${criteria.isSidepot} = true THEN ${scores.value} ELSE NULL END)`,
+				})
+				.from(scores)
+				.innerJoin(
+					judgingAssignments,
+					eq(scores.assignmentId, judgingAssignments.id),
+				)
+				.innerJoin(organization, eq(judgingAssignments.teamId, organization.id))
+				.innerJoin(criteria, eq(scores.criteriaId, criteria.id))
+				.where(
+					input.roundId
+						? eq(judgingAssignments.roundId, input.roundId)
+						: undefined,
+				)
+				.groupBy(judgingAssignments.teamId, organization.name);
 
-			const normalScores = await buildQuery(false);
-			const sidepotScores = await buildQuery(true);
-
-			return { normalScores, sidepotScores };
+			return results;
 		}),
 
 	// Submit a score
-	create: protectedProcedure
+	create: judgeProcedure
 		.input(
 			z.object({
 				assignmentId: z.string().uuid(),
 				criteriaId: z.string().uuid(),
 				score: z.number().int().min(0),
-				feedback: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -146,34 +146,30 @@ export const scoresRouter = createTRPCRouter({
 					assignmentId: input.assignmentId,
 					criteriaId: input.criteriaId,
 					value: input.score,
-					feedback: input.feedback,
 				})
 				.returning();
 			return newScore;
 		}),
 
 	// Update a score
-	update: protectedProcedure
+	update: judgeProcedure
 		.input(
 			z.object({
 				id: z.string().uuid(),
-				criteria: z.string().min(1).optional(),
 				score: z.number().int().min(0).optional(),
-				feedback: z.string().optional().nullable(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id, ...data } = input;
 			const [updated] = await ctx.db
 				.update(scores)
-				.set(data)
-				.where(eq(scores.id, id))
+				.set({ value: input.score })
+				.where(eq(scores.id, input.id))
 				.returning();
 			return updated;
 		}),
 
 	// Delete a score
-	delete: protectedProcedure
+	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			await ctx.db.delete(scores).where(eq(scores.id, input.id));
