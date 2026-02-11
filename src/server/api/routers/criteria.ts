@@ -16,16 +16,12 @@ export const criteriaRouter = createTRPCRouter({
 		.input(
 			z.object({
 				name: z.string().min(1),
-				maxScore: z.number().int().min(1),
-				description: z.string().optional(),
+				maxScore: z.number().int().default(10),
+				isSidepot: z.boolean().default(false),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [newCriteria] = await ctx.db
-				.insert(criteria)
-				.values(input)
-				.returning();
-			return newCriteria;
+			return await ctx.db.insert(criteria).values(input).returning();
 		}),
 
 	update: adminProcedure
@@ -33,8 +29,8 @@ export const criteriaRouter = createTRPCRouter({
 			z.object({
 				id: z.string().uuid(),
 				name: z.string().min(1).optional(),
-				maxScore: z.number().int().min(1).optional(),
-				description: z.string().optional(),
+				maxScore: z.number().optional(),
+				isSidepot: z.boolean().optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {

@@ -3,7 +3,6 @@ import { hackathonSettingsRouter } from "@/server/api/routers/hackathon-settings
 import { judgingAssignmentsRouter } from "@/server/api/routers/judging-assignments";
 import { judgingRoundsRouter } from "@/server/api/routers/judging-rounds";
 import { scoresRouter } from "@/server/api/routers/scores";
-import { sidepotsRouter } from "@/server/api/routers/sidepot";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
