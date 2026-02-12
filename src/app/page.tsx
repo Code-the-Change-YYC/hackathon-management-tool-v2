@@ -6,7 +6,7 @@ import { HydrateClient } from "@/trpc/server";
 
 export default async function Home() {
 	const session = await auth.api.getSession({
-		headers: await headers(),
+		headers: await headers()
 	});
 
 	return (

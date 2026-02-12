@@ -15,7 +15,7 @@ export async function createOrGetUser({
 	email,
 	password,
 	name,
-	role,
+	role
 }: CreateUserInput): Promise<User> {
 	// Check if user exists
 	const existingUser = await db
@@ -34,8 +34,8 @@ export async function createOrGetUser({
 		body: {
 			name,
 			email,
-			password,
-		},
+			password
+		}
 	});
 
 	console.log(`User created: ${email}`);

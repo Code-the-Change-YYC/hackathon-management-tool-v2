@@ -6,28 +6,28 @@ import { db } from "@/server/db";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
-		provider: "pg",
+		provider: "pg"
 	}),
 	emailAndPassword: {
-		enabled: true,
+		enabled: true
 	},
 	plugins: [organization(), admin()],
 	user: {
 		additionalFields: {
 			dietaryRestrictions: {
 				type: "string",
-				required: false,
+				required: false
 			},
 			school: {
 				type: "string",
-				required: false,
+				required: false
 			},
 			faculty: {
 				type: "string",
-				required: false,
-			},
-		},
-	},
+				required: false
+			}
+		}
+	}
 });
 
 export type Session = typeof auth.$Infer.Session;
