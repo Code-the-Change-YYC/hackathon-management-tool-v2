@@ -11,6 +11,13 @@ import {
 	timestamp
 } from "drizzle-orm/pg-core";
 
+export const PROGRAMS = [
+	"computer_science",
+	"software_engineering",
+	"electrical_engineering",
+	"other",
+] as const;
+
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
 export const user = createTable("user", {
@@ -28,9 +35,12 @@ export const user = createTable("user", {
 	banned: boolean("banned").default(false),
 	banReason: text("ban_reason"),
 	banExpires: timestamp("ban_expires"),
-	dietaryRestrictions: text("dietary_restrictions"),
+	allergies: text("allergies"),
 	school: text("school"),
-	faculty: text("faculty")
+	program: text("program", { enum: PROGRAMS }),
+	completedRegistration: boolean("completed_registration")
+		.default(false)
+		.notNull(),
 });
 
 export const session = createTable(

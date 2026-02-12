@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, organization } from "better-auth/plugins";
 
 import { db } from "@/server/db";
+import { PROGRAMS } from "@/server/db/auth-schema";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
@@ -14,7 +15,7 @@ export const auth = betterAuth({
 	plugins: [organization(), admin()],
 	user: {
 		additionalFields: {
-			dietaryRestrictions: {
+			allergies: {
 				type: "string",
 				required: false
 			},
@@ -22,12 +23,17 @@ export const auth = betterAuth({
 				type: "string",
 				required: false
 			},
-			faculty: {
+			program: {
 				type: "string",
-				required: false
-			}
-		}
-	}
+				required: false,
+				options: PROGRAMS,
+			},
+			completedRegistration: {
+				type: "boolean",
+				required: false,
+			},
+		},
+	},
 });
 
 export type Session = typeof auth.$Infer.Session;

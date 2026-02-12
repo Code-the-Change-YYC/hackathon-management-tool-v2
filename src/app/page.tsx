@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import UserTable from "@/app/components/admin/usertable";
 import styles from "@/app/index.module.scss";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";
@@ -68,6 +69,8 @@ export default async function Home() {
 				{session?.user && (
 					<div className="text-center">Logged in as {session.user.name}</div>
 				)}
+
+				<UserTable />
 			</main>
 		</HydrateClient>
 	);
