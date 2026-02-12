@@ -2,6 +2,7 @@ import { hackathonSettingsRouter } from "@/server/api/routers/hackathon-settings
 import { judgingAssignmentsRouter } from "@/server/api/routers/judging-assignments";
 import { judgingRoundsRouter } from "@/server/api/routers/judging-rounds";
 import { scoresRouter } from "@/server/api/routers/scores";
+import { usersRouter } from "@/server/api/routers/users";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
@@ -14,6 +15,7 @@ export const appRouter = createTRPCRouter({
 	judgingRounds: judgingRoundsRouter,
 	judgingAssignments: judgingAssignmentsRouter,
 	scores: scoresRouter,
+	users: usersRouter,
 });
 
 // export type definition of API

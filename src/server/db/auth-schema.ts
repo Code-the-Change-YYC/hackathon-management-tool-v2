@@ -5,6 +5,13 @@ import {
 } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
+export const PROGRAMS = [
+	"computer_science",
+	"software_engineering",
+	"electrical_engineering",
+	"other",
+] as const;
+
 export const user = pgTable("user", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
@@ -20,9 +27,12 @@ export const user = pgTable("user", {
 	banned: boolean("banned").default(false),
 	banReason: text("ban_reason"),
 	banExpires: timestamp("ban_expires"),
-	dietaryRestrictions: text("dietary_restrictions"),
+	allergies: text("allergies"),
 	school: text("school"),
-	faculty: text("faculty"),
+	program: text("program", { enum: PROGRAMS }),
+	completedRegistration: boolean("completed_registration")
+		.default(false)
+		.notNull(),
 });
 
 export const session = pgTable(
