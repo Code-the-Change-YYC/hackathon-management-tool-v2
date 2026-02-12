@@ -1,10 +1,9 @@
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	judgeProcedure,
-	protectedProcedure,
 	publicProcedure,
 } from "@/server/api/trpc";
 import { organization } from "@/server/db/auth-schema";

@@ -8,7 +8,6 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { organization, user } from "./auth-schema";
 import { judgingAssignments } from "./schema";
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
