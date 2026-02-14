@@ -6,7 +6,7 @@ import {
 	text,
 	timestamp,
 	uniqueIndex,
-	uuid,
+	uuid
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth-schema";
 
@@ -48,7 +48,7 @@ export const judgingRooms = createTable("judging_room", {
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => new Date())
-		.notNull(),
+		.notNull()
 });
 
 export const judgingRoomStaff = createTable(
@@ -63,14 +63,14 @@ export const judgingRoomStaff = createTable(
 			.references(() => user.id, { onDelete: "cascade" }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
-			.notNull(),
+			.notNull()
 	},
 	(table) => [
 		uniqueIndex("judging_room_judge_room_judge_uniq").on(
 			table.roomId,
-			table.staffId,
-		),
-	],
+			table.staffId
+		)
+	]
 );
 
 export const judgingAssignments = createTable("judging_assignment", {
@@ -107,7 +107,7 @@ export const judgingRoundRelations = relations(judgingRounds, ({ many }) => ({
 
 // each judging room can have many admins and many judges
 export const judgingRoomRelations = relations(judgingRooms, ({ many }) => ({
-	staff: many(judgingRoomStaff),
+	staff: many(judgingRoomStaff)
 }));
 
 export const judgingAssignmentRelations = relations(
@@ -119,7 +119,7 @@ export const judgingAssignmentRelations = relations(
 		}),
 		room: one(judgingRooms, {
 			fields: [judgingAssignments.roomId],
-			references: [judgingRooms.id],
+			references: [judgingRooms.id]
 		}),
 		scores: many(scores)
 	})
