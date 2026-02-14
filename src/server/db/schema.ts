@@ -51,14 +51,14 @@ export const judgingRooms = createTable("judging_room", {
 		.notNull(),
 });
 
-export const judgingRoomJudges = createTable(
-	"judging_room_judge",
+export const judgingRoomStaff = createTable(
+	"judging_room_staff",
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		roomId: uuid("room_id")
 			.notNull()
 			.references(() => judgingRooms.id, { onDelete: "cascade" }),
-		judgeId: text("judge_id")
+		staffId: text("staff_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -68,29 +68,7 @@ export const judgingRoomJudges = createTable(
 	(table) => [
 		uniqueIndex("judging_room_judge_room_judge_uniq").on(
 			table.roomId,
-			table.judgeId,
-		),
-	],
-);
-
-export const judgingRoomAdmins = createTable(
-	"judging_room_admin",
-	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		roomId: uuid("room_id")
-			.notNull()
-			.references(() => judgingRooms.id, { onDelete: "cascade" }),
-		adminId: text("admin_id")
-			.notNull()
-			.references(() => user.id, { onDelete: "cascade" }),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
-	},
-	(table) => [
-		uniqueIndex("judging_room_admin_room_admin_uniq").on(
-			table.roomId,
-			table.adminId,
+			table.staffId,
 		),
 	],
 );
@@ -129,8 +107,7 @@ export const judgingRoundRelations = relations(judgingRounds, ({ many }) => ({
 
 // each judging room can have many admins and many judges
 export const judgingRoomRelations = relations(judgingRooms, ({ many }) => ({
-	admins: many(judgingRoomAdmins),
-	judges: many(judgingRoomJudges),
+	staff: many(judgingRoomStaff),
 }));
 
 export const judgingAssignmentRelations = relations(
