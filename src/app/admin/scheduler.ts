@@ -1,40 +1,63 @@
+type Team = {
+  id: string;
+  name: string;
+};
+
+type Room = {
+  id: string;
+  name: string;
+  judge: string;
+};
+
+type TimeSlot = {
+  teamId: string;
+  teamName: string;
+  roomId: string;
+  roomName: string;
+  judgeName: string;
+  start: Date;
+  end: Date;
+};
+
+
 export function createSchedule(
-	teams: any[],
-	rooms: any[],
+	teams: Team[],
+	rooms: Room[],
 	startTime: Date,
-	duration: number,
+  duration: number,
+  bufferTime: number  = 5
 ) {
-	const schedule: {
-		teamName: string;
-		roomName: string;
-		judgeName: string;
-		start: Date;
-		end: Date;
-	}[] = [];
-	let currentTime = new Date(startTime);
-	let roomIndex = 0;
-	const bufferTime = 5;
+  const schedule: TimeSlot[] = [];
+  
+  let currentTime = new Date(startTime);
+  
+  // Process team in batches equal to number of rooms
+  for (let i = 0; i < teams.length; i += rooms.length) {  
 
-	teams.forEach((team) => {
-		const timeSlot = {
-			teamName: team.name,
-			roomName: rooms[roomIndex].name,
-			judgeName: rooms[roomIndex].judge,
-			start: new Date(currentTime),
-			end: new Date(currentTime.getTime() + duration * 60000),
-		};
+    const batch = teams.slice(i, i + rooms.length);
 
-		schedule.push(timeSlot);
+    batch.forEach((team, index) => {
+      
+      const room = rooms[index];
 
-		roomIndex++;
+      if (!room) return;
 
-		if (roomIndex >= rooms.length) {
-			roomIndex = 0;
-			currentTime = new Date(
-				currentTime.getTime() + (duration + bufferTime) * 60000,
-			);
-		}
-	});
+      schedule.push({
+        teamId: team.id,
+        teamName: team.name,
+        roomId: room.id,
+        roomName: room.name,
+        judgeName: room.judge,
+        start: new Date(currentTime),
+        end: new Date(currentTime.getTime() + duration * 60000),
+      });
+    })
 
-	return schedule;
+    // Move time forward after batch completes
+    currentTime = new Date(
+      currentTime.getTime() + (duration + bufferTime) * 60000
+    );
+ 
+  }
+  return schedule;
 }
