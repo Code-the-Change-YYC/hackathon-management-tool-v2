@@ -7,16 +7,16 @@ import { member, organization } from "@/server/db/auth-schema";
 async function main() {
 	console.log("Starting seed...");
 
-	const adminEmail = process.env.ADMIN_EMAIL || "admin@salvationarmy.com";
+	const adminEmail = process.env.ADMIN_EMAIL || "admin@hackathon.com";
 	const adminPassword = process.env.ADMIN_PASSWORD || "Password123!";
 	const adminName = process.env.ADMIN_NAME || "Admin User";
 
-	const judgeEmail = process.env.JUDGE_EMAIL || "judge@salvationarmy.com";
+	const judgeEmail = process.env.JUDGE_EMAIL || "judge@hackathon.com";
 	const judgePassword = process.env.JUDGE_PASSWORD || "Password123!";
 	const judgeName = process.env.JUDGE_NAME || "Judge User";
 
 	const participantEmail =
-		process.env.PARTICIPANT_EMAIL || "participant@salvationarmy.com";
+		process.env.PARTICIPANT_EMAIL || "participant@hackathon.com";
 	const participantPassword =
 		process.env.PARTICIPANT_PASSWORD || "Password123!";
 	const participantName = process.env.PARTICIPANT_NAME || "Participant User";
@@ -28,21 +28,21 @@ async function main() {
 			email: adminEmail,
 			password: adminPassword,
 			name: adminName,
-			role: "admin",
+			role: "admin"
 		});
 
 		await createOrGetUser({
 			email: judgeEmail,
 			password: judgePassword,
 			name: judgeName,
-			role: "judge",
+			role: "judge"
 		});
 
 		await createOrGetUser({
 			email: participantEmail,
 			password: participantPassword,
 			name: participantName,
-			role: "participant",
+			role: "participant"
 		});
 
 		console.log("\nCreating organizations...");
@@ -52,7 +52,7 @@ async function main() {
 			{ name: "Drivers", slug: "drivers" },
 			{ name: "Team One", slug: "team-one" },
 			{ name: "Team Two", slug: "team-two" },
-			{ name: "Team Three", slug: "team-three" },
+			{ name: "Team Three", slug: "team-three" }
 		];
 
 		for (const org of orgs) {
@@ -76,7 +76,7 @@ async function main() {
 						id: generateId(),
 						name: org.name,
 						slug: org.slug,
-						createdAt: new Date(),
+						createdAt: new Date()
 					})
 					.returning();
 
@@ -87,15 +87,15 @@ async function main() {
 						organizationId: newOrg.id,
 						userId: adminUser.id,
 						role: "owner",
-						createdAt: new Date(),
+						createdAt: new Date()
 					});
 
 					console.log(
-						`Created organization: ${org.name} (admin added as owner)`,
+						`Created organization: ${org.name} (admin added as owner)`
 					);
 				} else {
 					console.error(
-						`Failed to create member for organization: ${org.name} (organization not created)`,
+						`Failed to create member for organization: ${org.name} (organization not created)`
 					);
 				}
 			} catch (error) {

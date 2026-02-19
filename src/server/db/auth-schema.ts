@@ -1,15 +1,24 @@
 import {
 	type InferInsertModel,
 	type InferSelectModel,
-	relations,
+	relations
 } from "drizzle-orm";
 import {
 	boolean,
 	index,
 	pgTableCreator,
 	text,
-	timestamp,
+	timestamp
 } from "drizzle-orm/pg-core";
+
+export const PROGRAMS = [
+	"computer_science",
+	"software_engineering",
+	"electrical_engineering",
+	"other"
+] as const;
+
+export const MEMBER_ROLES = ["owner", "member"] as const;
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
@@ -28,9 +37,12 @@ export const user = createTable("user", {
 	banned: boolean("banned").default(false),
 	banReason: text("ban_reason"),
 	banExpires: timestamp("ban_expires"),
-	dietaryRestrictions: text("dietary_restrictions"),
+	allergies: text("allergies"),
 	school: text("school"),
-	faculty: text("faculty"),
+	program: text("program", { enum: PROGRAMS }),
+	completedRegistration: boolean("completed_registration")
+		.default(false)
+		.notNull()
 });
 
 export const session = createTable(
@@ -49,9 +61,9 @@ export const session = createTable(
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
 		activeOrganizationId: text("active_organization_id"),
-		impersonatedBy: text("impersonated_by"),
+		impersonatedBy: text("impersonated_by")
 	},
-	(table) => [index("session_userId_idx").on(table.userId)],
+	(table) => [index("session_userId_idx").on(table.userId)]
 );
 
 export const account = createTable(
@@ -73,9 +85,9 @@ export const account = createTable(
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => /* @__PURE__ */ new Date())
-			.notNull(),
+			.notNull()
 	},
-	(table) => [index("account_userId_idx").on(table.userId)],
+	(table) => [index("account_userId_idx").on(table.userId)]
 );
 
 export const verification = createTable(
@@ -89,9 +101,9 @@ export const verification = createTable(
 		updatedAt: timestamp("updated_at")
 			.defaultNow()
 			.$onUpdate(() => /* @__PURE__ */ new Date())
-			.notNull(),
+			.notNull()
 	},
-	(table) => [index("verification_identifier_idx").on(table.identifier)],
+	(table) => [index("verification_identifier_idx").on(table.identifier)]
 );
 
 export const organization = createTable("organization", {
@@ -101,7 +113,7 @@ export const organization = createTable("organization", {
 	logo: text("logo"),
 	createdAt: timestamp("created_at").notNull(),
 	metadata: text("metadata"),
-	teamCode: text("team_code").unique(),
+	teamCode: text("team_code").unique()
 });
 
 export const member = createTable(
@@ -114,13 +126,13 @@ export const member = createTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
-		role: text("role").default("member").notNull(),
-		createdAt: timestamp("created_at").notNull(),
+		role: text("role", { enum: MEMBER_ROLES }).default("member").notNull(),
+		createdAt: timestamp("created_at").notNull()
 	},
 	(table) => [
 		index("member_organizationId_idx").on(table.organizationId),
-		index("member_userId_idx").on(table.userId),
-	],
+		index("member_userId_idx").on(table.userId)
+	]
 );
 
 export const invitation = createTable(
@@ -137,61 +149,64 @@ export const invitation = createTable(
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		inviterId: text("inviter_id")
 			.notNull()
-			.references(() => user.id, { onDelete: "cascade" }),
+			.references(() => user.id, { onDelete: "cascade" })
 	},
 	(table) => [
 		index("invitation_organizationId_idx").on(table.organizationId),
-		index("invitation_email_idx").on(table.email),
-	],
+		index("invitation_email_idx").on(table.email)
+	]
 );
 
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
 	members: many(member),
-	invitations: many(invitation),
+	invitations: many(invitation)
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
 	user: one(user, {
 		fields: [session.userId],
-		references: [user.id],
-	}),
+		references: [user.id]
+	})
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({
 	user: one(user, {
 		fields: [account.userId],
-		references: [user.id],
-	}),
+		references: [user.id]
+	})
 }));
 
 export const organizationRelations = relations(organization, ({ many }) => ({
 	members: many(member),
-	invitations: many(invitation),
+	invitations: many(invitation)
 }));
 
 export const memberRelations = relations(member, ({ one }) => ({
 	organization: one(organization, {
 		fields: [member.organizationId],
-		references: [organization.id],
+		references: [organization.id]
 	}),
 	user: one(user, {
 		fields: [member.userId],
-		references: [user.id],
-	}),
+		references: [user.id]
+	})
 }));
 
 export const invitationRelations = relations(invitation, ({ one }) => ({
 	organization: one(organization, {
 		fields: [invitation.organizationId],
-		references: [organization.id],
+		references: [organization.id]
 	}),
 	user: one(user, {
 		fields: [invitation.inviterId],
-		references: [user.id],
-	}),
+		references: [user.id]
+	})
 }));
 
 export type UserSelectType = InferSelectModel<typeof user>;
 export type UserInsertType = InferInsertModel<typeof user>;
+
+export type OrganizationSelectType = InferSelectModel<typeof organization>;
+export type OrganizationInsertType = InferInsertModel<typeof organization>;

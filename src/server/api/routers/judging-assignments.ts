@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	createTRPCRouter,
 	protectedProcedure,
-	publicProcedure,
+	publicProcedure
 } from "@/server/api/trpc";
 import { judgingAssignments } from "@/server/db/schema";
 
@@ -15,9 +15,9 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				judge: true,
 				team: true,
 				round: true,
-				scores: true,
+				scores: true
 			},
-			orderBy: (assignments, { desc }) => [desc(assignments.createdAt)],
+			orderBy: (assignments, { desc }) => [desc(assignments.createdAt)]
 		});
 		return assignments;
 	}),
@@ -31,8 +31,8 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				with: {
 					judge: true,
 					team: true,
-					scores: true,
-				},
+					scores: true
+				}
 			});
 			return assignments;
 		}),
@@ -46,9 +46,9 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				with: {
 					team: true,
 					round: true,
-					scores: true,
+					scores: true
 				},
-				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)],
+				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
 			});
 			return assignments;
 		}),
@@ -62,8 +62,8 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				with: {
 					judge: true,
 					round: true,
-					scores: true,
-				},
+					scores: true
+				}
 			});
 			return assignments;
 		}),
@@ -75,8 +75,8 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				judgeId: z.string(),
 				teamId: z.string(),
 				roundId: z.string().uuid(),
-				timeSlot: z.date().optional(),
-			}),
+				timeSlot: z.date().optional()
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const [assignment] = await ctx.db
@@ -94,8 +94,8 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				judgeId: z.string().optional(),
 				teamId: z.string().optional(),
 				roundId: z.string().uuid().optional(),
-				timeSlot: z.date().optional().nullable(),
-			}),
+				timeSlot: z.date().optional().nullable()
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
@@ -115,5 +115,5 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				.delete(judgingAssignments)
 				.where(eq(judgingAssignments.id, input.id));
 			return { success: true };
-		}),
+		})
 });
