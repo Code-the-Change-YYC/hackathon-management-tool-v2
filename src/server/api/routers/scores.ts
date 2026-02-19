@@ -1,10 +1,9 @@
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	judgeProcedure,
-	protectedProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
 import { organization } from "@/server/db/auth-schema";
@@ -111,19 +110,19 @@ export const scoresRouter = createTRPCRouter({
 					normalAvg: sql<number>`AVG(CASE WHEN ${criteria.isSidepot} = false THEN ${scores.value} ELSE NULL END)`,
 
 					sidepotTotal: sql<number>`SUM(CASE WHEN ${criteria.isSidepot} = true THEN ${scores.value} ELSE 0 END)`,
-					sidepotAvg: sql<number>`AVG(CASE WHEN ${criteria.isSidepot} = true THEN ${scores.value} ELSE NULL END)`,
+					sidepotAvg: sql<number>`AVG(CASE WHEN ${criteria.isSidepot} = true THEN ${scores.value} ELSE NULL END)`
 				})
 				.from(scores)
 				.innerJoin(
 					judgingAssignments,
-					eq(scores.assignmentId, judgingAssignments.id),
+					eq(scores.assignmentId, judgingAssignments.id)
 				)
 				.innerJoin(organization, eq(judgingAssignments.teamId, organization.id))
 				.innerJoin(criteria, eq(scores.criteriaId, criteria.id))
 				.where(
 					input.roundId
 						? eq(judgingAssignments.roundId, input.roundId)
-						: undefined,
+						: undefined
 				)
 				.groupBy(judgingAssignments.teamId, organization.name);
 
@@ -136,8 +135,8 @@ export const scoresRouter = createTRPCRouter({
 			z.object({
 				assignmentId: z.string().uuid(),
 				criteriaId: z.string().uuid(),
-				score: z.number().int().min(0),
-			}),
+				score: z.number().int().min(0)
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const [newScore] = await ctx.db
@@ -145,7 +144,7 @@ export const scoresRouter = createTRPCRouter({
 				.values({
 					assignmentId: input.assignmentId,
 					criteriaId: input.criteriaId,
-					value: input.score,
+					value: input.score
 				})
 				.returning();
 			return newScore;
@@ -156,8 +155,8 @@ export const scoresRouter = createTRPCRouter({
 		.input(
 			z.object({
 				id: z.string().uuid(),
-				score: z.number().int().min(0).optional(),
-			}),
+				score: z.number().int().min(0).optional()
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const [updated] = await ctx.db

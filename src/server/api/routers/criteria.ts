@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	adminProcedure,
 	createTRPCRouter,
-	publicProcedure,
+	publicProcedure
 } from "@/server/api/trpc";
 import { criteria } from "@/server/db/scores-schema";
 
@@ -17,8 +17,8 @@ export const criteriaRouter = createTRPCRouter({
 			z.object({
 				name: z.string().min(1),
 				maxScore: z.number().int().default(10),
-				isSidepot: z.boolean().default(false),
-			}),
+				isSidepot: z.boolean().default(false)
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			return await ctx.db.insert(criteria).values(input).returning();
@@ -30,8 +30,8 @@ export const criteriaRouter = createTRPCRouter({
 				id: z.string().uuid(),
 				name: z.string().min(1).optional(),
 				maxScore: z.number().optional(),
-				isSidepot: z.boolean().optional(),
-			}),
+				isSidepot: z.boolean().optional()
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
@@ -48,5 +48,5 @@ export const criteriaRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			await ctx.db.delete(criteria).where(eq(criteria.id, input.id));
 			return { success: true };
-		}),
+		})
 });
