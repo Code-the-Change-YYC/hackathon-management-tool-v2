@@ -5,7 +5,7 @@ import {
 	pgTableCreator,
 	text,
 	timestamp,
-	uuid,
+	uuid
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth-schema";
 
@@ -18,7 +18,7 @@ export const hackathonSettings = createTable("hackathon_settings", {
 	endDate: timestamp("end_date", { withTimezone: true }),
 	isActive: boolean("is_active").default(true).notNull(),
 	currentRoundId: uuid("current_round_id"), // Reference to active judging round
-	metadata: text("metadata"), // JSON string for extra settings
+	metadata: text("metadata") // JSON string for extra settings
 });
 
 export const judgingRounds = createTable("judging_round", {
@@ -32,7 +32,7 @@ export const judgingRounds = createTable("judging_round", {
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => new Date())
-		.notNull(),
+		.notNull()
 });
 
 export const judgingAssignments = createTable("judging_assignment", {
@@ -49,7 +49,7 @@ export const judgingAssignments = createTable("judging_assignment", {
 	timeSlot: timestamp("time_slot", { withTimezone: true }),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
-		.notNull(),
+		.notNull()
 });
 
 export const scores = createTable("score", {
@@ -62,12 +62,12 @@ export const scores = createTable("score", {
 	feedback: text("feedback"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
-		.notNull(),
+		.notNull()
 });
 
 // Relations
 export const judgingRoundRelations = relations(judgingRounds, ({ many }) => ({
-	assignments: many(judgingAssignments),
+	assignments: many(judgingAssignments)
 }));
 
 export const judgingAssignmentRelations = relations(
@@ -75,23 +75,23 @@ export const judgingAssignmentRelations = relations(
 	({ one, many }) => ({
 		judge: one(user, {
 			fields: [judgingAssignments.judgeId],
-			references: [user.id],
+			references: [user.id]
 		}),
 		team: one(organization, {
 			fields: [judgingAssignments.teamId],
-			references: [organization.id],
+			references: [organization.id]
 		}),
 		round: one(judgingRounds, {
 			fields: [judgingAssignments.roundId],
-			references: [judgingRounds.id],
+			references: [judgingRounds.id]
 		}),
-		scores: many(scores),
-	}),
+		scores: many(scores)
+	})
 );
 
 export const scoreRelations = relations(scores, ({ one }) => ({
 	assignment: one(judgingAssignments, {
 		fields: [scores.assignmentId],
-		references: [judgingAssignments.id],
-	}),
+		references: [judgingAssignments.id]
+	})
 }));

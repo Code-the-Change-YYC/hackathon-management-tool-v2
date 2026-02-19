@@ -6,7 +6,7 @@ import type { Role } from "@/types/types";
 // session helpers for server components and API routes
 export async function getSession(): Promise<Session | null> {
 	const session = await auth.api.getSession({
-		headers: await headers(),
+		headers: await headers()
 	});
 	return session;
 }

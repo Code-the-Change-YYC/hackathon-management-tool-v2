@@ -2,7 +2,7 @@ import type {
 	OrganizationInsertType,
 	OrganizationSelectType,
 	UserInsertType,
-	UserSelectType,
+	UserSelectType
 } from "@/server/db/auth-schema";
 import { PROGRAMS } from "@/server/db/auth-schema";
 
@@ -18,13 +18,13 @@ export type Program = (typeof PROGRAMS)[number];
 export enum Role {
 	ADMIN = "admin",
 	JUDGE = "judge",
-	PARTICIPANT = "participant",
+	PARTICIPANT = "participant"
 }
 
 export enum OrganizationRole {
 	MEMBER = "member",
 	ADMIN = "admin",
-	OWNER = "owner",
+	OWNER = "owner"
 }
 
 export const ALL_ROLES: Role[] = [Role.ADMIN, Role.JUDGE, Role.PARTICIPANT];
@@ -32,5 +32,5 @@ export const ALL_ROLES: Role[] = [Role.ADMIN, Role.JUDGE, Role.PARTICIPANT];
 export const ALL_ORGANIZATION_ROLES: OrganizationRole[] = [
 	OrganizationRole.MEMBER,
 	OrganizationRole.ADMIN,
-	OrganizationRole.OWNER,
+	OrganizationRole.OWNER
 ];

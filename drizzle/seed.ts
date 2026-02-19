@@ -28,21 +28,21 @@ async function main() {
 			email: adminEmail,
 			password: adminPassword,
 			name: adminName,
-			role: "admin",
+			role: "admin"
 		});
 
 		await createOrGetUser({
 			email: judgeEmail,
 			password: judgePassword,
 			name: judgeName,
-			role: "judge",
+			role: "judge"
 		});
 
 		await createOrGetUser({
 			email: participantEmail,
 			password: participantPassword,
 			name: participantName,
-			role: "participant",
+			role: "participant"
 		});
 
 		console.log("\nCreating organizations...");
@@ -52,7 +52,7 @@ async function main() {
 			{ name: "Drivers", slug: "drivers" },
 			{ name: "Team One", slug: "team-one" },
 			{ name: "Team Two", slug: "team-two" },
-			{ name: "Team Three", slug: "team-three" },
+			{ name: "Team Three", slug: "team-three" }
 		];
 
 		for (const org of orgs) {
@@ -76,7 +76,7 @@ async function main() {
 						id: generateId(),
 						name: org.name,
 						slug: org.slug,
-						createdAt: new Date(),
+						createdAt: new Date()
 					})
 					.returning();
 
@@ -87,15 +87,15 @@ async function main() {
 						organizationId: newOrg.id,
 						userId: adminUser.id,
 						role: "owner",
-						createdAt: new Date(),
+						createdAt: new Date()
 					});
 
 					console.log(
-						`Created organization: ${org.name} (admin added as owner)`,
+						`Created organization: ${org.name} (admin added as owner)`
 					);
 				} else {
 					console.error(
-						`Failed to create member for organization: ${org.name} (organization not created)`,
+						`Failed to create member for organization: ${org.name} (organization not created)`
 					);
 				}
 			} catch (error) {

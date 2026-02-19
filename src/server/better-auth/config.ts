@@ -7,33 +7,33 @@ import { PROGRAMS } from "@/server/db/auth-schema";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
-		provider: "pg",
+		provider: "pg"
 	}),
 	emailAndPassword: {
-		enabled: true,
+		enabled: true
 	},
 	plugins: [organization(), admin()],
 	user: {
 		additionalFields: {
 			allergies: {
 				type: "string",
-				required: false,
+				required: false
 			},
 			school: {
 				type: "string",
-				required: false,
+				required: false
 			},
 			program: {
 				type: "string",
 				required: false,
-				options: PROGRAMS,
+				options: PROGRAMS
 			},
 			completedRegistration: {
 				type: "boolean",
-				required: false,
-			},
-		},
-	},
+				required: false
+			}
+		}
+	}
 });
 
 export type Session = typeof auth.$Infer.Session;
