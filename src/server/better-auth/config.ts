@@ -26,14 +26,14 @@ export const auth = betterAuth({
 			program: {
 				type: "string",
 				required: false,
-				options: PROGRAMS,
+				options: PROGRAMS
 			},
 			completedRegistration: {
 				type: "boolean",
-				required: false,
-			},
-		},
-	},
+				required: false
+			}
+		}
+	}
 });
 
 export type Session = typeof auth.$Infer.Session;

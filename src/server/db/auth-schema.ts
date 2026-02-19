@@ -15,7 +15,7 @@ export const PROGRAMS = [
 	"computer_science",
 	"software_engineering",
 	"electrical_engineering",
-	"other",
+	"other"
 ] as const;
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
@@ -40,7 +40,7 @@ export const user = createTable("user", {
 	program: text("program", { enum: PROGRAMS }),
 	completedRegistration: boolean("completed_registration")
 		.default(false)
-		.notNull(),
+		.notNull()
 });
 
 export const session = createTable(

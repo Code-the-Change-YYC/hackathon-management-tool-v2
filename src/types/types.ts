@@ -2,7 +2,7 @@ import type {
 	OrganizationInsertType,
 	OrganizationSelectType,
 	UserInsertType,
-	UserSelectType,
+	UserSelectType
 } from "@/server/db/auth-schema";
 import { PROGRAMS } from "@/server/db/auth-schema";
 
