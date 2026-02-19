@@ -1,6 +1,19 @@
-import type { UserSelectType } from "@/server/db/auth-schema";
+import type {
+	OrganizationInsertType,
+	OrganizationSelectType,
+	UserInsertType,
+	UserSelectType
+} from "@/server/db/auth-schema";
+import { PROGRAMS } from "@/server/db/auth-schema";
 
 export type User = UserSelectType;
+export type UserInsert = UserInsertType;
+
+export type Organization = OrganizationSelectType;
+export type OrganizationInsert = OrganizationInsertType;
+
+export { PROGRAMS };
+export type Program = (typeof PROGRAMS)[number];
 
 export enum Role {
 	ADMIN = "admin",

@@ -7,16 +7,16 @@ import { member, organization } from "@/server/db/auth-schema";
 async function main() {
 	console.log("Starting seed...");
 
-	const adminEmail = process.env.ADMIN_EMAIL || "admin@salvationarmy.com";
+	const adminEmail = process.env.ADMIN_EMAIL || "admin@hackathon.com";
 	const adminPassword = process.env.ADMIN_PASSWORD || "Password123!";
 	const adminName = process.env.ADMIN_NAME || "Admin User";
 
-	const judgeEmail = process.env.JUDGE_EMAIL || "judge@salvationarmy.com";
+	const judgeEmail = process.env.JUDGE_EMAIL || "judge@hackathon.com";
 	const judgePassword = process.env.JUDGE_PASSWORD || "Password123!";
 	const judgeName = process.env.JUDGE_NAME || "Judge User";
 
 	const participantEmail =
-		process.env.PARTICIPANT_EMAIL || "participant@salvationarmy.com";
+		process.env.PARTICIPANT_EMAIL || "participant@hackathon.com";
 	const participantPassword =
 		process.env.PARTICIPANT_PASSWORD || "Password123!";
 	const participantName = process.env.PARTICIPANT_NAME || "Participant User";
