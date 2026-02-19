@@ -4,7 +4,7 @@ import type { CellValueChangedEvent, ColDef } from "ag-grid-community";
 import {
 	AllCommunityModule,
 	ModuleRegistry,
-	themeQuartz,
+	themeQuartz
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useCallback, useMemo } from "react";
@@ -12,7 +12,7 @@ import { api } from "@/trpc/react";
 import {
 	createTeamColumnDefs,
 	TABLE_THEME_PARAMS,
-	TEAM_EDITABLE_FIELDS,
+	TEAM_EDITABLE_FIELDS
 } from "@/types/teamTableConstants";
 import type { Organization } from "@/types/types";
 
@@ -24,14 +24,14 @@ export default function TeamTable() {
 	const updateTeam = api.teams.update.useMutation({
 		onSuccess: async () => {
 			await utils.teams.getAll.invalidate();
-		},
+		}
 	});
 
 	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
 
 	const columnDefs = useMemo<ColDef<Organization>[]>(
 		() => createTeamColumnDefs(),
-		[],
+		[]
 	);
 
 	const defaultColDef = useMemo<ColDef<Organization>>(
@@ -39,9 +39,9 @@ export default function TeamTable() {
 			flex: 1,
 			sortable: true,
 			filter: true,
-			resizable: true,
+			resizable: true
 		}),
-		[],
+		[]
 	);
 
 	const onCellValueChanged = useCallback(
@@ -52,12 +52,12 @@ export default function TeamTable() {
 
 			const updates = {
 				id: event.data.id,
-				[event.colDef.field]: event.newValue,
+				[event.colDef.field]: event.newValue
 			};
 
 			updateTeam.mutate(updates);
 		},
-		[updateTeam],
+		[updateTeam]
 	);
 
 	// TODO: remove height and width inline style
