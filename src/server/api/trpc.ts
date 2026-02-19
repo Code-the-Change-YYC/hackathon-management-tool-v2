@@ -131,3 +131,27 @@ export const protectedProcedure = t.procedure
 			}
 		});
 	});
+
+/**
+ * Admin procedure
+ *
+ * Enables queries or mutations to only be accessible to CTC members
+ */
+export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+	if (ctx.session.user.role !== "admin") {
+		throw new TRPCError({ code: "FORBIDDEN" });
+	}
+	return next();
+});
+
+/**
+ * Judge procedure
+ *
+ * Enables queries or mutations to only be accessible to judges
+ */
+export const judgeProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+	if (ctx.session.user.role !== "judge" && ctx.session.user.role !== "admin") {
+		throw new TRPCError({ code: "FORBIDDEN" });
+	}
+	return next();
+});
