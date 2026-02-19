@@ -1,7 +1,7 @@
 import type {
 	ColDef,
 	ValueFormatterParams,
-	ValueParserParams,
+	ValueParserParams
 } from "ag-grid-community";
 import { ALL_ROLES, PROGRAMS, type User } from "@/types/types";
 
@@ -16,7 +16,7 @@ export const TABLE_THEME_PARAMS = {
 	spacing: "8px",
 	headerTextColor: "var(--color-dark-grey)",
 	cellTextColor: "var(--color-dark-grey)",
-	borderColor: "var(--color-border)",
+	borderColor: "var(--color-border)"
 } as const;
 
 export const TABLE_SLOT_MIN_TIME = "08:00:00";
@@ -32,7 +32,7 @@ export const EDITABLE_FIELDS = new Set([
 	"school",
 	"program",
 	"completedRegistration",
-	"banned",
+	"banned"
 ]);
 
 // Helper functions for formatting and parsing cell values
@@ -65,7 +65,7 @@ export const createUserColumnDefs = (): ColDef<User>[] => [
 		editable: true,
 		cellEditor: "agSelectCellEditor",
 		cellEditorParams: { values: ["", ...ALL_ROLES] },
-		valueParser: (params) => parseEnumValue(params),
+		valueParser: (params) => parseEnumValue(params)
 	},
 	{ field: "school", editable: true, minWidth: 160 },
 	{
@@ -73,7 +73,7 @@ export const createUserColumnDefs = (): ColDef<User>[] => [
 		editable: true,
 		cellEditor: "agSelectCellEditor",
 		cellEditorParams: { values: ["", ...PROGRAMS] },
-		valueParser: (params) => parseEnumValue(params),
+		valueParser: (params) => parseEnumValue(params)
 	},
 	{ field: "allergies", editable: true, minWidth: 160 },
 	{
@@ -82,7 +82,7 @@ export const createUserColumnDefs = (): ColDef<User>[] => [
 		cellEditor: "agSelectCellEditor",
 		cellEditorParams: { values: ["true", "false"] },
 		valueParser: (params) => parseBooleanValue(params),
-		valueFormatter: ({ value }: ValueFormatterParams) => (value ? "Yes" : "No"),
+		valueFormatter: ({ value }: ValueFormatterParams) => (value ? "Yes" : "No")
 	},
 	{
 		field: "banned",
@@ -90,16 +90,16 @@ export const createUserColumnDefs = (): ColDef<User>[] => [
 		cellEditor: "agSelectCellEditor",
 		cellEditorParams: { values: ["true", "false"] },
 		valueParser: (params) => parseBooleanValue(params),
-		valueFormatter: ({ value }: ValueFormatterParams) => (value ? "Yes" : "No"),
+		valueFormatter: ({ value }: ValueFormatterParams) => (value ? "Yes" : "No")
 	},
 	{
 		field: "createdAt",
 		editable: false,
-		valueFormatter: ({ value }: ValueFormatterParams) => formatDateTime(value),
+		valueFormatter: ({ value }: ValueFormatterParams) => formatDateTime(value)
 	},
 	{
 		field: "updatedAt",
 		editable: false,
-		valueFormatter: ({ value }: ValueFormatterParams) => formatDateTime(value),
-	},
+		valueFormatter: ({ value }: ValueFormatterParams) => formatDateTime(value)
+	}
 ];

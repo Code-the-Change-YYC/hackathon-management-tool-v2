@@ -6,7 +6,7 @@ import { PROGRAMS, user } from "@/server/db/auth-schema";
 export const usersRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
 		const users = await ctx.db.query.user.findMany({
-			orderBy: [desc(user.createdAt)],
+			orderBy: [desc(user.createdAt)]
 		});
 		return users;
 	}),
@@ -21,8 +21,8 @@ export const usersRouter = createTRPCRouter({
 				school: z.string().optional().nullable(),
 				program: z.enum(PROGRAMS).optional().nullable(),
 				completedRegistration: z.boolean().optional(),
-				banned: z.boolean().optional(),
-			}),
+				banned: z.boolean().optional()
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
@@ -32,5 +32,5 @@ export const usersRouter = createTRPCRouter({
 				.where(eq(user.id, id))
 				.returning();
 			return updated;
-		}),
+		})
 });

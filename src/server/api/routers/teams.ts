@@ -6,7 +6,7 @@ import { organization } from "@/server/db/auth-schema";
 export const teamsRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
 		const teams = await ctx.db.query.organization.findMany({
-			orderBy: [desc(organization.createdAt)],
+			orderBy: [desc(organization.createdAt)]
 		});
 		return teams;
 	}),
@@ -17,8 +17,8 @@ export const teamsRouter = createTRPCRouter({
 				name: z.string().min(1).optional(),
 				slug: z.string().optional(),
 				logo: z.string().optional().nullable(),
-				metadata: z.string().optional().nullable(),
-			}),
+				metadata: z.string().optional().nullable()
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
@@ -28,5 +28,5 @@ export const teamsRouter = createTRPCRouter({
 				.where(eq(organization.id, id))
 				.returning();
 			return updated;
-		}),
+		})
 });

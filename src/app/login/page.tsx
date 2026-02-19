@@ -19,7 +19,7 @@ export default function LoginPage() {
 		try {
 			const result = await authClient.signIn.email({
 				email,
-				password,
+				password
 			});
 
 			if (result.error) {
@@ -28,7 +28,7 @@ export default function LoginPage() {
 				// Redirect to dashboard on success
 				router.push("/"); // will redirect to home for now
 			}
-		} catch (err) {
+		} catch (_err) {
 			setError("An unexpected error occurred");
 		} finally {
 			setLoading(false);

@@ -12,7 +12,7 @@ export const TABLE_THEME_PARAMS = {
 	spacing: "8px",
 	headerTextColor: "var(--color-dark-grey)",
 	cellTextColor: "var(--color-dark-grey)",
-	borderColor: "var(--color-border)",
+	borderColor: "var(--color-border)"
 } as const;
 
 export const TABLE_SLOT_MIN_TIME = "08:00:00";
@@ -24,7 +24,7 @@ export const TEAM_EDITABLE_FIELDS = new Set([
 	"name",
 	"slug",
 	"logo",
-	"metadata",
+	"metadata"
 ]);
 
 // Helper function for formatting date/time
@@ -48,6 +48,6 @@ export const createTeamColumnDefs = (): ColDef<Organization>[] => [
 		field: "createdAt",
 		editable: false,
 		valueFormatter: ({ value }: ValueFormatterParams) => formatDateTime(value),
-		minWidth: 180,
-	},
+		minWidth: 180
+	}
 ];

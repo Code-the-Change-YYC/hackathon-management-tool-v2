@@ -4,7 +4,7 @@ import type { CellValueChangedEvent, ColDef } from "ag-grid-community";
 import {
 	AllCommunityModule,
 	ModuleRegistry,
-	themeQuartz,
+	themeQuartz
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useCallback, useMemo } from "react";
@@ -13,7 +13,7 @@ import type { User } from "@/types/types";
 import {
 	createUserColumnDefs,
 	EDITABLE_FIELDS,
-	TABLE_THEME_PARAMS,
+	TABLE_THEME_PARAMS
 } from "@/types/userTableConstants";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -24,7 +24,7 @@ export default function UserTable() {
 	const updateUser = api.users.update.useMutation({
 		onSuccess: async () => {
 			await utils.users.getAll.invalidate();
-		},
+		}
 	});
 
 	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
@@ -36,9 +36,9 @@ export default function UserTable() {
 			flex: 1,
 			sortable: true,
 			filter: true,
-			resizable: true,
+			resizable: true
 		}),
-		[],
+		[]
 	);
 
 	const onCellValueChanged = useCallback(
@@ -49,12 +49,12 @@ export default function UserTable() {
 
 			const updates = {
 				id: event.data.id,
-				[event.colDef.field]: event.newValue,
+				[event.colDef.field]: event.newValue
 			};
 
 			updateUser.mutate(updates);
 		},
-		[updateUser],
+		[updateUser]
 	);
 
 	// TODO: remove height and width inline style
