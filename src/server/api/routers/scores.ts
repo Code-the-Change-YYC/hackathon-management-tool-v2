@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	createTRPCRouter,
 	protectedProcedure,
-	publicProcedure,
+	publicProcedure
 } from "@/server/api/trpc";
 import { judgingAssignments, scores } from "@/server/db/schema";
 
@@ -16,11 +16,11 @@ export const scoresRouter = createTRPCRouter({
 					with: {
 						judge: true,
 						team: true,
-						round: true,
-					},
-				},
+						round: true
+					}
+				}
 			},
-			orderBy: (scores, { desc }) => [desc(scores.createdAt)],
+			orderBy: (scores, { desc }) => [desc(scores.createdAt)]
 		});
 		return allScores;
 	}),
@@ -36,10 +36,10 @@ export const scoresRouter = createTRPCRouter({
 						with: {
 							judge: true,
 							team: true,
-							round: true,
-						},
-					},
-				},
+							round: true
+						}
+					}
+				}
 			});
 			return assignmentScores;
 		}),
@@ -52,17 +52,17 @@ export const scoresRouter = createTRPCRouter({
 				where: (scores, { eq }) =>
 					eq(
 						sql`(SELECT team_id FROM ${judgingAssignments} WHERE id = ${scores.assignmentId})`,
-						input.teamId,
+						input.teamId
 					),
 				with: {
 					assignment: {
 						with: {
 							judge: true,
 							team: true,
-							round: true,
-						},
-					},
-				},
+							round: true
+						}
+					}
+				}
 			});
 			return teamScores;
 		}),
@@ -75,17 +75,17 @@ export const scoresRouter = createTRPCRouter({
 				where: (scores, { eq }) =>
 					eq(
 						sql`(SELECT round_id FROM ${judgingAssignments} WHERE id = ${scores.assignmentId})`,
-						input.roundId,
+						input.roundId
 					),
 				with: {
 					assignment: {
 						with: {
 							judge: true,
 							team: true,
-							round: true,
-						},
-					},
-				},
+							round: true
+						}
+					}
+				}
 			});
 			return roundScores;
 		}),
@@ -94,22 +94,22 @@ export const scoresRouter = createTRPCRouter({
 	getAggregatedByTeam: publicProcedure
 		.input(
 			z.object({
-				roundId: z.string().uuid().optional(),
-			}),
+				roundId: z.string().uuid().optional()
+			})
 		)
 		.query(async ({ ctx, input }) => {
 			// This is a more complex query that aggregates scores by team
 			const query = ctx.db
 				.select({
 					teamId: judgingAssignments.teamId,
-					totalScore: sql<number>`SUM(${scores.value})`.as("total_score"),
-					averageScore: sql<number>`AVG(${scores.value})`.as("average_score"),
-					scoreCount: sql<number>`COUNT(${scores.id})`.as("score_count"),
+					totalScore: sql<number>`SUM(${scores.score})`.as("total_score"),
+					averageScore: sql<number>`AVG(${scores.score})`.as("average_score"),
+					scoreCount: sql<number>`COUNT(${scores.id})`.as("score_count")
 				})
 				.from(scores)
 				.innerJoin(
 					judgingAssignments,
-					eq(scores.assignmentId, judgingAssignments.id),
+					eq(scores.assignmentId, judgingAssignments.id)
 				)
 				.groupBy(judgingAssignments.teamId);
 
@@ -128,8 +128,8 @@ export const scoresRouter = createTRPCRouter({
 				assignmentId: z.string().uuid(),
 				criteriaId: z.string().uuid(),
 				score: z.number().int().min(0),
-				feedback: z.string().optional(),
-			}),
+				feedback: z.string().optional()
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const [newScore] = await ctx.db
@@ -151,8 +151,8 @@ export const scoresRouter = createTRPCRouter({
 				id: z.string().uuid(),
 				criteria: z.string().min(1).optional(),
 				score: z.number().int().min(0).optional(),
-				feedback: z.string().optional().nullable(),
-			}),
+				feedback: z.string().optional().nullable()
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
@@ -170,5 +170,5 @@ export const scoresRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			await ctx.db.delete(scores).where(eq(scores.id, input.id));
 			return { success: true };
-		}),
+		})
 });
