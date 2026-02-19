@@ -1,6 +1,5 @@
 import { headers } from "next/headers";
 import Link from "next/link";
-import UserTable from "@/app/components/admin/usertable";
 import styles from "@/app/index.module.scss";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";
@@ -17,6 +16,9 @@ export default async function Home() {
 					<h1 className={styles.title}>
 						Create <span className={styles.pinkSpan}>T3</span> App
 					</h1>
+					{session?.user && (
+						<div className="text-center">Logged in as {session.user.name}</div>
+					)}
 					<div className={styles.cardRow}>
 						<Link
 							className={styles.card}
@@ -54,6 +56,10 @@ export default async function Home() {
 							<h3 className={styles.cardTitle}>Participant →</h3>
 							<div className={styles.cardText}>Participant dashboard.</div>
 						</Link>
+						<Link className={styles.card} href="/login">
+							<h3 className={styles.cardTitle}>Login →</h3>
+							<div className={styles.cardText}>Login to the app.</div>
+						</Link>
 					</div>
 					<div className={styles.showcaseContainer}>
 						<p className={styles.showcaseText}>Hackathon Management Tool</p>
@@ -65,12 +71,6 @@ export default async function Home() {
 						</p>
 					</div>
 				</div>
-
-				{session?.user && (
-					<div className="text-center">Logged in as {session.user.name}</div>
-				)}
-
-				<UserTable />
 			</main>
 		</HydrateClient>
 	);
