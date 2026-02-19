@@ -204,3 +204,6 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
 
 export type UserSelectType = InferSelectModel<typeof user>;
 export type UserInsertType = InferInsertModel<typeof user>;
+
+export type OrganizationSelectType = InferSelectModel<typeof organization>;
+export type OrganizationInsertType = InferInsertModel<typeof organization>;

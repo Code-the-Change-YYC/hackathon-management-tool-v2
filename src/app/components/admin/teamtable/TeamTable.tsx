@@ -9,29 +9,32 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import { useCallback, useMemo } from "react";
 import { api } from "@/trpc/react";
-import type { User } from "@/types/types";
 import {
-	createUserColumnDefs,
-	EDITABLE_FIELDS,
+	createTeamColumnDefs,
 	TABLE_THEME_PARAMS,
-} from "@/types/userTableConstants";
+	TEAM_EDITABLE_FIELDS,
+} from "@/types/teamTableConstants";
+import type { Organization } from "@/types/types";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-export default function UserTable() {
-	const { data, isLoading } = api.users.getAll.useQuery(); // prefetch these eventually
+export default function TeamTable() {
+	const { data, isLoading } = api.teams.getAll.useQuery();
 	const utils = api.useUtils();
-	const updateUser = api.users.update.useMutation({
+	const updateTeam = api.teams.update.useMutation({
 		onSuccess: async () => {
-			await utils.users.getAll.invalidate();
+			await utils.teams.getAll.invalidate();
 		},
 	});
 
 	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
 
-	const columnDefs = useMemo<ColDef<User>[]>(() => createUserColumnDefs(), []);
+	const columnDefs = useMemo<ColDef<Organization>[]>(
+		() => createTeamColumnDefs(),
+		[],
+	);
 
-	const defaultColDef = useMemo<ColDef<User>>(
+	const defaultColDef = useMemo<ColDef<Organization>>(
 		() => ({
 			flex: 1,
 			sortable: true,
@@ -42,19 +45,19 @@ export default function UserTable() {
 	);
 
 	const onCellValueChanged = useCallback(
-		(event: CellValueChangedEvent<User>) => {
+		(event: CellValueChangedEvent<Organization>) => {
 			if (!event.data || !event.colDef.field) return;
 			if (event.newValue === event.oldValue) return;
-			if (!EDITABLE_FIELDS.has(event.colDef.field)) return;
+			if (!TEAM_EDITABLE_FIELDS.has(event.colDef.field)) return;
 
 			const updates = {
 				id: event.data.id,
 				[event.colDef.field]: event.newValue,
 			};
 
-			updateUser.mutate(updates);
+			updateTeam.mutate(updates);
 		},
-		[updateUser],
+		[updateTeam],
 	);
 
 	// TODO: remove height and width inline style

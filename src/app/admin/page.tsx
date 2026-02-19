@@ -1,3 +1,4 @@
+import TeamTable from "@/app/components/admin/teamtable/TeamTable";
 import UserTable from "@/app/components/admin/usertable";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
@@ -22,7 +23,14 @@ export default async function AdminPage() {
 				</div>
 			</div>
 			<div>
-				<UserTable />
+				<div>
+					<h2 className={styles.sectionTitle}>Users</h2>
+					<UserTable />
+				</div>
+				<div>
+					<h2 className={styles.sectionTitle}>Teams</h2>
+					<TeamTable />
+				</div>
 			</div>
 		</main>
 	);
