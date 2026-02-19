@@ -63,7 +63,7 @@ export default async function Home() {
 						<Link className={styles.card} href="/login">
 							<h3 className={styles.cardTitle}>Login →</h3>
 							<div className={styles.cardText}>Login to the app.</div>
-            </Link>
+						</Link>
 					</div>
 					<div className={styles.showcaseContainer}>
 						<p className={styles.showcaseText}>Hackathon Management Tool</p>

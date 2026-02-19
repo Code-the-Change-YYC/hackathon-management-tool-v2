@@ -4,7 +4,7 @@ import {
 	text,
 	timestamp,
 	unique,
-	uuid,
+	uuid
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 
@@ -21,7 +21,7 @@ export const meal = createTable("meal", {
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => new Date())
-		.notNull(),
+		.notNull()
 });
 
 export const mealAttendance = createTable(
@@ -45,28 +45,28 @@ export const mealAttendance = createTable(
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
-			.notNull(),
+			.notNull()
 	},
 	(t) => [
-		unique().on(t.userId, t.mealId), // each user can only attend a meal once
-	],
+		unique().on(t.userId, t.mealId) // each user can only attend a meal once
+	]
 );
 
 export const mealRelations = relations(meal, ({ many }) => ({
-	attendance: many(mealAttendance),
+	attendance: many(mealAttendance)
 }));
 
 export const mealAttendanceRelations = relations(mealAttendance, ({ one }) => ({
 	user: one(user, {
 		fields: [mealAttendance.userId],
-		references: [user.id],
+		references: [user.id]
 	}),
 	meal: one(meal, {
 		fields: [mealAttendance.mealId],
-		references: [meal.id],
+		references: [meal.id]
 	}),
 	admin: one(user, {
 		fields: [mealAttendance.checkedInBy],
-		references: [user.id],
-	}),
+		references: [user.id]
+	})
 }));

@@ -9,12 +9,12 @@ export const mealsRouter = createTRPCRouter({
 				.object({
 					title: z.string(),
 					startTime: z.string(),
-					endTime: z.string(),
+					endTime: z.string()
 				})
 				.refine((data) => new Date(data.endTime) > new Date(data.startTime), {
 					message: "End time must be after start time.",
-					path: ["endTime"],
-				}),
+					path: ["endTime"]
+				})
 		)
 		.mutation(async ({ input, ctx }) => {
 			const [newMeal] = await ctx.db
@@ -22,7 +22,7 @@ export const mealsRouter = createTRPCRouter({
 				.values({
 					title: input.title,
 					startTime: new Date(input.startTime),
-					endTime: new Date(input.endTime),
+					endTime: new Date(input.endTime)
 				})
 				.returning();
 			return newMeal;
@@ -33,8 +33,8 @@ export const mealsRouter = createTRPCRouter({
 			z.object({
 				mealId: z.string().uuid(),
 				userId: z.string(),
-				checkedInBy: z.string(),
-			}),
+				checkedInBy: z.string()
+			})
 		)
 		.mutation(async ({ input, ctx }) => {
 			const [record] = await ctx.db
@@ -42,9 +42,9 @@ export const mealsRouter = createTRPCRouter({
 				.values({
 					mealId: input.mealId,
 					userId: input.userId,
-					checkedInBy: input.checkedInBy,
+					checkedInBy: input.checkedInBy
 				})
 				.returning();
 			return record;
-		}),
+		})
 });

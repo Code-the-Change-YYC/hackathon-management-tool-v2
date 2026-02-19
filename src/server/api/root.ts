@@ -19,7 +19,7 @@ export const appRouter = createTRPCRouter({
 	scores: scoresRouter,
 	users: usersRouter,
 	teams: teamsRouter,
-  meals: mealsRouter
+	meals: mealsRouter
 });
 
 // export type definition of API
