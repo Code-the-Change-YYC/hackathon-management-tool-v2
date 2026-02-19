@@ -92,13 +92,20 @@ export const hackathonSettings = createTable("hackathon_settings", {
 
 // Relations
 export const judgingRoundRelations = relations(judgingRounds, ({ many }) => ({
-	assignments: many(judgingAssignments)
+	rooms: many(judgingRooms)
 }));
 
-// each judging room can have many admins and many judges
-export const judgingRoomRelations = relations(judgingRooms, ({ many }) => ({
-	staff: many(judgingRoomStaff)
-}));
+export const judgingRoomRelations = relations(
+	judgingRooms,
+	({ one, many }) => ({
+		round: one(judgingRounds, {
+			fields: [judgingRooms.roundId],
+			references: [judgingRounds.id]
+		}),
+		staff: many(judgingRoomStaff),
+		assignments: many(judgingAssignments)
+	})
+);
 
 export const judgingAssignmentRelations = relations(
 	judgingAssignments,
