@@ -41,8 +41,7 @@ export const mealsRouter = createTRPCRouter({
 				.insert(mealAttendance)
 				.values({
 					mealId: input.mealId,
-					userId: input.userId,
-					checkedInBy: input.checkedInBy
+					userId: input.userId
 				})
 				.returning();
 			return record;
