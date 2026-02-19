@@ -12,7 +12,7 @@ export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
 export const meal = createTable("meal", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	title: text("title").notNull().unique(), // can be breakfast, lunch, dinner, breakfast leftovers...
+	title: text("title").notNull(), // can be breakfast, lunch, dinner, breakfast leftovers...
 	startTime: timestamp("start_time", { withTimezone: true }).notNull().unique(),
 	endTime: timestamp("end_time", { withTimezone: true }).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true })
@@ -29,10 +29,6 @@ export const mealAttendance = createTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		userId: text("user_id")
-			.notNull()
-			.references(() => user.id, { onDelete: "cascade" }),
-		// checkedInBy is the admin that scanned the user in for the meal
-		checkedInBy: text("checked_in_by")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
 		mealId: uuid("meal_id")
@@ -64,9 +60,5 @@ export const mealAttendanceRelations = relations(mealAttendance, ({ one }) => ({
 	meal: one(meal, {
 		fields: [mealAttendance.mealId],
 		references: [meal.id]
-	}),
-	admin: one(user, {
-		fields: [mealAttendance.checkedInBy],
-		references: [user.id]
 	})
 }));
