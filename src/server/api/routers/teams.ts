@@ -32,8 +32,7 @@ export const teamsRouter = createTRPCRouter({
 	// New feature: Querying descending for score
 	getRankings: protectedProcedure.query(async ({ ctx }) => {
 		const result = await ctx.db.execute(
-			// I am hardcoding the SQL here because Drizzle doesn't support the necessary joins and aggregations for this query yet (GPT said so). Also, I have not defined any type for the return value yet, this is temporary.
-			sql<{ id: string; name: string; totalScore: number }>`
+			sql`
           SELECT 
             o.id,
             o.name,
@@ -48,6 +47,10 @@ export const teamsRouter = createTRPCRouter({
         `
 		);
 
-		return result;
+		return result as unknown as {
+			id: string;
+			name: string;
+			totalScore: number;
+		}[]; // I wanted to do type assertion, I don't know why it needs 'unknown' as well but it works
 	})
 });
