@@ -1,11 +1,12 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { createSchedule } from "@/app/admin/scheduler";
 import {
 	createTRPCRouter,
 	protectedProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
-import { judgingRounds } from "@/server/db/schema";
+import { judgingAssignments, judgingRounds } from "@/server/db/schema";
 
 export const judgingRoundsRouter = createTRPCRouter({
 	// Get all judging rounds
@@ -15,6 +16,40 @@ export const judgingRoundsRouter = createTRPCRouter({
 		});
 		return rounds;
 	}),
+
+	generateSchedule: protectedProcedure
+		.input(z.object({ roundId: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			// Get round 1
+			const round = await ctx.db.query.judgingRounds.findFirst({
+				where: eq(judgingRounds.id, input.roundId)
+			});
+
+			if (!round) {
+				throw new Error("Round not found");
+			}
+
+			// Get all teams (organizations)
+			const teams = await ctx.db.query.organization.findMany();
+
+			// Get all judges (users) - need to select JUDGE role specifically
+			const judges = await ctx.db.query.user.findMany({});
+
+			// Run scheduling algorithm
+			const schedule = createSchedule(teams, judges, round.startTime, 15);
+
+			// Insert assignments
+			for (const slot of schedule) {
+				await ctx.db.insert(judgingAssignments).values({
+					judgeId: slot.judgeId,
+					teamId: slot.teamId,
+					roundId: round.id,
+					timeSlot: slot.start
+				});
+			}
+
+			return { sucess: true };
+		}),
 
 	// Get a single judging round by ID
 	getById: publicProcedure
