@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { meal, mealAttendance } from "@/server/db/meal-schema";
@@ -7,11 +8,11 @@ export const mealsRouter = createTRPCRouter({
 		.input(
 			z
 				.object({
-					title: z.string(),
-					startTime: z.string(),
-					endTime: z.string()
+					title: z.string().trim().min(1),
+					startTime: z.coerce.date(),
+					endTime: z.coerce.date()
 				})
-				.refine((data) => new Date(data.endTime) > new Date(data.startTime), {
+				.refine((data) => data.endTime > data.startTime, {
 					message: "End time must be after start time.",
 					path: ["endTime"]
 				})
@@ -21,8 +22,8 @@ export const mealsRouter = createTRPCRouter({
 				.insert(meal)
 				.values({
 					title: input.title,
-					startTime: new Date(input.startTime),
-					endTime: new Date(input.endTime)
+					startTime: input.startTime,
+					endTime: input.endTime
 				})
 				.returning();
 			return newMeal;
@@ -32,8 +33,7 @@ export const mealsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				mealId: z.string().uuid(),
-				userId: z.string(),
-				checkedInBy: z.string()
+				userId: z.string().min(1)
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -43,7 +43,18 @@ export const mealsRouter = createTRPCRouter({
 					mealId: input.mealId,
 					userId: input.userId
 				})
+				.onConflictDoNothing({
+					target: [mealAttendance.userId, mealAttendance.mealId]
+				})
 				.returning();
+
+			if (!record) {
+				throw new TRPCError({
+					code: "CONFLICT",
+					message: "User is already checked in for this meal."
+				});
+			}
+
 			return record;
 		})
 });
