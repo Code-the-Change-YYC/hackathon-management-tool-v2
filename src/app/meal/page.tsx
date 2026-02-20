@@ -5,21 +5,21 @@ import { api } from "@/trpc/react";
 
 export default function MealPage() {
 	const [title, setTitle] = useState("");
-	const [startTime, setStartTime] = useState("");
-	const [endTime, setEndTime] = useState("");
+	const [startTime, setStartTime] = useState<Date | null>(null);
+	const [endTime, setEndTime] = useState<Date | null>(null);
 	const [mealId, setMealId] = useState("");
 	const [userId, setUserId] = useState("");
-	const [checkedInBy, setCheckedInBy] = useState("");
 
 	const createMeal = api.meals.addMeal.useMutation();
 	const scanUserIn = api.meals.scanUserIn.useMutation();
 
 	function handleCreateMeal() {
+		if (!startTime || !endTime) return;
 		createMeal.mutate({ title, startTime, endTime });
 	}
 
 	function handleScanUserIn() {
-		scanUserIn.mutate({ mealId, userId, checkedInBy });
+		scanUserIn.mutate({ mealId, userId });
 	}
 
 	return (
@@ -41,14 +41,24 @@ export default function MealPage() {
 					<input
 						id="start-time"
 						name="start-time"
-						onChange={(e) => setStartTime(e.target.value)}
+						onChange={(e) => {
+							const nextStartTime = new Date(e.target.value);
+							setStartTime(
+								Number.isNaN(nextStartTime.getTime()) ? null : nextStartTime
+							);
+						}}
 						type="datetime-local"
 					/>
 					<label htmlFor="end-time">End time:</label>
 					<input
 						id="end-time"
 						name="end-time"
-						onChange={(e) => setEndTime(e.target.value)}
+						onChange={(e) => {
+							const nextEndTime = new Date(e.target.value);
+							setEndTime(
+								Number.isNaN(nextEndTime.getTime()) ? null : nextEndTime
+							);
+						}}
 						type="datetime-local"
 					/>
 					<button
@@ -74,13 +84,6 @@ export default function MealPage() {
 						id="start-time"
 						name="start-time"
 						onChange={(e) => setUserId(e.target.value)}
-						type="text"
-					/>
-					<label htmlFor="checked-in-by">Checked In By:</label>
-					<input
-						id="checked-in-by"
-						name="checked-in-by"
-						onChange={(e) => setCheckedInBy(e.target.value)}
 						type="text"
 					/>
 					<button
