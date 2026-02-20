@@ -7,14 +7,14 @@ import {
 	judgingAssignments,
 	judgingRounds
 } from "@/server/db/schema";
-import { criteria, scores } from "@/server/db/scores-schema"; // adjust path if needed
+import { criteria, scores } from "@/server/db/scores-schema";
 
 async function main() {
 	console.log("Starting scoring seed...");
 
 	try {
 		// Create judging round
-		const roundId = crypto.randomUUID();
+		const roundId = crypto.randomUUID(); // Using crypto because better auth generateId was not working? Might need to read up a little more on better auth's generateId function, but this works for now
 		await db.insert(judgingRounds).values({
 			id: roundId,
 			name: "Round 1",
