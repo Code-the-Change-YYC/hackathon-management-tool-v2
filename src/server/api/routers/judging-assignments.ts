@@ -56,7 +56,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 			z.object({
 				teamId: z.string(),
 				roomId: z.string().uuid(),
-				timeSlot: z.date().optional()
+				timeSlot: z.coerce.date().optional()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -74,7 +74,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				id: z.string().uuid(),
 				teamId: z.string().optional(),
 				roomId: z.string().uuid().optional(),
-				timeSlot: z.date().optional().nullable()
+				timeSlot: z.coerce.date().optional().nullable()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
