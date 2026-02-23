@@ -1,13 +1,23 @@
+/**
+ * Teams router — manages hackathon teams, which are represented as `organization` rows in the
+ * better-auth schema.
+ *
+ * Key design notes:
+ * - Team names are strictly validated (letters, numbers, spaces, hyphens, underscores only) to
+ *   prevent issues with emojis or special characters that caused problems in prior years.
+ * - Each team is assigned a unique 4-character uppercase hex code (e.g. "A3F2") on creation.
+ * - The `create` mutation is wrapped in a transaction so the organization row and the initial
+ *   owner membership are always created together or not at all.
+ * - Member roles are sourced from the `MEMBER_ROLES` constant in auth-schema rather than
+ *   hardcoded strings to keep role definitions in a single place.
+ */
+
 import crypto from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { MEMBER_ROLES, member, organization } from "@/server/db/auth-schema";
 
-/**
- * Validates that a team name contains only alphanumeric characters, spaces, hyphens, and underscores.
- * Rejects emojis and other special characters.
- */
 const teamNameSchema = z
 	.string()
 	.min(1, "Team name is required")
@@ -17,9 +27,6 @@ const teamNameSchema = z
 		"Team name can only contain letters, numbers, spaces, hyphens, and underscores"
 	);
 
-/**
- * Generates a unique 4-character alphanumeric team code.
- */
 function generateTeamCode(): string {
 	return crypto.randomBytes(2).toString("hex").toUpperCase();
 }
@@ -32,10 +39,6 @@ export const teamsRouter = createTRPCRouter({
 		return teams;
 	}),
 
-	/**
-	 * Create a new team with the current user as leader.
-	 * Generates a unique 4-char team code and validates the team name.
-	 */
 	create: protectedProcedure
 		.input(
 			z.object({
@@ -51,9 +54,7 @@ export const teamsRouter = createTRPCRouter({
 				.replace(/\s+/g, "-")
 				.replace(/[^a-z0-9-]/g, "");
 
-			// Use a transaction so both inserts succeed or fail atomically
 			const team = await ctx.db.transaction(async (tx) => {
-				// Create the team (organization)
 				const [newTeam] = await tx
 					.insert(organization)
 					.values({
@@ -65,12 +66,11 @@ export const teamsRouter = createTRPCRouter({
 					})
 					.returning();
 
-				// Add the creator as the team leader (owner)
 				await tx.insert(member).values({
 					id: crypto.randomUUID(),
 					organizationId: teamId,
 					userId,
-					role: MEMBER_ROLES[0], // "owner"
+					role: MEMBER_ROLES[0],
 					createdAt: new Date()
 				});
 
