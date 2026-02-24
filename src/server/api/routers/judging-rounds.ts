@@ -48,7 +48,7 @@ export const judgingRoundsRouter = createTRPCRouter({
 				});
 			}
 
-			return { sucess: true };
+			return { success: true };
 		}),
 
 	// Get a single judging round by ID
