@@ -9,8 +9,8 @@ import styles from "../dashboard.module.scss";
 export default async function AdminPage() {
 	//const session = await requireRole([Role.ADMIN]);
 
-	const startTime = new Date("2026-01-31T10:00:00");
-	const mySchedule = createSchedule(mockTeams, mockRooms, startTime, 15);
+	// const startTime = new Date("2026-01-31T10:00:00");
+	// const mySchedule = createSchedule(mockTeams, mockRooms, startTime, 15);
 
 	return (
 		<main className={styles.main}>
@@ -27,14 +27,14 @@ export default async function AdminPage() {
 					<p>Manage your hackathon settings, users, and rounds here.</p>
 				</div>
 				<h1 className={styles.welcome}>Schedule</h1>
-				<ul>
+				{/* <ul>
 					{mySchedule.map((timeSlot) => (
 						<li key={`${timeSlot.teamName}-${timeSlot.start.getTime()}`}>
 							{timeSlot.teamName} is in {timeSlot.roomName} with{" "}
 							{timeSlot.judgeName} at {timeSlot.start.toLocaleTimeString()}
 						</li>
 					))}
-				</ul>
+				</ul> */}
 			</div>
 			<div>
 				<div>
