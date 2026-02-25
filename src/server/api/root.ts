@@ -1,5 +1,6 @@
 import { hackathonSettingsRouter } from "@/server/api/routers/hackathon-settings";
 import { judgingAssignmentsRouter } from "@/server/api/routers/judging-assignments";
+import { judgingRoomsRouter } from "@/server/api/routers/judging-rooms";
 import { judgingRoundsRouter } from "@/server/api/routers/judging-rounds";
 import { mealsRouter } from "@/server/api/routers/meals";
 import { scoresRouter } from "@/server/api/routers/scores";
@@ -19,7 +20,8 @@ export const appRouter = createTRPCRouter({
 	scores: scoresRouter,
 	users: usersRouter,
 	teams: teamsRouter,
-	meals: mealsRouter
+	meals: mealsRouter,
+	judgingRooms: judgingRoomsRouter
 });
 
 // export type definition of API
