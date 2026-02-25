@@ -10,14 +10,9 @@ import { AgGridReact } from "ag-grid-react";
 import { useMemo } from "react";
 import { api } from "@/trpc/react";
 import { TABLE_THEME_PARAMS } from "@/types/teamTableConstants";
+import type { TeamRanking } from "@/types/types";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
-
-type TeamRanking = {
-	id: string;
-	name: string;
-	totalScore: number;
-};
 
 export default function ScoreTable() {
 	const { data, isLoading } = api.teams.getRankings.useQuery();
@@ -57,6 +52,7 @@ export default function ScoreTable() {
 		[]
 	);
 
+	// TODO: remove height and width inline style
 	return (
 		<div style={{ height: 600, width: "100%" }}>
 			<AgGridReact

@@ -2,6 +2,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { organization } from "@/server/db/auth-schema";
+import type { TeamRanking } from "@/types/types";
 
 export const teamsRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -32,7 +33,7 @@ export const teamsRouter = createTRPCRouter({
 	// New feature: Querying descending for score
 	getRankings: protectedProcedure.query(async ({ ctx }) => {
 		const result = await ctx.db.execute(
-			sql`
+			sql<TeamRanking>`
           SELECT 
             o.id,
             o.name,
@@ -47,10 +48,6 @@ export const teamsRouter = createTRPCRouter({
         `
 		);
 
-		return result as unknown as {
-			id: string;
-			name: string;
-			totalScore: number;
-		}[]; // I wanted to do type assertion, I don't know why it needs 'unknown' as well but it works
+		return result;
 	})
 });
