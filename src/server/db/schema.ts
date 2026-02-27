@@ -5,6 +5,7 @@ import {
 	pgTableCreator,
 	text,
 	timestamp,
+	uniqueIndex,
 	uuid
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth-schema";
@@ -26,17 +27,51 @@ export const judgingRounds = createTable("judging_round", {
 		.notNull()
 });
 
+export const judgingRooms = createTable("judging_room", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	roundId: uuid("round_id")
+		.references(() => judgingRounds.id, { onDelete: "cascade" })
+		.notNull(),
+	roomLink: text("room_link").notNull(), // link to the video meeting
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.defaultNow()
+		.notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.defaultNow()
+		.$onUpdate(() => new Date())
+		.notNull()
+});
+
+export const judgingRoomStaff = createTable(
+	"judging_room_staff",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		roomId: uuid("room_id")
+			.notNull()
+			.references(() => judgingRooms.id, { onDelete: "cascade" }),
+		staffId: text("staff_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+	},
+	(table) => [
+		uniqueIndex("judging_room_judge_room_judge_uniq").on(
+			table.roomId,
+			table.staffId
+		)
+	]
+);
+
 export const judgingAssignments = createTable("judging_assignment", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	judgeId: text("judge_id")
-		.notNull()
-		.references(() => user.id, { onDelete: "cascade" }),
 	teamId: text("team_id")
 		.notNull()
 		.references(() => organization.id, { onDelete: "cascade" }),
-	roundId: uuid("round_id")
+	roomId: uuid("room_id")
 		.notNull()
-		.references(() => judgingRounds.id, { onDelete: "cascade" }),
+		.references(() => judgingRooms.id, { onDelete: "cascade" }),
 	timeSlot: timestamp("time_slot", { withTimezone: true }),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
@@ -57,23 +92,31 @@ export const hackathonSettings = createTable("hackathon_settings", {
 
 // Relations
 export const judgingRoundRelations = relations(judgingRounds, ({ many }) => ({
-	assignments: many(judgingAssignments)
+	rooms: many(judgingRooms)
 }));
+
+export const judgingRoomRelations = relations(
+	judgingRooms,
+	({ one, many }) => ({
+		round: one(judgingRounds, {
+			fields: [judgingRooms.roundId],
+			references: [judgingRounds.id]
+		}),
+		staff: many(judgingRoomStaff),
+		assignments: many(judgingAssignments)
+	})
+);
 
 export const judgingAssignmentRelations = relations(
 	judgingAssignments,
 	({ one, many }) => ({
-		judge: one(user, {
-			fields: [judgingAssignments.judgeId],
-			references: [user.id]
-		}),
 		team: one(organization, {
 			fields: [judgingAssignments.teamId],
 			references: [organization.id]
 		}),
-		round: one(judgingRounds, {
-			fields: [judgingAssignments.roundId],
-			references: [judgingRounds.id]
+		room: one(judgingRooms, {
+			fields: [judgingAssignments.roomId],
+			references: [judgingRooms.id]
 		}),
 		scores: many(scores)
 	})
