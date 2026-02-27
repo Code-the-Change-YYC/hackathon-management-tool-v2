@@ -16,7 +16,8 @@ import crypto from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { MEMBER_ROLES, member, organization } from "@/server/db/auth-schema";
+import { member, organization } from "@/server/db/auth-schema";
+import { MEMBER_ROLES } from "@/types/types";
 
 const teamNameSchema = z
 	.string()
@@ -70,7 +71,7 @@ export const teamsRouter = createTRPCRouter({
 					id: crypto.randomUUID(),
 					organizationId: teamId,
 					userId,
-					role: MEMBER_ROLES[0],
+					role: MEMBER_ROLES.OWNER,
 					createdAt: new Date()
 				});
 

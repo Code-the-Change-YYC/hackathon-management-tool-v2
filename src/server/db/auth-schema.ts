@@ -18,8 +18,6 @@ export const PROGRAMS = [
 	"other"
 ] as const;
 
-export const MEMBER_ROLES = ["owner", "member"] as const;
-
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
 export const user = createTable("user", {
