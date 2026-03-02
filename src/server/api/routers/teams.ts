@@ -48,6 +48,6 @@ export const teamsRouter = createTRPCRouter({
         `
 		);
 
-		return result;
+		return result as unknown as TeamRanking[]; // Fixes the CI/CD error in ScoreTable.tsx where the type of data was not being recognized as TeamRanking[]
 	})
 });
