@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --font-omnes: var(--font-omnes);
+
+  --radius-20: 20px;
+
+  --color-strawberry-red: #ef4444;
+  --color-pastel-pink: #FFD2DC;
+  --color-medium-pink: #FF859C;
+  --color-dark-pink: #FF4D6F;
+  --color-fuzzy-peach: #FFD7C5;
+  --color-grapefruit: #FF6B54;
+  --color-pastel-green: #BAFBE4;
+  --color-dark-green: #00D3A9;
+  --color-emerald-green: #017D66;
+  --color-regal-blue: #396fb3;
+  --color-lilac-purple: #D6C9FF;
+  --color-awesome-purple: #A689FF;
+  --color-awesomer-purple: #7055FD;
+  --color-pale-grey: #F9F9F9;
+  --color-light-grey: #F2F2F2;
+  --color-dashboard-grey: #E5E5E5;
+  --color-grey-purple: #4B486D;
+  --color-mint-green: #D4FAEF;
+  --color-medium-grey: #D9D9D9;
+  --color-ehhh-grey: #C5C5C5;
+  --color-dark-grey: #333333;
+
+  --background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
+  --background-image-gradient-conic: conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops));
+}
+
+@utility custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 2px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #FF4D6F;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: #D2D2D2;
+  }
+}
+
+@utility no-details-marker {
+  &::-webkit-details-marker {
+    display: none;
+  }
+}
