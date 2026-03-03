@@ -5,6 +5,8 @@ import { organization, user } from "@/server/db/auth-schema";
 import {
 	hackathonSettings,
 	judgingAssignments,
+	judgingRoomStaff,
+	judgingRooms,
 	judgingRounds
 } from "@/server/db/schema";
 import { criteria, scores } from "@/server/db/scores-schema";
@@ -14,7 +16,7 @@ async function main() {
 
 	try {
 		// Create judging round
-		const roundId = crypto.randomUUID(); // Using crypto because better auth generateId was not working? Might need to read up a little more on better auth's generateId function, but this works for now
+		const roundId = crypto.randomUUID();
 		await db.insert(judgingRounds).values({
 			id: roundId,
 			name: "Round 1",
@@ -24,7 +26,7 @@ async function main() {
 			updatedAt: new Date()
 		});
 
-		// Insert criteria into the actual hackathon_criteria table
+		// Insert criteria
 		const criteriaList = [
 			{ name: "Innovation", maxScore: 10 },
 			{ name: "Technical Complexity", maxScore: 10 },
@@ -44,23 +46,42 @@ async function main() {
 			createdCriteria.push({ id, ...c });
 		}
 
-		// Get judges
+		// Get judges and teams
 		const judges = await db.select().from(user).where(eq(user.role, "judge"));
 		if (judges.length === 0) throw new Error("No judges found");
 
-		// Get all teams
 		const allTeams = await db.select().from(organization);
 		if (allTeams.length === 0) throw new Error("No teams found");
 
-		// Create assignments and scores
-		for (const team of allTeams) {
-			for (const judge of judges) {
+		// Each judge gets their own room, all teams are assigned to each room
+		for (const judge of judges) {
+			const roomId = crypto.randomUUID();
+
+			// Create a room for this judge
+			await db.insert(judgingRooms).values({
+				id: roomId,
+				roundId,
+				roomLink: `https://meet.example.com/room-${roomId}`,
+				createdAt: new Date(),
+				updatedAt: new Date()
+			});
+
+			// Assign judge as staff for this room
+			await db.insert(judgingRoomStaff).values({
+				id: crypto.randomUUID(),
+				roomId,
+				staffId: judge.id,
+				createdAt: new Date()
+			});
+
+			// Assign every team to this room and generate scores
+			for (const team of allTeams) {
 				const assignmentId = crypto.randomUUID();
+
 				await db.insert(judgingAssignments).values({
 					id: assignmentId,
-					judgeId: judge.id,
 					teamId: team.id,
-					roundId,
+					roomId,
 					createdAt: new Date()
 				});
 
