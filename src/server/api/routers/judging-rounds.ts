@@ -1,15 +1,15 @@
+import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { createSchedule } from "@/app/admin/scheduler";
-import { TRPCError } from "@trpc/server";
 import {
+	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure,
-	adminProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
-import { judgingAssignments, judgingRounds } from "@/server/db/schema";
 import { user } from "@/server/db/auth-schema";
+import { judgingAssignments, judgingRounds } from "@/server/db/schema";
 
 export const judgingRoundsRouter = createTRPCRouter({
 	getAll: publicProcedure.query(async ({ ctx }) => {
