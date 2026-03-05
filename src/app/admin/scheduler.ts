@@ -17,38 +17,35 @@ export function createSchedule(
 	judges: Judge[],
 	startTime: Date,
 	duration: number,
-	bufferTime: number = 5
+	bufferTime: number
 ): AssignmentSlot[] {
-	
-  const schedule: AssignmentSlot[] = [];
+	if (judges.length === 0) throw new Error("No judges available");
+	if (teams.length === 0) return [];
 
-  if (judges.length === 0) {
-    throw new Error("No judges available");
-  }
+	const schedule: AssignmentSlot[] = [];
+	let currentTime = new Date(startTime);
 
-  if (teams.length === 0) return [];
+	let teamIndex = 0;
 
-  let currentTime = new Date(startTime);
-  let teamIndex = 0;
+	while (teamIndex < teams.length) {
+		for (const judge of judges) {
+			const team = teams[teamIndex];
 
-  while (teamIndex < teams.length) {
+			if (!team) break;
 
-    for (let j = 0; j < judges.length && teamIndex < teams.length; j++) {
-      const team = teams[teamIndex]!;
-      const judge = judges[j]!;
+			schedule.push({
+				teamId: team.id,
+				judgeId: judge.id,
+				start: new Date(currentTime)
+			});
 
-      schedule.push({
-        teamId: team.id,
-        judgeId: judge.id,
-        start: new Date(currentTime),
-      });
+			teamIndex++;
+		}
 
-      teamIndex++;
+		currentTime = new Date(
+			currentTime.getTime() + (duration + bufferTime) * 60000
+		);
+	}
 
-      currentTime = new Date(
-        currentTime.getTime() + (duration + bufferTime) * 60000
-      );
-    }
-  }
-  return schedule;
+	return schedule;
 }
