@@ -10,7 +10,6 @@ import {
 	text,
 	timestamp
 } from "drizzle-orm/pg-core";
-import { MEMBER_ROLE_VALUES } from "@/constants/member-roles";
 
 export const PROGRAMS = [
 	"computer_science",
@@ -125,9 +124,7 @@ export const member = createTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
-		role: text("role", { enum: MEMBER_ROLE_VALUES })
-			.default("member")
-			.notNull(),
+		role: text("role").default("member").notNull(),
 		createdAt: timestamp("created_at").notNull()
 	},
 	(table) => [
