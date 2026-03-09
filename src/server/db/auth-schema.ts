@@ -10,6 +10,7 @@ import {
 	text,
 	timestamp
 } from "drizzle-orm/pg-core";
+import { MEMBER_ROLE_VALUES } from "@/constants/member-roles";
 
 export const PROGRAMS = [
 	"computer_science",
@@ -17,9 +18,6 @@ export const PROGRAMS = [
 	"electrical_engineering",
 	"other"
 ] as const;
-
-// Used internally for the drizzle column enum — the exported MEMBER_ROLES object lives in types.ts
-const MEMBER_ROLE_VALUES = ["owner", "member", "admin"] as const;
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
