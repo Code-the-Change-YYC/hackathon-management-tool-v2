@@ -5,6 +5,7 @@ import { scoresRouter } from "@/server/api/routers/scores";
 import { teamsRouter } from "@/server/api/routers/teams";
 import { usersRouter } from "@/server/api/routers/users";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
+import { criteriaRouter } from "./routers/criteria";
 
 /**
  * This is the primary router for your server.
@@ -17,7 +18,8 @@ export const appRouter = createTRPCRouter({
 	judgingAssignments: judgingAssignmentsRouter,
 	scores: scoresRouter,
 	users: usersRouter,
-	teams: teamsRouter
+	teams: teamsRouter,
+	criteria: criteriaRouter
 });
 
 // export type definition of API

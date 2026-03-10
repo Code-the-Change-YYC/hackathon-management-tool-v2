@@ -60,6 +60,12 @@ export default async function Home() {
 							<h3 className={styles.cardTitle}>Login →</h3>
 							<div className={styles.cardText}>Login to the app.</div>
 						</Link>
+
+						{/* Temporary page to view score table for judges */}
+						<Link className={styles.card} href="/scores">
+							<h3 className={styles.cardTitle}>Scores →</h3>
+							<div className={styles.cardText}>Judge Scores.</div>
+						</Link>
 					</div>
 					<div className={styles.showcaseContainer}>
 						<p className={styles.showcaseText}>Hackathon Management Tool</p>

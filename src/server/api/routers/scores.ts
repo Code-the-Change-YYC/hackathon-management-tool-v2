@@ -74,20 +74,11 @@ export const scoresRouter = createTRPCRouter({
 	getByRound: publicProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
-			const roundScores = await ctx.db.query.scores.findMany({
-				where: (scores, { eq }) =>
-					eq(
-						sql`(SELECT round_id FROM ${judgingAssignments} WHERE id = ${scores.assignmentId})`,
-						input.roundId
-					),
+			const roundScores = await ctx.db.query.judgingAssignments.findMany({
+				where: eq(judgingAssignments.roundId, input.roundId),
 				with: {
-					assignment: {
-						with: {
-							judge: true,
-							team: true,
-							round: true
-						}
-					}
+					team: true,
+					scores: true
 				}
 			});
 			return roundScores;
@@ -130,24 +121,33 @@ export const scoresRouter = createTRPCRouter({
 		}),
 
 	// Submit a score
-	create: judgeProcedure
+	createMany: judgeProcedure
 		.input(
-			z.object({
-				assignmentId: z.string().uuid(),
-				criteriaId: z.string().uuid(),
-				score: z.number().int().min(0)
-			})
+			z.array(
+				z.object({
+					assignmentId: z.string().uuid(),
+					criteriaId: z.string().uuid(),
+					score: z.number().int().min(0).max(10)
+				})
+			)
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [newScore] = await ctx.db
+			const results = await ctx.db
 				.insert(scores)
-				.values({
-					assignmentId: input.assignmentId,
-					criteriaId: input.criteriaId,
-					value: input.score
+				.values(
+					input.map((item) => ({
+						assignmentId: item.assignmentId,
+						criteriaId: item.criteriaId,
+						value: item.score
+					}))
+				)
+				.onConflictDoUpdate({
+					target: [scores.assignmentId, scores.criteriaId],
+					set: { value: sql`excluded.value` }
 				})
 				.returning();
-			return newScore;
+
+			return results;
 		}),
 
 	// Update a score
