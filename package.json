@@ -29,7 +29,6 @@
 		"@trpc/client": "^11.0.0",
 		"@trpc/react-query": "^11.0.0",
 		"@trpc/server": "^11.0.0",
-		"ag-grid": "^18.1.2",
 		"ag-grid-community": "^35.0.1",
 		"ag-grid-react": "^35.0.1",
 		"better-auth": "^1.3",

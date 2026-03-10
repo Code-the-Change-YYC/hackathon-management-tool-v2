@@ -71,8 +71,6 @@ const ModalPopup = ({
 		}
 	};
 
-	const scoreOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
 	if (isLoading) return <h1>Loading!</h1>;
 
 	return (
@@ -86,7 +84,7 @@ const ModalPopup = ({
 						<Image
 							alt="Exit popup icon"
 							height={20}
-							src="/svgs/judging/exit_icon.svg"
+							src="/svgs/judges/exit_icon.svg"
 							width={20}
 						/>
 					</button>
@@ -97,61 +95,82 @@ const ModalPopup = ({
 						<div className="flex items-center gap-4">
 							{criteria
 								.filter((c) => !c.isSidepot)
-								.map((c) => (
-									<div className="flex flex-col gap-2" key={c.id}>
-										<label
-											className="font-medium text-grey-purple text-sm"
-											htmlFor={`criteria-${c.id}`}
-										>
-											{c.name}
-										</label>
+								.map((c) => {
+									// generate options from 0 to maxScore
+									const scoreOptions = Array.from(
+										{ length: c.maxScore + 1 },
+										(_, i) => i
+									);
 
-										<select
-											className="w-full rounded-lg border-2 border-pale-grey p-2 outline-none transition-colors focus:border-medium-pink"
-											id={`criteria-${c.id}`}
-										>
-											<option disabled value="">
-												Select Score
-											</option>
-											{scoreOptions.map((num) => (
-												<option key={num} value={num}>
-													{num}
+									return (
+										<div className="flex flex-col gap-2" key={c.id}>
+											<label
+												className="font-medium text-grey-purple text-sm"
+												htmlFor={`criteria-${c.id}`}
+											>
+												{c.name}
+											</label>
+
+											<select
+												className="w-full rounded-2xl border-2 border-light-grey p-2 outline-none transition-colors focus:border-medium-pink"
+												id={`criteria-${c.id}`}
+												onChange={(e) =>
+													handleScoreChange(c.id, e.target.value)
+												}
+												value={localScores[c.id] ?? ""}
+											>
+												<option disabled value="">
+													Select Score
 												</option>
-											))}
-										</select>
-									</div>
-								))}
+												{scoreOptions.map((num) => (
+													<option key={num} value={num}>
+														{num}
+													</option>
+												))}
+											</select>
+										</div>
+									);
+								})}
 						</div>
 						<hr></hr>
 						<p className="font-bold text-2xl">Sidepots:</p>
 						<div className="flex items-center gap-4">
 							{criteria
 								.filter((c) => c.isSidepot)
-								.map((c) => (
-									<div className="flex flex-col gap-2" key={c.id}>
-										<label
-											className="font-medium text-grey-purple text-sm"
-											htmlFor={`criteria-${c.id}`}
-										>
-											{c.name}
-										</label>
-										<select
-											className="w-full rounded-lg border-2 border-pastel-green p-2 outline-none transition-colors focus:border-dark-green"
-											onChange={(e) => handleScoreChange(c.id, e.target.value)}
-											value={localScores[c.id] ?? ""}
-										>
-											<option value="">N/A (Optional)</option>
-											{scoreOptions.map((num) => (
-												<option key={num} value={num}>
-													{num}
-												</option>
-											))}
-										</select>
-									</div>
-								))}
+								.map((c) => {
+									const scoreOptions = Array.from(
+										{ length: c.maxScore + 1 },
+										(_, i) => i
+									);
+
+									return (
+										<div className="flex flex-col gap-2" key={c.id}>
+											<label
+												className="font-medium text-grey-purple text-sm"
+												htmlFor={`criteria-${c.id}`}
+											>
+												{c.name}
+											</label>
+											<select
+												className="w-full rounded-2xl border-2 border-pastel-green p-2 outline-none transition-colors focus:border-dark-green"
+												onChange={(e) =>
+													handleScoreChange(c.id, e.target.value)
+												}
+												value={localScores[c.id] ?? ""}
+											>
+												<option value="">Select Score</option>
+												{scoreOptions.map((num) => (
+													<option key={num} value={num}>
+														{num}
+													</option>
+												))}
+											</select>
+										</div>
+									);
+								})}
 						</div>
 						<button
-							className="rounded-full bg-awesomer-purple px-10 py-3 font-bold text-white shadow-lg transition-all hover:bg-awesome-purple disabled:bg-ehhh-grey"
+							className="rounded-full bg-dark-pink px-10 py-3 font-bold text-white shadow-lg transition-all hover:bg-medium-pink disabled:bg-ehhh-grey"
 							disabled={createManyMutation.isPending}
 							type="submit"
 						>

@@ -21,7 +21,9 @@ export const JUDGING_TABLE_THEME_PARAMS = {
 	headerColumnResizeHandleWidth: "0px",
 	headerColumnResizeHandleColor: "transparent",
 	columnBorder: true,
-	wrapperBorder: false
+	wrapperBorder: false,
+	oddRowBackgroundColor: "var(--color-light-grey)",
+	evenRowBackgroundColor: "var(--color-dashboard-grey)"
 } as const;
 
 export const createJudgingColumnDefs = (
@@ -43,16 +45,12 @@ export const createJudgingColumnDefs = (
 			colId: `score_${c.id}`,
 			headerClass: c.isSidepot ? "bg-pastel-pink text-dark-pink" : "",
 			width: JUDGING_DEFAULT_COLUMN_WIDTH,
-			editable: true,
-			cellEditor: "agSelectCellEditor",
-			cellEditorParams: {
-				values: Array.from({ length: c.maxScore + 1 }, (_, i) => i)
-			},
+			editable: false,
 			criteriaId: c.id,
 			suppressMovable: true,
 			valueGetter: (params: ValueGetterParams<Assignment>) => {
 				const score = params.data?.scores?.find((s) => s.criteriaId === c.id);
-				return score?.value ?? null;
+				return score?.value != null ? String(score.value) : null;
 			}
 		})),
 		{

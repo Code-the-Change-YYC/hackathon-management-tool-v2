@@ -1,6 +1,11 @@
+import dynamic from "next/dynamic";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 import styles from "../dashboard.module.scss";
+
+const JudgingDashboard = dynamic(
+	() => import("../components/judges/JudgingDashboard")
+);
 
 export default async function JudgePage() {
 	const session = await requireRole([Role.JUDGE, Role.ADMIN]);
@@ -19,6 +24,7 @@ export default async function JudgePage() {
 					<h2 className={styles.welcome}>Ready to Judge?</h2>
 					<p>View your assigned teams and submit scores.</p>
 				</div>
+				<JudgingDashboard />
 			</div>
 		</main>
 	);

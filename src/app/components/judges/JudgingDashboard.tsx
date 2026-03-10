@@ -5,9 +5,9 @@
 
 import { useState } from "react";
 import { api } from "@/trpc/react";
-import ModalPopup from "../components/judges/ModalPopup";
-import ScoresTable from "../components/judges/ScoresTable";
-import StatsPanel from "../components/judges/StatsPanel";
+import ModalPopup from "./ModalPopup";
+import ScoresTable from "./ScoresTable";
+import StatsPanel from "./StatsPanel";
 
 export default function JudgingDashboard() {
 	const [selectedTeam, setSelectedTeam] = useState<{
@@ -54,7 +54,7 @@ export default function JudgingDashboard() {
 	};
 
 	return (
-		<div className="flex w-dvw flex-col justify-center gap-4 p-8 py-6 xl:flex-row">
+		<div className="flex w-full flex-col justify-center gap-4 xl:flex-row">
 			<div className="flex w-full flex-row gap-4 xl:w-1/4 xl:flex-col">
 				{panelData.map((item) => (
 					<StatsPanel

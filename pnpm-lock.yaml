@@ -26,9 +26,6 @@ importers:
       '@trpc/server':
         specifier: ^11.0.0
         version: 11.7.2(typescript@5.9.3)
-      ag-grid:
-        specifier: ^18.1.2
-        version: 18.1.2
       ag-grid-community:
         specifier: ^35.0.1
         version: 35.0.1
@@ -960,10 +957,6 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
-  ag-grid@18.1.2:
-    resolution: {integrity: sha512-HtJt8iFcRKCBj5UHBDmwSLLr72F3XDACeBNarH4nJWFHIqcnu7u0Ifrd2nftPmfEBj6YjFHawDqcZL2yo3YfmQ==}
-    deprecated: ag-grid is now deprecated - please use @ag-grid-community/all-modules. See www.ag-grid.com/javascript-grid-modules/ for more information.
 
   better-auth@1.4.1:
     resolution: {integrity: sha512-HDVE69Nw6Y1FPTcmFEmPolfsjMfVB5U823Ij9yWBoM8MdHZ2lA3JVus4xQJ2oRE1riJTlcSLFcgJKWGD7V7hmw==}
@@ -2122,8 +2115,6 @@ snapshots:
       prop-types: 15.8.1
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
-
-  ag-grid@18.1.2: {}
 
   better-auth@1.4.1(next@15.5.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.94.2))(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
     dependencies:
