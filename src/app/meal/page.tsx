@@ -61,6 +61,7 @@ export default function MealPage() {
 						}}
 						type="datetime-local"
 					/>
+					{/* TODO: make buttons use loading state after mutations are fired */}
 					<button
 						onClick={() => {
 							handleCreateMeal();
@@ -86,6 +87,7 @@ export default function MealPage() {
 						onChange={(e) => setUserId(e.target.value)}
 						type="text"
 					/>
+					{/* TODO: make buttons use loading state after mutations are fired */}
 					<button
 						onClick={() => {
 							handleScanUserIn();
