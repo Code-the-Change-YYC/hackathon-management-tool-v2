@@ -1,6 +1,3 @@
-/**
- * Temporary page to show the scoring table for judges
- */
 "use client";
 
 import { useState } from "react";
@@ -34,6 +31,7 @@ export default function JudgingDashboard() {
 		(a) => (a.scores?.length ?? 0) === 0
 	).length;
 
+	// judging specific stats
 	const panelData = [
 		{
 			icon: "/svgs/judges/team_icon.svg",

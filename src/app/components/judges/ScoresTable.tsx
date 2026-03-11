@@ -1,16 +1,13 @@
 import type { ICellRendererParams } from "ag-grid-community";
 import {
 	AllCommunityModule,
-	type CellValueChangedEvent,
-	type ColDef,
 	ModuleRegistry,
 	themeQuartz
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import Image from "next/image";
-import { useCallback, useMemo } from "react";
-import { toast } from "react-toastify";
-import { api, type RouterOutputs } from "@/trpc/react";
+import { useMemo } from "react";
+import type { RouterOutputs } from "@/trpc/react";
 import {
 	createJudgingColumnDefs,
 	JUDGING_TABLE_THEME_PARAMS
@@ -21,6 +18,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 type Assignment = RouterOutputs["scores"]["getByRound"][number];
 
+// custom component for AG Grid to open modal
 type ActionRendererParams = ICellRendererParams<Assignment> & {
 	context: {
 		onOpenModal: (assignmentId: string, teamName: string) => void;
@@ -43,7 +41,6 @@ export default function JudgingTable({
 	criteria,
 	onOpenModal
 }: JudgingTableProps) {
-	const utils = api.useUtils();
 	const theme = useMemo(
 		() => themeQuartz.withParams(JUDGING_TABLE_THEME_PARAMS),
 		[]
@@ -52,56 +49,6 @@ export default function JudgingTable({
 	const columnDefs = useMemo(
 		() => createJudgingColumnDefs(criteria),
 		[criteria]
-	);
-
-	// mutations
-	const updateMutation = api.scores.update.useMutation({
-		onSuccess: () => utils.scores.getByRound.invalidate()
-	});
-
-	const createMutation = api.scores.createMany.useMutation({
-		onSuccess: () => utils.scores.getByRound.invalidate()
-	});
-
-	// handles updates to scores
-	const onCellValueChanged = useCallback(
-		async (event: CellValueChangedEvent<Assignment>) => {
-			if (event.newValue === event.oldValue || event.newValue === "-") return;
-
-			type JudgingColDef = ColDef<Assignment> & {
-				criteriaId?: string;
-			};
-			const criteriaId = (event.colDef as JudgingColDef).criteriaId;
-			if (!criteriaId) return;
-
-			const scoreRecord = event.data.scores?.find(
-				(s) => s.criteriaId === criteriaId
-			);
-			const scoreValue = parseInt(event.newValue, 10);
-
-			try {
-				if (scoreRecord) {
-					// update existing score
-					await updateMutation.mutateAsync({
-						id: scoreRecord.id,
-						score: scoreValue
-					});
-				} else {
-					// create new score entry
-					await createMutation.mutateAsync([
-						{
-							assignmentId: event.data.id,
-							criteriaId: criteriaId,
-							score: scoreValue
-						}
-					]);
-				}
-				toast.success(`Score successfully updated for ${event.data.team.name}`);
-			} catch {
-				toast.error("Failed to save score. Please try again.");
-			}
-		},
-		[updateMutation, createMutation]
 	);
 
 	return (
@@ -120,7 +67,6 @@ export default function JudgingTable({
 						cellClass: "flex items-center justify-center"
 					}}
 					getRowId={({ data }) => data.id}
-					onCellValueChanged={onCellValueChanged}
 					pagination={true}
 					paginationPageSize={10}
 					paginationPageSizeSelector={[10, 20, 50, 100]}

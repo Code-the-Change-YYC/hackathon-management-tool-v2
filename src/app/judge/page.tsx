@@ -3,6 +3,7 @@ import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 import styles from "../dashboard.module.scss";
 
+// import internal data from JudgingDashboard
 const JudgingDashboard = dynamic(
 	() => import("../components/judges/JudgingDashboard")
 );

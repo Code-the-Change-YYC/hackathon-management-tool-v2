@@ -7,20 +7,21 @@ type Criterion = RouterOutputs["criteria"]["getAll"][number];
 
 interface ModalPopupProps {
 	onClose: () => void;
-	assignmentId: string; // judging assignment - not sure how its handle currently so may need to change later on
+	assignmentId: string; // judging assignment - not sure how it will be handled so may need to change later on
 	teamName: string;
 	criteria: Criterion[];
 }
 
-const ModalPopup = ({
+export default function ModalPopup({
 	onClose,
 	assignmentId,
 	teamName,
 	criteria
-}: ModalPopupProps) => {
+}: ModalPopupProps) {
 	const utils = api.useUtils();
 	const [localScores, setLocalScores] = useState<Record<string, number>>({});
 
+	// retrieves all existing scores in the db for judges to see and edit previous scores
 	const { data: existingScores, isLoading } =
 		api.scores.getByAssignment.useQuery({
 			assignmentId
@@ -37,8 +38,11 @@ const ModalPopup = ({
 		}
 	}, [existingScores]);
 
+	// updates the score if it already exists, or creates a new one if it doesn't
 	const createManyMutation = api.scores.createMany.useMutation();
 
+	// update local score when value is selected from the dropdown
+	// score isn't submitted yet
 	const handleScoreChange = (criteriaId: string, value: string) => {
 		setLocalScores((prev) => ({
 			...prev,
@@ -49,6 +53,7 @@ const ModalPopup = ({
 	const onSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
+		// formats local scores how the API expects it
 		const scoreData = Object.entries(localScores).map(([criteriaId, val]) => ({
 			assignmentId,
 			criteriaId,
@@ -61,9 +66,9 @@ const ModalPopup = ({
 		}
 
 		try {
-			await createManyMutation.mutateAsync(scoreData);
+			await createManyMutation.mutateAsync(scoreData); // save scores to db
 			toast.success(`All ${scoreData.length} scores saved for ${teamName}!`);
-			await utils.scores.getByRound.invalidate();
+			await utils.scores.getByRound.invalidate(); // refresh scores table
 			onClose();
 		} catch (error) {
 			console.error(error);
@@ -71,7 +76,7 @@ const ModalPopup = ({
 		}
 	};
 
-	if (isLoading) return <h1>Loading!</h1>;
+	if (isLoading) return <h1>Loading...</h1>;
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -183,6 +188,4 @@ const ModalPopup = ({
 			</div>
 		</div>
 	);
-};
-
-export default ModalPopup;
+}
