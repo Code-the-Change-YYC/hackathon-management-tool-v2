@@ -12,9 +12,8 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 	getAll: publicProcedure.query(async ({ ctx }) => {
 		const assignments = await ctx.db.query.judgingAssignments.findMany({
 			with: {
-				judge: true,
 				team: true,
-				round: true,
+				room: true,
 				scores: true
 			},
 			orderBy: (assignments, { desc }) => [desc(assignments.createdAt)]
@@ -22,33 +21,17 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		return assignments;
 	}),
 
-	// Get assignments by round ID
-	getByRound: publicProcedure
-		.input(z.object({ roundId: z.string().uuid() }))
+	// Get assignments by room ID
+	getByRoom: publicProcedure
+		.input(z.object({ roomId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			const assignments = await ctx.db.query.judgingAssignments.findMany({
-				where: eq(judgingAssignments.roundId, input.roundId),
+				where: eq(judgingAssignments.roomId, input.roomId),
 				with: {
-					judge: true,
 					team: true,
+					room: true,
 					scores: true
 				}
-			});
-			return assignments;
-		}),
-
-	// Get assignments for a specific judge
-	getByJudge: protectedProcedure
-		.input(z.object({ judgeId: z.string() }))
-		.query(async ({ ctx, input }) => {
-			const assignments = await ctx.db.query.judgingAssignments.findMany({
-				where: eq(judgingAssignments.judgeId, input.judgeId),
-				with: {
-					team: true,
-					round: true,
-					scores: true
-				},
-				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
 			});
 			return assignments;
 		}),
@@ -60,8 +43,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 			const assignments = await ctx.db.query.judgingAssignments.findMany({
 				where: eq(judgingAssignments.teamId, input.teamId),
 				with: {
-					judge: true,
-					round: true,
+					room: true,
 					scores: true
 				}
 			});
@@ -72,10 +54,9 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 	create: protectedProcedure
 		.input(
 			z.object({
-				judgeId: z.string(),
 				teamId: z.string(),
-				roundId: z.string().uuid(),
-				timeSlot: z.date().optional()
+				roomId: z.string().uuid(),
+				timeSlot: z.coerce.date().optional()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -91,10 +72,9 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				id: z.string().uuid(),
-				judgeId: z.string().optional(),
 				teamId: z.string().optional(),
-				roundId: z.string().uuid().optional(),
-				timeSlot: z.date().optional().nullable()
+				roomId: z.string().uuid().optional(),
+				timeSlot: z.coerce.date().optional().nullable()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {

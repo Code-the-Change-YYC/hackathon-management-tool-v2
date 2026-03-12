@@ -6,7 +6,7 @@ import {
 	judgeProcedure
 } from "@/server/api/trpc";
 import { organization } from "@/server/db/auth-schema";
-import { judgingAssignments, scores } from "@/server/db/schema";
+import { judgingAssignments, judgingRooms, scores } from "@/server/db/schema";
 import { criteria } from "@/server/db/scores-schema";
 
 export const scoresRouter = createTRPCRouter({
@@ -16,9 +16,8 @@ export const scoresRouter = createTRPCRouter({
 			with: {
 				assignment: {
 					with: {
-						judge: true,
 						team: true,
-						round: true
+						room: true
 					}
 				}
 			},
@@ -36,9 +35,8 @@ export const scoresRouter = createTRPCRouter({
 				with: {
 					assignment: {
 						with: {
-							judge: true,
 							team: true,
-							round: true
+							room: true
 						}
 					}
 				}
@@ -59,9 +57,8 @@ export const scoresRouter = createTRPCRouter({
 				with: {
 					assignment: {
 						with: {
-							judge: true,
 							team: true,
-							round: true
+							room: true
 						}
 					}
 				}
@@ -111,12 +108,11 @@ export const scoresRouter = createTRPCRouter({
 					judgingAssignments,
 					eq(scores.assignmentId, judgingAssignments.id)
 				)
+				.innerJoin(judgingRooms, eq(judgingAssignments.roomId, judgingRooms.id))
 				.innerJoin(organization, eq(judgingAssignments.teamId, organization.id))
 				.innerJoin(criteria, eq(scores.criteriaId, criteria.id))
 				.where(
-					input.roundId
-						? eq(judgingAssignments.roundId, input.roundId)
-						: undefined
+					input.roundId ? eq(judgingRooms.roundId, input.roundId) : undefined
 				)
 				.groupBy(judgingAssignments.teamId, organization.name);
 
