@@ -13,6 +13,9 @@
  * and its pending invitations. Regular members can leave freely, and if
  * they're the last member the team gets cleaned up automatically.
  *
+ * Team updates are allowed for app-level admins (any team) or team owners
+ * (their own team only).
+ *
  * All multi-row writes use transactions for atomicity.
  * MEMBER_ROLES lives in types.ts as the single source of truth for roles.
  */
@@ -334,6 +337,7 @@ export const teamsRouter = createTRPCRouter({
 	update: protectedProcedure
 		.input(
 			z.object({
+				id: z.string(),
 				name: z.string().min(1).optional(),
 				slug: z.string().optional(),
 				logo: z.string().optional().nullable(),
@@ -341,20 +345,30 @@ export const teamsRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+			const { id, ...data } = input;
 			const userId = ctx.session.user.id;
-			const membership = await getUserMembership(ctx.db, userId);
+			const isAppAdmin = ctx.session.user.role === "admin";
 
-			if (membership.role !== MEMBER_ROLES.OWNER) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Only team owners can update team details"
+			if (!isAppAdmin) {
+				const membership = await ctx.db.query.member.findFirst({
+					where: and(
+						eq(member.userId, userId),
+						eq(member.organizationId, id),
+						eq(member.role, MEMBER_ROLES.OWNER)
+					)
 				});
+				if (!membership) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message: "Only app admins or team owners can update team details"
+					});
+				}
 			}
 
 			const [updated] = await ctx.db
 				.update(organization)
-				.set(input)
-				.where(eq(organization.id, membership.organizationId))
+				.set(data)
+				.where(eq(organization.id, id))
 				.returning();
 			return updated;
 		})
