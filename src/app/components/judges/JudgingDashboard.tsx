@@ -15,7 +15,7 @@ export default function JudgingDashboard() {
 	// temp hardcoded fetching judging assignments
 	const { data: assignments, isLoading: assignmentsLoading } =
 		api.scores.getByRound.useQuery({
-			roundId: "1e9a0b26-ad05-4da8-8116-e6c4b51672f9" // this can be replaced with the "id" column in the hackathon_judging_round table
+			roundId: "71ca22b9-5642-459b-ada1-c51d0e8ca720" // this can be replaced with the "id" column in the hackathon_judging_round table
 		});
 
 	// fetch judging criteria from db
