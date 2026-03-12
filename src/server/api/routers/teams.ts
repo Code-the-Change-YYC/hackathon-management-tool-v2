@@ -1,14 +1,20 @@
 /**
- * Teams router — manages hackathon teams backed by the `organization` table.
+ * Teams router for managing hackathon teams (backed by the organization table).
  *
- * Key behaviours:
- * - Team names are validated to reject emojis and special characters.
- * - Each team gets a unique 4-char uppercase hex team code on creation.
- * - A user may belong to at most one team at a time.
- * - Non-leader members can join a team via its team code.
- * - Team owners can invite other users by email (creates an invitation record).
- * - When the last member leaves a team the organization row is deleted automatically.
- * - All multi-row mutations are wrapped in transactions for atomicity.
+ * Team names only allow letters, numbers, spaces, hyphens, and underscores
+ * to avoid emoji/special character issues from last year.
+ *
+ * Each team gets a unique 4-char hex code on creation. Users can only be on
+ * one team at a time, enforced by ensureNotInTeam() which is shared across
+ * create, join, and acceptInvite.
+ *
+ * Owners are the only ones who can send invitations. If an owner tries to
+ * leave, they must pass confirmDelete: true which deletes the entire team
+ * and its pending invitations. Regular members can leave freely, and if
+ * they're the last member the team gets cleaned up automatically.
+ *
+ * All multi-row writes use transactions for atomicity.
+ * MEMBER_ROLES lives in types.ts as the single source of truth for roles.
  */
 
 import crypto from "node:crypto";
@@ -16,6 +22,7 @@ import { TRPCError } from "@trpc/server";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import type { db as dbType } from "@/server/db";
 import {
 	invitation,
 	member,
@@ -37,6 +44,42 @@ function generateTeamCode(): string {
 	return crypto.randomBytes(2).toString("hex").toUpperCase();
 }
 
+async function ensureNotInTeam(db: typeof dbType, userId: string) {
+	const existing = await db.query.member.findFirst({
+		where: eq(member.userId, userId)
+	});
+	if (existing) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "You are already a member of a team"
+		});
+	}
+}
+
+async function getUserMembership(db: typeof dbType, userId: string) {
+	const membership = await db.query.member.findFirst({
+		where: eq(member.userId, userId)
+	});
+	if (!membership) {
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "You are not a member of any team"
+		});
+	}
+	return membership;
+}
+
+async function deleteTeamAndInvitations(
+	tx: Parameters<Parameters<typeof dbType.transaction>[0]>[0],
+	organizationId: string
+) {
+	await tx
+		.delete(invitation)
+		.where(eq(invitation.organizationId, organizationId));
+	await tx.delete(member).where(eq(member.organizationId, organizationId));
+	await tx.delete(organization).where(eq(organization.id, organizationId));
+}
+
 export const teamsRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
 		const teams = await ctx.db.query.organization.findMany({
@@ -53,16 +96,7 @@ export const teamsRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
-
-			const existing = await ctx.db.query.member.findFirst({
-				where: eq(member.userId, userId)
-			});
-			if (existing) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "You are already a member of a team"
-				});
-			}
+			await ensureNotInTeam(ctx.db, userId);
 
 			const teamId = crypto.randomUUID();
 			const teamCode = generateTeamCode();
@@ -108,16 +142,7 @@ export const teamsRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
-
-			const existing = await ctx.db.query.member.findFirst({
-				where: eq(member.userId, userId)
-			});
-			if (existing) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "You are already a member of a team"
-				});
-			}
+			await ensureNotInTeam(ctx.db, userId);
 
 			const team = await ctx.db.query.organization.findFirst({
 				where: eq(organization.teamCode, input.teamCode)
@@ -215,16 +240,7 @@ export const teamsRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
-
-			const existing = await ctx.db.query.member.findFirst({
-				where: eq(member.userId, userId)
-			});
-			if (existing) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "You are already a member of a team"
-				});
-			}
+			await ensureNotInTeam(ctx.db, userId);
 
 			const inv = await ctx.db.query.invitation.findFirst({
 				where: and(
@@ -274,44 +290,50 @@ export const teamsRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
-	leave: protectedProcedure.mutation(async ({ ctx }) => {
-		const userId = ctx.session.user.id;
+	leave: protectedProcedure
+		.input(
+			z
+				.object({
+					confirmDelete: z.boolean().optional()
+				})
+				.optional()
+		)
+		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+			const membership = await getUserMembership(ctx.db, userId);
+			const isOwner = membership.role === MEMBER_ROLES.OWNER;
 
-		const membership = await ctx.db.query.member.findFirst({
-			where: eq(member.userId, userId)
-		});
-		if (!membership) {
-			throw new TRPCError({
-				code: "NOT_FOUND",
-				message: "You are not a member of any team"
-			});
-		}
-
-		await ctx.db.transaction(async (tx) => {
-			await tx.delete(member).where(eq(member.id, membership.id));
-
-			const remainingMembers = await tx.query.member.findMany({
-				where: eq(member.organizationId, membership.organizationId)
-			});
-
-			if (remainingMembers.length === 0) {
-				await tx
-					.delete(invitation)
-					.where(eq(invitation.organizationId, membership.organizationId));
-
-				await tx
-					.delete(organization)
-					.where(eq(organization.id, membership.organizationId));
+			if (isOwner && !input?.confirmDelete) {
+				return {
+					success: false,
+					warning:
+						"You are the team owner. Leaving will delete the entire team " +
+						"and all pending invitations. Set confirmDelete: true to proceed."
+				};
 			}
-		});
 
-		return { success: true };
-	}),
+			await ctx.db.transaction(async (tx) => {
+				if (isOwner) {
+					await deleteTeamAndInvitations(tx, membership.organizationId);
+				} else {
+					await tx.delete(member).where(eq(member.id, membership.id));
+
+					const remainingMembers = await tx.query.member.findMany({
+						where: eq(member.organizationId, membership.organizationId)
+					});
+
+					if (remainingMembers.length === 0) {
+						await deleteTeamAndInvitations(tx, membership.organizationId);
+					}
+				}
+			});
+
+			return { success: true };
+		}),
 
 	update: protectedProcedure
 		.input(
 			z.object({
-				id: z.string(),
 				name: z.string().min(1).optional(),
 				slug: z.string().optional(),
 				logo: z.string().optional().nullable(),
@@ -319,11 +341,20 @@ export const teamsRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id, ...data } = input;
+			const userId = ctx.session.user.id;
+			const membership = await getUserMembership(ctx.db, userId);
+
+			if (membership.role !== MEMBER_ROLES.OWNER) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Only team owners can update team details"
+				});
+			}
+
 			const [updated] = await ctx.db
 				.update(organization)
-				.set(data)
-				.where(eq(organization.id, id))
+				.set(input)
+				.where(eq(organization.id, membership.organizationId))
 				.returning();
 			return updated;
 		})
