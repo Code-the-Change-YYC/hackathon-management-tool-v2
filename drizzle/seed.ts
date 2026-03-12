@@ -39,7 +39,7 @@ async function main() {
 			await createOrGetUser({
 				email,
 				password: "Password123!",
-				name: email.split("@")[0]!.toUpperCase(),
+				name: email.split("@")[0] ?? "Unknown Judge".toUpperCase(),
 				role: "judge"
 			});
 		}
@@ -76,8 +76,11 @@ async function main() {
 					.limit(1);
 
 				if (existingOrg.length > 0) {
-					createdTeams.push(existingOrg[0]!);
-					console.log(`Team already exists: ${org.name}`);
+					const firstOrg = existingOrg[0];
+					if (firstOrg) {
+						createdTeams.push(firstOrg);
+						console.log(`Team already exists: ${org.name}`);
+					}
 					continue;
 				}
 
@@ -148,6 +151,7 @@ async function main() {
 		const rounds = [round1, round2].filter(Boolean);
 
 		for (const round of rounds) {
+			if (!round) continue;
 			for (const judge of judges) {
 				for (const team of createdTeams) {
 					const [assignment] = await db
@@ -155,7 +159,7 @@ async function main() {
 						.values({
 							judgeId: judge.id,
 							teamId: team.id,
-							roundId: round!.id
+							roundId: round.id
 						})
 						.returning();
 
