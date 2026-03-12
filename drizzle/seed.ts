@@ -3,7 +3,12 @@ import { createOrGetUser } from "drizzle/seedUtils";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { member, organization, user } from "@/server/db/auth-schema";
-import { judgingAssignments, judgingRounds } from "@/server/db/schema";
+import {
+	judgingAssignments,
+	judgingRoomStaff,
+	judgingRooms,
+	judgingRounds
+} from "@/server/db/schema";
 import { criteria, scores } from "@/server/db/scores-schema";
 
 async function main() {
@@ -153,26 +158,39 @@ async function main() {
 		for (const round of rounds) {
 			if (!round) continue;
 			for (const judge of judges) {
-				for (const team of createdTeams) {
-					const [assignment] = await db
-						.insert(judgingAssignments)
-						.values({
-							judgeId: judge.id,
-							teamId: team.id,
-							roundId: round.id
-						})
-						.returning();
+				const [room] = await db
+					.insert(judgingRooms)
+					.values({
+						roundId: round.id,
+						roomLink: "https://zoom.us/"
+					})
+					.returning();
 
-					// Only add scores if its not team 6 to test create score functionality
-					if (assignment && team.slug !== "team-6") {
-						// Add a score for every criterion for this assignment
-						const scoreValues = criteriaList.map((crit) => ({
-							assignmentId: assignment.id,
-							criteriaId: crit.id,
-							value: Math.floor(Math.random() * (crit.maxScore + 1))
-						}));
+				if (room) {
+					await db.insert(judgingRoomStaff).values({
+						roomId: room.id,
+						staffId: judge.id
+					});
 
-						await db.insert(scores).values(scoreValues);
+					for (const team of createdTeams) {
+						const [assignment] = await db
+							.insert(judgingAssignments)
+							.values({
+								teamId: team.id,
+								roomId: room.id,
+								timeSlot: new Date()
+							})
+							.returning();
+
+						// Only add scores if not team 6 to test create score functionality
+						if (assignment && team.slug !== "team-6") {
+							const scoreValues = criteriaList.map((crit) => ({
+								assignmentId: assignment.id,
+								criteriaId: crit.id,
+								value: Math.floor(Math.random() * (crit.maxScore + 1))
+							}));
+							await db.insert(scores).values(scoreValues);
+						}
 					}
 				}
 			}

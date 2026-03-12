@@ -20,7 +20,7 @@ export const appRouter = createTRPCRouter({
 	scores: scoresRouter,
 	users: usersRouter,
 	teams: teamsRouter,
-	criteria: criteriaRouter
+	criteria: criteriaRouter,
 	judgingRooms: judgingRoomsRouter
 });
 

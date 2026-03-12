@@ -6,7 +6,12 @@ import {
 	judgeProcedure
 } from "@/server/api/trpc";
 import { organization } from "@/server/db/auth-schema";
-import { judgingAssignments, judgingRooms, scores } from "@/server/db/schema";
+import {
+	judgingAssignments,
+	judgingRoomStaff,
+	judgingRooms,
+	scores
+} from "@/server/db/schema";
 import { criteria } from "@/server/db/scores-schema";
 
 export const scoresRouter = createTRPCRouter({
@@ -70,18 +75,32 @@ export const scoresRouter = createTRPCRouter({
 	getByRound: judgeProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
-			const roundScores = await ctx.db.query.judgingAssignments.findMany({
-				where: (assignments) =>
+			const judgeRoom = await ctx.db
+				.select({ id: judgingRooms.id })
+				.from(judgingRooms)
+				.innerJoin(
+					judgingRoomStaff,
+					eq(judgingRoomStaff.roomId, judgingRooms.id)
+				)
+				.where(
 					and(
-						eq(judgingAssignments.roundId, input.roundId),
-						eq(assignments.judgeId, ctx.session.user.id)
-					),
+						eq(judgingRooms.roundId, input.roundId),
+						eq(judgingRoomStaff.staffId, ctx.session.user.id)
+					)
+				);
+
+			const roomIds = judgeRoom.map((r) => r.id);
+
+			if (roomIds.length === 0) return [];
+
+			return await ctx.db.query.judgingAssignments.findMany({
+				where: (assignments, { inArray }) =>
+					inArray(assignments.roomId, roomIds),
 				with: {
 					team: true,
 					scores: true
 				}
 			});
-			return roundScores;
 		}),
 
 	// Get aggregated scores by team (useful for leaderboards)
