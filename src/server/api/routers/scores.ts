@@ -1,10 +1,9 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
 	createTRPCRouter,
-	judgeProcedure,
-	publicProcedure
+	judgeProcedure
 } from "@/server/api/trpc";
 import { organization } from "@/server/db/auth-schema";
 import { judgingAssignments, scores } from "@/server/db/schema";
@@ -12,7 +11,7 @@ import { criteria } from "@/server/db/scores-schema";
 
 export const scoresRouter = createTRPCRouter({
 	// Get all scores
-	getAll: publicProcedure.query(async ({ ctx }) => {
+	getAll: judgeProcedure.query(async ({ ctx }) => {
 		const allScores = await ctx.db.query.scores.findMany({
 			with: {
 				assignment: {
@@ -29,7 +28,7 @@ export const scoresRouter = createTRPCRouter({
 	}),
 
 	// Get scores by assignment ID
-	getByAssignment: publicProcedure
+	getByAssignment: judgeProcedure
 		.input(z.object({ assignmentId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			const assignmentScores = await ctx.db.query.scores.findMany({
@@ -48,7 +47,7 @@ export const scoresRouter = createTRPCRouter({
 		}),
 
 	// Get scores by team ID (across all rounds and judges)
-	getByTeam: publicProcedure
+	getByTeam: judgeProcedure
 		.input(z.object({ teamId: z.string() }))
 		.query(async ({ ctx, input }) => {
 			const teamScores = await ctx.db.query.scores.findMany({
@@ -71,11 +70,15 @@ export const scoresRouter = createTRPCRouter({
 		}),
 
 	// Get scores by round ID
-	getByRound: publicProcedure
+	getByRound: judgeProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			const roundScores = await ctx.db.query.judgingAssignments.findMany({
-				where: eq(judgingAssignments.roundId, input.roundId),
+				where: (assignments) =>
+					and(
+						eq(judgingAssignments.roundId, input.roundId),
+						eq(assignments.judgeId, ctx.session.user.id)
+					),
 				with: {
 					team: true,
 					scores: true
@@ -85,7 +88,7 @@ export const scoresRouter = createTRPCRouter({
 		}),
 
 	// Get aggregated scores by team (useful for leaderboards)
-	getAggregatedByTeam: publicProcedure
+	getAggregatedByTeam: judgeProcedure
 		.input(
 			z.object({
 				roundId: z.string().uuid().optional()

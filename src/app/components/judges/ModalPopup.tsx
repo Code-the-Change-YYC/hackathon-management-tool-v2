@@ -179,9 +179,7 @@ export default function ModalPopup({
 							disabled={createManyMutation.isPending}
 							type="submit"
 						>
-							{createManyMutation.isPending
-								? "Submitting..."
-								: "Submit Final Score"}
+							{createManyMutation.isPending ? "Submitting..." : "Submit Score"}
 						</button>
 					</form>
 				</div>
