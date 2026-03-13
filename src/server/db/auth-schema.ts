@@ -110,7 +110,8 @@ export const organization = createTable("organization", {
 	slug: text("slug").notNull().unique(),
 	logo: text("logo"),
 	createdAt: timestamp("created_at").notNull(),
-	metadata: text("metadata")
+	metadata: text("metadata"),
+	teamCode: text("team_code").unique()
 });
 
 export const member = createTable(
