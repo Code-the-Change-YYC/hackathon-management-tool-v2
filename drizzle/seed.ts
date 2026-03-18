@@ -2,7 +2,14 @@ import { generateId } from "better-auth";
 import { createOrGetUser } from "drizzle/seedUtils";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
-import { member, organization } from "@/server/db/auth-schema";
+import { member, organization, user } from "@/server/db/auth-schema";
+import {
+	judgingAssignments,
+	judgingRoomStaff,
+	judgingRooms,
+	judgingRounds
+} from "@/server/db/schema";
+import { criteria, scores } from "@/server/db/scores-schema";
 
 async function main() {
 	console.log("Starting seed...");
@@ -11,9 +18,11 @@ async function main() {
 	const adminPassword = process.env.ADMIN_PASSWORD || "Password123!";
 	const adminName = process.env.ADMIN_NAME || "Admin User";
 
-	const judgeEmail = process.env.JUDGE_EMAIL || "judge@hackathon.com";
-	const judgePassword = process.env.JUDGE_PASSWORD || "Password123!";
-	const judgeName = process.env.JUDGE_NAME || "Judge User";
+	const judgeEmails = [
+		"judge1@hackathon.com",
+		"judge2@hackathon.com",
+		"judge3@hackathon.com"
+	];
 
 	const participantEmail =
 		process.env.PARTICIPANT_EMAIL || "participant@hackathon.com";
@@ -31,12 +40,16 @@ async function main() {
 			role: "admin"
 		});
 
-		await createOrGetUser({
-			email: judgeEmail,
-			password: judgePassword,
-			name: judgeName,
-			role: "judge"
-		});
+		for (const email of judgeEmails) {
+			await createOrGetUser({
+				email,
+				password: "Password123!",
+				name: email.split("@")[0] ?? "Unknown Judge".toUpperCase(),
+				role: "judge"
+			});
+		}
+
+		const judges = await db.select().from(user).where(eq(user.role, "judge"));
 
 		await createOrGetUser({
 			email: participantEmail,
@@ -45,15 +58,18 @@ async function main() {
 			role: "participant"
 		});
 
-		console.log("\nCreating organizations...");
+		console.log("\nCreating Teams...");
 
 		const orgs = [
-			{ name: "Admins", slug: "admins" },
-			{ name: "Drivers", slug: "drivers" },
-			{ name: "Team One", slug: "team-one" },
-			{ name: "Team Two", slug: "team-two" },
-			{ name: "Team Three", slug: "team-three" }
+			{ name: "Team One", slug: "team-1" },
+			{ name: "Team Two", slug: "team-2" },
+			{ name: "Team Three", slug: "team-3" },
+			{ name: "Team Four", slug: "team-4" },
+			{ name: "Team Five", slug: "team-5" },
+			{ name: "Team Six", slug: "team-6" }
 		];
+
+		const createdTeams = [];
 
 		for (const org of orgs) {
 			try {
@@ -65,7 +81,11 @@ async function main() {
 					.limit(1);
 
 				if (existingOrg.length > 0) {
-					console.log(`Team already exists: ${org.name}`);
+					const firstOrg = existingOrg[0];
+					if (firstOrg) {
+						createdTeams.push(firstOrg);
+						console.log(`Team already exists: ${org.name}`);
+					}
 					continue;
 				}
 
@@ -81,7 +101,7 @@ async function main() {
 					.returning();
 
 				// Add admin user as owner of the organization
-				if (newOrg?.id) {
+				if (newOrg) {
 					await db.insert(member).values({
 						id: generateId(),
 						organizationId: newOrg.id,
@@ -90,16 +110,89 @@ async function main() {
 						createdAt: new Date()
 					});
 
-					console.log(
-						`Created organization: ${org.name} (admin added as owner)`
-					);
+					createdTeams.push(newOrg);
+					console.log(`Created Team: ${org.name}`);
 				} else {
 					console.error(
-						`Failed to create member for organization: ${org.name} (organization not created)`
+						`Failed to create member for team: ${org.name} (team not created)`
 					);
 				}
 			} catch (error) {
 				console.error(`Failed to create ${org.name}:`, error);
+			}
+		}
+
+		console.log("\nCreating Judging rounds...");
+		const [round1] = await db
+			.insert(judgingRounds)
+			.values({
+				name: "Preliminary Round",
+				startTime: new Date(),
+				endTime: new Date(Date.now() + 3600 * 1000)
+			})
+			.returning();
+
+		const [round2] = await db
+			.insert(judgingRounds)
+			.values({
+				name: "Finals",
+				startTime: new Date(Date.now() + 7200 * 1000),
+				endTime: new Date(Date.now() + 10800 * 1000)
+			})
+			.returning();
+
+		console.log("\nCreating Main Criteria and Sidepots...");
+		const criteriaList = await db
+			.insert(criteria)
+			.values([
+				{ name: "Technical Execution", maxScore: 10, isSidepot: false },
+				{ name: "Innovation", maxScore: 10, isSidepot: false },
+				{ name: "Best use of AI", maxScore: 5, isSidepot: true },
+				{ name: "Best UI", maxScore: 5, isSidepot: true }
+			])
+			.returning();
+
+		console.log("\nCreating Judging Assignments and Random Scores...");
+		const rounds = [round1, round2].filter(Boolean);
+
+		for (const round of rounds) {
+			if (!round) continue;
+			for (const judge of judges) {
+				const [room] = await db
+					.insert(judgingRooms)
+					.values({
+						roundId: round.id,
+						roomLink: "https://zoom.us/"
+					})
+					.returning();
+
+				if (room) {
+					await db.insert(judgingRoomStaff).values({
+						roomId: room.id,
+						staffId: judge.id
+					});
+
+					for (const team of createdTeams) {
+						const [assignment] = await db
+							.insert(judgingAssignments)
+							.values({
+								teamId: team.id,
+								roomId: room.id,
+								timeSlot: new Date()
+							})
+							.returning();
+
+						// Only add scores if not team 6 to test create score functionality
+						if (assignment && team.slug !== "team-6") {
+							const scoreValues = criteriaList.map((crit) => ({
+								assignmentId: assignment.id,
+								criteriaId: crit.id,
+								value: Math.floor(Math.random() * (crit.maxScore + 1))
+							}));
+							await db.insert(scores).values(scoreValues);
+						}
+					}
+				}
 			}
 		}
 

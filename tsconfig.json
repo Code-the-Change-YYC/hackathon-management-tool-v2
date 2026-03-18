@@ -36,7 +36,8 @@
 		"**/*.tsx",
 		"**/*.cjs",
 		"**/*.js",
-		".next/types/**/*.ts"
+		".next/types/**/*.ts",
+		"postcss.config.mjs"
 	],
 	"exclude": ["node_modules", "generated"]
 }
