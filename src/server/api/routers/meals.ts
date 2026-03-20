@@ -1,10 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
 import { meal, mealAttendance } from "@/server/db/meal-schema";
 
 export const mealsRouter = createTRPCRouter({
-	addMeal: protectedProcedure
+	addMeal: adminProcedure
 		.input(
 			z
 				.object({
@@ -29,7 +29,7 @@ export const mealsRouter = createTRPCRouter({
 			return newMeal;
 		}),
 
-	scanUserIn: protectedProcedure
+	scanUserIn: adminProcedure
 		.input(
 			z.object({
 				mealId: z.string().uuid(),
