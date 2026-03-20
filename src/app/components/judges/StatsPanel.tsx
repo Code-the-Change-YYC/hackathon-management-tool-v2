@@ -1,0 +1,31 @@
+import Image from "next/image";
+import Card from "../Dashboard/Card";
+
+interface StatsPanelProps {
+	icon: string;
+	stat: number;
+	alt: string;
+	subheader: string;
+}
+
+const StatsPanel = (props: StatsPanelProps) => {
+	const { icon, stat, alt, subheader } = props;
+
+	return (
+		<Card className="flex-1">
+			<div
+				className={
+					"flex size-12 items-center justify-center rounded-full bg-pastel-pink"
+				}
+			>
+				<Image alt={alt} height={50} src={icon} width={25} />
+			</div>
+			<h1 className={"my-2 font-semibold text-5xl"}>
+				<i>{stat}</i>
+			</h1>
+			<p className={"max-w-37.5 text-center"}>{subheader}</p>
+		</Card>
+	);
+};
+
+export default StatsPanel;
