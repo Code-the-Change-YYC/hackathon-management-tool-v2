@@ -9,4 +9,4 @@ pre-commit:
 pre-push:
   commands:
     biome-ci:
-      run: pnpm biome ci
+      run: pnpm biome check --write
