@@ -38,6 +38,7 @@
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-hook-form": "^7.71.2",
+		"react-qr-code": "^2.0.18",
 		"react-toastify": "^11.0.5",
 		"server-only": "^0.0.1",
 		"superjson": "^2.2.1",
