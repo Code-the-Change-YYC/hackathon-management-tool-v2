@@ -1,12 +1,20 @@
 "use client";
 
-import React from "react";
+import { api } from "@/trpc/react";
 
 export default function MealAttendees({
 	attendees
 }: {
 	attendees: { userId: string; time: string }[];
 }) {
+	const getMealAttendees = api.meals.getMealAttendees.useQuery();
+	getMealAttendees.data?.forEach((attendee) => {
+		attendees.push({
+			userId: attendee.id,
+			time: new Date(attendee.createdAt).toLocaleString()
+		});
+	});
+
 	if (!attendees || attendees.length === 0) {
 		return <div className="text-medium-grey text-sm">No attendees yet.</div>;
 	}

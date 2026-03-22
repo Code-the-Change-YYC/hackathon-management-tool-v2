@@ -61,5 +61,13 @@ export const mealsRouter = createTRPCRouter({
 	getAllMeals: adminProcedure.query(async ({ ctx }) => {
 		const meals = await ctx.db.select().from(meal).orderBy(meal.startTime);
 		return meals;
+	}),
+
+	getMealAttendees: adminProcedure.query(async ({ ctx }) => {
+		const mealAttendees = await ctx.db
+			.select()
+			.from(mealAttendance)
+			.orderBy(mealAttendance.updatedAt);
+		return mealAttendees;
 	})
 });
