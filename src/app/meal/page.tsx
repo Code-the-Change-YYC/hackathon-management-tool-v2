@@ -89,40 +89,6 @@ export default function MealPage() {
 						Submit
 					</button>
 				</div>
-				<div className="rounded-xl border border-light-grey bg-white p-8 shadow-[0_4px_6px_rgba(0,0,0,0.05)]">
-					<h2 className="mb-4 font-semibold text-2xl text-grey-purple">
-						Scan user in for a meal
-					</h2>
-					<label className="mb-2 block font-medium text-sm" htmlFor="meal-id">
-						Meal Id:
-					</label>
-					<input
-						className="mb-4 w-full rounded-lg border border-medium-grey bg-white px-3 py-2 outline-none transition focus:border-awesomer-purple focus:ring-2 focus:ring-awesomer-purple/20"
-						id="meal-id"
-						name="meal-id"
-						onChange={(e) => setMealId(e.target.value)}
-						type="text"
-					/>
-					<label className="mb-2 block font-medium text-sm" htmlFor="user-id">
-						User Id:
-					</label>
-					<input
-						className="mb-6 w-full rounded-lg border border-medium-grey bg-white px-3 py-2 outline-none transition focus:border-awesomer-purple focus:ring-2 focus:ring-awesomer-purple/20"
-						id="user-id"
-						name="user-id"
-						onChange={(e) => setUserId(e.target.value)}
-						type="text"
-					/>
-					<button
-						className="rounded-lg bg-awesomer-purple px-4 py-2 font-semibold text-white transition hover:bg-awesome-purple"
-						onClick={() => {
-							handleScanUserIn();
-						}}
-						type="button"
-					>
-						Submit
-					</button>
-				</div>
 			</div>
 		</main>
 	);
