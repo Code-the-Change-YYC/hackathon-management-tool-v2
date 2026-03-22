@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/trpc/react";
 
@@ -7,19 +8,13 @@ export default function MealPage() {
 	const [title, setTitle] = useState("");
 	const [startTime, setStartTime] = useState<Date | null>(null);
 	const [endTime, setEndTime] = useState<Date | null>(null);
-	const [mealId, setMealId] = useState("");
-	const [userId, setUserId] = useState("");
 
 	const createMeal = api.meals.addMeal.useMutation();
-	const scanUserIn = api.meals.scanUserIn.useMutation();
+	const getAllMeals = api.meals.getAllMeals.useQuery();
 
 	function handleCreateMeal() {
 		if (!startTime || !endTime) return;
 		createMeal.mutate({ title, startTime, endTime });
-	}
-
-	function handleScanUserIn() {
-		scanUserIn.mutate({ mealId, userId });
 	}
 
 	return (
@@ -88,6 +83,34 @@ export default function MealPage() {
 					>
 						Submit
 					</button>
+				</div>
+
+				<div className="rounded-xl border border-light-grey bg-white p-8 shadow-[0_4px_6px_rgba(0,0,0,0.05)]">
+					<h2 className="mb-4 font-semibold text-2xl text-grey-purple">
+						Existing meals
+					</h2>
+					<ul className="space-y-4">
+						{getAllMeals.data?.map((m) => (
+							<li
+								className="rounded-md border border-medium-grey p-4"
+								key={m.id}
+							>
+								<div className="font-semibold">{m.title}</div>
+								<div className="text-sm">
+									{new Date(m.startTime).toLocaleString()} —{" "}
+									{new Date(m.endTime).toLocaleString()}
+								</div>
+								<div className="flex">
+									<Link
+										className="ml-auto rounded-lg bg-awesomer-purple px-4 py-2 font-semibold transition hover:bg-awesome-purple"
+										href={`/meal/${m.title}/scan`}
+									>
+										<span className="text-white">Scan</span>
+									</Link>
+								</div>
+							</li>
+						))}
+					</ul>
 				</div>
 			</div>
 		</main>
