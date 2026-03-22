@@ -23,22 +23,36 @@ export default function MealPage() {
 	}
 
 	return (
-		<main>
-			<header>
-				<h1>Meal Portal</h1>
+		<main className="flex min-h-screen flex-col bg-pale-grey font-sans text-dark-grey">
+			<header className="flex items-center justify-between bg-awesomer-purple px-8 py-4 text-white shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+				<h1 className="m-0 font-bold text-2xl">Meal Portal</h1>
+				<span className="ml-4 inline-block rounded-full bg-white/20 px-3 py-1 font-semibold text-sm">
+					Admin
+				</span>
 			</header>
-			<div>
-				<div>
-					<h2>Create a meal</h2>
-					<label htmlFor="title">Title:</label>
+			<div className="mx-auto flex w-full max-w-300 flex-col gap-6 p-8">
+				<div className="rounded-xl border border-light-grey bg-white p-8 shadow-[0_4px_6px_rgba(0,0,0,0.05)]">
+					<h2 className="mb-4 font-semibold text-2xl text-grey-purple">
+						Create a meal
+					</h2>
+					<label className="mb-2 block font-medium text-sm" htmlFor="title">
+						Title:
+					</label>
 					<input
+						className="mb-4 w-full rounded-lg border border-medium-grey bg-white px-3 py-2 outline-none transition focus:border-awesomer-purple focus:ring-2 focus:ring-awesomer-purple/20"
 						id="title"
 						name="title"
 						onChange={(e) => setTitle(e.target.value)}
 						type="text"
 					/>
-					<label htmlFor="start-time">Start time:</label>
+					<label
+						className="mb-2 block font-medium text-sm"
+						htmlFor="start-time"
+					>
+						Start time:
+					</label>
 					<input
+						className="mb-4 w-full rounded-lg border border-medium-grey bg-white px-3 py-2 outline-none transition focus:border-awesomer-purple focus:ring-2 focus:ring-awesomer-purple/20"
 						id="start-time"
 						name="start-time"
 						onChange={(e) => {
@@ -49,8 +63,11 @@ export default function MealPage() {
 						}}
 						type="datetime-local"
 					/>
-					<label htmlFor="end-time">End time:</label>
+					<label className="mb-2 block font-medium text-sm" htmlFor="end-time">
+						End time:
+					</label>
 					<input
+						className="mb-6 w-full rounded-lg border border-medium-grey bg-white px-3 py-2 outline-none transition focus:border-awesomer-purple focus:ring-2 focus:ring-awesomer-purple/20"
 						id="end-time"
 						name="end-time"
 						onChange={(e) => {
@@ -63,6 +80,7 @@ export default function MealPage() {
 					/>
 					{/* TODO: make buttons use loading state after mutations are fired */}
 					<button
+						className="rounded-lg bg-awesomer-purple px-4 py-2 font-semibold text-white transition hover:bg-awesome-purple"
 						onClick={() => {
 							handleCreateMeal();
 						}}
@@ -71,24 +89,32 @@ export default function MealPage() {
 						Submit
 					</button>
 				</div>
-				<div>
-					<h2>Scan user in for a meal</h2>
-					<label htmlFor="meal-id">Meal Id:</label>
+				<div className="rounded-xl border border-light-grey bg-white p-8 shadow-[0_4px_6px_rgba(0,0,0,0.05)]">
+					<h2 className="mb-4 font-semibold text-2xl text-grey-purple">
+						Scan user in for a meal
+					</h2>
+					<label className="mb-2 block font-medium text-sm" htmlFor="meal-id">
+						Meal Id:
+					</label>
 					<input
+						className="mb-4 w-full rounded-lg border border-medium-grey bg-white px-3 py-2 outline-none transition focus:border-awesomer-purple focus:ring-2 focus:ring-awesomer-purple/20"
 						id="meal-id"
 						name="meal-id"
 						onChange={(e) => setMealId(e.target.value)}
 						type="text"
 					/>
-					<label htmlFor="user-id">User Id:</label>
+					<label className="mb-2 block font-medium text-sm" htmlFor="user-id">
+						User Id:
+					</label>
 					<input
-						id="start-time"
-						name="start-time"
+						className="mb-6 w-full rounded-lg border border-medium-grey bg-white px-3 py-2 outline-none transition focus:border-awesomer-purple focus:ring-2 focus:ring-awesomer-purple/20"
+						id="user-id"
+						name="user-id"
 						onChange={(e) => setUserId(e.target.value)}
 						type="text"
 					/>
-					{/* TODO: make buttons use loading state after mutations are fired */}
 					<button
+						className="rounded-lg bg-awesomer-purple px-4 py-2 font-semibold text-white transition hover:bg-awesome-purple"
 						onClick={() => {
 							handleScanUserIn();
 						}}
