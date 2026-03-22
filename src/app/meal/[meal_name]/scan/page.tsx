@@ -1,4 +1,4 @@
-import MealScanner from "@/app/components/meal/MealScanner";
+import Meal from "@/app/components/meal/Meal";
 
 export default async function MealPage({
 	params
@@ -16,7 +16,7 @@ export default async function MealPage({
 				</span>
 			</header>
 			<div className="mx-auto w-full max-w-md px-4 py-8 sm:px-6">
-				<MealScanner />
+				<Meal mealId={meal_name} />
 			</div>
 		</main>
 	);

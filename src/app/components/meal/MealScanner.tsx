@@ -1,12 +1,18 @@
 "use client";
 
 import { type IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
+import React from "react";
 
-export default function MealScanner() {
+export default function MealScanner({
+	onDetected
+}: {
+	onDetected?: (value: string) => void;
+}) {
 	const handleScan = (detectedCodes: IDetectedBarcode[]) => {
-		console.log("detected codes:", detectedCodes);
+		if (!detectedCodes || detectedCodes.length === 0) return;
 		detectedCodes.forEach((code) => {
-			console.log(`Format: ${code.format}, Value: ${code.rawValue}`);
+			const val = code.rawValue;
+			if (onDetected) onDetected(val);
 		});
 	};
 

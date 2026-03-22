@@ -103,7 +103,7 @@ export default function MealPage() {
 								<div className="flex">
 									<Link
 										className="ml-auto rounded-lg bg-awesomer-purple px-4 py-2 font-semibold transition hover:bg-awesome-purple"
-										href={`/meal/${m.title}/scan`}
+										href={`/meal/${m.id}/scan`}
 									>
 										<span className="text-white">Scan</span>
 									</Link>

@@ -32,7 +32,7 @@ export const mealsRouter = createTRPCRouter({
 	scanUserIn: adminProcedure
 		.input(
 			z.object({
-				mealId: z.string().uuid(),
+				mealId: z.string(),
 				userId: z.string().min(1)
 			})
 		)
