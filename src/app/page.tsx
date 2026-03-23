@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import Header from "@/app/components/admin/landingpage/header";
 import styles from "@/app/index.module.scss";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";
@@ -9,8 +10,11 @@ export default async function Home() {
 		headers: await headers()
 	});
 
+	const hasTeam = false;
+
 	return (
 		<HydrateClient>
+			<Header hasTeam={hasTeam} isSignedIn={!!session?.user} />
 			<main className={styles.main}>
 				<div className={styles.container}>
 					<h1 className={styles.title}>
