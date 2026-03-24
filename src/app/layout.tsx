@@ -2,7 +2,7 @@ import "@/styles/globals.scss";
 import "./global.css";
 
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import localFont from "next/font/local";
 
 import { TRPCReactProvider } from "@/trpc/react";
 
@@ -12,8 +12,9 @@ export const metadata: Metadata = {
 	icons: [{ rel: "icon", url: "/favicon.ico" }]
 };
 
-const geist = Geist({
-	subsets: ["latin"]
+const Omnes = localFont({
+	src: "./fonts/Omnes Medium.ttf",
+	variable: "--font-omnes"
 });
 
 export default function RootLayout({
@@ -21,7 +22,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html lang="en">
-			<body className={geist.className}>
+			<body className={Omnes.className}>
 				<TRPCReactProvider>{children}</TRPCReactProvider>
 			</body>
 		</html>
