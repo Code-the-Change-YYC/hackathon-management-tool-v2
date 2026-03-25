@@ -1,6 +1,6 @@
 import Meal from "@/app/components/meal/Meal";
 
-export default async function MealPage({
+export default async function MealScanPage({
 	params
 }: {
 	params: Promise<{ meal_name: string }>;
