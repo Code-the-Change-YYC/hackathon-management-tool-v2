@@ -1,8 +1,12 @@
+import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
+import { Role } from "@/types/types";
+
 export default async function MealPage({
 	params
 }: {
 	params: Promise<{ meal_name: string }>;
 }) {
+	await requireRole([Role.JUDGE, Role.ADMIN]);
 	const { meal_name } = await params;
 
 	return (

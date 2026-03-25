@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/react";
+import { Role } from "@/types/types";
 
-export default function CreateMealPage() {
+export default async function CreateMealPage() {
+	await requireRole([Role.JUDGE, Role.ADMIN]);
+
 	const [title, setTitle] = useState("");
 	const [startTime, setStartTime] = useState<Date | null>(null);
 	const [endTime, setEndTime] = useState<Date | null>(null);
