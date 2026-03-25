@@ -10,21 +10,23 @@ export default function MealAttendees({
 	mealId: string;
 }) {
 	const getMealAttendees = api.meals.getMealAttendees.useQuery({ id: mealId });
-	getMealAttendees.data?.forEach((attendee) => {
-		attendees.push({
-			userId: attendee.id,
+
+	const dbAttendees =
+		getMealAttendees.data?.map((attendee) => ({
+			userId: attendee.userId,
 			userName: attendee.userName,
 			time: new Date(attendee.createdAt).toLocaleString()
-		});
-	});
+		})) ?? [];
 
-	if (!attendees || attendees.length === 0) {
+	const allAttendees = [...attendees, ...dbAttendees];
+
+	if (allAttendees.length === 0) {
 		return <div className="text-medium-grey text-sm">No attendees yet.</div>;
 	}
 
 	return (
 		<ul className="space-y-2">
-			{attendees.map((a) => (
+			{allAttendees.map((a) => (
 				<li className="rounded-md border border-medium-grey p-2" key={a.userId}>
 					<div className="font-medium">{a.userName}</div>
 					<div className="text-medium-grey text-xs">

@@ -9,14 +9,10 @@ export default function Meal({ mealId }: { mealId: string }) {
 	const [attendees, setAttendees] = useState<
 		{ userId: string; userName: string; time: string }[]
 	>([]);
-	const [lastScanned, setLastScanned] = useState<{
-		userId: string;
-		userName: string;
-		time: string;
-	} | null>(null);
 
 	const addMealAttendee = api.meals.scanUserIn.useMutation();
 
+	// expects a string in the form "userId::userName"
 	function handleDetected(value: string) {
 		const time = new Date().toISOString();
 		const userInfo = value.split("::");
@@ -24,11 +20,19 @@ export default function Meal({ mealId }: { mealId: string }) {
 		const userName = userInfo[1];
 
 		if (!userId || !userName) return;
+		if (userId === attendees[0]?.userId) return;
 
 		const entry = { userId, userName, time };
-		addMealAttendee.mutate({ userId, mealId });
-		setAttendees((prev) => [entry, ...prev]);
-		setLastScanned(entry);
+
+		// add attendee to database and attendees list for UI to update
+		addMealAttendee.mutate(
+			{ userId, mealId },
+			{
+				onSuccess: () => {
+					setAttendees((prev) => [entry, ...prev]);
+				}
+			}
+		);
 	}
 
 	return (
@@ -37,13 +41,6 @@ export default function Meal({ mealId }: { mealId: string }) {
 				<div className="mx-auto w-full max-w-sm overflow-hidden rounded-lg md:max-w-md lg:max-w-full">
 					<MealScanner onDetected={handleDetected} />
 				</div>
-				{lastScanned && (
-					<div className="mt-4 rounded-md bg-green-50 p-3 text-sm">
-						Scanned{" "}
-						<span className="font-semibold">{lastScanned.userName}</span> at{" "}
-						{new Date(lastScanned.time).toLocaleString()}
-					</div>
-				)}
 			</div>
 
 			<div className="flex h-full min-w-0 flex-col rounded-xl border border-light-grey bg-white p-4 sm:p-6">

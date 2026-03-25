@@ -5,13 +5,13 @@ import { type IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 export default function MealScanner({
 	onDetected
 }: {
-	onDetected?: (value: string) => void;
+	onDetected: (value: string) => void;
 }) {
 	const handleScan = (detectedCodes: IDetectedBarcode[]) => {
 		if (!detectedCodes || detectedCodes.length === 0) return;
 		detectedCodes.forEach((code) => {
 			const val = code.rawValue;
-			if (onDetected) onDetected(val);
+			onDetected(val);
 		});
 	};
 
