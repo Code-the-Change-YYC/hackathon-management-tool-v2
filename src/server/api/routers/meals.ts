@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
+import { user } from "@/server/db/auth-schema";
 import { meal, mealAttendance } from "@/server/db/meal-schema";
 
 export const mealsRouter = createTRPCRouter({
@@ -74,11 +75,22 @@ export const mealsRouter = createTRPCRouter({
 			return oneMeal;
 		}),
 
-	getMealAttendees: adminProcedure.query(async ({ ctx }) => {
-		const mealAttendees = await ctx.db
-			.select()
-			.from(mealAttendance)
-			.orderBy(mealAttendance.updatedAt);
-		return mealAttendees;
-	})
+	getMealAttendees: adminProcedure
+		.input(z.object({ id: z.string().uuid() }))
+		.query(async ({ input, ctx }) => {
+			const mealAttendees = await ctx.db
+				.select({
+					id: mealAttendance.id,
+					userId: mealAttendance.userId,
+					mealId: mealAttendance.mealId,
+					userName: user.name,
+					createdAt: mealAttendance.createdAt,
+					updatedAt: mealAttendance.updatedAt
+				})
+				.from(mealAttendance)
+				.innerJoin(user, eq(mealAttendance.userId, user.id))
+				.where(eq(mealAttendance.mealId, input.id))
+				.orderBy(mealAttendance.updatedAt);
+			return mealAttendees;
+		})
 });

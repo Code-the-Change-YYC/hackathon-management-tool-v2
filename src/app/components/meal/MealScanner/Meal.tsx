@@ -7,10 +7,11 @@ import MealScanner from "./MealScanner";
 
 export default function Meal({ mealId }: { mealId: string }) {
 	const [attendees, setAttendees] = useState<
-		{ userId: string; time: string }[]
+		{ userId: string; userName: string; time: string }[]
 	>([]);
 	const [lastScanned, setLastScanned] = useState<{
 		userId: string;
+		userName: string;
 		time: string;
 	} | null>(null);
 
@@ -18,8 +19,13 @@ export default function Meal({ mealId }: { mealId: string }) {
 
 	function handleDetected(value: string) {
 		const time = new Date().toISOString();
-		const userId = String(value);
-		const entry = { userId, time };
+		const userInfo = value.split("::");
+		const userId = userInfo[0];
+		const userName = userInfo[1];
+
+		if (!userId || !userName) return;
+
+		const entry = { userId, userName, time };
 		addMealAttendee.mutate({ userId, mealId });
 		setAttendees((prev) => [entry, ...prev]);
 		setLastScanned(entry);
@@ -33,8 +39,9 @@ export default function Meal({ mealId }: { mealId: string }) {
 				</div>
 				{lastScanned && (
 					<div className="mt-4 rounded-md bg-green-50 p-3 text-sm">
-						Scanned <span className="font-semibold">{lastScanned.userId}</span>{" "}
-						at {new Date(lastScanned.time).toLocaleString()}
+						Scanned{" "}
+						<span className="font-semibold">{lastScanned.userName}</span> at{" "}
+						{new Date(lastScanned.time).toLocaleString()}
 					</div>
 				)}
 			</div>
@@ -42,7 +49,7 @@ export default function Meal({ mealId }: { mealId: string }) {
 			<div className="flex h-full min-w-0 flex-col rounded-xl border border-light-grey bg-white p-4 sm:p-6">
 				<h3 className="mb-3 font-semibold">Attendees</h3>
 				<div className="max-h-[55vh] overflow-y-auto pr-1">
-					<MealAttendees attendees={attendees} />
+					<MealAttendees attendees={attendees} mealId={mealId} />
 				</div>
 			</div>
 		</div>

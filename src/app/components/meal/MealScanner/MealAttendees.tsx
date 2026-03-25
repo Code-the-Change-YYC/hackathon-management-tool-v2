@@ -3,14 +3,17 @@
 import { api } from "@/trpc/react";
 
 export default function MealAttendees({
-	attendees
+	attendees,
+	mealId
 }: {
-	attendees: { userId: string; time: string }[];
+	attendees: { userId: string; userName: string; time: string }[];
+	mealId: string;
 }) {
-	const getMealAttendees = api.meals.getMealAttendees.useQuery();
+	const getMealAttendees = api.meals.getMealAttendees.useQuery({ id: mealId });
 	getMealAttendees.data?.forEach((attendee) => {
 		attendees.push({
 			userId: attendee.id,
+			userName: attendee.userName,
 			time: new Date(attendee.createdAt).toLocaleString()
 		});
 	});
@@ -23,7 +26,7 @@ export default function MealAttendees({
 		<ul className="space-y-2">
 			{attendees.map((a) => (
 				<li className="rounded-md border border-medium-grey p-2" key={a.userId}>
-					<div className="font-medium">{a.userId}</div>
+					<div className="font-medium">{a.userName}</div>
 					<div className="text-medium-grey text-xs">
 						{new Date(a.time).toLocaleString()}
 					</div>
