@@ -18,6 +18,8 @@ export const PROGRAMS = [
 	"other"
 ] as const;
 
+const MEMBER_ROLE_VALUES = ["owner", "member", "admin"] as const;
+
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
 export const user = createTable("user", {
@@ -124,7 +126,9 @@ export const member = createTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
-		role: text("role").default("member").notNull(),
+		role: text("role", { enum: MEMBER_ROLE_VALUES })
+			.default("member")
+			.notNull(),
 		createdAt: timestamp("created_at").notNull()
 	},
 	(table) => [
