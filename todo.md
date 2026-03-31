@@ -20,8 +20,11 @@
 
 **US-03 — Set Active Judging Round**
 > As an admin, I want to set the currently active judging round so that the scoring views reflect the correct round.
+- Acceptance: Only users with role `admin` can update `currentRoundId`
 - Acceptance: Admin can select any existing round to set as `currentRoundId`
 - Acceptance: Setting is persisted to the singleton settings row (id = 1)
+- Acceptance: The Judge UI uses the latest `currentRoundId` to scope rooms/assignments/scores
+- Acceptance: If switching rounds while there are in-progress judging sessions (scores exist in the current round), show a warning/confirmation in the Admin UI before applying the change
 
 ---
 
@@ -33,24 +36,39 @@
 
 **US-04 — Add Criteria**
 > As an admin, I want to add a new judging criteria with a name and max score so that judges know what to evaluate.
+- Acceptance: Only users with role `admin` can create criteria
 - Acceptance: Admin can create a criteria with `name` and `maxScore`
+- Acceptance: `name` is trimmed and must be non-empty
+- Acceptance: `maxScore` must be an integer within an allowed range (e.g. 1–100)
 - Acceptance: New criteria appears in the scoring UI immediately
 
 **US-05 — Edit Criteria**
 > As an admin, I want to edit a criteria's name and max score so that I can correct mistakes before judging begins.
-- Acceptance: Admin can update `name` and `maxScore` on any criteria
-- Acceptance: Warning shown if scores already exist for this criteria
+- Acceptance: Only users with role `admin` can update criteria
+- Acceptance: Admin can update `name` on any criteria
+- Acceptance: If scores already exist for this criteria, show a warning in the Admin UI
+- Acceptance: If scores already exist for this criteria, changing `maxScore` is blocked (to avoid invalidating historical scoring); Admin can still change `name` and `isSidepot`
+- Acceptance: If no scores exist for this criteria, Admin can update both `name` and `maxScore`
 
 **US-06 — Toggle Sidepot**
 > As an admin, I want to mark a criteria as a sidepot so that it is tracked and displayed separately from the main competition scores.
+- Acceptance: Only users with role `admin` can toggle `isSidepot`
 - Acceptance: Admin can toggle `isSidepot` on any criteria
 - Acceptance: Sidepot criteria are visually distinct in the scoring and rankings UI
 
-**US-07 — Delete Criteria**
-> As an admin, I want to delete a criteria so that I can remove categories that are no longer needed.
-- Acceptance: Admin is warned if scores exist for the criteria before deletion
-- Acceptance: Deletion cascades and removes all associated scores
-- Note: Once judging is live, prefer archiving over hard deletion
+**US-07A — Archive Criteria (preferred once judging starts)**
+> As an admin, I want to archive a criteria so that I can remove it from active judging without deleting historical data.
+- Acceptance: Only users with role `admin` can archive criteria
+- Acceptance: Archiving hides the criteria from Judge scoring inputs for the active round
+- Acceptance: Archived criteria are visually marked as archived in the Admin UI
+- Acceptance: Archiving does not delete scores
+
+**US-07B — Hard Delete Criteria (destructive)**
+> As an admin, I want to hard delete a criteria so that I can permanently remove an unused category.
+- Acceptance: Only users with role `admin` can hard delete criteria
+- Acceptance: If scores exist for the criteria, the Admin UI requires an explicit destructive confirmation (e.g. type-to-confirm)
+- Acceptance: Hard deletion cascades and removes all associated scores
+- Note: Prefer US-07A once judging is live
 
 ---
 
@@ -94,21 +112,30 @@
 
 **US-13 — Create a Judging Room**
 > As an admin, I want to create a judging room for a round with a meeting link so that judges and teams know where to go.
+- Acceptance: Only users with role `admin` can create rooms
 - Acceptance: Admin can create a room with a `roomLink` and associate it to a `judgingRound`
+- Acceptance: `roomLink` must be non-empty (and optionally validated as a URL)
 
 **US-14 — Assign a Judge to a Room**
 > As an admin, I want to assign a judge as staff to a room so that each room has a designated evaluator.
+- Acceptance: Only users with role `admin` can assign staff to rooms
 - Acceptance: Admin can add a user to `judging_room_staff` for a given room
+- Acceptance: Only users with role `judge` (and optionally `admin`) can be assigned as room staff
 - Acceptance: Duplicate assignments are prevented (unique constraint on `roomId + staffId`)
 
 **US-15 — Assign a Team to a Room**
 > As an admin, I want to assign a team to a room so that judging assignments are structured and trackable.
+- Acceptance: Only users with role `admin` can assign teams to rooms
 - Acceptance: Admin can create a `judging_assignment` linking a team to a room
+- Acceptance: A team cannot be assigned to more than one room within the same judging round (if attempted, the API returns a clear error and the UI shows a friendly message)
 - Acceptance: Optional `timeSlot` can be set per assignment
 
 **US-16 — Remove a Judge or Team from a Room**
 > As an admin, I want to remove a judge or team from a room so that I can correct assignment mistakes.
-- Acceptance: Removing a team from a room warns that associated scores will be deleted
+- Acceptance: Only users with role `admin` can remove judges/teams from rooms
+- Acceptance: Removing a team assignment shows a warning if scores already exist for that team+round and requires confirmation
+- Acceptance: Removing a team assignment deletes scores scoped to that team+round (and preserves unrelated scores)
+- Acceptance: Removing a judge from room staff does not delete scores by default (scores remain as historical record); if we later support “remove judge and delete their scores”, it must be an explicit destructive action with confirmation
 
 ---
 
@@ -179,7 +206,8 @@
 | US-04 | Add judging criteria | Criteria | Low |
 | US-05 | Edit criteria name/max score | Criteria | Medium |
 | US-06 | Toggle sidepot flag | Criteria | Low |
-| US-07 | Delete criteria | Criteria | High — cascades scores |
+| US-07A | Archive criteria | Criteria | Low |
+| US-07B | Hard delete criteria | Criteria | High — cascades scores |
 | US-08 | View all users | Users | Low |
 | US-09 | Change user role | Users | Medium — requires room staff cleanup |
 | US-10 | Ban a user | Users | Low |
@@ -188,7 +216,7 @@
 | US-13 | Create a judging room | Rooms | Low |
 | US-14 | Assign judge to room | Rooms | Low |
 | US-15 | Assign team to room | Rooms | Low |
-| US-16 | Remove judge/team from room | Rooms | Medium — cascades scores |
+| US-16 | Remove judge/team from room | Rooms | Medium — can affect scores |
 | US-17 | Reset rooms only | Resets | High — cascades scores |
 | US-18 | Reset scores only | Resets | High |
 | US-19 | Reset judging entirely | Resets | High |

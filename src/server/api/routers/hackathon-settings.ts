@@ -13,7 +13,7 @@ export const hackathonSettingsRouter = createTRPCRouter({
 		const settings = await ctx.db.query.hackathonSettings.findFirst({
 			where: eq(hackathonSettings.id, 1)
 		});
-		return settings;
+		return settings ?? null;
 	}),
 
 	// Update hackathon settings (admin only - you may want to add role check)
@@ -23,8 +23,7 @@ export const hackathonSettingsRouter = createTRPCRouter({
 				startDate: z.date().optional(),
 				endDate: z.date().optional(),
 				isActive: z.boolean().optional(),
-				currentRoundId: z.string().uuid().optional().nullable(),
-				metadata: z.string().optional().nullable()
+				currentRoundId: z.string().uuid().optional().nullable()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {

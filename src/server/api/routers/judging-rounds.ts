@@ -23,7 +23,7 @@ export const judgingRoundsRouter = createTRPCRouter({
 			const round = await ctx.db.query.judgingRounds.findFirst({
 				where: eq(judgingRounds.id, input.id),
 				with: {
-					assignments: true
+					rooms: true
 				}
 			});
 			return round;
