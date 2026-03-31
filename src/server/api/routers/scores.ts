@@ -20,10 +20,7 @@ export const scoresRouter = createTRPCRouter({
 						team: true,
 						room: {
 							with: {
-								round: true,
-								staff: {
-									with: { staff: true }
-								}
+								round: true
 							}
 						}
 					}
@@ -46,10 +43,7 @@ export const scoresRouter = createTRPCRouter({
 							team: true,
 							room: {
 								with: {
-									round: true,
-									staff: {
-										with: { staff: true }
-									}
+									round: true
 								}
 							}
 						}
@@ -75,10 +69,7 @@ export const scoresRouter = createTRPCRouter({
 							team: true,
 							room: {
 								with: {
-									round: true,
-									staff: {
-										with: { staff: true }
-									}
+									round: true
 								}
 							}
 						}
@@ -104,10 +95,7 @@ export const scoresRouter = createTRPCRouter({
 							team: true,
 							room: {
 								with: {
-									round: true,
-									staff: {
-										with: { staff: true }
-									}
+									round: true
 								}
 							}
 						}

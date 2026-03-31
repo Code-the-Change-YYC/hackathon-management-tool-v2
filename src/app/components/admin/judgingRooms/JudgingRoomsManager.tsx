@@ -66,13 +66,8 @@ export default function JudgingRoomsManager() {
 
 	// Placeholder endpoint for future "auto assign" algorithm.
 	const autoAssign = api.judgingRooms.autoAssignStub.useMutation();
-	// Turn room layout into actual judging_assignment rows.
-	const applyToAssignments =
-		api.judgingRooms.applyLayoutToAssignments.useMutation({
-			onSuccess: async () => {
-				await utils.judgingAssignments.getByRound.invalidate({ roundId });
-			}
-		});
+	const [isApplying, setIsApplying] = useState(false);
+	const [applyMessage, setApplyMessage] = useState("");
 
 	// draft = unsaved edits in the current browser session.
 	// null means "show exactly what is persisted on backend".
@@ -100,8 +95,35 @@ export default function JudgingRoomsManager() {
 	// Use local draft if present, otherwise show saved rooms.
 	const rooms = draft ?? persistedRooms;
 
-	// Disable save when we cannot save yet or while request is in-flight.
-	const saveDisabled = !roundId || saveLayout.isPending;
+	const roomGridRef = useRef<AgGridReact<RoomDraft>>(null);
+	const readRoomsFromGrid = (): RoomDraft[] => {
+		const api = roomGridRef.current?.api;
+		if (!api) return rooms;
+		const next: RoomDraft[] = [];
+		api.forEachNode((node) => {
+			if (node.data) next.push(node.data);
+		});
+		return next;
+	};
+
+	const handleApply = async () => {
+		if (!roundId) return;
+		setApplyMessage("");
+		setIsApplying(true);
+		try {
+			const latestRooms = readRoomsFromGrid();
+			setDraft(latestRooms);
+			await saveLayout.mutateAsync({ roundId, layout: { rooms: latestRooms } });
+			await utils.judgingAssignments.getByRound.invalidate({ roundId });
+			setDraft(null);
+			setApplyMessage("Applied: layout was saved to database.");
+		} catch (e) {
+			const message = e instanceof Error ? e.message : "Unknown error";
+			setApplyMessage(`Apply failed: ${message}`);
+		} finally {
+			setIsApplying(false);
+		}
+	};
 
 	// Build one simple status line so admins always know what happened.
 	const statusMessage = useMemo(() => {
@@ -109,14 +131,8 @@ export default function JudgingRoomsManager() {
 		if (saveLayout.isSuccess) return "Room layout saved.";
 		if (saveLayout.error) return `Save failed: ${saveLayout.error.message}`;
 
-		if (applyToAssignments.isPending)
-			return "Applying layout to assignments...";
-		if (applyToAssignments.isSuccess) {
-			return `Applied. Created assignments: ${applyToAssignments.data?.created ?? 0}`;
-		}
-		if (applyToAssignments.error) {
-			return `Apply failed: ${applyToAssignments.error.message}`;
-		}
+		if (isApplying) return "Applying layout to assignments...";
+		if (applyMessage) return applyMessage;
 
 		if (autoAssign.isPending) return "Auto-assign is running...";
 		if (autoAssign.isSuccess)
@@ -130,10 +146,8 @@ export default function JudgingRoomsManager() {
 		autoAssign.error,
 		autoAssign.isPending,
 		autoAssign.isSuccess,
-		applyToAssignments.data,
-		applyToAssignments.error,
-		applyToAssignments.isPending,
-		applyToAssignments.isSuccess,
+		applyMessage,
+		isApplying,
 		saveLayout.error,
 		saveLayout.isPending,
 		saveLayout.isSuccess
@@ -202,9 +216,6 @@ export default function JudgingRoomsManager() {
 		() => ({ sortable: true, filter: true, resizable: true }),
 		[]
 	);
-
-	// Refs let us control ag-grid programmatically (select/deselect rows, etc.).
-	const roomGridRef = useRef<AgGridReact<RoomDraft>>(null);
 
 	// Columns for "available judges" grid.
 	const judgeColumnDefs = useMemo<ColDef<UserRow>[]>(
@@ -312,19 +323,11 @@ export default function JudgingRoomsManager() {
 				</button>
 
 				<button
-					disabled={!roundId || applyToAssignments.isPending}
-					onClick={() => applyToAssignments.mutate({ roundId })}
+					disabled={!roundId || isApplying || saveLayout.isPending}
+					onClick={() => void handleApply()}
 					type="button"
 				>
 					Apply layout → create assignments
-				</button>
-
-				<button
-					disabled={saveDisabled}
-					onClick={() => saveLayout.mutate({ roundId, layout: { rooms } })}
-					type="button"
-				>
-					{saveLayout.isPending ? "Saving…" : "Save layout"}
 				</button>
 			</div>
 
@@ -339,8 +342,8 @@ export default function JudgingRoomsManager() {
 					getRowId={({ data }) => data.id}
 					onCellValueChanged={(e: CellValueChangedEvent<RoomDraft>) => {
 						if (!e.data) return;
-						// Ensure edits persist to draft, even if we were still reading persisted layout.
-						if (!draft) setDraft(rooms.slice());
+						// Keep local state synced with current grid edits (roomLink, room name, etc).
+						setDraft(readRoomsFromGrid());
 					}}
 					onSelectionChanged={(e) => {
 						const api = e.api;

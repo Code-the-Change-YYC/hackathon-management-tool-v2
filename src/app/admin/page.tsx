@@ -3,6 +3,7 @@ import UserTable from "@/app/components/admin/usertable";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 import CriteriaTable from "../components/admin/criteriaTable/CriteriaTable";
+import HackathonSettingsPanel from "../components/admin/hackathonSettings/HackathonSettingsPanel";
 import JudgingAssignmentsTable from "../components/admin/judgingAssignmentsTable/JudgingAssignmentsTable";
 import JudgingRoomsManager from "../components/admin/judgingRooms/JudgingRoomsManager";
 import styles from "../dashboard.module.scss";
@@ -26,6 +27,10 @@ export default async function AdminPage() {
 				</div>
 			</div>
 			<div>
+				<div>
+					<h2 className={styles.sectionTitle}>Hackathon Settings</h2>
+					<HackathonSettingsPanel />
+				</div>
 				<div>
 					<h2 className={styles.sectionTitle}>Users</h2>
 					<UserTable />

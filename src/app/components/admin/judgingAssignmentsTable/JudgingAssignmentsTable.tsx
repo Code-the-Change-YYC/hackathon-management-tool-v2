@@ -7,7 +7,7 @@ import {
 	themeQuartz
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { TABLE_THEME_PARAMS } from "@/types/teamTableConstants";
 
@@ -24,6 +24,12 @@ export default function JudgingAssignmentsTable() {
 	const defaultRoundId = settings?.currentRoundId ?? rounds?.[0]?.id ?? "";
 	const [selectedRoundId, setSelectedRoundId] =
 		useState<string>(defaultRoundId);
+
+	useEffect(() => {
+		if (!selectedRoundId && defaultRoundId) {
+			setSelectedRoundId(defaultRoundId);
+		}
+	}, [defaultRoundId, selectedRoundId]);
 
 	const { data: roomLayout } = api.judgingRooms.getLayoutByRound.useQuery(
 		{ roundId: selectedRoundId },
@@ -87,9 +93,8 @@ export default function JudgingAssignmentsTable() {
 				width: 120
 			},
 			{
-				headerName: "Room Staff",
-				valueGetter: (p) =>
-					p.data?.room?.staff.map((s) => s.staffId).join(", ") ?? "",
+				headerName: "Room Link",
+				valueGetter: (p) => p.data?.room?.roomLink ?? "",
 				flex: 1.4
 			},
 			{

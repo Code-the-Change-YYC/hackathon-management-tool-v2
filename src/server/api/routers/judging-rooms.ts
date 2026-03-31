@@ -31,25 +31,31 @@ export const judgingRoomsRouter = createTRPCRouter({
 			const rooms = await ctx.db.query.judgingRooms.findMany({
 				where: eq(judgingRooms.roundId, input.roundId),
 				with: {
-					staff: true,
 					assignments: true
 				}
 			});
 
 			return {
-				rooms: rooms.map((room) => ({
-					id: room.id,
-					name: `Room ${room.id.slice(0, 8)}`,
-					roomLink: room.roomLink,
-					staffIds: room.staff.map((s) => s.staffId),
-					teamIds: room.assignments.map((a) => a.teamId),
-					teamTimeSlots: Object.fromEntries(
-						room.assignments.map((a) => [
-							a.teamId,
-							a.timeSlot ? a.timeSlot.toISOString() : null
-						])
-					)
-				}))
+				rooms: await Promise.all(
+					rooms.map(async (room) => {
+						const staffRows = await ctx.db.query.judgingRoomStaff.findMany({
+							where: eq(judgingRoomStaff.roomId, room.id)
+						});
+						return {
+							id: room.id,
+							name: `Room ${room.id.slice(0, 8)}`,
+							roomLink: room.roomLink,
+							staffIds: staffRows.map((s) => s.staffId),
+							teamIds: room.assignments.map((a) => a.teamId),
+							teamTimeSlots: Object.fromEntries(
+								room.assignments.map((a) => [
+									a.teamId,
+									a.timeSlot ? a.timeSlot.toISOString() : null
+								])
+							)
+						};
+					})
+				)
 			};
 		}),
 

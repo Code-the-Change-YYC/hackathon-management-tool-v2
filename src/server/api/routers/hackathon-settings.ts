@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
+	adminProcedure,
 	createTRPCRouter,
-	protectedProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
 import { hackathonSettings } from "@/server/db/schema";
@@ -16,8 +16,8 @@ export const hackathonSettingsRouter = createTRPCRouter({
 		return settings ?? null;
 	}),
 
-	// Update hackathon settings (admin only - you may want to add role check)
-	update: protectedProcedure
+	// Update hackathon settings (admin only)
+	update: adminProcedure
 		.input(
 			z.object({
 				startDate: z.date().optional(),

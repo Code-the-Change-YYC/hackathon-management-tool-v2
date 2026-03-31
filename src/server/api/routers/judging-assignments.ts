@@ -1,11 +1,15 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	createTRPCRouter,
 	protectedProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
-import { judgingAssignments, judgingRooms } from "@/server/db/schema";
+import {
+	judgingAssignments,
+	judgingRoomStaff,
+	judgingRooms
+} from "@/server/db/schema";
 
 export const judgingAssignmentsRouter = createTRPCRouter({
 	// Get all assignments
@@ -15,12 +19,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				team: true,
 				room: {
 					with: {
-						round: true,
-						staff: {
-							with: {
-								staff: true
-							}
-						}
+						round: true
 					}
 				},
 				scores: true
@@ -44,12 +43,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 					team: true,
 					room: {
 						with: {
-							round: true,
-							staff: {
-								with: {
-									staff: true
-								}
-							}
+							round: true
 						}
 					},
 					scores: true
@@ -62,24 +56,27 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 	getByJudge: protectedProcedure
 		.input(z.object({ judgeId: z.string() }))
 		.query(async ({ ctx, input }) => {
+			const roomStaffRows = await ctx.db.query.judgingRoomStaff.findMany({
+				where: eq(judgingRoomStaff.staffId, input.judgeId),
+				columns: { roomId: true }
+			});
+			const roomIds = roomStaffRows.map((r) => r.roomId);
+			if (roomIds.length === 0) return [];
+
 			const assignments = await ctx.db.query.judgingAssignments.findMany({
+				where: inArray(judgingAssignments.roomId, roomIds),
 				with: {
 					team: true,
 					room: {
 						with: {
-							round: true,
-							staff: {
-								with: { staff: true }
-							}
+							round: true
 						}
 					},
 					scores: true
 				},
 				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
 			});
-			return assignments.filter((a) =>
-				a.room.staff.some((staffRow) => staffRow.staffId === input.judgeId)
-			);
+			return assignments;
 		}),
 
 	// Get assignments for a specific team
@@ -91,10 +88,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				with: {
 					room: {
 						with: {
-							round: true,
-							staff: {
-								with: { staff: true }
-							}
+							round: true
 						}
 					},
 					scores: true
