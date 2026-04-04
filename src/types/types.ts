@@ -27,6 +27,12 @@ export enum OrganizationRole {
 	OWNER = "owner"
 }
 
+export const MEMBER_ROLES = {
+	OWNER: "owner",
+	MEMBER: "member",
+	ADMIN: "admin"
+} as const;
+
 export type TeamRanking = {
 	id: string;
 	name: string;

@@ -1,10 +1,13 @@
 import { hackathonSettingsRouter } from "@/server/api/routers/hackathon-settings";
 import { judgingAssignmentsRouter } from "@/server/api/routers/judging-assignments";
+import { judgingRoomsRouter } from "@/server/api/routers/judging-rooms";
 import { judgingRoundsRouter } from "@/server/api/routers/judging-rounds";
+import { mealsRouter } from "@/server/api/routers/meals";
 import { scoresRouter } from "@/server/api/routers/scores";
 import { teamsRouter } from "@/server/api/routers/teams";
 import { usersRouter } from "@/server/api/routers/users";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
+import { criteriaRouter } from "./routers/criteria";
 
 /**
  * This is the primary router for your server.
@@ -17,7 +20,10 @@ export const appRouter = createTRPCRouter({
 	judgingAssignments: judgingAssignmentsRouter,
 	scores: scoresRouter,
 	users: usersRouter,
-	teams: teamsRouter
+	teams: teamsRouter,
+	meals: mealsRouter,
+	criteria: criteriaRouter,
+	judgingRooms: judgingRoomsRouter
 });
 
 // export type definition of API
