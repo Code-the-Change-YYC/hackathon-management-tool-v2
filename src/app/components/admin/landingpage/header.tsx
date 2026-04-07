@@ -12,12 +12,18 @@ export default function Header({ isSignedIn, hasTeam }: HeaderProps) {
 			<div className="mx-auto flex w-full max-w-screen-2x1 items-center px-6 py-5">
 				<div className="min-w-25 text-awesomer-purple hover:text-awesome-purple">
 					{!isSignedIn && (
-						<Link className="text-sm transition-colors" href="#">
+						<Link
+							className="font-semibold text-base transition-colors"
+							href="#"
+						>
 							Join Hackathon
 						</Link>
 					)}
 					{isSignedIn && !hasTeam && (
-						<Link className="text-sm transition-colors" href="#">
+						<Link
+							className="font-semibold text-base transition-colors"
+							href="#"
+						>
 							Join a Team
 						</Link>
 					)}
