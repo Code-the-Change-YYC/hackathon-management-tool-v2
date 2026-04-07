@@ -29,6 +29,25 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		return assignments;
 	}),
 
+	// Get assignments by room ID
+	getByRoom: publicProcedure
+		.input(z.object({ roomId: z.string().uuid() }))
+		.query(async ({ ctx, input }) => {
+			const assignments = await ctx.db.query.judgingAssignments.findMany({
+				where: eq(judgingAssignments.roomId, input.roomId),
+				with: {
+					team: true,
+					room: {
+						with: {
+							round: true
+						}
+					},
+					scores: true
+				}
+			});
+			return assignments;
+		}),
+
 	// Get assignments by round ID
 	getByRound: publicProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
@@ -47,7 +66,8 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 						}
 					},
 					scores: true
-				}
+				},
+				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
 			});
 			return assignments;
 		}),

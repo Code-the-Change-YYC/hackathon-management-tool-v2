@@ -1,10 +1,6 @@
 "use client";
 
-import type {
-	CellValueChangedEvent,
-	ColDef,
-	SelectionChangedEvent
-} from "ag-grid-community";
+import type { CellValueChangedEvent, ColDef } from "ag-grid-community";
 import {
 	AllCommunityModule,
 	ModuleRegistry,
@@ -33,8 +29,6 @@ function newRoomId() {
 
 // Re-use backend return types so frontend and backend stay in sync.
 type Layout = RouterOutputs["judgingRooms"]["getLayoutByRound"];
-type UserRow = RouterOutputs["users"]["getAll"][number];
-type TeamRow = RouterOutputs["teams"]["getAll"][number];
 
 export default function JudgingRoomsManager() {
 	// Helper object used to refresh cached tRPC data after mutations.
@@ -42,8 +36,6 @@ export default function JudgingRoomsManager() {
 
 	// Read all data we need to build room management UI.
 	const { data: rounds } = api.judgingRounds.getAll.useQuery();
-	const { data: users } = api.users.getAll.useQuery();
-	const { data: teams } = api.teams.getAll.useQuery();
 	const { data: settings } = api.hackathonSettings.get.useQuery();
 
 	// Prefer active round; if not available, fall back to first round.
@@ -72,9 +64,6 @@ export default function JudgingRoomsManager() {
 	// draft = unsaved edits in the current browser session.
 	// null means "show exactly what is persisted on backend".
 	const [draft, setDraft] = useState<RoomDraft[] | null>(null);
-	// Which room row is currently selected for judge/team selection.
-	const [selectedRoomId, setSelectedRoomId] = useState<string>("");
-
 	useEffect(() => {
 		// If data arrives after first render, set round once we know it.
 		if (!roundId && defaultRoundId) setRoundId(defaultRoundId);
@@ -153,25 +142,6 @@ export default function JudgingRoomsManager() {
 		saveLayout.isSuccess
 	]);
 
-	// Full selected room object for easier downstream logic.
-	const selectedRoom = useMemo(
-		() => rooms.find((r) => r.id === selectedRoomId) ?? null,
-		[rooms, selectedRoomId]
-	);
-
-	const judgeRows = useMemo<UserRow[]>(() => {
-		// Only judges/admins can be room staff.
-		return (users ?? [])
-			.filter((u) => u.role === "judge" || u.role === "admin")
-			.slice()
-			.sort((a, b) => a.name.localeCompare(b.name));
-	}, [users]);
-
-	const teamRows = useMemo<TeamRow[]>(() => {
-		// Sort teams once for nicer UX.
-		return (teams ?? []).slice().sort((a, b) => a.name.localeCompare(b.name));
-	}, [teams]);
-
 	// Columns for top "rooms" grid.
 	const roomsColumnDefs = useMemo<ColDef<RoomDraft>[]>(
 		() => [
@@ -199,7 +169,6 @@ export default function JudgingRoomsManager() {
 							if (!p.data) return;
 							const id = p.data.id;
 							setDraft(rooms.filter((r) => r.id !== id));
-							if (selectedRoomId === id) setSelectedRoomId("");
 						}}
 						type="button"
 					>
@@ -208,7 +177,7 @@ export default function JudgingRoomsManager() {
 				)
 			}
 		],
-		[rooms, selectedRoomId]
+		[rooms]
 	);
 
 	// Default behavior shared by room grid columns.
@@ -216,48 +185,6 @@ export default function JudgingRoomsManager() {
 		() => ({ sortable: true, filter: true, resizable: true }),
 		[]
 	);
-
-	// Columns for "available judges" grid.
-	const judgeColumnDefs = useMemo<ColDef<UserRow>[]>(
-		() => [
-			{ headerName: "Name", field: "name", flex: 1.1 },
-			{ headerName: "Email", field: "email", flex: 1.5 },
-			{ headerName: "Role", field: "role", width: 120 }
-		],
-		[]
-	);
-
-	// Columns for "available teams" grid.
-	const teamColumnDefs = useMemo<ColDef<TeamRow>[]>(
-		() => [
-			{ headerName: "Team", field: "name", flex: 1.3 },
-			{ headerName: "Slug", field: "slug", flex: 1.1 }
-		],
-		[]
-	);
-
-	const staffGridRef = useRef<AgGridReact<UserRow>>(null);
-	const teamsGridRef = useRef<AgGridReact<TeamRow>>(null);
-
-	useEffect(() => {
-		// Keep judge/team grid row selections in sync with selected room.
-		// Example: click Room 2 -> auto-check judges/teams that belong to Room 2.
-		if (!selectedRoom) return;
-		if (!staffGridRef.current?.api) return;
-		if (!teamsGridRef.current?.api) return;
-
-		staffGridRef.current.api.deselectAll();
-		teamsGridRef.current.api.deselectAll();
-
-		staffGridRef.current.api.forEachNode((node) => {
-			if (!node.data) return;
-			if (selectedRoom.staffIds.includes(node.data.id)) node.setSelected(true);
-		});
-		teamsGridRef.current.api.forEachNode((node) => {
-			if (!node.data) return;
-			if (selectedRoom.teamIds.includes(node.data.id)) node.setSelected(true);
-		});
-	}, [selectedRoom]);
 
 	// Same visual theme used by other admin tables.
 	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
@@ -276,7 +203,6 @@ export default function JudgingRoomsManager() {
 					onChange={(e) => {
 						setRoundId(e.target.value);
 						setDraft(null);
-						setSelectedRoomId("");
 					}}
 					value={roundId}
 				>
@@ -304,7 +230,6 @@ export default function JudgingRoomsManager() {
 							}
 						];
 						setDraft(next);
-						setSelectedRoomId(next[next.length - 1]?.id ?? "");
 						queueMicrotask(() =>
 							roomGridRef.current?.api?.ensureIndexVisible(next.length - 1)
 						);
@@ -345,60 +270,10 @@ export default function JudgingRoomsManager() {
 						// Keep local state synced with current grid edits (roomLink, room name, etc).
 						setDraft(readRoomsFromGrid());
 					}}
-					onSelectionChanged={(e) => {
-						const api = e.api;
-						const selected = api.getSelectedRows()[0];
-						setSelectedRoomId(selected?.id ?? "");
-					}}
 					ref={roomGridRef}
 					rowData={rooms}
-					rowSelection={{ mode: "singleRow", enableClickSelection: true }}
 					theme={theme}
 				/>
-			</div>
-
-			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-				<div style={{ height: 320, width: "100%" }}>
-					<AgGridReact
-						columnDefs={judgeColumnDefs}
-						defaultColDef={{ sortable: true, filter: true, resizable: true }}
-						getRowId={({ data }) => data.id}
-						onSelectionChanged={(e: SelectionChangedEvent<UserRow>) => {
-							if (!selectedRoom) return;
-							const staffIds = e.api.getSelectedRows().map((r) => r.id);
-							setDraft(
-								rooms.map((r) =>
-									r.id === selectedRoom.id ? { ...r, staffIds } : r
-								)
-							);
-						}}
-						ref={staffGridRef}
-						rowData={judgeRows}
-						rowSelection={{ mode: "multiRow", enableClickSelection: true }}
-						theme={theme}
-					/>
-				</div>
-
-				<div style={{ height: 320, width: "100%" }}>
-					<AgGridReact
-						columnDefs={teamColumnDefs}
-						defaultColDef={{ sortable: true, filter: true, resizable: true }}
-						getRowId={({ data }) => data.id}
-						onSelectionChanged={(e: SelectionChangedEvent<TeamRow>) => {
-							if (!selectedRoom) return;
-							const teamIds = e.api.getSelectedRows().map((r) => r.id);
-							setDraft(
-								rooms.map((r) =>
-									r.id === selectedRoom.id ? { ...r, teamIds } : r
-								)
-							);
-						}}
-						ref={teamsGridRef}
-						rowData={teamRows}
-						rowSelection={{ mode: "multiRow", enableClickSelection: true }}
-						theme={theme}
-					/>
-				</div>
 			</div>
 		</div>
 	);

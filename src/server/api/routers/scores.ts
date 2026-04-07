@@ -1,18 +1,22 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
 	createTRPCRouter,
-	judgeProcedure,
-	publicProcedure
+	judgeProcedure
 } from "@/server/api/trpc";
 import { organization } from "@/server/db/auth-schema";
-import { judgingAssignments, judgingRooms, scores } from "@/server/db/schema";
+import {
+	judgingAssignments,
+	judgingRoomStaff,
+	judgingRooms,
+	scores
+} from "@/server/db/schema";
 import { criteria } from "@/server/db/scores-schema";
 
 export const scoresRouter = createTRPCRouter({
 	// Get all scores
-	getAll: publicProcedure.query(async ({ ctx }) => {
+	getAll: judgeProcedure.query(async ({ ctx }) => {
 		const allScores = await ctx.db.query.scores.findMany({
 			with: {
 				assignment: {
@@ -32,7 +36,7 @@ export const scoresRouter = createTRPCRouter({
 	}),
 
 	// Get scores by assignment ID
-	getByAssignment: publicProcedure
+	getByAssignment: judgeProcedure
 		.input(z.object({ assignmentId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			const assignmentScores = await ctx.db.query.scores.findMany({
@@ -54,7 +58,7 @@ export const scoresRouter = createTRPCRouter({
 		}),
 
 	// Get scores by team ID (across all rounds and judges)
-	getByTeam: publicProcedure
+	getByTeam: judgeProcedure
 		.input(z.object({ teamId: z.string() }))
 		.query(async ({ ctx, input }) => {
 			const teamScores = await ctx.db.query.scores.findMany({
@@ -80,33 +84,45 @@ export const scoresRouter = createTRPCRouter({
 		}),
 
 	// Get scores by round ID
-	getByRound: publicProcedure
+	getByRound: judgeProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
-			const roundScores = await ctx.db.query.scores.findMany({
-				where: (scores, { eq }) =>
-					eq(
-						sql`(SELECT round_id FROM ${judgingRooms} WHERE id = (SELECT room_id FROM ${judgingAssignments} WHERE id = ${scores.assignmentId}))`,
-						input.roundId
-					),
+			const judgeRoomsForRound = await ctx.db
+				.select({ id: judgingRooms.id })
+				.from(judgingRooms)
+				.innerJoin(
+					judgingRoomStaff,
+					eq(judgingRoomStaff.roomId, judgingRooms.id)
+				)
+				.where(
+					and(
+						eq(judgingRooms.roundId, input.roundId),
+						eq(judgingRoomStaff.staffId, ctx.session.user.id)
+					)
+				);
+
+			const roomIds = judgeRoomsForRound.map((r) => r.id);
+
+			if (roomIds.length === 0) return [];
+
+			return ctx.db.query.judgingAssignments.findMany({
+				where: (assignments, { inArray }) =>
+					inArray(assignments.roomId, roomIds),
 				with: {
-					assignment: {
+					team: true,
+					room: {
 						with: {
-							team: true,
-							room: {
-								with: {
-									round: true
-								}
-							}
+							round: true
 						}
-					}
-				}
+					},
+					scores: true
+				},
+				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
 			});
-			return roundScores;
 		}),
 
 	// Get aggregated scores by team (useful for leaderboards)
-	getAggregatedByTeam: publicProcedure
+	getAggregatedByTeam: judgeProcedure
 		.input(
 			z.object({
 				roundId: z.string().uuid().optional()
@@ -141,24 +157,33 @@ export const scoresRouter = createTRPCRouter({
 		}),
 
 	// Submit a score
-	create: judgeProcedure
+	createMany: judgeProcedure
 		.input(
-			z.object({
-				assignmentId: z.string().uuid(),
-				criteriaId: z.string().uuid(),
-				score: z.number().int().min(0)
-			})
+			z.array(
+				z.object({
+					assignmentId: z.string().uuid(),
+					criteriaId: z.string().uuid(),
+					score: z.number().int().min(0).max(10)
+				})
+			)
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [newScore] = await ctx.db
+			const results = await ctx.db
 				.insert(scores)
-				.values({
-					assignmentId: input.assignmentId,
-					criteriaId: input.criteriaId,
-					value: input.score
+				.values(
+					input.map((item) => ({
+						assignmentId: item.assignmentId,
+						criteriaId: item.criteriaId,
+						value: item.score
+					}))
+				)
+				.onConflictDoUpdate({
+					target: [scores.assignmentId, scores.criteriaId],
+					set: { value: sql`excluded.value` }
 				})
 				.returning();
-			return newScore;
+
+			return results;
 		}),
 
 	// Update a score

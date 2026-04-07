@@ -6,6 +6,7 @@ import CriteriaTable from "../components/admin/criteriaTable/CriteriaTable";
 import HackathonSettingsPanel from "../components/admin/hackathonSettings/HackathonSettingsPanel";
 import JudgingAssignmentsTable from "../components/admin/judgingAssignmentsTable/JudgingAssignmentsTable";
 import JudgingRoomsManager from "../components/admin/judgingRooms/JudgingRoomsManager";
+import JudgingRoundsTable from "../components/admin/judgingRounds/JudgingRoundsTable";
 import styles from "../dashboard.module.scss";
 
 export default async function AdminPage() {
@@ -42,6 +43,10 @@ export default async function AdminPage() {
 				<div>
 					<h2 className={styles.sectionTitle}>Criteria</h2>
 					<CriteriaTable />
+				</div>
+				<div>
+					<h2 className={styles.sectionTitle}>Judging Rounds</h2>
+					<JudgingRoundsTable />
 				</div>
 				<div>
 					<h2 className={styles.sectionTitle}>Judging Assignments</h2>

@@ -27,6 +27,12 @@ export enum OrganizationRole {
 	OWNER = "owner"
 }
 
+export const MEMBER_ROLES = {
+	OWNER: "owner",
+	MEMBER: "member",
+	ADMIN: "admin"
+} as const;
+
 export const ALL_ROLES: Role[] = [Role.ADMIN, Role.JUDGE, Role.PARTICIPANT];
 
 export const ALL_ORGANIZATION_ROLES: OrganizationRole[] = [
