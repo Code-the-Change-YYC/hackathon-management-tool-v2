@@ -1,7 +1,19 @@
 "use client";
 
+import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import {
+	AllCommunityModule,
+	ModuleRegistry,
+	themeQuartz
+} from "ag-grid-community";
+import { AgGridReact } from "ag-grid-react";
 import { useMemo, useState } from "react";
-import { api } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
+import { TABLE_THEME_PARAMS } from "@/types/teamTableConstants";
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+
+type RoundRow = RouterOutputs["judgingRounds"]["getAll"][number];
 
 export default function JudgingRoundsTable() {
 	const utils = api.useUtils();
@@ -38,6 +50,57 @@ export default function JudgingRoundsTable() {
 		deleteRound.error,
 		deleteRound.isPending
 	]);
+
+	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
+
+	const columnDefs = useMemo<ColDef<RoundRow>[]>(
+		() => [
+			{ headerName: "Round", field: "name", flex: 1.2 },
+			{
+				headerName: "Start",
+				field: "startTime",
+				flex: 1.4,
+				valueFormatter: (p) =>
+					p.value ? new Date(p.value as Date).toLocaleString() : ""
+			},
+			{
+				headerName: "End",
+				field: "endTime",
+				flex: 1.4,
+				valueFormatter: (p) =>
+					p.value ? new Date(p.value as Date).toLocaleString() : ""
+			},
+			{
+				headerName: "",
+				width: 120,
+				sortable: false,
+				filter: false,
+				cellRenderer: (params: ICellRendererParams<RoundRow>) => (
+					<button
+						disabled={deleteRound.isPending}
+						onClick={() => {
+							if (!params.data) return;
+							deleteRound.mutate({ id: params.data.id });
+						}}
+						type="button"
+					>
+						Delete
+					</button>
+				)
+			}
+		],
+		[deleteRound]
+	);
+
+	const defaultColDef = useMemo<ColDef<RoundRow>>(
+		() => ({
+			flex: 1,
+			sortable: true,
+			filter: true,
+			resizable: true
+		}),
+		[]
+	);
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -88,36 +151,15 @@ export default function JudgingRoundsTable() {
 
 			<div style={{ fontSize: 12, opacity: 0.85, minHeight: 18 }}>{status}</div>
 
-			<div style={{ display: "grid", gap: 6 }}>
-				{isLoading && <div>Loading rounds...</div>}
-				{(rounds ?? []).map((round) => (
-					<div
-						key={round.id}
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							border: "1px solid #ddd",
-							padding: "8px 10px",
-							borderRadius: 8
-						}}
-					>
-						<div>
-							<div>{round.name}</div>
-							<div style={{ fontSize: 12, opacity: 0.8 }}>
-								{new Date(round.startTime).toLocaleString()} -{" "}
-								{new Date(round.endTime).toLocaleString()}
-							</div>
-						</div>
-						<button
-							disabled={deleteRound.isPending}
-							onClick={() => deleteRound.mutate({ id: round.id })}
-							type="button"
-						>
-							Delete
-						</button>
-					</div>
-				))}
+			<div style={{ height: 450, width: "100%" }}>
+				<AgGridReact
+					columnDefs={columnDefs}
+					defaultColDef={defaultColDef}
+					getRowId={({ data }) => data.id}
+					loading={isLoading}
+					rowData={rounds ?? []}
+					theme={theme}
+				/>
 			</div>
 		</div>
 	);
