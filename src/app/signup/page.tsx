@@ -130,7 +130,7 @@ export default function SignupPage() {
 								Which institution do you go to?
 							</label>
 							<select
-								className="h-11 w-full rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
+								className="h-11 w-full cursor-pointer rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 								disabled={loading}
 								id="school"
 								onChange={(e) => setSchool(e.target.value)}
@@ -153,7 +153,7 @@ export default function SignupPage() {
 								*Do you want provided food at the hackathon? (required)
 							</label>
 							<select
-								className="h-11 w-full rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
+								className="h-11 w-full cursor-pointer rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 								disabled={loading}
 								id="food"
 								onChange={(e) => setWantsFood(e.target.value as MealOption)}
@@ -194,7 +194,7 @@ export default function SignupPage() {
 								Cancel
 							</Link>
 							<button
-								className="h-11 min-w-28 rounded-full bg-awesomer-purple px-6 font-semibold text-pale-grey text-sm transition hover:bg-awesome-purple disabled:cursor-not-allowed disabled:opacity-70"
+								className="h-11 min-w-28 cursor-pointer rounded-full bg-awesomer-purple px-6 font-semibold text-pale-grey text-sm transition hover:bg-awesome-purple disabled:cursor-not-allowed disabled:opacity-70"
 								disabled={loading}
 								type="submit"
 							>

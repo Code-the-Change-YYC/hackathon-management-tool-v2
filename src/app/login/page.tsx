@@ -76,12 +76,15 @@ export default function LoginPage() {
 							</div>
 
 							<div className="flex items-center justify-between text-sm">
-								<label className="inline-flex items-center gap-2 text-grey-purple">
-									<input className="accent-awesomer-purple" type="checkbox" />
-									Remember me?
+								<label className="group inline-flex cursor-pointer items-center gap-2 text-grey-purple transition-colors hover:text-awesomer-purple">
+									<input
+										className="cursor-pointer accent-awesomer-purple transition-colors group-hover:accent-awesomer-purple"
+										type="checkbox"
+									/>
+									<span>Remember me?</span>
 								</label>
 								<button
-									className="text-grey-purple transition hover:text-awesomer-purple"
+									className="cursor-pointer text-grey-purple transition-colors hover:text-awesomer-purple"
 									type="button"
 								>
 									Forgot Password?
@@ -95,7 +98,7 @@ export default function LoginPage() {
 							)}
 
 							<button
-								className="h-10 w-full rounded-full bg-awesomer-purple font-semibold text-pale-grey text-sm transition hover:bg-awesome-purple disabled:cursor-not-allowed disabled:opacity-70"
+								className="h-10 w-full cursor-pointer rounded-full bg-awesomer-purple font-semibold text-pale-grey text-sm transition hover:bg-awesome-purple disabled:cursor-not-allowed disabled:opacity-70"
 								disabled={loading}
 								type="submit"
 							>
@@ -109,7 +112,7 @@ export default function LoginPage() {
 							</div>
 
 							<button
-								className="flex h-10 w-full items-center justify-center gap-2 border border-medium-grey bg-pale-grey font-medium text-dark-grey text-sm transition hover:bg-lilac-purple"
+								className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 border border-medium-grey bg-pale-grey font-medium text-dark-grey text-sm transition hover:bg-lilac-purple"
 								type="button"
 							>
 								<span className="text-base">G</span>
@@ -119,7 +122,7 @@ export default function LoginPage() {
 							<p className="pt-2 text-center text-dark-grey/75 text-sm">
 								Don&apos;t have an account?{" "}
 								<Link
-									className="font-semibold text-awesomer-purple hover:text-awesome-purple"
+									className="font-semibold text-awesomer-purple! hover:text-awesome-purple!"
 									href="/signup"
 								>
 									CREATE AN ACCOUNT
