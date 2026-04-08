@@ -33,6 +33,12 @@ export const MEMBER_ROLES = {
 	ADMIN: "admin"
 } as const;
 
+export type TeamRanking = {
+	id: string;
+	name: string;
+	totalScore: number;
+};
+
 export const ALL_ROLES: Role[] = [Role.ADMIN, Role.JUDGE, Role.PARTICIPANT];
 
 export const ALL_ORGANIZATION_ROLES: OrganizationRole[] = [

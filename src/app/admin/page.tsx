@@ -2,6 +2,7 @@ import TeamTable from "@/app/components/admin/teamtable/TeamTable";
 import UserTable from "@/app/components/admin/usertable";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
+import ScoreTable from "../components/admin/scoreTable/ScoreTable";
 import styles from "../dashboard.module.scss";
 
 export default async function AdminPage() {
@@ -30,6 +31,10 @@ export default async function AdminPage() {
 				<div>
 					<h2 className={styles.sectionTitle}>Teams</h2>
 					<TeamTable />
+				</div>
+				<div>
+					<h2 className={styles.sectionTitle}>Scores</h2>
+					<ScoreTable />
 				</div>
 			</div>
 		</main>
