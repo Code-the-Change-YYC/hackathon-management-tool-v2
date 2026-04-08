@@ -6,7 +6,10 @@ import Sponsors from "@/app/components/admin/landingpage/sponsors";
 import styles from "@/app/index.module.scss";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";
+import AboutChallenge from "./components/admin/landingpage/AboutChallenge";
 import JudgingCriteria from "./components/admin/landingpage/JudgingCriteria";
+import Prizes from "./components/admin/landingpage/Prizes";
+import Requirements from "./components/admin/landingpage/Requirements";
 
 export default async function Home() {
 	const session = await auth.api.getSession({
@@ -18,6 +21,9 @@ export default async function Home() {
 	return (
 		<HydrateClient>
 			<Header hasTeam={hasTeam} isSignedIn={!!session?.user} />
+			<AboutChallenge />
+			<Requirements />
+			<Prizes />
 			<main className={styles.main}>
 				<div className={styles.container}>
 					<h1 className={styles.title}>
