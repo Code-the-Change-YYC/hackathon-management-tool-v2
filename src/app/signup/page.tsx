@@ -49,16 +49,16 @@ export default function SignupPage() {
 	};
 
 	return (
-		<main className="min-h-screen bg-[#6d4dff] text-[#2f2f2f]">
-			<header className="bg-[#ececec]">
+		<main className="min-h-screen bg-awesomer-purple text-dark-grey">
+			<header className="bg-light-grey">
 				<div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
 					<Link
-						className="font-semibold text-[#5f45f9] text-lg hover:text-[#462fd3]"
+						className="font-semibold text-awesomer-purple text-lg hover:text-awesome-purple"
 						href="/signup"
 					>
 						Join a Team
 					</Link>
-					<div className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-[#393939] bg-white text-[#f15a6a] text-lg leading-none">
+					<div className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-dark-grey bg-pale-grey text-dark-pink text-lg leading-none">
 						♡
 					</div>
 					<div className="w-20" />
@@ -66,12 +66,12 @@ export default function SignupPage() {
 			</header>
 
 			<section className="mx-auto w-full max-w-6xl px-4 py-10 md:py-14">
-				<h1 className="mb-6 text-center font-extrabold text-3xl text-white md:text-5xl">
+				<h1 className="mb-6 text-center font-extrabold text-3xl text-pale-grey md:text-5xl">
 					Register for Hack the Change 2026
 				</h1>
 
-				<div className="mx-auto max-w-5xl rounded-2xl bg-[#f3f3f3] p-5 shadow-[0_16px_36px_rgba(50,24,153,0.30)] md:p-8">
-					<h2 className="mb-5 font-bold text-2xl text-[#252525]">
+				<div className="mx-auto max-w-5xl rounded-2xl bg-pale-grey p-5 shadow-lg md:p-8">
+					<h2 className="mb-5 font-bold text-2xl text-dark-grey">
 						Individual Registration
 					</h2>
 
@@ -82,7 +82,7 @@ export default function SignupPage() {
 									*First Name
 								</label>
 								<input
-									className="h-11 w-full rounded-xl border border-[#bcbcbc] bg-white px-4 text-sm outline-none transition focus:border-[#6a4dff]"
+									className="h-11 w-full rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 									disabled={loading}
 									id="firstName"
 									onChange={(e) => setFirstName(e.target.value)}
@@ -97,7 +97,7 @@ export default function SignupPage() {
 									*Last Name
 								</label>
 								<input
-									className="h-11 w-full rounded-xl border border-[#bcbcbc] bg-white px-4 text-sm outline-none transition focus:border-[#6a4dff]"
+									className="h-11 w-full rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 									disabled={loading}
 									id="lastName"
 									onChange={(e) => setLastName(e.target.value)}
@@ -113,7 +113,7 @@ export default function SignupPage() {
 								*Email
 							</label>
 							<input
-								className="h-11 w-full rounded-xl border border-[#bcbcbc] bg-white px-4 text-sm outline-none transition focus:border-[#6a4dff]"
+								className="h-11 w-full rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 								disabled={loading}
 								id="email"
 								onChange={(e) => setEmail(e.target.value)}
@@ -129,7 +129,7 @@ export default function SignupPage() {
 								*Password
 							</label>
 							<input
-								className="h-11 w-full rounded-xl border border-[#bcbcbc] bg-white px-4 text-sm outline-none transition focus:border-[#6a4dff]"
+								className="h-11 w-full rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 								disabled={loading}
 								id="password"
 								onChange={(e) => setPassword(e.target.value)}
@@ -145,7 +145,7 @@ export default function SignupPage() {
 								Which institution do you go to?
 							</label>
 							<select
-								className="h-11 w-full rounded-xl border border-[#bcbcbc] bg-white px-4 text-sm outline-none transition focus:border-[#6a4dff]"
+								className="h-11 w-full rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 								disabled={loading}
 								id="school"
 								onChange={(e) => setSchool(e.target.value)}
@@ -168,7 +168,7 @@ export default function SignupPage() {
 								*Do you want provided food at the hackathon? (required)
 							</label>
 							<select
-								className="h-11 w-full rounded-xl border border-[#bcbcbc] bg-white px-4 text-sm outline-none transition focus:border-[#6a4dff]"
+								className="h-11 w-full rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 								disabled={loading}
 								id="food"
 								onChange={(e) => setWantsFood(e.target.value as MealOption)}
@@ -186,7 +186,7 @@ export default function SignupPage() {
 								*If you wanted provided food, please indicate any allergies:
 							</label>
 							<input
-								className="h-11 w-full rounded-xl border border-[#bcbcbc] bg-white px-4 text-sm outline-none transition focus:border-[#6a4dff]"
+								className="h-11 w-full rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 								disabled={loading}
 								id="allergies"
 								onChange={(e) => setAllergies(e.target.value)}
@@ -196,20 +196,20 @@ export default function SignupPage() {
 						</div>
 
 						{error && (
-							<p className="rounded-md bg-[#ffe2e7] px-3 py-2 text-[#b3003c] text-sm">
+							<p className="rounded-md bg-pastel-pink px-3 py-2 text-sm text-strawberry-red">
 								{error}
 							</p>
 						)}
 
 						<div className="flex justify-end gap-3 pt-2">
 							<Link
-								className="inline-flex h-11 min-w-28 items-center justify-center rounded-full border border-[#8e7cff] bg-white px-6 font-semibold text-[#5f45f9] text-sm transition hover:bg-[#f6f2ff]"
+								className="inline-flex h-11 min-w-28 items-center justify-center rounded-full border border-awesome-purple bg-pale-grey px-6 font-semibold text-awesomer-purple text-sm transition hover:bg-lilac-purple"
 								href="/login"
 							>
 								Cancel
 							</Link>
 							<button
-								className="h-11 min-w-28 rounded-full bg-[#6a4dff] px-6 font-semibold text-sm text-white transition hover:bg-[#5537f0] disabled:cursor-not-allowed disabled:opacity-70"
+								className="h-11 min-w-28 rounded-full bg-awesomer-purple px-6 font-semibold text-pale-grey text-sm transition hover:bg-awesome-purple disabled:cursor-not-allowed disabled:opacity-70"
 								disabled={loading}
 								type="submit"
 							>
@@ -220,7 +220,7 @@ export default function SignupPage() {
 				</div>
 			</section>
 
-			<footer className="bg-[#9e83ff]/70 py-6 text-center text-white/90 text-xs">
+			<footer className="bg-awesome-purple/70 py-6 text-center text-pale-grey/90 text-xs">
 				<p>Keep up with us!</p>
 				<p className="mt-2">Copyright © Code The Change YYC</p>
 			</footer>

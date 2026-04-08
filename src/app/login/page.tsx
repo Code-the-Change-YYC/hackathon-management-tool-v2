@@ -37,26 +37,26 @@ export default function LoginPage() {
 	};
 
 	return (
-		<main className="min-h-screen bg-[#f9dde4] text-[#2f2f2f]">
-			<header className="border-[#dac3c9] border-b bg-[#f4eef0]">
+		<main className="min-h-screen bg-pastel-pink text-dark-grey">
+			<header className="border-medium-grey border-b bg-light-grey">
 				<div className="mx-auto flex w-full max-w-6xl items-center justify-center px-4 py-4">
-					<div className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-[#393939] bg-white text-[#f15a6a] text-lg leading-none">
+					<div className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-dark-grey bg-pale-grey text-dark-pink text-lg leading-none">
 						♡
 					</div>
 				</div>
 			</header>
 
 			<section className="mx-auto flex min-h-[calc(100vh-65px)] w-full max-w-6xl items-center justify-center px-4 py-8">
-				<div className="w-full max-w-4xl rounded-none bg-[#6a4dff] p-5 shadow-[0_12px_28px_rgba(79,52,180,0.25)] md:p-8">
-					<div className="rounded-2xl bg-[#f4f4f4] p-6 md:p-8">
-						<h1 className="mb-6 font-bold text-3xl text-[#1f1f1f]">Sign In</h1>
+				<div className="w-full max-w-4xl rounded-none bg-awesomer-purple p-5 shadow-lg md:p-8">
+					<div className="rounded-2xl bg-pale-grey p-6 md:p-8">
+						<h1 className="mb-6 font-bold text-3xl text-dark-grey">Sign In</h1>
 						<form className="space-y-4" onSubmit={handleSubmit}>
 							<div className="space-y-1">
 								<label className="font-medium text-sm" htmlFor="email">
 									Email
 								</label>
 								<input
-									className="h-10 w-full rounded-full border border-[#bdbdbd] bg-white px-4 text-sm outline-none transition focus:border-[#6a4dff]"
+									className="h-10 w-full rounded-full border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 									disabled={loading}
 									id="email"
 									onChange={(e) => setEmail(e.target.value)}
@@ -72,7 +72,7 @@ export default function LoginPage() {
 									Password
 								</label>
 								<input
-									className="h-10 w-full rounded-full border border-[#bdbdbd] bg-white px-4 text-sm outline-none transition focus:border-[#6a4dff]"
+									className="h-10 w-full rounded-full border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 									disabled={loading}
 									id="password"
 									onChange={(e) => setPassword(e.target.value)}
@@ -84,12 +84,12 @@ export default function LoginPage() {
 							</div>
 
 							<div className="flex items-center justify-between text-sm">
-								<label className="inline-flex items-center gap-2 text-[#695fb3]">
-									<input className="accent-[#6a4dff]" type="checkbox" />
+								<label className="inline-flex items-center gap-2 text-grey-purple">
+									<input className="accent-awesomer-purple" type="checkbox" />
 									Remember me?
 								</label>
 								<button
-									className="text-[#695fb3] transition hover:text-[#4e3cc4]"
+									className="text-grey-purple transition hover:text-awesomer-purple"
 									type="button"
 								>
 									Forgot Password?
@@ -97,37 +97,37 @@ export default function LoginPage() {
 							</div>
 
 							{error && (
-								<p className="rounded-md bg-[#ffe2e7] px-3 py-2 text-[#b3003c] text-sm">
+								<p className="rounded-md bg-pastel-pink px-3 py-2 text-sm text-strawberry-red">
 									{error}
 								</p>
 							)}
 
 							<button
-								className="h-10 w-full rounded-full bg-[#6a4dff] font-semibold text-sm text-white transition hover:bg-[#5537f0] disabled:cursor-not-allowed disabled:opacity-70"
+								className="h-10 w-full rounded-full bg-awesomer-purple font-semibold text-pale-grey text-sm transition hover:bg-awesome-purple disabled:cursor-not-allowed disabled:opacity-70"
 								disabled={loading}
 								type="submit"
 							>
 								{loading ? "Signing in..." : "Sign in"}
 							</button>
 
-							<div className="flex items-center gap-3 text-[#7d7d7d] text-xs">
-								<div className="h-px flex-1 bg-[#cfcfcf]" />
+							<div className="flex items-center gap-3 text-dark-grey/70 text-xs">
+								<div className="h-px flex-1 bg-medium-grey" />
 								<span>or</span>
-								<div className="h-px flex-1 bg-[#cfcfcf]" />
+								<div className="h-px flex-1 bg-medium-grey" />
 							</div>
 
 							<button
-								className="flex h-10 w-full items-center justify-center gap-2 border border-[#cfcfcf] bg-white font-medium text-[#242424] text-sm transition hover:bg-[#f4f1ff]"
+								className="flex h-10 w-full items-center justify-center gap-2 border border-medium-grey bg-pale-grey font-medium text-dark-grey text-sm transition hover:bg-lilac-purple"
 								type="button"
 							>
 								<span className="text-base">G</span>
 								Continue with Google
 							</button>
 
-							<p className="pt-2 text-center text-[#666] text-sm">
+							<p className="pt-2 text-center text-dark-grey/75 text-sm">
 								Don&apos;t have an account?{" "}
 								<Link
-									className="font-semibold text-[#5e45f7] hover:text-[#462fd3]"
+									className="font-semibold text-awesomer-purple hover:text-awesome-purple"
 									href="/signup"
 								>
 									CREATE AN ACCOUNT
