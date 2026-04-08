@@ -50,21 +50,6 @@ export default function SignupPage() {
 
 	return (
 		<main className="min-h-screen bg-awesomer-purple text-dark-grey">
-			<header className="bg-light-grey">
-				<div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
-					<Link
-						className="font-semibold text-awesomer-purple text-lg hover:text-awesome-purple"
-						href="/signup"
-					>
-						Join a Team
-					</Link>
-					<div className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-dark-grey bg-pale-grey text-dark-pink text-lg leading-none">
-						♡
-					</div>
-					<div className="w-20" />
-				</div>
-			</header>
-
 			<section className="mx-auto w-full max-w-6xl px-4 py-10 md:py-14">
 				<h1 className="mb-6 text-center font-extrabold text-3xl text-pale-grey md:text-5xl">
 					Register for Hack the Change 2026
@@ -219,11 +204,6 @@ export default function SignupPage() {
 					</form>
 				</div>
 			</section>
-
-			<footer className="bg-awesome-purple/70 py-6 text-center text-pale-grey/90 text-xs">
-				<p>Keep up with us!</p>
-				<p className="mt-2">Copyright © Code The Change YYC</p>
-			</footer>
 		</main>
 	);
 }

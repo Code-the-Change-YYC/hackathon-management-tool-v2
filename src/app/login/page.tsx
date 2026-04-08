@@ -38,14 +38,6 @@ export default function LoginPage() {
 
 	return (
 		<main className="min-h-screen bg-pastel-pink text-dark-grey">
-			<header className="border-medium-grey border-b bg-light-grey">
-				<div className="mx-auto flex w-full max-w-6xl items-center justify-center px-4 py-4">
-					<div className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-dark-grey bg-pale-grey text-dark-pink text-lg leading-none">
-						♡
-					</div>
-				</div>
-			</header>
-
 			<section className="mx-auto flex min-h-[calc(100vh-65px)] w-full max-w-6xl items-center justify-center px-4 py-8">
 				<div className="w-full max-w-4xl rounded-none bg-awesomer-purple p-5 shadow-lg md:p-8">
 					<div className="rounded-2xl bg-pale-grey p-6 md:p-8">
