@@ -108,7 +108,7 @@ export default function LoginPage() {
 								{loading ? "Signing in..." : "Sign in"}
 							</button>
 
-							<div className="flex items-center gap-3 text-dark-grey/70 text-xs">
+							{/* <div className="flex items-center gap-3 text-dark-grey/70 text-xs">
 								<div className="h-px flex-1 bg-medium-grey" />
 								<span>or</span>
 								<div className="h-px flex-1 bg-medium-grey" />
@@ -120,7 +120,7 @@ export default function LoginPage() {
 							>
 								<span className="text-base">G</span>
 								Continue with Google
-							</button>
+							</button> */}
 
 							<p className="pt-2 text-center text-dark-grey/75 text-sm">
 								Don&apos;t have an account?{" "}
