@@ -6,6 +6,7 @@ import Sponsors from "@/app/components/admin/landingpage/sponsors";
 import styles from "@/app/index.module.scss";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";
+import JudgingCriteria from "./components/admin/landingpage/JudgingCriteria";
 
 export default async function Home() {
 	const session = await auth.api.getSession({
@@ -77,6 +78,7 @@ export default async function Home() {
 						</p>
 					</div>
 				</div>
+				<JudgingCriteria />
 				<Sponsors />
 			</main>
 			<Footer />
