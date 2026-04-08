@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { authClient } from "@/server/better-auth/client";
+import { api } from "@/trpc/react";
 
 type MealOption = "yes" | "no" | "";
 
@@ -20,6 +21,8 @@ export default function SignupForm() {
 	const [allergies, setAllergies] = useState("");
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+	const completeRegistration =
+		api.users.completeRegistrationByEmail.useMutation();
 
 	const isRequiredComplete =
 		firstName.trim() !== "" &&
@@ -53,11 +56,20 @@ export default function SignupForm() {
 				return;
 			}
 
-			// Save profile details after account creation if supported by your backend later.
-			void school;
-			void program;
-			void wantsFood;
-			void allergies;
+			await completeRegistration.mutateAsync({
+				email,
+				school,
+				program:
+					program === "computer_science" ||
+					program === "software_engineering" ||
+					program === "electrical_engineering" ||
+					program === "other"
+						? program
+						: undefined,
+				allergies,
+				wantsFood
+			});
+
 			router.push("/login");
 		} catch (_err) {
 			setError("An unexpected error occurred");
