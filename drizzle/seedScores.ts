@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { organization, user } from "@/server/db/auth-schema";

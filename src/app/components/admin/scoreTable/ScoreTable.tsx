@@ -25,7 +25,11 @@ export default function ScoreTable() {
 				headerName: "Rank",
 				width: 100,
 				sortable: false,
-				valueGetter: (params) => (params.node ? params.node.rowIndex! + 1 : "")
+				valueGetter: (params) => {
+					if (!params.node) return "";
+					const idx = params.node.rowIndex;
+					return typeof idx === "number" ? idx + 1 : "";
+				}
 			},
 			{
 				headerName: "Team Name",
