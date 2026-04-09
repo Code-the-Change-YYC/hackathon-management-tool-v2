@@ -107,6 +107,20 @@ export const judgingRoomRelations = relations(
 	})
 );
 
+export const judgingRoomStaffRelations = relations(
+	judgingRoomStaff,
+	({ one }) => ({
+		room: one(judgingRooms, {
+			fields: [judgingRoomStaff.roomId],
+			references: [judgingRooms.id]
+		}),
+		staff: one(user, {
+			fields: [judgingRoomStaff.staffId],
+			references: [user.id]
+		})
+	})
+);
+
 export const judgingAssignmentRelations = relations(
 	judgingAssignments,
 	({ one, many }) => ({

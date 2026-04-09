@@ -18,12 +18,12 @@ export const appRouter = createTRPCRouter({
 	hackathonSettings: hackathonSettingsRouter,
 	judgingRounds: judgingRoundsRouter,
 	judgingAssignments: judgingAssignmentsRouter,
+	judgingRooms: judgingRoomsRouter,
 	scores: scoresRouter,
 	users: usersRouter,
 	teams: teamsRouter,
 	meals: mealsRouter,
-	criteria: criteriaRouter,
-	judgingRooms: judgingRoomsRouter
+	criteria: criteriaRouter
 });
 
 // export type definition of API
