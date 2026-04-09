@@ -26,7 +26,7 @@
 
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
@@ -37,7 +37,7 @@ import {
 	user
 } from "@/server/db/auth-schema";
 import { hackathonSettings } from "@/server/db/schema";
-import { MEMBER_ROLES } from "@/types/types";
+import { MEMBER_ROLES, type TeamRanking } from "@/types/types";
 
 type TeamMetadata = {
 	devpostLink?: string | null;
@@ -455,5 +455,25 @@ export const teamsRouter = createTRPCRouter({
 				.where(eq(organization.id, id))
 				.returning();
 			return updated;
-		})
+		}),
+	// New feature: Querying descending for score
+	getRankings: protectedProcedure.query(async ({ ctx }) => {
+		const result = await ctx.db.execute(
+			sql<TeamRanking>`
+          SELECT 
+            o.id,
+            o.name,
+            COALESCE(SUM(s.value), 0) AS "totalScore"
+          FROM hackathon_organization o
+          LEFT JOIN hackathon_judging_assignment a 
+            ON a.team_id = o.id
+          LEFT JOIN hackathon_score s 
+            ON s.assignment_id = a.id
+          GROUP BY o.id, o.name
+          ORDER BY "totalScore" DESC
+        `
+		);
+
+		return result as unknown as TeamRanking[]; // Fixes the CI/CD error in ScoreTable.tsx where the type of data was not being recognized as TeamRanking[]
+	})
 });

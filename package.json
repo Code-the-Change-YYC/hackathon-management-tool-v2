@@ -7,6 +7,7 @@
 		"build": "next build",
 		"check": "biome check .",
 		"seed": "bun drizzle/seed.ts",
+		"seed:scores": "bun drizzle/seedScores.ts",
 		"check:ci": "biome ci",
 		"check:unsafe": "biome check --write --unsafe .",
 		"check:write": "biome check --write .",
