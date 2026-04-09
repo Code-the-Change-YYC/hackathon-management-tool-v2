@@ -130,6 +130,7 @@ export default function CriteriaTable() {
 	};
 
 	return (
+		// TODO: remove all the styling here and replace with tailwind later
 		<div>
 			{/* Toolbar */}
 			<div style={{ marginBottom: 8 }}>

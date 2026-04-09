@@ -190,6 +190,7 @@ export default function JudgingRoomsManager() {
 	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
 
 	return (
+		// TODO: remove height and width inline style
 		<div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
 			<div
 				style={{

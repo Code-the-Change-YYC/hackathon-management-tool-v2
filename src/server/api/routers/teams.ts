@@ -16,13 +16,17 @@
  * Team updates are allowed for app-level admins (any team) or team owners
  * (their own team only).
  *
+ * Metadata keys used here:
+ * - organization.metadata.devpostLink
+ * - hackathon_settings.metadata.devpostSubmissionCloseAt (ISO timestamp)
+ *
  * All multi-row writes use transactions for atomicity.
  * MEMBER_ROLES lives in types.ts as the single source of truth for roles.
  */
 
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
@@ -32,7 +36,16 @@ import {
 	organization,
 	user
 } from "@/server/db/auth-schema";
-import { MEMBER_ROLES } from "@/types/types";
+import { hackathonSettings } from "@/server/db/schema";
+import { MEMBER_ROLES, type TeamRanking } from "@/types/types";
+
+type TeamMetadata = {
+	devpostLink?: string | null;
+};
+
+type HackathonMetadata = {
+	devpostSubmissionCloseAt?: string | null;
+};
 
 const teamNameSchema = z
 	.string()
@@ -45,6 +58,37 @@ const teamNameSchema = z
 
 function generateTeamCode(): string {
 	return crypto.randomBytes(2).toString("hex").toUpperCase();
+}
+
+function parseMetadata<T extends Record<string, unknown>>(
+	raw: string | null
+): T {
+	if (!raw) {
+		return {} as T;
+	}
+
+	try {
+		const parsed = JSON.parse(raw) as unknown;
+		if (typeof parsed === "object" && parsed !== null) {
+			return parsed as T;
+		}
+		return {} as T;
+	} catch {
+		return {} as T;
+	}
+}
+
+function parseDeadline(value: string | null | undefined): Date | null {
+	if (!value) {
+		return null;
+	}
+
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) {
+		return null;
+	}
+
+	return date;
 }
 
 async function ensureNotInTeam(db: typeof dbType, userId: string) {
@@ -84,6 +128,46 @@ async function deleteTeamAndInvitations(
 }
 
 export const teamsRouter = createTRPCRouter({
+	getMyDevpostSubmissionStatus: protectedProcedure.query(async ({ ctx }) => {
+		const membership = await getUserMembership(ctx.db, ctx.session.user.id);
+
+		const team = await ctx.db.query.organization.findFirst({
+			where: eq(organization.id, membership.organizationId)
+		});
+		if (!team) {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message: "Team not found"
+			});
+		}
+
+		const settings = await ctx.db.query.hackathonSettings.findFirst({
+			where: eq(hackathonSettings.id, 1)
+		});
+
+		const teamMetadata = parseMetadata<TeamMetadata>(team.metadata);
+		const hackathonMetadata = parseMetadata<HackathonMetadata>(
+			settings?.metadata ?? null
+		);
+
+		const devpostLink = teamMetadata.devpostLink?.trim() || null;
+		const submissionCloseAt = parseDeadline(
+			hackathonMetadata.devpostSubmissionCloseAt
+		);
+		const now = new Date();
+		const isBeforeDeadline =
+			submissionCloseAt !== null && now.getTime() < submissionCloseAt.getTime();
+		const showWarning = isBeforeDeadline && !devpostLink;
+
+		return {
+			teamId: team.id,
+			teamName: team.name,
+			devpostLink,
+			submissionCloseAt,
+			showWarning
+		};
+	}),
+
 	getAll: protectedProcedure.query(async ({ ctx }) => {
 		const teams = await ctx.db.query.organization.findMany({
 			orderBy: [desc(organization.createdAt)]
@@ -371,5 +455,25 @@ export const teamsRouter = createTRPCRouter({
 				.where(eq(organization.id, id))
 				.returning();
 			return updated;
-		})
+		}),
+	// New feature: Querying descending for score
+	getRankings: protectedProcedure.query(async ({ ctx }) => {
+		const result = await ctx.db.execute(
+			sql<TeamRanking>`
+          SELECT 
+            o.id,
+            o.name,
+            COALESCE(SUM(s.value), 0) AS "totalScore"
+          FROM hackathon_organization o
+          LEFT JOIN hackathon_judging_assignment a 
+            ON a.team_id = o.id
+          LEFT JOIN hackathon_score s 
+            ON s.assignment_id = a.id
+          GROUP BY o.id, o.name
+          ORDER BY "totalScore" DESC
+        `
+		);
+
+		return result as unknown as TeamRanking[]; // Fixes the CI/CD error in ScoreTable.tsx where the type of data was not being recognized as TeamRanking[]
+	})
 });

@@ -47,6 +47,7 @@ export default function HackathonSettingsPanel() {
 	}, [update.error, update.isPending, update.isSuccess]);
 
 	return (
+		// TODO: remove height and width inline style
 		<div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
 			<div
 				style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "end" }}

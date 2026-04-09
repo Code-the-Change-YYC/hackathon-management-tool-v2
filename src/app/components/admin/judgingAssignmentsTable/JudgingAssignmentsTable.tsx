@@ -135,6 +135,7 @@ export default function JudgingAssignmentsTable() {
 	);
 
 	return (
+		// TODO: remove height and width inline style
 		<div>
 			<div
 				style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}
