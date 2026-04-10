@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import Link from "next/link";
-import Footer from "@/app/components/admin/landingpage/footer";
-import Header from "@/app/components/admin/landingpage/header";
-import Sponsors from "@/app/components/admin/landingpage/sponsors";
+import Sponsors from "@/app/components/admin/landingpage/Sponsors";
+import Footer from "@/app/components/Footer";
+import Header from "@/app/components/Header";
 import styles from "@/app/index.module.scss";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";

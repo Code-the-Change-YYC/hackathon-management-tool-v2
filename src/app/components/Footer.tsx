@@ -7,12 +7,6 @@ export default function Footer() {
 		<footer className="w-full bg-awesome-purple py-5">
 			<div className="flex flex-col items-center gap-2">
 				<p className="font-bold text-sm text-white">Keep up with us!</p>
-				<Link
-					className="!text-dashboard-grey !underline font-normal !hover:text-awesome-purple text-sm transition-colors"
-					href="https://www.google.com"
-				>
-					View 2024 Winners!
-				</Link>
 				<div className="flex items-center gap-5">
 					<Link href="https://facebook.com" target="_blank">
 						<Image
