@@ -1,3 +1,4 @@
+import QRCode from "react-qr-code";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
@@ -45,6 +46,7 @@ export default async function ParticipantPage() {
 					<h2 className={styles.welcome}>Welcome, Hacker!</h2>
 					<p>Check your schedule, submit your project, and view results.</p>
 				</div>
+				<QRCode value={`${session.user.id}::${session.user.name}`} />
 			</div>
 		</main>
 	);
