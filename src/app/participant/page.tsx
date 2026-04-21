@@ -2,10 +2,18 @@ import QRCode from "react-qr-code";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
-import styles from "../dashboard.module.scss";
 
 export default async function ParticipantPage() {
 	const session = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
+	const displayName = session.user.name?.trim() || "Participant";
+	const qrBackground = "#f9f9f9";
+	const qrForeground = "#ff4d6f";
+	const initials = displayName
+		.split(/\s+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((namePart) => namePart[0]?.toUpperCase() ?? "")
+		.join("");
 
 	let devpostStatus: Awaited<
 		ReturnType<typeof api.teams.getMyDevpostSubmissionStatus>
@@ -18,23 +26,31 @@ export default async function ParticipantPage() {
 	}
 
 	return (
-		<main className={styles.main}>
-			<header className={styles.header}>
-				<h1 className={styles.title}>Participant Dashboard</h1>
-				<div>
-					<span>{session.user.name}</span>
-					<span className={styles.roleBadge}>Participant</span>
+		<main className="min-h-screen bg-fuzzy-peach text-grapefruit">
+			<section className="relative overflow-hidden bg-grapefruit px-6 pt-12 pb-10 text-white sm:px-10 lg:px-16">
+				<div className="mx-auto flex max-w-5xl flex-col gap-6 sm:flex-row sm:items-center">
+					<div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-pale-grey bg-pale-grey font-black text-3xl text-medium-pink shadow-[0_8px_24px_rgba(0,0,0,0.16)] sm:h-28 sm:w-28">
+						{initials || "P"}
+					</div>
+					<div className="space-y-2">
+						<h1 className="font-black text-3xl italic leading-tight drop-shadow-[0_2px_0_rgba(0,0,0,0.08)] sm:text-4xl">
+							Hello, {displayName}!
+						</h1>
+					</div>
 				</div>
-			</header>
-			<div className={styles.content}>
+			</section>
+
+			<section className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8 sm:px-10 lg:px-16 lg:py-10">
 				{devpostStatus?.showWarning ? (
-					<div className={styles.warningCard}>
-						<h2 className={styles.warningTitle}>Devpost Submission Required</h2>
-						<p>
+					<div className="rounded-[28px] border border-medium-pink bg-pale-grey px-6 py-5 text-dark-grey shadow-[0_14px_40px_rgba(255,107,84,0.14)]">
+						<h2 className="font-extrabold text-grapefruit text-lg uppercase tracking-[0.08em]">
+							Devpost Submission Required
+						</h2>
+						<p className="mt-2 font-medium text-sm sm:text-base">
 							Your team must submit a Devpost link before submissions close.
 						</p>
 						{devpostStatus.submissionCloseAt ? (
-							<p className={styles.warningDeadline}>
+							<p className="mt-2 font-bold text-dark-grey text-sm sm:text-base">
 								Submissions close on{" "}
 								{devpostStatus.submissionCloseAt.toLocaleString()}.
 							</p>
@@ -42,12 +58,25 @@ export default async function ParticipantPage() {
 					</div>
 				) : null}
 
-				<div className={styles.card}>
-					<h2 className={styles.welcome}>Welcome, Hacker!</h2>
-					<p>Check your schedule, submit your project, and view results.</p>
+				<div className="space-y-3 pl-10">
+					<h2 className="font-medium text-2xl uppercase">My Food Ticket</h2>
 				</div>
-				<QRCode value={`${session.user.id}::${session.user.name}`} />
-			</div>
+
+				<div className="rounded-[28px] border-2 border-pale-grey bg-pale-grey p-5 shadow-[0_22px_50px_rgba(255,107,84,0.18)] sm:p-8">
+					<div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-10">
+						<div className="flex justify-center lg:justify-start">
+							<div className="rounded-3xl border border-fuzzy-peach bg-pale-grey p-4 shadow-[0_12px_30px_rgba(255,107,84,0.12)] sm:p-5">
+								<QRCode
+									bgColor={qrBackground}
+									fgColor={qrForeground}
+									size={176}
+									value={`${session.user.id}::${displayName}`}
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
 		</main>
 	);
 }
