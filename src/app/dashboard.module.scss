@@ -41,6 +41,27 @@
     border: 1px solid v.$light-grey;
 }
 
+.warningCard {
+    background: #fff6e8;
+    border: 1px solid #ffd39b;
+    border-left: 6px solid #f97316;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    color: #7c2d12;
+}
+
+.warningTitle {
+    margin: 0 0 0.35rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.warningDeadline {
+    margin-top: 0.35rem;
+    font-weight: 600;
+}
+
 .welcome {
     font-size: 1.5rem;
     margin-bottom: 1rem;

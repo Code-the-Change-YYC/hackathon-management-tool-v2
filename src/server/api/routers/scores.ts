@@ -22,7 +22,11 @@ export const scoresRouter = createTRPCRouter({
 				assignment: {
 					with: {
 						team: true,
-						room: true
+						room: {
+							with: {
+								round: true
+							}
+						}
 					}
 				}
 			},
@@ -41,7 +45,11 @@ export const scoresRouter = createTRPCRouter({
 					assignment: {
 						with: {
 							team: true,
-							room: true
+							room: {
+								with: {
+									round: true
+								}
+							}
 						}
 					}
 				}
@@ -63,7 +71,11 @@ export const scoresRouter = createTRPCRouter({
 					assignment: {
 						with: {
 							team: true,
-							room: true
+							room: {
+								with: {
+									round: true
+								}
+							}
 						}
 					}
 				}
@@ -75,7 +87,7 @@ export const scoresRouter = createTRPCRouter({
 	getByRound: judgeProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
-			const judgeRoom = await ctx.db
+			const judgeRoomsForRound = await ctx.db
 				.select({ id: judgingRooms.id })
 				.from(judgingRooms)
 				.innerJoin(
@@ -89,17 +101,23 @@ export const scoresRouter = createTRPCRouter({
 					)
 				);
 
-			const roomIds = judgeRoom.map((r) => r.id);
+			const roomIds = judgeRoomsForRound.map((r) => r.id);
 
 			if (roomIds.length === 0) return [];
 
-			return await ctx.db.query.judgingAssignments.findMany({
+			return ctx.db.query.judgingAssignments.findMany({
 				where: (assignments, { inArray }) =>
 					inArray(assignments.roomId, roomIds),
 				with: {
 					team: true,
+					room: {
+						with: {
+							round: true
+						}
+					},
 					scores: true
-				}
+				},
+				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
 			});
 		}),
 
