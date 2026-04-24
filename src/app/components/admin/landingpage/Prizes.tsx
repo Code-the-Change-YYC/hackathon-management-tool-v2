@@ -8,7 +8,7 @@ export default function Prizes() {
 			imageSrc="/svgs/prizes.svg"
 			paragraphs={[
 				"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-				"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+				"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut layobore et dolore magna aliqua."
 			]}
 			titleColor="text-dark-pink"
 			titleHighlight="Prizes"
