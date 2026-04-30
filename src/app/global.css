@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-	--font-omnes: var(--font-omnes);
+	--font-sans: var(--font-omnes);
 
 	--radius-20: 20px;
 
