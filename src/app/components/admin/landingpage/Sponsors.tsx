@@ -23,9 +23,9 @@ export default function Sponsors() {
 						<Image
 							alt={sponsor.name}
 							className="h-full w-full object-cover"
-							height={64}
+							height={65}
 							src={sponsor.image}
-							width={64}
+							width={65}
 						/>
 					</div>
 				))}
