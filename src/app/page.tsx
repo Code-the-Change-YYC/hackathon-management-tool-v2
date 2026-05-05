@@ -1,16 +1,35 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import Sponsors from "@/app/components/admin/landingpage/Sponsors";
+import Footer from "@/app/components/Footer";
+import Header from "@/app/components/Header";
 import styles from "@/app/index.module.scss";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";
+import AboutChallenge from "./components/admin/landingpage/AboutChallenge";
+import Countdown from "./components/admin/landingpage/Countdown";
+import EventDetails from "./components/admin/landingpage/EventDetails";
+import Judges from "./components/admin/landingpage/Judges";
+import JudgingCriteria from "./components/admin/landingpage/JudgingCriteria";
+import Prizes from "./components/admin/landingpage/Prizes";
+import Requirements from "./components/admin/landingpage/Requirements";
 
 export default async function Home() {
 	const session = await auth.api.getSession({
 		headers: await headers()
 	});
 
+	const hasTeam = false;
+
 	return (
 		<HydrateClient>
+			<Header hasTeam={hasTeam} isSignedIn={!!session?.user} />
+			<Countdown />
+			<EventDetails />
+			<AboutChallenge />
+			<Requirements />
+			<Prizes />
+			<Judges />
 			<main className={styles.main}>
 				<div className={styles.container}>
 					<h1 className={styles.title}>
@@ -75,7 +94,10 @@ export default async function Home() {
 						</p>
 					</div>
 				</div>
+				<JudgingCriteria />
+				<Sponsors />
 			</main>
+			<Footer />
 		</HydrateClient>
 	);
 }
