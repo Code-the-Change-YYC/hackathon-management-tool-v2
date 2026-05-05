@@ -21,7 +21,15 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html lang="en">
-			<body className={geist.className}>
+			<body
+				className={geist.className}
+				style={
+					{
+						"--font-omnes":
+							'"Omnes", "Avenir Next", "Nunito Sans", Arial, sans-serif'
+					} as React.CSSProperties
+				}
+			>
 				<TRPCReactProvider>{children}</TRPCReactProvider>
 			</body>
 		</html>
