@@ -9,6 +9,7 @@ import { HydrateClient } from "@/trpc/server";
 import AboutChallenge from "./components/admin/landingpage/AboutChallenge";
 import Countdown from "./components/admin/landingpage/Countdown";
 import EventDetails from "./components/admin/landingpage/EventDetails";
+import Judges from "./components/admin/landingpage/Judges";
 import JudgingCriteria from "./components/admin/landingpage/JudgingCriteria";
 import Prizes from "./components/admin/landingpage/Prizes";
 import Requirements from "./components/admin/landingpage/Requirements";
@@ -28,6 +29,7 @@ export default async function Home() {
 			<AboutChallenge />
 			<Requirements />
 			<Prizes />
+			<Judges />
 			<main className={styles.main}>
 				<div className={styles.container}>
 					<h1 className={styles.title}>
