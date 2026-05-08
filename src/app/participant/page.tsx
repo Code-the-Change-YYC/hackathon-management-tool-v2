@@ -7,8 +7,6 @@ export default async function ParticipantPage() {
 	const session = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
 	const displayName = session.user.name?.trim() || "Participant";
 	const emailAddress = session.user.email;
-	const qrBackground = "#f9f9f9";
-	const qrForeground = "#ff4d6f";
 	const initials = displayName
 		.split(/\s+/)
 		.filter(Boolean)
@@ -68,9 +66,7 @@ export default async function ParticipantPage() {
 						<div className="flex justify-center lg:justify-start">
 							<div className="rounded-3xl border border-fuzzy-peach bg-pale-grey p-4 shadow-[0_12px_30px_rgba(255,107,84,0.12)] sm:p-5">
 								<QRCode
-									bgColor={qrBackground}
-									fgColor={qrForeground}
-									size={176}
+									className="h-44 w-44 [&>path:first-of-type]:fill-pale-grey [&>path:last-of-type]:fill-dark-pink"
 									value={`${session.user.id}::${displayName}::${emailAddress}`}
 								/>
 							</div>
@@ -80,7 +76,7 @@ export default async function ParticipantPage() {
 								<p className="font-black text-grapefruit text-sm uppercase tracking-[0.08em]">
 									Name
 								</p>
-								<p className="mt-1 break-words font-semibold text-dark-grey text-lg">
+								<p className="wrap-break-word mt-1 font-semibold text-dark-grey text-lg">
 									{displayName}
 								</p>
 							</div>
