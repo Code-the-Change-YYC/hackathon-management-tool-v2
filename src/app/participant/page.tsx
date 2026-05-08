@@ -6,6 +6,7 @@ import { Role } from "@/types/types";
 export default async function ParticipantPage() {
 	const session = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
 	const displayName = session.user.name?.trim() || "Participant";
+	const emailAddress = session.user.email;
 	const qrBackground = "#f9f9f9";
 	const qrForeground = "#ff4d6f";
 	const initials = displayName
@@ -70,8 +71,26 @@ export default async function ParticipantPage() {
 									bgColor={qrBackground}
 									fgColor={qrForeground}
 									size={176}
-									value={`${session.user.id}::${displayName}`}
+									value={`${session.user.id}::${displayName}::${emailAddress}`}
 								/>
+							</div>
+						</div>
+						<div className="space-y-4 text-center lg:text-left">
+							<div>
+								<p className="font-black text-grapefruit text-sm uppercase tracking-[0.08em]">
+									Name
+								</p>
+								<p className="mt-1 break-words font-semibold text-dark-grey text-lg">
+									{displayName}
+								</p>
+							</div>
+							<div>
+								<p className="font-black text-grapefruit text-sm uppercase tracking-[0.08em]">
+									Email Address
+								</p>
+								<p className="mt-1 break-all font-semibold text-dark-grey text-lg">
+									{emailAddress}
+								</p>
 							</div>
 						</div>
 					</div>
