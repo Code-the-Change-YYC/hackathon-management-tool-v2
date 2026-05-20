@@ -1,11 +1,13 @@
 import { eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
+	adminProcedure,
 	createTRPCRouter,
-	protectedProcedure,
-	publicProcedure
+	protectedProcedure
 } from "@/server/api/trpc";
+import { member } from "@/server/db/auth-schema";
 import {
+	hackathonSettings,
 	judgingAssignments,
 	judgingRoomStaff,
 	judgingRooms
@@ -13,13 +15,18 @@ import {
 
 export const judgingAssignmentsRouter = createTRPCRouter({
 	// Get all assignments
-	getAll: publicProcedure.query(async ({ ctx }) => {
+	getAll: adminProcedure.query(async ({ ctx }) => {
 		const assignments = await ctx.db.query.judgingAssignments.findMany({
 			with: {
 				team: true,
 				room: {
 					with: {
-						round: true
+						round: true,
+						staff: {
+							with: {
+								staff: true
+							}
+						}
 					}
 				},
 				scores: true
@@ -30,7 +37,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 	}),
 
 	// Get assignments by room ID
-	getByRoom: publicProcedure
+	getByRoom: adminProcedure
 		.input(z.object({ roomId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			const assignments = await ctx.db.query.judgingAssignments.findMany({
@@ -39,7 +46,12 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 					team: true,
 					room: {
 						with: {
-							round: true
+							round: true,
+							staff: {
+								with: {
+									staff: true
+								}
+							}
 						}
 					},
 					scores: true
@@ -49,7 +61,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		}),
 
 	// Get assignments by round ID
-	getByRound: publicProcedure
+	getByRound: adminProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			const assignments = await ctx.db.query.judgingAssignments.findMany({
@@ -62,7 +74,12 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 					team: true,
 					room: {
 						with: {
-							round: true
+							round: true,
+							staff: {
+								with: {
+									staff: true
+								}
+							}
 						}
 					},
 					scores: true
@@ -100,7 +117,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		}),
 
 	// Get assignments for a specific team
-	getByTeam: publicProcedure
+	getByTeam: adminProcedure
 		.input(z.object({ teamId: z.string() }))
 		.query(async ({ ctx, input }) => {
 			const assignments = await ctx.db.query.judgingAssignments.findMany({
@@ -117,8 +134,42 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 			return assignments;
 		}),
 
+	getMineForActiveRound: protectedProcedure.query(async ({ ctx }) => {
+		const settings = await ctx.db.query.hackathonSettings.findFirst({
+			where: eq(hackathonSettings.id, 1)
+		});
+		if (!settings?.currentRoundId) return null;
+
+		const membership = await ctx.db.query.member.findFirst({
+			where: eq(member.userId, ctx.session.user.id)
+		});
+		if (!membership) return null;
+
+		const assignment = await ctx.db.query.judgingAssignments.findFirst({
+			where: (assignments, { and, eq }) =>
+				and(
+					eq(assignments.teamId, membership.organizationId),
+					eq(
+						sql`(SELECT round_id FROM ${judgingRooms} WHERE id = ${assignments.roomId})`,
+						settings.currentRoundId
+					)
+				),
+			with: {
+				team: true,
+				room: {
+					with: {
+						round: true
+					}
+				}
+			},
+			orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
+		});
+
+		return assignment ?? null;
+	}),
+
 	// Create a new assignment
-	create: protectedProcedure
+	create: adminProcedure
 		.input(
 			z.object({
 				teamId: z.string(),
@@ -135,7 +186,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		}),
 
 	// Update an assignment
-	update: protectedProcedure
+	update: adminProcedure
 		.input(
 			z.object({
 				id: z.string().uuid(),
@@ -155,7 +206,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		}),
 
 	// Delete an assignment
-	delete: protectedProcedure
+	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			await ctx.db

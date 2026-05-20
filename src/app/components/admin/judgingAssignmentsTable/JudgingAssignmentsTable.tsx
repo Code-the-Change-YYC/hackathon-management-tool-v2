@@ -93,6 +93,15 @@ export default function JudgingAssignmentsTable() {
 				width: 120
 			},
 			{
+				headerName: "Judges",
+				valueGetter: (p) =>
+					p.data?.room?.staff
+						?.map((staffRow) => staffRow.staff?.name)
+						.filter(Boolean)
+						.join(", ") ?? "",
+				flex: 1.4
+			},
+			{
 				headerName: "Room Link",
 				valueGetter: (p) => p.data?.room?.roomLink ?? "",
 				flex: 1.4
