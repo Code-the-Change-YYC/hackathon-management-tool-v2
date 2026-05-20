@@ -51,7 +51,6 @@ const ASSIGNED_TEAMS_GRID_THEME_PARAMS = {
 function CheckPill() {
 	// Renders the check icon in the grid cell.
 	return (
-		// Fill the whole grid cell so the check mark actually sits in the middle.
 		<span className="flex h-full w-full items-center justify-center">
 			<svg
 				aria-label="Scored"

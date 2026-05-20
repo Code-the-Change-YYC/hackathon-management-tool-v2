@@ -21,6 +21,7 @@ const COLUMNS = [
 
 const SCORE_LEVELS = COLUMNS.slice(1);
 
+// TODO: Change this static table into AG Grid Table
 export default function RubricTable() {
 	return (
 		<div className="rounded-2xl border-2 border-emerald-green bg-mint-green/40 p-4 shadow-md sm:p-6">

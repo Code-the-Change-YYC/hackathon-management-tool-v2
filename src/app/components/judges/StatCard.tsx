@@ -9,7 +9,6 @@ interface StatCardProps {
 export default function StatCard({ stat, caption, icon }: StatCardProps) {
 	return (
 		<div className="flex min-h-44 w-full flex-col items-center rounded-lg bg-white px-4 py-5 text-center shadow-md">
-			{/* These cards use SVG paths from public so the icons stay easy to swap. */}
 			<div className="flex size-11 items-center justify-center rounded-full bg-pastel-pink">
 				<Image
 					alt=""
