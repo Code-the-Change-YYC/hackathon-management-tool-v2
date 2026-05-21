@@ -33,7 +33,7 @@ function useCountdown(targetDate: Date): TimeLeft | null {
 		};
 
 		setTimeLeft(calculate());
-		const timer = setInterval(() => setTimeLeft(calculate()), 1000);
+		const timer = setInterval(() => setTimeLeft(calculate()), MS_PER_SECOND);
 		return () => clearInterval(timer);
 	}, [targetDate]);
 
