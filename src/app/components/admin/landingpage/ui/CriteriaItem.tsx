@@ -1,8 +1,6 @@
 import Image from "next/image";
 
-type CriteriaItemProps = {
-	text: string;
-};
+import type { CriteriaItemProps } from "@/types/landingPage";
 
 export default function CriteriaItem({ text }: CriteriaItemProps) {
 	return (

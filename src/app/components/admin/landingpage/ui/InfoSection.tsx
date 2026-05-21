@@ -1,16 +1,6 @@
 import Image from "next/image";
 
-type InfoSectionProps = {
-	title?: string;
-	titleColor?: string;
-	titleHighlight?: string;
-	bodyTextColor?: string;
-	paragraphs: string[];
-	imageSrc: string;
-	imageAlt: string;
-	bgColor: string;
-	reverse?: boolean;
-};
+import type { InfoSectionProps } from "@/types/landingPage";
 
 export default function InfoSection({
 	title,

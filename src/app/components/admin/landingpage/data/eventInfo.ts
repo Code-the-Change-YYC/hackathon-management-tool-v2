@@ -1,8 +1,4 @@
-export type EventInfoItem = {
-	id: string;
-	icon: string;
-	label: string;
-};
+import type { EventInfoItem } from "@/types/landingPage";
 
 export const eventInfoItems: EventInfoItem[] = [
 	{ id: "date", icon: "/svgs/calendar.svg", label: "Date" },

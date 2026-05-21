@@ -1,7 +1,4 @@
-export type Criterion = {
-	id: string;
-	text: string;
-};
+import type { Criterion } from "@/types/landingPage";
 
 export const criteria: Criterion[] = [
 	{ id: "criteria-1", text: "Random text dhfjhefhwiEHGwiegkwNGMWNGJKWORGHWH" },

@@ -1,9 +1,6 @@
 import Image from "next/image";
 
-type EventDetailProps = {
-	icon: string;
-	label: string;
-};
+import type { EventDetailProps } from "@/types/landingPage";
 
 export default function EventDetailsItem({ icon, label }: EventDetailProps) {
 	return (

@@ -1,9 +1,4 @@
-export type Judge = {
-	id: string;
-	name: string;
-	company: string;
-	image: string;
-};
+import type { Judge } from "@/types/landingPage";
 
 export const judges: Judge[] = [
 	{

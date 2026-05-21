@@ -1,8 +1,4 @@
-export type Sponsor = {
-	id: string;
-	image: string;
-	name: string;
-};
+import type { Sponsor } from "@/types/landingPage";
 
 export const sponsors: Sponsor[] = [
 	{ id: "sponsor-1", image: "/svgs/CTCLogo.svg", name: "Sponsor 1" },

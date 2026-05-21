@@ -1,10 +1,6 @@
 import Image from "next/image";
 
-type JudgeItemProps = {
-	name: string;
-	company: string;
-	image: string;
-};
+import type { JudgeItemProps } from "@/types/landingPage";
 
 export default function JudgeItem({ company, image, name }: JudgeItemProps) {
 	return (
