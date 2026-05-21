@@ -2,15 +2,20 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
-type TimeLeft = {
-	days: number;
-	hours: number;
-	minutes: number;
-	seconds: number;
-};
+import type { TimeLeft } from "@/types/landingPage";
 
 const HACKATHON_DATE = new Date("2026-10-01T00:00:00");
+
+const ZERO_TIME: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+
+const SECONDS_PER_MINUTE = 60;
+const MINUTES_PER_HOUR = 60;
+const HOURS_PER_DAY = 24;
+const MS_PER_SECOND = 1000;
+
+const MS_PER_MINUTE = MS_PER_SECOND * SECONDS_PER_MINUTE;
+const MS_PER_HOUR = MS_PER_MINUTE * MINUTES_PER_HOUR;
+const MS_PER_DAY = MS_PER_HOUR * HOURS_PER_DAY;
 
 function useCountdown(targetDate: Date): TimeLeft | null {
 	const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
@@ -18,12 +23,12 @@ function useCountdown(targetDate: Date): TimeLeft | null {
 	useEffect(() => {
 		const calculate = (): TimeLeft => {
 			const diff = targetDate.getTime() - Date.now();
-			if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+			if (diff <= 0) return ZERO_TIME;
 			return {
-				days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-				hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-				minutes: Math.floor((diff / (1000 * 60)) % 60),
-				seconds: Math.floor((diff / 1000) % 60)
+				days: Math.floor(diff / MS_PER_DAY),
+				hours: Math.floor((diff / MS_PER_HOUR) % HOURS_PER_DAY),
+				minutes: Math.floor((diff / MS_PER_MINUTE) % MINUTES_PER_HOUR),
+				seconds: Math.floor((diff / MS_PER_SECOND) % SECONDS_PER_MINUTE)
 			};
 		};
 
