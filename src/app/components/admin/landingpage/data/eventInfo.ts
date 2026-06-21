@@ -1,8 +1,16 @@
 import type { EventInfoItem } from "@/types/landingPage";
 
 export const eventInfoItems: EventInfoItem[] = [
-	{ id: "date", icon: "/svgs/calendar.svg", label: "Date" },
-	{ id: "location", icon: "/svgs/location.svg", label: "Location" },
-	{ id: "public", icon: "/svgs/heart.svg", label: "Public" },
-	{ id: "prizes", icon: "/svgs/diamond.svg", label: "$XXXX Prizes" }
+	{ id: "date", icon: "/svgs/landingPage/date_icon.svg", label: "Date" },
+	{
+		id: "location",
+		icon: "/svgs/landingPage/location_icon.svg",
+		label: "Location"
+	},
+	{ id: "public", icon: "/svgs/judges/team_icon.svg", label: "Public" },
+	{
+		id: "prizes",
+		icon: "/svgs/landingPage/prize_icon.svg",
+		label: "$XXXX Prizes"
+	}
 ];
