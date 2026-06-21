@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { TimeLeft } from "@/types/landingPage";
 
+//TODO: Make countdown section into its own ticket - Need more work on this
+
 const HACKATHON_DATE = new Date("2026-10-01T00:00:00");
 
 const ZERO_TIME: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };

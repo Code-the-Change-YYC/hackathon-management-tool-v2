@@ -13,7 +13,7 @@ export default function CriteriaItem({ text }: CriteriaItemProps) {
 					width={24}
 				/>
 			</div>
-			<p className="text-dark-grey text-sm">{text}</p>
+			<p className="break-words text-dark-grey text-sm">{text}</p>
 		</div>
 	);
 }
