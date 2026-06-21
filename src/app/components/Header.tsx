@@ -14,7 +14,7 @@ export default function Header({ isSignedIn, hasTeam }: HeaderProps) {
 					{!isSignedIn && (
 						<Link
 							className="font-semibold text-base transition-colors"
-							href="#"
+							href="/login"
 						>
 							Join Hackathon
 						</Link>

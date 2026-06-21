@@ -30,6 +30,8 @@ export default async function Home() {
 			<Requirements />
 			<Prizes />
 			<Judges />
+			<JudgingCriteria />
+			<Sponsors />
 			<main className={styles.main}>
 				<div className={styles.container}>
 					<h1 className={styles.title}>
