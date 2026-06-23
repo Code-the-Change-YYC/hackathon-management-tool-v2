@@ -5,6 +5,29 @@
 
 	--radius-20: 20px;
 
+	/* Figma "Prototypes" design system palette */
+	--color-purple-50: #f7f5ff;
+	--color-purple-100: #eae6ff;
+	--color-purple-500: #7054fd;
+	--color-purple-800: #2911a7;
+
+	--color-grey-00: #ffffff;
+	--color-grey-50: #fcfcfc;
+	--color-grey-100: #f5f5f5;
+	--color-grey-200: #e6e6e6;
+	--color-grey-300: #d6d6d6;
+	--color-grey-400: #a5a5a5;
+	--color-grey-600: #575757;
+	--color-grey-800: #292929;
+
+	--color-orange-50: #fff1ec;
+	--color-orange-400: #fe957b;
+	--color-orange-800: #b71801;
+
+	--color-red-50: #fff0f3;
+	--color-red-700: #c7093a;
+	--color-red-900: #8e0d37;
+
 	--color-strawberry-red: #ef4444;
 	--color-pastel-pink: #ffd2dc;
 	--color-medium-pink: #ff859c;
@@ -51,4 +74,12 @@
 	&::-webkit-details-marker {
 		display: none;
 	}
+}
+
+/* Figma elevation/200 token: layered drop shadow used on cards and modals */
+@utility shadow-elevation-200 {
+	box-shadow:
+		0 3px 8px 0 rgba(0, 0, 0, 0.1),
+		0 1px 3px 0 rgba(0, 0, 0, 0.1),
+		0 0 0.5px 0 rgba(0, 0, 0, 0.18);
 }

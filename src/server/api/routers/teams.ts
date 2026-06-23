@@ -56,8 +56,21 @@ const teamNameSchema = z
 		"Team name can only contain letters, numbers, spaces, hyphens, and underscores"
 	);
 
+// Max members per team, surfaced to the My Team UI to gate the invite button.
+const MAX_TEAM_SIZE = 5;
+
+// 6-char alphanumeric invite codes (uppercase letters + digits) to match the
+// 6-box code entry in the new design.
+const TEAM_CODE_LENGTH = 6;
+const TEAM_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
 function generateTeamCode(): string {
-	return crypto.randomBytes(2).toString("hex").toUpperCase();
+	const bytes = crypto.randomBytes(TEAM_CODE_LENGTH);
+	let code = "";
+	for (const byte of bytes) {
+		code += TEAM_CODE_ALPHABET[byte % TEAM_CODE_ALPHABET.length];
+	}
+	return code;
 }
 
 function parseMetadata<T extends Record<string, unknown>>(
@@ -175,6 +188,56 @@ export const teamsRouter = createTRPCRouter({
 		return teams;
 	}),
 
+	// Returns the current user's team with its members for the My Team page,
+	// or null when the user is not on a team yet (drives the "no team" banner).
+	getMyTeam: protectedProcedure.query(async ({ ctx }) => {
+		const userId = ctx.session.user.id;
+
+		const membership = await ctx.db.query.member.findFirst({
+			where: eq(member.userId, userId)
+		});
+		if (!membership) {
+			return null;
+		}
+
+		const team = await ctx.db.query.organization.findFirst({
+			where: eq(organization.id, membership.organizationId)
+		});
+		if (!team) {
+			return null;
+		}
+
+		const members = await ctx.db.query.member.findMany({
+			where: eq(member.organizationId, membership.organizationId),
+			with: { user: true }
+		});
+
+		const sorted = [...members].sort((a, b) => {
+			const aOwner = a.role === MEMBER_ROLES.OWNER;
+			const bOwner = b.role === MEMBER_ROLES.OWNER;
+			if (aOwner !== bOwner) {
+				return aOwner ? -1 : 1;
+			}
+			return a.createdAt.getTime() - b.createdAt.getTime();
+		});
+
+		return {
+			id: team.id,
+			name: team.name,
+			teamCode: team.teamCode,
+			maxMembers: MAX_TEAM_SIZE,
+			myRole: membership.role,
+			members: sorted.map((m) => ({
+				id: m.id,
+				userId: m.userId,
+				name: m.user.name,
+				email: m.user.email,
+				role: m.role,
+				isYou: m.userId === userId
+			}))
+		};
+	}),
+
 	create: protectedProcedure
 		.input(
 			z.object({
@@ -223,7 +286,10 @@ export const teamsRouter = createTRPCRouter({
 			z.object({
 				teamCode: z
 					.string()
-					.length(4, "Team code must be exactly 4 characters")
+					.length(
+						TEAM_CODE_LENGTH,
+						`Team code must be exactly ${TEAM_CODE_LENGTH} characters`
+					)
 					.toUpperCase()
 			})
 		)
@@ -238,6 +304,16 @@ export const teamsRouter = createTRPCRouter({
 				throw new TRPCError({
 					code: "NOT_FOUND",
 					message: "No team found with that code"
+				});
+			}
+
+			const currentMembers = await ctx.db.query.member.findMany({
+				where: eq(member.organizationId, team.id)
+			});
+			if (currentMembers.length >= MAX_TEAM_SIZE) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: `This team is full (${MAX_TEAM_SIZE} members maximum)`
 				});
 			}
 

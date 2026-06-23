@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import TeamFooter from "@/app/components/team/TeamFooter";
-import TeamHeader from "@/app/components/team/TeamHeader";
+import AppShell from "@/app/components/layout/AppShell";
 import { auth } from "@/server/better-auth/config";
 import { Role } from "@/types/types";
 
@@ -21,11 +20,5 @@ export default async function TeamLayout({
 		redirect("/");
 	}
 
-	return (
-		<div className="flex min-h-screen flex-col">
-			<TeamHeader breadcrumbLabel="Join a Team" userName={session.user.name} />
-			<main className="flex-1">{children}</main>
-			<TeamFooter />
-		</div>
-	);
+	return <AppShell userName={session.user.name}>{children}</AppShell>;
 }
