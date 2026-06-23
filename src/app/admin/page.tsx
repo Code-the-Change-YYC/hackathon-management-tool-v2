@@ -7,6 +7,7 @@ import HackathonSettingsPanel from "../components/admin/hackathonSettings/Hackat
 import JudgingAssignmentsTable from "../components/admin/judgingAssignmentsTable/JudgingAssignmentsTable";
 import JudgingRoomsManager from "../components/admin/judgingRooms/JudgingRoomsManager";
 import JudgingRoundsTable from "../components/admin/judgingRounds/JudgingRoundsTable";
+import ResetPage from "../components/admin/reset/page";
 import ScoreTable from "../components/admin/scoreTable/ScoreTable";
 import styles from "../dashboard.module.scss";
 
@@ -60,6 +61,10 @@ export default async function AdminPage() {
 				<div>
 					<h2 className={styles.sectionTitle}>Scores</h2>
 					<ScoreTable />
+				</div>
+				<div>
+					<h2 className={styles.sectionTitle}>Reset Hackathon</h2>
+					<ResetPage />
 				</div>
 			</div>
 		</main>
