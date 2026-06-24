@@ -68,7 +68,7 @@ function NavLink({
 	active: boolean;
 	onNavigate: () => void;
 }) {
-	const className = `flex items-center gap-2 rounded-xl px-3 py-1.5 font-medium text-[14px] leading-5 transition ${
+	const className = `flex items-center gap-1 rounded-xl px-3 py-1.5 font-medium text-[14px] leading-5 transition ${
 		active
 			? "bg-purple-100 text-purple-800"
 			: "text-grey-800 hover:bg-purple-50"
@@ -140,7 +140,7 @@ function NavContent({
 						{index > 0 && (
 							<div className="h-px w-full rounded-full bg-grey-300" />
 						)}
-						<p className="font-medium text-[11px] text-grey-600 leading-4 tracking-wide">
+						<p className="font-medium text-[11px] text-grey-600 leading-4">
 							{section.heading}
 						</p>
 						<div className="flex flex-col gap-2">

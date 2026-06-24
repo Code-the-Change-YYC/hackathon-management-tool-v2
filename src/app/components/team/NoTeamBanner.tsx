@@ -6,7 +6,27 @@ import { ArrowRightIcon } from "@/app/components/layout/icons";
 export default function NoTeamBanner({ onAction }: { onAction: () => void }) {
 	return (
 		<div className="relative overflow-hidden rounded-[16px] bg-red-700">
-			<div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+			<div
+				aria-hidden="true"
+				className="pointer-events-none absolute inset-y-0 right-40 hidden items-end lg:flex"
+			>
+				<Image
+					alt=""
+					className="h-full w-auto object-contain"
+					height={160}
+					src="/team/mascot-celebrate.png"
+					width={180}
+				/>
+				<Image
+					alt=""
+					className="-ml-8 h-full w-auto object-contain"
+					height={160}
+					src="/team/mascot-flag.png"
+					width={160}
+				/>
+			</div>
+
+			<div className="relative flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
 				<div className="flex flex-col gap-2">
 					<h2 className="font-semibold text-[28px] text-white leading-9">
 						You aren't part of a team yet!
@@ -26,15 +46,6 @@ export default function NoTeamBanner({ onAction }: { onAction: () => void }) {
 					<ArrowRightIcon className="size-5" />
 				</button>
 			</div>
-
-			<Image
-				alt=""
-				aria-hidden="true"
-				className="pointer-events-none absolute top-0 right-40 hidden h-full w-auto object-cover opacity-90 xl:block"
-				height={160}
-				src="/team/mascot-join.png"
-				width={220}
-			/>
 		</div>
 	);
 }

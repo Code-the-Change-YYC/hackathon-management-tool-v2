@@ -28,7 +28,7 @@ export default function JoinedSuccessModal({
 				<Image
 					alt="Teammates celebrating"
 					height={180}
-					src="/team/mascot-join.png"
+					src="/team/mascot-celebrate.png"
 					width={180}
 				/>
 			</div>

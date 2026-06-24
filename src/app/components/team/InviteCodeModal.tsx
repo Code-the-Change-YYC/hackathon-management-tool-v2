@@ -44,7 +44,7 @@ export default function InviteCodeModal({
 				<Image
 					alt="Mascot holding a flag"
 					height={180}
-					src="/team/mascot-register.png"
+					src="/team/mascot-flag.png"
 					width={180}
 				/>
 			</div>

@@ -95,13 +95,13 @@ export default function MyTeamTable({
 						<TeamIcon className="size-6" />
 					</span>
 					<div className="flex flex-col">
-						<p className="font-medium text-[11px] text-purple-500 uppercase tracking-wide">
+						<p className="font-medium text-[11px] text-purple-500 uppercase tracking-[0.55px]">
 							Your Team
 						</p>
-						<p className="font-semibold text-[28px] text-grey-800 leading-9">
+						<p className="font-semibold text-[28px] text-grey-800 leading-9 tracking-[-0.7px]">
 							{teamName}
 						</p>
-						<p className="font-medium text-[11px] text-grey-600 uppercase tracking-wide">
+						<p className="font-medium text-[11px] text-grey-600 uppercase tracking-[0.55px]">
 							{members.length}/{maxMembers} Members
 						</p>
 					</div>
