@@ -17,9 +17,9 @@ export default function InfoSection({
 	return (
 		<section className={`w-full ${bgColor} px-40 py-32`}>
 			<div
-				className={`mx-auto flex max-w-7xl flex-col items-center justify-between gap-12 ${reverse ? "md:flex-row-reverse" : "md:flex-row"}`}
+				className={`mx-auto flex max-w-7xl flex-col items-center justify-between gap-18 ${reverse ? "md:flex-row-reverse" : "md:flex-row"}`}
 			>
-				<div className="flex h-96 w-96 shrink-0 items-center justify-center overflow-hidden rounded-[30px] bg-white shadow-md">
+				<div className="flex h-96 w-96 min-w-[300px] shrink-0 items-center justify-center overflow-hidden rounded-[30px] bg-white shadow-md">
 					<Image
 						alt={imageAlt}
 						className="h-72 w-80 object-contain"
@@ -29,7 +29,7 @@ export default function InfoSection({
 					/>
 				</div>
 
-				<div className="flex max-w-lg flex-col gap-6">
+				<div className="flex min-w-[300px] max-w-lg flex-col gap-6">
 					{titleHighlight && (
 						<div className="relative inline-flex items-center gap-2">
 							{accentSrc && accentPosition === "before" && (
