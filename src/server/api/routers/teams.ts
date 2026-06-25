@@ -28,7 +28,11 @@ import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import {
+	adminProcedure,
+	createTRPCRouter,
+	protectedProcedure
+} from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
 import {
 	invitation,
@@ -174,6 +178,44 @@ export const teamsRouter = createTRPCRouter({
 		});
 		return teams;
 	}),
+
+	setPrescreen: adminProcedure
+		.input(
+			z.object({
+				teamId: z.string(),
+				status: z.enum(["passed", "failed"]),
+				comments: z.string().min(1, "Comments are required")
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const team = await ctx.db.query.organization.findFirst({
+				where: eq(organization.id, input.teamId)
+			});
+			if (!team) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Team not found"
+				});
+			}
+			if (team.prescreenStatus !== "pending") {
+				throw new TRPCError({
+					code: "CONFLICT",
+					message: "Team has already been prescreened"
+				});
+			}
+
+			const [updated] = await ctx.db
+				.update(organization)
+				.set({
+					prescreenStatus: input.status,
+					prescreenComments: input.comments,
+					prescreenedBy: ctx.session.user.id,
+					prescreenedAt: new Date()
+				})
+				.where(eq(organization.id, input.teamId))
+				.returning();
+			return updated;
+		}),
 
 	create: protectedProcedure
 		.input(

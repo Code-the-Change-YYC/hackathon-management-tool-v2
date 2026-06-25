@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
-import { user } from "@/server/db/auth-schema";
+import { type organization, user } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
 	judgingRoomStaff,
@@ -27,8 +27,8 @@ const LayoutSchema = z.object({
 
 type JudgingRoom = typeof judgingRooms.$inferSelect;
 
-function hasPassedPrescreen() {
-	return true;
+function hasPassedPrescreen(team: typeof organization.$inferSelect) {
+	return team.prescreenStatus === "passed";
 }
 
 export const judgingRoomsRouter = createTRPCRouter({

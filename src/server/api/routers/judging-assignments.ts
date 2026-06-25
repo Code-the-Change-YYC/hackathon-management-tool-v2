@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -5,7 +6,7 @@ import {
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
-import { member } from "@/server/db/auth-schema";
+import { member, organization } from "@/server/db/auth-schema";
 import {
 	hackathonSettings,
 	judgingAssignments,
@@ -178,6 +179,23 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+			const team = await ctx.db.query.organization.findFirst({
+				where: eq(organization.id, input.teamId)
+			});
+			if (!team) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Team not found"
+				});
+			}
+			if (team.prescreenStatus !== "passed") {
+				throw new TRPCError({
+					code: "CONFLICT",
+					message:
+						"Only prescreen-passed teams can be assigned to judging rooms"
+				});
+			}
+
 			const [assignment] = await ctx.db
 				.insert(judgingAssignments)
 				.values(input)

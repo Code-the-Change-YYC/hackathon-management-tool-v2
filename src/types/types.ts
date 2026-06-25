@@ -4,7 +4,7 @@ import type {
 	UserInsertType,
 	UserSelectType
 } from "@/server/db/auth-schema";
-import { PROGRAMS } from "@/server/db/auth-schema";
+import { PRESCREEN_STATUS_VALUES, PROGRAMS } from "@/server/db/auth-schema";
 
 export type User = UserSelectType;
 export type UserInsert = UserInsertType;
@@ -12,8 +12,9 @@ export type UserInsert = UserInsertType;
 export type Organization = OrganizationSelectType;
 export type OrganizationInsert = OrganizationInsertType;
 
-export { PROGRAMS };
+export { PRESCREEN_STATUS_VALUES, PROGRAMS };
 export type Program = (typeof PROGRAMS)[number];
+export type PrescreenStatus = (typeof PRESCREEN_STATUS_VALUES)[number];
 
 export enum Role {
 	ADMIN = "admin",

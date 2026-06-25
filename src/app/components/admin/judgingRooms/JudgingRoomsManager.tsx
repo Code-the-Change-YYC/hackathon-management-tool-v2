@@ -37,6 +37,7 @@ export default function JudgingRoomsManager() {
 	// Read all data we need to build room management UI.
 	const { data: rounds } = api.judgingRounds.getAll.useQuery();
 	const { data: settings } = api.hackathonSettings.get.useQuery();
+	const { data: teams } = api.teams.getAll.useQuery();
 
 	// Prefer active round; if not available, fall back to first round.
 	const defaultRoundId = settings?.currentRoundId ?? rounds?.[0]?.id ?? "";
@@ -208,6 +209,14 @@ export default function JudgingRoomsManager() {
 	// Same visual theme used by other admin tables.
 	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
 
+	const prescreenSummary = useMemo(() => {
+		const all = teams ?? [];
+		const passed = all.filter((t) => t.prescreenStatus === "passed").length;
+		const pending = all.filter((t) => t.prescreenStatus === "pending").length;
+		const failed = all.filter((t) => t.prescreenStatus === "failed").length;
+		return `${passed} teams passed prescreening (${pending} pending, ${failed} failed)`;
+	}, [teams]);
+
 	return (
 		// TODO: remove height and width inline style
 		<div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -309,6 +318,8 @@ export default function JudgingRoomsManager() {
 					Apply layout → create assignments
 				</button>
 			</div>
+
+			<div style={{ fontSize: 12, opacity: 0.85 }}>{prescreenSummary}</div>
 
 			<div style={{ fontSize: 12, opacity: 0.85, minHeight: 18 }}>
 				{statusMessage}
