@@ -96,8 +96,6 @@ export default async function Home() {
 						</p>
 					</div>
 				</div>
-				<JudgingCriteria />
-				<Sponsors />
 			</main>
 			<Footer />
 		</HydrateClient>

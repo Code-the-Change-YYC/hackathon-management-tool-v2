@@ -38,6 +38,8 @@ export type InfoSectionProps = {
 	imageSrc: string;
 	imageAlt: string;
 	bgColor: string;
+	accentSrc?: string;
+	accentPosition?: "before" | "after";
 	reverse?: boolean;
 };
 
