@@ -1,17 +1,23 @@
+import Image from "next/image";
 import { judges } from "./data/judges";
-import JudgeCard from "./ui/JudgeItem";
+import JudgeItem from "./ui/JudgeItem";
 
 export default function Judges() {
 	return (
-		<section className="w-full bg-white px-6 py-10 sm:px-12">
-			<div className="mb-6">
+		<section className="w-full bg-white px-[84px] py-[81px]">
+			<div className="mb-[40px]">
 				<h2 className="font-bold text-2xl text-dark-grey">Judges</h2>
-				<div className="mt-1 h-1 w-12 rounded-full bg-dark-green" />
+				<Image
+					alt=""
+					height={15}
+					src="/svgs/landingPage/green_underline.svg"
+					width={100}
+				/>
 			</div>
 
-			<div className="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-3">
+			<div className="grid grid-cols-2 gap-[40px] md:grid-cols-3">
 				{judges.map((judge) => (
-					<JudgeCard
+					<JudgeItem
 						company={judge.company}
 						image={judge.image}
 						key={judge.id}
