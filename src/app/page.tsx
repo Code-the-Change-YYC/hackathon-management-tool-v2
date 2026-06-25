@@ -29,8 +29,8 @@ export default async function Home() {
 			<AboutChallenge />
 			<Requirements />
 			<Prizes />
-			<Judges />
 			<JudgingCriteria />
+			<Judges />
 			<Sponsors />
 			<main className={styles.main}>
 				<div className={styles.container}>
