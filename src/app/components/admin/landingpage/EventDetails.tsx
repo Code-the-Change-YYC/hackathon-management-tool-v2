@@ -1,16 +1,24 @@
+import Image from "next/image";
 import { eventInfoItems } from "./data/eventInfo";
 import EventDetailsItem from "./ui/EventDetailsItem";
 
 export default function EventDetails() {
 	return (
-		<section className="w-full bg-white px-6 py-12 sm:px-12">
-			<div className="relative mx-auto max-w-3xl">
-				<div className="absolute inset-0 translate-x-3 translate-y-3 rounded-2xl bg-dark-pink" />
+		<section className="w-full bg-white pt-[150px] pr-[40px] pb-[125px] pl-[40px] md:pr-[115px] md:pl-[109px]">
+			<div className="relative h-[440px]">
+				<div className="absolute inset-0 translate-x-3 translate-y-3 rounded-[30px] bg-medium-pink" />
 
-				<div className="relative flex flex-col overflow-hidden rounded-2xl border-3 border-dark-pink bg-pastel-pink md:flex-row">
-					<div className="h-48 w-full bg-dark-grey md:h-auto md:w-2/5" />
+				<div className="absolute inset-0 flex overflow-hidden rounded-[33px] border-[7px] border-dark-pink bg-pastel-pink">
+					<div className="relative w-[610px] shrink-0 overflow-hidden rounded-[24px] border-[4px] border-dark-pink bg-dark-grey">
+						<Image
+							alt="Event image"
+							className="h-full w-full object-cover"
+							fill
+							src="/svgs/landingPage/event_room.jpg"
+						/>
+					</div>
 
-					<div className="flex flex-col gap-4 px-10 py-5">
+					<div className="flex flex-1 flex-col justify-center gap-8 px-12">
 						{eventInfoItems.map((item) => (
 							<EventDetailsItem
 								icon={item.icon}

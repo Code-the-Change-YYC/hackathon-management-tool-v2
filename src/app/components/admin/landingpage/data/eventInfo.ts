@@ -7,7 +7,7 @@ export const eventInfoItems: EventInfoItem[] = [
 		icon: "/svgs/landingPage/location_icon.svg",
 		label: "Location"
 	},
-	{ id: "public", icon: "/svgs/judges/team_icon.svg", label: "Public" },
+	{ id: "public", icon: "/svgs/landingPage/public_icon.svg", label: "Public" },
 	{
 		id: "prizes",
 		icon: "/svgs/landingPage/prize_icon.svg",
