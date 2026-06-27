@@ -1,7 +1,10 @@
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<!-- Uploaded to: SVG Repo, www.svgrepo.com, Transformed by: SVG Repo Mixer Tools -->
-<svg fill="#ffffff" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff">
-<g id="SVGRepo_bgCarrier" stroke-width="0"/>
-<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"/>
-<g id="SVGRepo_iconCarrier"> <path d="M12 2.03998C6.5 2.03998 2 6.52998 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.84998C10.44 7.33998 11.93 5.95998 14.22 5.95998C15.31 5.95998 16.45 6.14998 16.45 6.14998V8.61998H15.19C13.95 8.61998 13.56 9.38998 13.56 10.18V12.06H16.34L15.89 14.96H13.56V21.96C15.9164 21.5878 18.0622 20.3855 19.6099 18.57C21.1576 16.7546 22.0054 14.4456 22 12.06C22 6.52998 17.5 2.03998 12 2.03998Z"/> </g>
-</svg>
+<svg width="36" height="35" viewBox="0 0 36 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_997_2036)">
+<path d="M35.8363 17.5C35.8363 7.83501 27.814 0 17.9181 0C8.02221 0 0 7.83501 0 17.5C0 26.2346 6.55237 33.4746 15.1184 34.7874V22.5586H10.5689V17.5H15.1184V13.6445C15.1184 9.25859 17.7935 6.83594 21.8864 6.83594C23.8462 6.83594 25.8973 7.17773 25.8973 7.17773V11.4844H23.6379C21.4122 11.4844 20.7178 12.8334 20.7178 14.2188V17.5H25.6873L24.8929 22.5586H20.7178V34.7874C29.2839 33.4746 35.8363 26.2346 35.8363 17.5Z" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_997_2036">
+<rect width="35.8363" height="35" fill="white"/>
+</clipPath>
+</defs>
+</svg>

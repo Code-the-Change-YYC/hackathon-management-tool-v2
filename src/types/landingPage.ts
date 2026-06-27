@@ -62,3 +62,13 @@ export type JudgeItemProps = {
 	company: string;
 	image: string;
 };
+
+export type Winner = {
+	id: string;
+	awardName: string;
+	awardColor: string;
+	projectName: string;
+	description: string;
+	image: string;
+	link: string;
+};
