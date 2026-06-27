@@ -2,21 +2,29 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function Footer() {
-	var iconDimension = 25;
+	const ICON_DIMENSION = 35;
 	return (
-		<footer className="w-full bg-awesome-purple py-5">
-			<div className="flex flex-col items-center gap-2">
-				<p className="font-bold text-sm text-white">Keep up with us!</p>
-				<div className="flex items-center gap-5">
+		<footer className="w-full bg-awesome-purple py-8">
+			<div className="flex flex-col items-center gap-2 gap-y-3">
+				<p className="font-bold text-awesomer-purple text-xl">
+					Keep up with us!
+				</p>
+				<Link
+					className="!text-ehhh-grey !underline !font-medium !hover:text-awesome-purple text-base leading-5 transition-colors"
+					href="https://www.google.com"
+				>
+					View 2024 Winners!
+				</Link>
+				<div className="flex items-center gap-8">
 					<Link
 						href="https://www.facebook.com/CodeTheChangeYYC/"
 						target="_blank"
 					>
 						<Image
 							alt="Facebook"
-							height={iconDimension}
+							height={ICON_DIMENSION}
 							src="/svgs/socialIcons/facebook_icon.svg"
-							width={iconDimension}
+							width={ICON_DIMENSION}
 						/>
 					</Link>
 					<Link
@@ -25,9 +33,9 @@ export default function Footer() {
 					>
 						<Image
 							alt="Instagram"
-							height={iconDimension}
+							height={ICON_DIMENSION}
 							src="/svgs/socialIcons/instagram_icon.svg"
-							width={iconDimension}
+							width={ICON_DIMENSION}
 						/>
 					</Link>
 					<Link
@@ -36,30 +44,30 @@ export default function Footer() {
 					>
 						<Image
 							alt="LinkedIn"
-							height={iconDimension}
+							height={ICON_DIMENSION}
 							src="/svgs/socialIcons/linkedin_icon.svg"
-							width={iconDimension}
+							width={ICON_DIMENSION}
 						/>
 					</Link>
 					<Link href="https://youtube.com" target="_blank">
 						<Image
 							alt="YouTube"
-							height={iconDimension}
+							height={ICON_DIMENSION}
 							src="/svgs/socialIcons/youtube_icon.svg"
-							width={iconDimension}
+							width={ICON_DIMENSION}
 						/>
 					</Link>
 					<Link href="https://github.com/Code-the-Change-YYC" target="_blank">
 						<Image
 							alt="GitHub"
-							height={iconDimension}
+							height={ICON_DIMENSION}
 							src="/svgs/socialIcons/github_icon.svg"
-							width={iconDimension}
+							width={ICON_DIMENSION}
 						/>
 					</Link>
 				</div>
 
-				<p className="pb-10 text-dashboard-grey/70 text-sm">
+				<p className="pb-10 font-medium text-base text-dashboard-grey/70 leading-5 sm:pb-0">
 					Copyright © Code The Change YYC
 				</p>
 			</div>
