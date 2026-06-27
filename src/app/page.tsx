@@ -7,7 +7,7 @@ import styles from "@/app/index.module.scss";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";
 import AboutChallenge from "./components/admin/landingpage/AboutChallenge";
-import Countdown from "./components/admin/landingpage/Countdown";
+import Countdown from "./components/admin/landingpage/countdown/Countdown";
 import EventDetails from "./components/admin/landingpage/EventDetails";
 import Judges from "./components/admin/landingpage/Judges";
 import JudgingCriteria from "./components/admin/landingpage/JudgingCriteria";
