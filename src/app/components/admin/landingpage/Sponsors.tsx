@@ -33,18 +33,18 @@ export default function Sponsors() {
 					</p>
 				</div>
 
-				<div className="flex w-full items-center justify-between px-[84px]">
+				<div className="flex w-full flex-wrap items-center justify-between gap-x-8 gap-y-6 px-[84px]">
 					{sponsors.map((sponsor) => (
 						<div
-							className="h-20 w-20 shrink-0 overflow-hidden rounded-full bg-medium-grey"
+							className="flex h-16 w-auto max-w-[140px] shrink-0 items-center justify-center"
 							key={sponsor.id}
 						>
 							<Image
 								alt={sponsor.name}
-								className="h-full w-full object-cover"
-								height={80}
+								className="h-full w-full object-contain"
+								height={64}
 								src={sponsor.image}
-								width={80}
+								width={140}
 							/>
 						</div>
 					))}
