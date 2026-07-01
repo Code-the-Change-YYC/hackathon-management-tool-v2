@@ -72,3 +72,9 @@ export type Winner = {
 	image: string;
 	link: string;
 };
+
+export type WinnerCardProps = {
+	winner: Winner;
+	index: number;
+	total: number;
+};
