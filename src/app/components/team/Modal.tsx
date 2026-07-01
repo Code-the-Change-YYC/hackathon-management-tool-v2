@@ -50,13 +50,15 @@ export function Modal({
 			/>
 			<div
 				aria-modal="true"
-				className="relative flex w-full max-w-[480px] flex-col gap-6 rounded-[20px] bg-grey-50 p-6 shadow-elevation-200 sm:p-8"
+				className={`relative flex w-full max-w-[480px] flex-col gap-6 rounded-[20px] bg-grey-50 p-6 shadow-elevation-200 sm:p-8 ${
+					showClose ? "pt-16 sm:pt-16" : ""
+				}`}
 				role="dialog"
 			>
 				{showClose && (
 					<button
 						aria-label="Close"
-						className="absolute top-4 right-4 grid size-8 place-items-center rounded-full text-grey-800 transition hover:bg-grey-100"
+						className="absolute top-5 right-5 grid size-8 place-items-center rounded-full text-grey-800 transition hover:bg-grey-100"
 						onClick={onClose}
 						type="button"
 					>
