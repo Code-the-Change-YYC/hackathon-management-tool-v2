@@ -7,11 +7,11 @@ import type { HeaderProps } from "@/types/landingPage";
 export default function Header({ isSignedIn, hasTeam }: HeaderProps) {
 	return (
 		<header className="relative w-full bg-white shadow-[0_4px_4px_0_rgba(0,0,0,0.25)]">
-			<div className="flex items-center justify-between px-[88px] py-[40px]">
-				<div className="min-w-[100px]">
+			<div className="flex items-center justify-between px-22 py-10">
+				<div className="min-w-25">
 					{!isSignedIn && (
 						<Link
-							className="!text-awesomer-purple hover:!text-awesome-purple font-semibold text-2xl transition-colors"
+							className="font-semibold text-2xl text-awesomer-purple! transition-colors hover:text-awesome-purple!"
 							href="/register"
 						>
 							Join Hackathon
@@ -19,7 +19,7 @@ export default function Header({ isSignedIn, hasTeam }: HeaderProps) {
 					)}
 					{isSignedIn && !hasTeam && (
 						<Link
-							className="!text-awesomer-purple hover:!text-awesome-purple font-semibold text-2xl transition-colors"
+							className="font-semibold text-2xl text-awesomer-purple! transition-colors hover:text-awesome-purple!"
 							href="/teams"
 						>
 							Join a Team
@@ -36,9 +36,9 @@ export default function Header({ isSignedIn, hasTeam }: HeaderProps) {
 					/>
 				</div>
 
-				<div className="flex min-w-[100px] justify-end">
+				<div className="flex min-w-25 justify-end">
 					<Link
-						className="!text-awesomer-purple hover:!text-awesome-purple font-semibold text-2xl transition-colors"
+						className="font-semibold text-2xl text-awesomer-purple! transition-colors hover:text-awesome-purple!"
 						href="/login"
 					>
 						Sign In

@@ -10,8 +10,8 @@ export default function AboutChallenge() {
 			imageAlt="About the challenge"
 			imageSrc="/svgs/landingPage/about_illustration.svg"
 			paragraphs={[
-				"Lorem ipsum dolor sit amet, chjhonsectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-				"Lorem ipsum dolor sit amet, consectetur adipiscing elsafasfit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+				"Hack the Change is a 24-hour event where students from across Canada come together to build innovative software solutions that create positive social impact.",
+				"Whether you are a first-time hacker or a seasoned veteran, the hackathon inspires participants to leverage technology, solve real-world problems, and code a better tomorrow."
 			]}
 			reverse
 			title="About the"

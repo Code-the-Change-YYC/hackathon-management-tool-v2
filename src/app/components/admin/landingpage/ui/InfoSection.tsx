@@ -1,5 +1,21 @@
+import type { StaticImageData } from "next/image";
 import Image from "next/image";
-import type { InfoSectionProps } from "@/types/landingPage";
+import type { ReactNode } from "react";
+
+export interface InfoSectionProps {
+	title?: string;
+	titleColor?: string;
+	titleHighlight: string;
+	bodyTextColor?: string;
+	paragraphs?: string[];
+	bodyContent?: ReactNode;
+	imageSrc: string | StaticImageData;
+	imageAlt: string;
+	bgColor: string;
+	accentSrc?: string;
+	accentPosition?: "before" | "after";
+	reverse?: boolean;
+}
 
 export default function InfoSection({
 	title,
@@ -7,6 +23,7 @@ export default function InfoSection({
 	titleHighlight,
 	bodyTextColor = "text-white/80",
 	paragraphs,
+	bodyContent,
 	imageSrc,
 	imageAlt,
 	bgColor,
@@ -19,7 +36,7 @@ export default function InfoSection({
 			<div
 				className={`mx-auto flex max-w-7xl flex-col items-center justify-between gap-18 ${reverse ? "md:flex-row-reverse" : "md:flex-row"}`}
 			>
-				<div className="flex h-96 w-96 min-w-[300px] shrink-0 items-center justify-center overflow-hidden rounded-[30px] bg-white shadow-md">
+				<div className="flex h-96 w-96 min-w-75 shrink-0 items-center justify-center overflow-hidden rounded-[30px] bg-white shadow-md">
 					<Image
 						alt={imageAlt}
 						className="h-72 w-80 object-contain"
@@ -29,7 +46,7 @@ export default function InfoSection({
 					/>
 				</div>
 
-				<div className="flex min-w-[300px] max-w-lg flex-col gap-6">
+				<div className="flex min-w-75 max-w-lg flex-col gap-6">
 					{titleHighlight && (
 						<div className="relative inline-flex items-center gap-2">
 							{accentSrc && accentPosition === "before" && (
@@ -41,7 +58,7 @@ export default function InfoSection({
 									width={24}
 								/>
 							)}
-							<h2 className="font-semibold text-3xl">
+							<h2 className="pr-2 font-semibold text-3xl md:text-5xl">
 								{title && (
 									<span className="text-white not-italic">{title} </span>
 								)}
@@ -58,14 +75,17 @@ export default function InfoSection({
 							)}
 						</div>
 					)}
-					{paragraphs.map((para) => (
-						<p
-							className={`${bodyTextColor} font-medium text-2xl leading-8`}
-							key={para}
-						>
-							{para}
-						</p>
-					))}
+
+					{bodyContent
+						? bodyContent
+						: paragraphs?.map((para) => (
+								<p
+									className={`${bodyTextColor} font-medium text-2xl leading-8`}
+									key={para}
+								>
+									{para}
+								</p>
+							))}
 				</div>
 			</div>
 		</section>

@@ -10,8 +10,7 @@ export default function Requirements() {
 			imageAlt="Requirements"
 			imageSrc="/svgs/landingPage/requirements_illustration.svg"
 			paragraphs={[
-				"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-				"Lorem ipsum dolor sit amet, consectetur adipiscihjfhjfng elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+				"Open to all Canadian students, at the university, college, or high school level."
 			]}
 			title=""
 			titleColor="text-awesomer-purple"

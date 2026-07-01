@@ -1,53 +1,74 @@
 import Image from "next/image";
+import Link from "next/link";
 import { sponsors } from "./data/sponsors";
 
 export default function Sponsors() {
 	return (
-		<section className="relative w-full overflow-hidden bg-white py-[40px]">
-			<Image
-				alt=""
-				className="-translate-y-1/2 pointer-events-none absolute top-[20%] left-0 hidden sm:block"
-				height={250}
-				src="/svgs/landingPage/pink_line_left.svg"
-				style={{ width: "35vw", height: "auto" }}
-				width={600}
-			/>
+		<section className="w-full bg-white py-10">
+			<div className="relative flex flex-col items-center gap-21">
+				<div className="relative flex w-full flex-col items-center gap-4 overflow-hidden py-12">
+					<Image
+						alt=""
+						className="-translate-y-1/2 pointer-events-none absolute top-[35%] left-0 hidden sm:block"
+						height={250}
+						src="/svgs/landingPage/pink_line_left.svg"
+						style={{ width: "32vw", height: "auto" }}
+						width={600}
+					/>
 
-			<Image
-				alt=""
-				className="-translate-y-1/2 pointer-events-none absolute top-[30%] right-0 hidden sm:block"
-				height={250}
-				src="/svgs/landingPage/pink_line_right.svg"
-				style={{ width: "35vw", height: "auto" }}
-				width={600}
-			/>
+					<Image
+						alt=""
+						className="-translate-y-1/2 pointer-events-none absolute top-[55%] right-0 hidden sm:block"
+						height={250}
+						src="/svgs/landingPage/pink_line_right.svg"
+						style={{ width: "32vw", height: "auto" }}
+						width={600}
+					/>
 
-			<div className="relative flex flex-col items-center gap-[84px]">
-				<div className="flex flex-col items-center gap-4">
-					<h2 className="text-center font-bold text-3xl">
+					<h2 className="relative text-center font-bold text-3xl md:text-4xl">
 						Thank you to our sponsors
 					</h2>
-					<p className="max-w-md text-center text-base text-dark-grey">
-						Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-						eiusmod tempor incididunt ut labore et dolore magna aliqua.
+					<p className="relative w-11/2 text-center text-base">
+						{`Without their support, this event wouldn't have been possible`}
 					</p>
 				</div>
 
-				<div className="flex w-full flex-wrap items-center justify-between gap-x-8 gap-y-6 px-[84px]">
-					{sponsors.map((sponsor) => (
-						<div
-							className="flex h-16 w-auto max-w-[140px] shrink-0 items-center justify-center"
-							key={sponsor.id}
-						>
-							<Image
-								alt={sponsor.name}
-								className="h-full w-full object-contain"
-								height={64}
-								src={sponsor.image}
-								width={140}
-							/>
-						</div>
-					))}
+				<div className="grid w-full grid-cols-2 gap-x-8 gap-y-10 px-21 md:grid-cols-4">
+					{sponsors.map((sponsor) => {
+						const logo = (
+							<div className="group-hover:-translate-y-1 flex size-32 items-center justify-center overflow-hidden rounded-full bg-white transition-all duration-300 group-hover:shadow-2xl md:size-37.5">
+								<Image
+									alt={sponsor.name}
+									className="h-full w-full scale-75 object-contain"
+									height={150}
+									src={sponsor.image}
+									width={150}
+								/>
+							</div>
+						);
+
+						return (
+							<div
+								className="group flex flex-col items-center justify-center gap-3"
+								key={sponsor.id}
+							>
+								{sponsor.url ? (
+									<Link
+										href={sponsor.url}
+										rel="noopener noreferrer"
+										target="_blank"
+									>
+										{logo}
+									</Link>
+								) : (
+									logo
+								)}
+								<p className="text-center text-dark-grey text-sm opacity-0 transition-all duration-300 group-hover:opacity-100">
+									{sponsor.name}
+								</p>
+							</div>
+						);
+					})}
 				</div>
 			</div>
 		</section>

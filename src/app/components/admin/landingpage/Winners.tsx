@@ -20,10 +20,13 @@ export default function Winners() {
 	const next = () => setStartIndex((i) => (i + 1) % winners.length);
 
 	return (
-		<section className="w-full bg-pinky-peach px-[80px] py-[80px]">
-			<h2 className="mb-12 font-semibold text-3xl text-dark-grey">
-				Last Year's <span className="text-awesomer-purple italic">Winners</span>
-			</h2>
+		<section className="w-full bg-pinky-peach px-40 py-32">
+			<div className="relative mb-12 inline-flex items-center gap-2">
+				<h2 className="pr-2 font-semibold text-3xl md:text-5xl">
+					<span className="text-dark-grey not-italic">Last Year&apos;s </span>
+					<span className="text-awesomer-purple italic">Winners</span>
+				</h2>
+			</div>
 
 			<div className="flex items-center gap-4">
 				<button

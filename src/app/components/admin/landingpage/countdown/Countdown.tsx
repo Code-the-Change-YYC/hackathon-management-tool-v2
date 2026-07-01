@@ -7,7 +7,7 @@ import CountdownHero from "./CountdownHero";
 import CountdownTile from "./CountdownTile";
 import CountdownWindow from "./CountdownWindow";
 
-const HACKATHON_DATE = new Date("2026-10-01T00:00:00");
+const HACKATHON_DATE = new Date("2026-11-07T09:00:00-07:00");
 const ZERO_TIME: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const BG_IMAGE = "/svgs/landingPage/countdown_bg.svg";
@@ -53,7 +53,7 @@ export default function Countdown() {
 				<CountdownWindow>
 					<div className="mb-8 flex flex-col items-center gap-3">
 						<p className="font-bold text-4xl text-awesomer-purple">
-							Hack the Change 2026 begins...
+							Hack the Change 2026 begins in...
 						</p>
 						<Image
 							alt=""

@@ -2,23 +2,28 @@ import type { Criterion } from "@/types/landingPage";
 
 export const criteria: Criterion[] = [
 	{
-		id: "criteria-1",
-		text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sitd amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+		category: "Innovation & Creativity",
+		description:
+			"Is the idea original or a fresh take on existing solutions? Does it creatively apply technology to urban challenges (e.g., housing, mobility, disaster resilience, inclusivity)?"
 	},
 	{
-		id: "criteria-2",
-		text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit ameht, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+		category: "Impact & Relevance to Prompt",
+		description:
+			"Does the solution clearly address the challenge? Could it meaningfully improve lives?"
 	},
 	{
-		id: "criteria-3",
-		text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consecteturg adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+		category: "Feasibility & Scalability",
+		description:
+			"Is the solution practical given real constraints (budget, infrastructure, etc.)? Could it scale beyond a demo into a real city/community setting?"
 	},
 	{
-		id: "criteria-4",
-		text: "Lorem ipsum dolor sit amet, consectetur addipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+		category: "Technical Execution",
+		description:
+			"Quality of the implementation (working prototype, technical depth, stability)? Use of appropriate technology stack. Is the solution technically sound and well-built?"
 	},
 	{
-		id: "criteria-5",
-		text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscingd elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+		category: "User Experience & Design",
+		description:
+			"Is the solution intuitive, accessible and user-friendly? Is the solution aesthetically pleasing? Does the design of the product elevate its function and original idea?"
 	}
 ];

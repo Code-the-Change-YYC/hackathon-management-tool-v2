@@ -12,11 +12,12 @@ export type EventInfoItem = {
 };
 
 export type Criterion = {
-	id: string;
-	text: string;
+	category: string;
+	description: string;
 };
 
 export type Sponsor = {
+	url: string | undefined;
 	id: string;
 	image: string;
 	name: string;
@@ -49,6 +50,7 @@ export type HeaderProps = {
 };
 
 export type CriteriaItemProps = {
+	category: string;
 	text: string;
 };
 

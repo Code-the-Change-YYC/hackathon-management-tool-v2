@@ -4,12 +4,12 @@ import EventDetailsItem from "./ui/EventDetailsItem";
 
 export default function EventDetails() {
 	return (
-		<section className="w-full bg-white pt-[150px] pr-[40px] pb-[125px] pl-[40px] md:pr-[115px] md:pl-[109px]">
-			<div className="relative h-[440px]">
+		<section className="w-full bg-white pt-37.5 pr-10 pb-31.25 pl-10 md:pr-28.75 md:pl-27.25">
+			<div className="relative h-110">
 				<div className="absolute inset-0 translate-x-3 translate-y-3 rounded-[30px] bg-medium-pink" />
 
 				<div className="absolute inset-0 flex overflow-hidden rounded-[33px] border-[7px] border-dark-pink bg-pastel-pink">
-					<div className="relative w-[610px] shrink-0 overflow-hidden rounded-[24px] border-[4px] border-dark-pink bg-dark-grey">
+					<div className="relative w-152.5 shrink-0 overflow-hidden rounded-3xl border-4 border-dark-pink bg-dark-grey">
 						<Image
 							alt="Event image"
 							className="h-full w-full object-cover"
