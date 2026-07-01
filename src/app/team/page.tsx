@@ -1,5 +1,5 @@
-import MyTeamView from "@/app/components/team/MyTeamView";
+import { redirect } from "next/navigation";
 
 export default function TeamPage() {
-	return <MyTeamView />;
+	redirect("/participant/my-team");
 }
