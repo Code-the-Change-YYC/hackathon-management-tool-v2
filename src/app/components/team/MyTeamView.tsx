@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/trpc/react";
+import EditTeamNameModal from "./EditTeamNameModal";
 import InviteCodeModal from "./InviteCodeModal";
 import JoinCodeModal from "./JoinCodeModal";
 import JoinedSuccessModal from "./JoinedSuccessModal";
@@ -11,7 +12,14 @@ import MyTeamTable, { type TeamMember } from "./MyTeamTable";
 import NoTeamBanner from "./NoTeamBanner";
 import SituationModal, { type Situation } from "./SituationModal";
 
-type ModalKind = null | "situation" | "invite" | "join" | "joined" | "leave";
+type ModalKind =
+	| null
+	| "situation"
+	| "invite"
+	| "join"
+	| "joined"
+	| "leave"
+	| "edit";
 
 type ViewTeam = {
 	name: string;
@@ -52,6 +60,7 @@ export default function MyTeamView() {
 
 	const [modal, setModal] = useState<ModalKind>(null);
 	const [joinError, setJoinError] = useState<string | null>(null);
+	const [editError, setEditError] = useState<string | null>(null);
 	const [joinedTeamName, setJoinedTeamName] = useState("");
 	const [previewTeam, setPreviewTeam] = useState(false);
 
@@ -76,6 +85,15 @@ export default function MyTeamView() {
 			setModal(null);
 			await utils.teams.getMyTeam.invalidate();
 		}
+	});
+
+	const updateMutation = api.teams.update.useMutation({
+		onSuccess: async () => {
+			setEditError(null);
+			setModal(null);
+			await utils.teams.getMyTeam.invalidate();
+		},
+		onError: (error) => setEditError(error.message)
 	});
 
 	const viewTeam: ViewTeam | null = team
@@ -128,7 +146,10 @@ export default function MyTeamView() {
 					canEditName={viewTeam.isOwner}
 					maxMembers={viewTeam.maxMembers}
 					members={viewTeam.members}
-					onEditName={() => undefined}
+					onEditName={() => {
+						setEditError(null);
+						setModal("edit");
+					}}
 					onInvite={() => setModal("invite")}
 					onLeave={() => setModal("leave")}
 					teamName={viewTeam.name}
@@ -140,6 +161,7 @@ export default function MyTeamView() {
 			<TestingShortcuts
 				onOpen={(kind) => {
 					setJoinError(null);
+					setEditError(null);
 					setModal(kind);
 				}}
 				onTogglePreview={() => setPreviewTeam((v) => !v)}
@@ -175,6 +197,21 @@ export default function MyTeamView() {
 				open={modal === "leave"}
 				teamName={viewTeam?.name ?? SAMPLE_TEAM.name}
 			/>
+			<EditTeamNameModal
+				currentName={viewTeam?.name ?? SAMPLE_TEAM.name}
+				error={editError}
+				loading={updateMutation.isPending}
+				onClose={() => setModal(null)}
+				onSave={(name) => {
+					if (team) {
+						updateMutation.mutate({ id: team.id, name });
+					} else {
+						// Preview mode has no real team to persist to.
+						setModal(null);
+					}
+				}}
+				open={modal === "edit"}
+			/>
 		</div>
 	);
 }
@@ -193,7 +230,8 @@ function TestingShortcuts({
 		{ label: "Invite code", kind: "invite" },
 		{ label: "Join code", kind: "join" },
 		{ label: "Joined success", kind: "joined" },
-		{ label: "Leave team", kind: "leave" }
+		{ label: "Leave team", kind: "leave" },
+		{ label: "Edit name", kind: "edit" }
 	];
 
 	return (
