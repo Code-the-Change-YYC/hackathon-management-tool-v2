@@ -11,6 +11,16 @@ import {
 } from "@/server/db/schema";
 import { criteria, scores } from "@/server/db/scores-schema";
 
+const TEAM_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+function makeTeamCode(): string {
+	let code = "";
+	for (let i = 0; i < 6; i++) {
+		code +=
+			TEAM_CODE_ALPHABET[Math.floor(Math.random() * TEAM_CODE_ALPHABET.length)];
+	}
+	return code;
+}
+
 async function main() {
 	console.log("Starting seed...");
 
@@ -96,7 +106,8 @@ async function main() {
 						id: generateId(),
 						name: org.name,
 						slug: org.slug,
-						createdAt: new Date()
+						createdAt: new Date(),
+						teamCode: makeTeamCode()
 					})
 					.returning();
 

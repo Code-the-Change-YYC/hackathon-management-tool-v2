@@ -73,6 +73,23 @@ function generateTeamCode(): string {
 	return code;
 }
 
+// Generates a team code that is not already taken (the column is unique).
+async function ensureUniqueTeamCode(db: typeof dbType): Promise<string> {
+	for (let attempt = 0; attempt < 10; attempt++) {
+		const candidate = generateTeamCode();
+		const existing = await db.query.organization.findFirst({
+			where: eq(organization.teamCode, candidate)
+		});
+		if (!existing) {
+			return candidate;
+		}
+	}
+	throw new TRPCError({
+		code: "INTERNAL_SERVER_ERROR",
+		message: "Could not generate a unique team code"
+	});
+}
+
 function parseMetadata<T extends Record<string, unknown>>(
 	raw: string | null
 ): T {
@@ -221,10 +238,21 @@ export const teamsRouter = createTRPCRouter({
 			return a.createdAt.getTime() - b.createdAt.getTime();
 		});
 
+		// Backfill an invite code for teams created before codes existed
+		// (e.g. seeded teams) so the invite modal always has one to show.
+		let teamCode = team.teamCode;
+		if (!teamCode) {
+			teamCode = await ensureUniqueTeamCode(ctx.db);
+			await ctx.db
+				.update(organization)
+				.set({ teamCode })
+				.where(eq(organization.id, team.id));
+		}
+
 		return {
 			id: team.id,
 			name: team.name,
-			teamCode: team.teamCode,
+			teamCode,
 			maxMembers: MAX_TEAM_SIZE,
 			myRole: membership.role,
 			members: sorted.map((m) => ({
@@ -249,7 +277,7 @@ export const teamsRouter = createTRPCRouter({
 			await ensureNotInTeam(ctx.db, userId);
 
 			const teamId = crypto.randomUUID();
-			const teamCode = generateTeamCode();
+			const teamCode = await ensureUniqueTeamCode(ctx.db);
 			const slug = input.name
 				.toLowerCase()
 				.replace(/\s+/g, "-")
