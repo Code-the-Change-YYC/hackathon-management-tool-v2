@@ -34,7 +34,7 @@ const SECTIONS: NavSection[] = [
 		items: [
 			{ label: "Dashboard", href: "/participant", icon: <DashboardIcon /> },
 			{ label: "Schedule", href: "/schedule", icon: <ScheduleIcon /> },
-			{ label: "My Team", href: "/team", icon: <TeamIcon /> },
+			{ label: "My Team", href: "/participant/my-team", icon: <TeamIcon /> },
 			{ label: "Meal Information", href: "/meal", icon: <MealIcon /> }
 		]
 	},
@@ -68,14 +68,18 @@ function NavLink({
 	active: boolean;
 	onNavigate: () => void;
 }) {
-	const className = `flex items-center gap-1 rounded-xl px-3 py-1.5 font-medium text-[14px] leading-5 transition ${
+	const className = `flex items-center gap-3 rounded-xl px-3 py-1.5 font-medium text-[14px] leading-5 transition ${
 		active
 			? "bg-purple-100 text-purple-800"
 			: "text-grey-800 hover:bg-purple-50"
 	}`;
 	const content = (
 		<>
-			<span className="grid size-5 shrink-0 place-items-center text-current">
+			<span
+				className={`grid size-5 shrink-0 place-items-center [&>svg]:size-5 ${
+					active ? "text-current" : "text-grey-600"
+				}`}
+			>
 				{item.icon}
 			</span>
 			<span>{item.label}</span>
@@ -143,14 +147,10 @@ function NavContent({
 						<p className="font-medium text-[11px] text-grey-600 leading-4">
 							{section.heading}
 						</p>
-						<div className="flex flex-col gap-2">
+						<div className="flex flex-col gap-4">
 							{section.items.map((item) => (
 								<NavLink
-									active={
-										item.href !== "/" &&
-										!item.external &&
-										pathname.startsWith(item.href)
-									}
+									active={!item.external && pathname === item.href}
 									item={item}
 									key={item.label}
 									onNavigate={onNavigate}
@@ -171,7 +171,7 @@ export default function Sidebar({ userName }: { userName?: string }) {
 
 	return (
 		<>
-			<aside className="sticky top-0 hidden h-screen w-[209px] shrink-0 border-grey-300 border-r bg-[#fafafa] py-4 pr-2 pl-4 lg:block">
+			<aside className="sticky top-0 hidden h-screen w-60 shrink-0 bg-[#fafafa] py-4 pr-2 pl-4 lg:block">
 				<NavContent
 					onNavigate={close}
 					pathname={pathname}
