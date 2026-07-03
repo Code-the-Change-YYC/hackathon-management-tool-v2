@@ -59,7 +59,7 @@ export default function Prizes() {
 			imageAlt="Prizes"
 			imageSrc="/svgs/landingPage/prizes_illustration.svg"
 			reverse
-			titleColor="text-emerald-green"
+			titleColor="text-medium-green"
 			titleHighlight="Prizes"
 		/>
 	);
