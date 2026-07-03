@@ -63,7 +63,7 @@ export default function Countdown() {
 						/>
 					</div>
 
-					<div className="flex items-end justify-center gap-6 pb-6">
+					<div className="flex flex-row items-center justify-center gap-3 py-4">
 						<CountdownTile name="Days" value={timeLeft.days} />
 						<CountdownTile name="Hours" value={timeLeft.hours} />
 						<CountdownTile name="Minutes" value={timeLeft.minutes} />
