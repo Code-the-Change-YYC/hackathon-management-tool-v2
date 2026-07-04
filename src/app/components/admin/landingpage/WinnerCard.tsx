@@ -30,9 +30,6 @@ export default function WinnerCard({ winner, index, total }: WinnerCardProps) {
 					<h2 className="font-semibold text-3xl text-white leading-8 [text-shadow:0px_4px_4px_rgb(0_0_0/0.25)]">
 						{winner.projectName}
 					</h2>
-					<p className="truncate font-medium text-base text-white leading-5">
-						{winner.description}
-					</p>
 				</div>
 			</Link>
 		</li>

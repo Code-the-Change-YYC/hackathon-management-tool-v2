@@ -18,7 +18,7 @@ export default function Sponsors() {
 
 					<Image
 						alt=""
-						className="-translate-y-1/2 pointer-events-none absolute top-[55%] right-0 hidden sm:block"
+						className="-translate-y-1/2 pointer-events-none absolute top-[65%] right-0 hidden sm:block"
 						height={250}
 						src="/svgs/landingPage/pink_line_right.svg"
 						style={{ width: "32vw", height: "auto" }}
@@ -28,8 +28,17 @@ export default function Sponsors() {
 					<h2 className="relative text-center font-bold text-3xl md:text-4xl">
 						Thank you to our sponsors
 					</h2>
-					<p className="relative w-11/2 text-center text-base">
-						{`Without their support, this event wouldn't have been possible`}
+					<p className="relative w-1/2 text-center text-base">
+						{`Without their support, this event would not be possible.`}
+					</p>
+					<p className="relative text-cente">
+						Interested in partnering? Contact{" "}
+						<Link
+							className="text-awesomer-purple! underline transition-colors"
+							href="mailto:codethechangeyyc@gmail.com"
+						>
+							codethechangeyyc@gmail.com
+						</Link>
 					</p>
 				</div>
 

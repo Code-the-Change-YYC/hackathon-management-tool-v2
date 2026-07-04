@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import Sponsors from "@/app/components/admin/landingpage/Sponsors";
 import Footer from "@/app/components/Footer";
-import Header from "@/app/components/Header";
+// import Header from "@/app/components/Header";
 import styles from "@/app/index.module.scss";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";
@@ -15,16 +15,18 @@ import Prizes from "./components/admin/landingpage/Prizes";
 import Requirements from "./components/admin/landingpage/Requirements";
 import Winners from "./components/admin/landingpage/Winners";
 
+// NOTE: HEADER WAS REMOVED FOR MLH SUBMISSION
+
 export default async function Home() {
-	const session = await auth.api.getSession({
-		headers: await headers()
-	});
+	// const session = await auth.api.getSession({
+	// 	headers: await headers()
+	// });
 
 	const hasTeam = false;
 
 	return (
 		<HydrateClient>
-			<Header hasTeam={hasTeam} isSignedIn={!!session?.user} />
+			{/* <Header hasTeam={hasTeam} isSignedIn={!!session?.user} /> */}
 			<Countdown />
 			<EventDetails />
 			<AboutChallenge />
@@ -40,9 +42,9 @@ export default async function Home() {
 					<h1 className={styles.title}>
 						Create <span className={styles.pinkSpan}>T3</span> App
 					</h1>
-					{session?.user && (
+					{/* {session?.user && (
 						<div className="text-center">Logged in as {session.user.name}</div>
-					)}
+					)} */}
 					<div className={styles.cardRow}>
 						<Link
 							className={styles.card}
@@ -93,11 +95,11 @@ export default async function Home() {
 						<p className={styles.showcaseText}>Hackathon Management Tool</p>
 					</div>
 
-					<div className={styles.authContainer}>
+					{/* <div className={styles.authContainer}>
 						<p className={styles.showcaseText}>
 							{session && <span>Logged in as {session.user?.name}</span>}
 						</p>
-					</div>
+					</div> */}
 				</div>
 			</main>
 			<Footer />

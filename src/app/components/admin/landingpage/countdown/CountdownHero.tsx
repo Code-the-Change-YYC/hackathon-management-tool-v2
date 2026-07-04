@@ -19,16 +19,17 @@ export default function CountdownHero() {
 				{EVENT_BLURB}
 			</p>
 
-			<div className="flex h-12 w-44 items-center justify-center rounded-3xl border-[5px] border-white bg-awesomer-purple transition-opacity hover:opacity-70 sm:h-14 sm:w-52">
+			<div className="flex h-12 w-44 items-center justify-center rounded-3xl border-[5px] border-white bg-awesomer-purple transition-opacity hover:opacity-70 md:h-24 md:w-80">
 				<Link
-					className="!text-white font-semibold text-lg sm:text-2xl"
-					href="/register"
+					className="font-semibold text-lg text-white! sm:text-2xl"
+					href="https://forms.gle/sERFprWZbtmr2k4C8"
 				>
-					Join Hackathon
+					Sign up to be notified when registration opens
 				</Link>
 			</div>
 
-			<p className="font-medium text-base text-dark-grey sm:text-xl">
+			{/* Removed until registration opens */}
+			{/* <p className="font-medium text-base text-dark-grey sm:text-xl">
 				Already registered?{" "}
 				<Link
 					className="!text-awesomer-purple font-semibold hover:opacity-70"
@@ -36,7 +37,7 @@ export default function CountdownHero() {
 				>
 					Sign in
 				</Link>
-			</p>
+			</p> */}
 		</div>
 	);
 }
