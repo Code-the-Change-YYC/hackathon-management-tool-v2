@@ -70,7 +70,6 @@ export type Winner = {
 	awardName: string;
 	awardColor: string;
 	projectName: string;
-	description: string;
 	image: string;
 	link: string;
 };
