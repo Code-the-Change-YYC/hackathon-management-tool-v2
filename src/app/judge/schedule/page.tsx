@@ -1,14 +1,5 @@
-import RoomTimeSlotsGrid from "../../components/judges/RoomTimeSlotsGrid";
+import { JudgeSchedulePage as JudgeSchedule } from "../../components/judges/JudgePortal";
 
 export default function JudgeSchedulePage() {
-	return (
-		<div>
-			<p className="mb-2 font-medium text-dashboard-grey text-xs uppercase tracking-wide">
-				Judging Schedule
-			</p>
-			<div className="rounded-2xl border-2 border-awesomer-purple bg-white p-6 shadow-md sm:p-8">
-				<RoomTimeSlotsGrid />
-			</div>
-		</div>
-	);
+	return <JudgeSchedule />;
 }
