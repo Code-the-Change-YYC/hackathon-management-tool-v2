@@ -1,3 +1,4 @@
+import Link from "next/link";
 import TeamTable from "@/app/components/admin/teamtable/TeamTable";
 import UserTable from "@/app/components/admin/usertable";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
@@ -26,18 +27,19 @@ export default async function AdminPage() {
 				<div className={styles.card}>
 					<h2 className={styles.welcome}>Welcome back, Admin!</h2>
 					<p>Manage your hackathon settings, users, and rounds here.</p>
+					<Link href="/admin/judge">Open the judging workspace →</Link>
 				</div>
 			</div>
 			<div>
-				<div>
+				<div id="settings">
 					<h2 className={styles.sectionTitle}>Hackathon Settings</h2>
 					<HackathonSettingsPanel />
 				</div>
-				<div>
+				<div id="users">
 					<h2 className={styles.sectionTitle}>Users</h2>
 					<UserTable />
 				</div>
-				<div>
+				<div id="teams">
 					<h2 className={styles.sectionTitle}>Teams</h2>
 					<TeamTable />
 				</div>
