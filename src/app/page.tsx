@@ -22,7 +22,7 @@ export default async function Home() {
 	// 	headers: await headers()
 	// });
 
-	const hasTeam = false;
+	// const hasTeam = false;
 
 	return (
 		<HydrateClient>
