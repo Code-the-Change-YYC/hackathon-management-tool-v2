@@ -48,6 +48,13 @@ import {
 	VideoLine
 } from "@mingcute/react";
 
+import { toast } from "sonner";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger
+} from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -129,6 +136,7 @@ const SECTIONS = [
 	{ id: "selection", label: "Selection Controls" },
 	{ id: "overlays", label: "Overlays" },
 	{ id: "data", label: "Data Display" },
+	{ id: "disclosure", label: "Disclosure" },
 	{ id: "feedback", label: "Feedback" }
 ] as const;
 
@@ -156,7 +164,6 @@ const BRAND_PALETTE: Array<[string, string]> = [
 	["dark-grey", "#333333"]
 ];
 
-// [token, css var, brand source it maps to]
 const SEMANTIC_TOKENS: Array<[string, string, string]> = [
 	["background", "--background", "#ffffff"],
 	["foreground", "--foreground", "dark-grey"],
@@ -197,7 +204,6 @@ const RADIUS_SCALE: Array<[string, string]> = [
 
 type IconComponent = React.ComponentType<{ className?: string }>;
 
-// A representative slice of the MingCute set used across the app.
 const ICON_EXAMPLES: Array<[IconComponent, string]> = [
 	[SearchLine, "search"],
 	[User1Line, "user"],
@@ -271,7 +277,6 @@ const BUTTON_COLORS: Array<[string, string]> = [
 	]
 ];
 
-// type=round | square from the kit — corner radius via a Tailwind class.
 const BUTTON_ROUNDING: Array<[string, string]> = [
 	["Round", "rounded-full"],
 	["Square", "rounded-2xl"]
@@ -570,7 +575,7 @@ export default function StyleGuidePage() {
 
 						{/* Buttons */}
 						<Section
-							description="Size is a Button prop; color and corner style are Tailwind classes passed to the component."
+							description="Size is a Button prop. Color and corner style are Tailwind classes passed to the component."
 							id="buttons"
 							title="Buttons"
 						>
@@ -644,8 +649,8 @@ export default function StyleGuidePage() {
 								<div className="flex flex-col gap-2">
 									<h3 className="font-medium text-sm">States</h3>
 									<p className="text-muted-foreground text-sm">
-										Hover, focus, and pressed are handled by the component;
-										disabled dims to 50%.
+										Hover, focus, and pressed are handled by the component.
+										Disabled dims to 50%.
 									</p>
 									<Row>
 										<Button>Enabled</Button>
@@ -803,7 +808,7 @@ export default function StyleGuidePage() {
 
 						{/* Overlays */}
 						<Section
-							description="Dialog, dropdown menu, and tooltip."
+							description="Dialog, dropdown menu, tooltip, and toast."
 							id="overlays"
 							title="Overlays"
 						>
@@ -866,6 +871,20 @@ export default function StyleGuidePage() {
 									/>
 									<TooltipContent>Add to your calendar</TooltipContent>
 								</Tooltip>
+
+								<Button
+									onClick={() =>
+										toast.success("Submission saved", {
+											action: {
+												label: "Undo",
+												onClick: () => toast("Submission reverted")
+											}
+										})
+									}
+									variant="outline"
+								>
+									Show toast
+								</Button>
 							</Row>
 						</Section>
 
@@ -984,11 +1003,45 @@ export default function StyleGuidePage() {
 							</div>
 						</Section>
 
-						{/* Feedback */}
+						{/* Accordion */}
+						<Section
+							description="Accordion for collapsible content."
+							id="accordion"
+							title="Accordion"
+						>
+							<Accordion defaultValue={["item-1"]}>
+								<AccordionItem value="item-1">
+									<AccordionTrigger>How do I register a team?</AccordionTrigger>
+									<AccordionContent className="text-muted-foreground">
+										Head to the event page and select{" "}
+										<span className="text-foreground">Create team</span>. You
+										can invite teammates by email once the team exists.
+									</AccordionContent>
+								</AccordionItem>
+								<AccordionItem value="item-2">
+									<AccordionTrigger>When does judging open?</AccordionTrigger>
+									<AccordionContent className="text-muted-foreground">
+										Judging opens automatically when the submission deadline
+										passes. Teams can keep editing until then.
+									</AccordionContent>
+								</AccordionItem>
+								<AccordionItem value="item-3">
+									<AccordionTrigger>
+										Can I edit my submission after submitting?
+									</AccordionTrigger>
+									<AccordionContent className="text-muted-foreground">
+										Yes — submissions stay editable right up until judging
+										begins, so you can polish your Devpost link and demo.
+									</AccordionContent>
+								</AccordionItem>
+							</Accordion>
+						</Section>
+
+						{/* Loading */}
 						<Section
 							description="Loading placeholders."
-							id="feedback"
-							title="Feedback"
+							id="loading"
+							title="Loading"
 						>
 							<div className="flex flex-col gap-3">
 								<h3 className="font-medium text-sm">Skeleton</h3>

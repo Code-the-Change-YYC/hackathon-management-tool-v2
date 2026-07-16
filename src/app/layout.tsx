@@ -4,6 +4,7 @@ import "./global.css";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 
+import { Toaster } from "@/components/ui/sonner";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
@@ -56,6 +57,7 @@ export default function RootLayout({
 		<html className={omnes.variable} lang="en">
 			<body>
 				<TRPCReactProvider>{children}</TRPCReactProvider>
+				<Toaster />
 			</body>
 		</html>
 	);
