@@ -70,5 +70,23 @@
 			"cssModules": true,
 			"tailwindDirectives": true
 		}
-	}
+	},
+	// Disable a few rules for shadcn/ui's generated code only. These are
+	// false alarms there. Our own files stay fully linted.
+	"overrides": [
+		{
+			"includes": ["src/components/ui/**"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"useSemanticElements": "off",
+						"noLabelWithoutControl": "off"
+					},
+					"suspicious": {
+						"noArrayIndexKey": "off"
+					}
+				}
+			}
+		}
+	]
 }

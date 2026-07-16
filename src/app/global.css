@@ -101,82 +101,101 @@
 }
 
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.205 0 0);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
 	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.205 0 0);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.708 0 0);
+
+	/* Surfaces */
+	--background: #ffffff;
+	--foreground: var(--color-dark-grey);
+	--card: #ffffff;
+	--card-foreground: var(--color-dark-grey);
+	--popover: #ffffff;
+	--popover-foreground: var(--color-dark-grey);
+
+	/* Brand */
+	--primary: var(--color-awesomer-purple);
+	--primary-foreground: #ffffff;
+	--secondary: var(--color-light-grey);
+	--secondary-foreground: var(--color-dark-grey);
+	--muted: var(--color-light-grey);
+	--muted-foreground: var(--color-grey-purple);
+	--accent: var(--color-lilac-purple);
+	--accent-foreground: var(--color-awesomer-purple);
+	--destructive: var(--color-strawberry-red);
+
+	/* Lines & focus */
+	--border: var(--color-dashboard-grey);
+	--input: var(--color-medium-grey);
+	--ring: var(--color-awesome-purple);
+
+	/* Charts */
+	--chart-1: var(--color-awesomer-purple);
+	--chart-2: var(--color-dark-pink);
+	--chart-3: var(--color-dark-green);
+	--chart-4: var(--color-regal-blue);
+	--chart-5: var(--color-grapefruit);
+
+	/* Sidebar */
+	--sidebar: var(--color-pale-grey);
+	--sidebar-foreground: var(--color-dark-grey);
+	--sidebar-primary: var(--color-awesomer-purple);
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: var(--color-lilac-purple);
+	--sidebar-accent-foreground: var(--color-awesomer-purple);
+	--sidebar-border: var(--color-dashboard-grey);
+	--sidebar-ring: var(--color-awesome-purple);
 }
 
 .dark {
+	/* Surfaces (kept neutral dark) */
 	--background: oklch(0.145 0 0);
 	--foreground: oklch(0.985 0 0);
 	--card: oklch(0.205 0 0);
 	--card-foreground: oklch(0.985 0 0);
 	--popover: oklch(0.205 0 0);
 	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.922 0 0);
-	--primary-foreground: oklch(0.205 0 0);
+
+	/* Brand */
+	--primary: var(--color-awesomer-purple);
+	--primary-foreground: #ffffff;
 	--secondary: oklch(0.269 0 0);
 	--secondary-foreground: oklch(0.985 0 0);
 	--muted: oklch(0.269 0 0);
 	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
+	--accent: var(--color-grey-purple);
 	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.704 0.191 22.216);
+	--destructive: var(--color-strawberry-red);
+
+	/* Lines & focus */
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.556 0 0);
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
+	--ring: var(--color-awesome-purple);
+
+	/* Charts */
+	--chart-1: var(--color-awesome-purple);
+	--chart-2: var(--color-medium-pink);
+	--chart-3: var(--color-dark-green);
+	--chart-4: var(--color-regal-blue);
+	--chart-5: var(--color-grapefruit);
+
+	/* Sidebar */
 	--sidebar: oklch(0.205 0 0);
 	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.488 0.243 264.376);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.269 0 0);
+	--sidebar-primary: var(--color-awesomer-purple);
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: var(--color-grey-purple);
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.556 0 0);
+	--sidebar-ring: var(--color-awesome-purple);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+	* {
+		@apply border-border outline-ring/50;
 	}
-  body {
-    @apply bg-background text-foreground;
+	body {
+		@apply bg-background text-foreground;
 	}
-  html {
-    @apply font-sans;
+	html {
+		@apply font-sans;
 	}
 }
