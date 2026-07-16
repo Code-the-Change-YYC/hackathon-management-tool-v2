@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import styles from "@/app/index.module.scss";
+import { Button } from "@/components/ui/button";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";
 
@@ -43,6 +44,7 @@ export default async function Home() {
 							</div>
 						</Link>
 					</div>
+					<Button>Click me</Button>
 					<div className={styles.cardRow}>
 						<Link className={styles.card} href="/admin">
 							<h3 className={styles.cardTitle}>Admin →</h3>
