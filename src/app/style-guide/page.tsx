@@ -316,32 +316,23 @@ export default function StyleGuidePage() {
 	const [activeId, setActiveId] = useState<string>(SECTIONS[0].id);
 
 	useEffect(() => {
-		const sectionEls = SECTIONS.map((s) =>
-			document.getElementById(s.id)
-		).filter((el): el is HTMLElement => el !== null);
-		const visible = new Set<string>();
+		const sectionEls = SECTIONS.map((s) => document.getElementById(s.id));
 
-		const observer = new IntersectionObserver(
-			(entries) => {
-				for (const entry of entries) {
-					if (entry.isIntersecting) {
-						visible.add(entry.target.id);
-					} else {
-						visible.delete(entry.target.id);
-					}
+		const handleScroll = () => {
+			const offset = 100;
+			let current: string = SECTIONS[0].id;
+			SECTIONS.forEach((section, i) => {
+				const el = sectionEls[i];
+				if (el && el.getBoundingClientRect().top <= offset) {
+					current = section.id;
 				}
-				const stillVisible = SECTIONS.map((s) => s.id).filter((id) =>
-					visible.has(id)
-				);
-				if (stillVisible.length > 0) {
-					setActiveId(stillVisible.at(-1) as string);
-				}
-			},
-			{ rootMargin: "-96px 0px -60% 0px", threshold: 0 }
-		);
+			});
+			setActiveId(current);
+		};
 
-		for (const el of sectionEls) observer.observe(el);
-		return () => observer.disconnect();
+		handleScroll();
+		window.addEventListener("scroll", handleScroll, { passive: true });
+		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 
 	return (
