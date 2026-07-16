@@ -834,9 +834,9 @@ export default function StyleGuidePage() {
 										render={<Button variant="outline">Open menu</Button>}
 									/>
 									<DropdownMenuContent className="w-48">
-										<DropdownMenuLabel>My account</DropdownMenuLabel>
-										<DropdownMenuSeparator />
 										<DropdownMenuGroup>
+											<DropdownMenuLabel>My account</DropdownMenuLabel>
+											<DropdownMenuSeparator />
 											<DropdownMenuItem>
 												<User1Line />
 												Profile
