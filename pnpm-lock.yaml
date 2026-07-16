@@ -14,6 +14,9 @@ importers:
       '@base-ui/react':
         specifier: ^1.6.0
         version: 1.6.0(@types/react@19.2.6)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@mingcute/react':
+        specifier: ^1.4.1
+        version: 1.4.1(react@19.2.0)
       '@t3-oss/env-nextjs':
         specifier: ^0.12.0
         version: 0.12.0(typescript@5.9.3)(zod@3.25.76)
@@ -50,9 +53,6 @@ importers:
       drizzle-orm:
         specifier: ^0.41.0
         version: 0.41.0(gel@2.2.0)(kysely@0.28.8)(postgres@3.4.7)
-      lucide-react:
-        specifier: ^1.24.0
-        version: 1.24.0(react@19.2.0)
       next:
         specifier: ^15.2.3
         version: 15.5.6(@babel/core@7.29.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.94.2)
@@ -848,6 +848,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@mingcute/react@1.4.1':
+    resolution: {integrity: sha512-efVOsE6P2+w75tUudBYNAcB7LhXUVeKoGrAAaxOUgs+wLHKZxzLLq4swes7uf9qnMdtACGt10TKusFVxj4hC8A==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
 
   '@modelcontextprotocol/sdk@1.29.0':
     resolution: {integrity: sha512-zo37mZA9hJWpULgkRpowewez1y6ML5GsXJPY8FI0tBBCd77HEvza4jDqRKOXgHNn867PVGCyTdzqpz0izu5ZjQ==}
@@ -2151,11 +2156,6 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  lucide-react@1.24.0:
-    resolution: {integrity: sha512-YT6mBD8lGKkg4nM39enlm94/sfJIiW0YKUT60fBy4YK8tai31ylg1VhGNWxkpSKHo9UagfnZqwIff3HTDQwXeA==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -3396,6 +3396,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  '@mingcute/react@1.4.1(react@19.2.0)':
+    dependencies:
+      react: 19.2.0
+
   '@modelcontextprotocol/sdk@1.29.0(zod@3.25.76)':
     dependencies:
       '@hono/node-server': 1.19.14(hono@4.12.30)
@@ -4473,10 +4477,6 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
-
-  lucide-react@1.24.0(react@19.2.0):
-    dependencies:
-      react: 19.2.0
 
   magic-string@0.30.21:
     dependencies:

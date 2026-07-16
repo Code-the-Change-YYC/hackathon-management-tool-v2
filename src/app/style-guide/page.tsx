@@ -1,15 +1,52 @@
 "use client";
 
 import {
-	ArrowRightIcon,
-	BellIcon,
-	CheckIcon,
-	PlusIcon,
-	SearchIcon,
-	SettingsIcon,
-	Trash2Icon,
-	UserIcon
-} from "lucide-react";
+	AddLine,
+	AnnouncementLine,
+	ArrowDownLine,
+	ArrowLeftLine,
+	ArrowRightLine,
+	ArrowUpLine,
+	BookmarkLine,
+	Calendar2Line,
+	CheckLine,
+	ClipboardLine,
+	CloseLine,
+	CopyLine,
+	Delete2Line,
+	DownLine,
+	DownloadLine,
+	Edit2Line,
+	ExitLine,
+	EyeLine,
+	FilterLine,
+	GroupLine,
+	HeartFill,
+	HeartLine,
+	Home1Line,
+	InformationLine,
+	LeftLine,
+	LinkLine,
+	LocationLine,
+	MailLine,
+	More1Line,
+	NotificationFill,
+	NotificationLine,
+	QuestionLine,
+	RightLine,
+	SearchLine,
+	Settings1Line,
+	SortAscendingLine,
+	StarFill,
+	StarLine,
+	TaskLine,
+	TimeLine,
+	TrophyLine,
+	UpLine,
+	UploadLine,
+	User1Line,
+	VideoLine
+} from "@mingcute/react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -85,6 +122,7 @@ const SECTIONS = [
 	{ id: "colors", label: "Colors" },
 	{ id: "typography", label: "Typography" },
 	{ id: "radius", label: "Radius" },
+	{ id: "icons", label: "Icons" },
 	{ id: "buttons", label: "Buttons" },
 	{ id: "badges", label: "Badges" },
 	{ id: "forms", label: "Forms & Inputs" },
@@ -155,6 +193,68 @@ const RADIUS_SCALE: Array<[string, string]> = [
 	["xl", "var(--radius-xl)"],
 	["2xl", "var(--radius-2xl)"],
 	["3xl", "var(--radius-3xl)"]
+];
+
+type IconComponent = React.ComponentType<{ className?: string }>;
+
+// A representative slice of the MingCute set used across the app.
+const ICON_EXAMPLES: Array<[IconComponent, string]> = [
+	[SearchLine, "search"],
+	[User1Line, "user"],
+	[GroupLine, "group"],
+	[MailLine, "mail"],
+	[NotificationLine, "notification"],
+	[Calendar2Line, "calendar"],
+	[TimeLine, "time"],
+	[Home1Line, "home"],
+	[TrophyLine, "trophy"],
+	[StarLine, "star"],
+	[HeartLine, "heart"],
+	[BookmarkLine, "bookmark"],
+	[Edit2Line, "edit"],
+	[CopyLine, "copy"],
+	[ClipboardLine, "clipboard"],
+	[TaskLine, "task"],
+	[InformationLine, "info"],
+	[QuestionLine, "question"],
+	[Settings1Line, "settings"],
+	[FilterLine, "filter"],
+	[SortAscendingLine, "sort"],
+	[DownloadLine, "download"],
+	[UploadLine, "upload"],
+	[EyeLine, "eye"],
+	[LinkLine, "link"],
+	[LocationLine, "location"],
+	[VideoLine, "video"],
+	[AnnouncementLine, "announce"],
+	[ExitLine, "exit"],
+	[More1Line, "more"],
+	[AddLine, "add"],
+	[CloseLine, "close"],
+	[CheckLine, "check"],
+	[ArrowUpLine, "arrow-up"],
+	[ArrowDownLine, "arrow-down"],
+	[ArrowLeftLine, "arrow-left"],
+	[ArrowRightLine, "arrow-right"],
+	[UpLine, "chevron-up"],
+	[DownLine, "chevron-down"],
+	[LeftLine, "chevron-left"],
+	[RightLine, "chevron-right"]
+];
+
+// [px label, size utility] — icons inherit currentColor and scale with these.
+const ICON_SIZES: Array<[string, string]> = [
+	["16", "size-4"],
+	["20", "size-5"],
+	["24", "size-6"],
+	["32", "size-8"]
+];
+
+// [outline, solid, label] — Line for most UI, Fill for emphasis.
+const LINE_FILL_PAIRS: Array<[IconComponent, IconComponent, string]> = [
+	[StarLine, StarFill, "star"],
+	[HeartLine, HeartFill, "heart"],
+	[NotificationLine, NotificationFill, "notification"]
 ];
 
 function Section({
@@ -361,6 +461,93 @@ export default function StyleGuidePage() {
 							</div>
 						</Section>
 
+						{/* Icons */}
+						<Section
+							description="MingCute open-source icons via @mingcute/react."
+							id="icons"
+							title="Icons"
+						>
+							<div className="flex flex-col gap-8">
+								{/* Sourcing */}
+								<div className="flex flex-col gap-3">
+									<h3 className="font-medium text-sm">Sourcing & style</h3>
+									<p className="max-w-2xl text-muted-foreground text-sm">
+										Icons come from the MingCute set through{" "}
+										<code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+											@mingcute/react
+										</code>
+										. Import the outline{" "}
+										<code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+											Line
+										</code>{" "}
+										variant for most UI and the solid{" "}
+										<code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+											Fill
+										</code>{" "}
+										variant for emphasis. Every icon inherits{" "}
+										<code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+											currentColor
+										</code>{" "}
+										and scales with Tailwind size utilities.
+									</p>
+									<div className="flex flex-wrap gap-8 pt-1">
+										{LINE_FILL_PAIRS.map(([Line, Fill, label]) => (
+											<div
+												className="flex flex-col items-center gap-2"
+												key={label}
+											>
+												<div className="flex items-center gap-4">
+													<Line className="size-6 text-foreground" />
+													<Fill className="size-6 text-primary" />
+												</div>
+												<span className="text-muted-foreground text-xs">
+													{label}
+												</span>
+											</div>
+										))}
+									</div>
+								</div>
+
+								{/* Sizes */}
+								<div className="flex flex-col gap-3">
+									<h3 className="font-medium text-sm">Sizes</h3>
+									<div className="flex items-end gap-6">
+										{ICON_SIZES.map(([px, sizeClass]) => (
+											<div
+												className="flex flex-col items-center gap-2"
+												key={px}
+											>
+												<SearchLine
+													className={`${sizeClass} text-foreground`}
+												/>
+												<span className="text-muted-foreground text-xs">
+													{px}px
+												</span>
+											</div>
+										))}
+									</div>
+								</div>
+
+								{/* Examples */}
+								<div className="flex flex-col gap-3">
+									<h3 className="font-medium text-sm">Examples</h3>
+									<div className="grid grid-cols-4 gap-3 sm:grid-cols-6 md:grid-cols-8">
+										{ICON_EXAMPLES.map(([Icon, label]) => (
+											<div
+												className="flex flex-col items-center gap-2 rounded-lg border border-border p-3"
+												key={label}
+											>
+												<Icon className="size-5 text-foreground" />
+												<span className="truncate text-[11px] text-muted-foreground">
+													{label}
+												</span>
+											</div>
+										))}
+									</div>
+								</div>
+							</div>
+						</Section>
+
 						{/* Buttons */}
 						<Section
 							description="Variants, sizes, states, and icon usage."
@@ -388,7 +575,7 @@ export default function StyleGuidePage() {
 										<Button size="default">Default</Button>
 										<Button size="lg">Large</Button>
 										<Button aria-label="Add" size="icon">
-											<PlusIcon />
+											<AddLine />
 										</Button>
 									</Row>
 								</div>
@@ -397,15 +584,15 @@ export default function StyleGuidePage() {
 									<h3 className="font-medium text-sm">With icons</h3>
 									<Row>
 										<Button>
-											<SearchIcon data-icon="inline-start" />
+											<SearchLine data-icon="inline-start" />
 											Search
 										</Button>
 										<Button variant="secondary">
 											Continue
-											<ArrowRightIcon data-icon="inline-end" />
+											<ArrowRightLine data-icon="inline-end" />
 										</Button>
 										<Button variant="destructive">
-											<Trash2Icon data-icon="inline-start" />
+											<Delete2Line data-icon="inline-start" />
 											Delete
 										</Button>
 									</Row>
@@ -439,7 +626,7 @@ export default function StyleGuidePage() {
 								<Badge variant="outline">Outline</Badge>
 								<Badge variant="ghost">Ghost</Badge>
 								<Badge>
-									<CheckIcon data-icon="inline-start" />
+									<CheckLine data-icon="inline-start" />
 									Verified
 								</Badge>
 							</Row>
@@ -607,22 +794,22 @@ export default function StyleGuidePage() {
 										<DropdownMenuSeparator />
 										<DropdownMenuGroup>
 											<DropdownMenuItem>
-												<UserIcon />
+												<User1Line />
 												Profile
 											</DropdownMenuItem>
 											<DropdownMenuItem>
-												<SettingsIcon />
+												<Settings1Line />
 												Settings
 											</DropdownMenuItem>
 											<DropdownMenuItem>
-												<BellIcon />
+												<NotificationLine />
 												Notifications
 											</DropdownMenuItem>
 										</DropdownMenuGroup>
 										<DropdownMenuSeparator />
 										<DropdownMenuGroup>
 											<DropdownMenuItem variant="destructive">
-												<Trash2Icon />
+												<Delete2Line />
 												Delete account
 											</DropdownMenuItem>
 										</DropdownMenuGroup>
@@ -707,7 +894,7 @@ export default function StyleGuidePage() {
 										</Avatar>
 										<Avatar>
 											<AvatarFallback>
-												<UserIcon className="size-4" />
+												<User1Line className="size-4" />
 											</AvatarFallback>
 										</Avatar>
 									</Row>
