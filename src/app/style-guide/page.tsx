@@ -47,6 +47,7 @@ import {
 	User1Line,
 	VideoLine
 } from "@mingcute/react";
+import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 import {
@@ -136,8 +137,8 @@ const SECTIONS = [
 	{ id: "selection", label: "Selection Controls" },
 	{ id: "overlays", label: "Overlays" },
 	{ id: "data", label: "Data Display" },
-	{ id: "disclosure", label: "Disclosure" },
-	{ id: "feedback", label: "Feedback" }
+	{ id: "accordion", label: "Accordion" },
+	{ id: "loading", label: "Loading" }
 ] as const;
 
 const BRAND_PALETTE: Array<[string, string]> = [
@@ -312,6 +313,37 @@ function Row({ children }: { children: React.ReactNode }) {
 }
 
 export default function StyleGuidePage() {
+	const [activeId, setActiveId] = useState<string>(SECTIONS[0].id);
+
+	useEffect(() => {
+		const sectionEls = SECTIONS.map((s) =>
+			document.getElementById(s.id)
+		).filter((el): el is HTMLElement => el !== null);
+		const visible = new Set<string>();
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) {
+						visible.add(entry.target.id);
+					} else {
+						visible.delete(entry.target.id);
+					}
+				}
+				const stillVisible = SECTIONS.map((s) => s.id).filter((id) =>
+					visible.has(id)
+				);
+				if (stillVisible.length > 0) {
+					setActiveId(stillVisible.at(-1) as string);
+				}
+			},
+			{ rootMargin: "-96px 0px -60% 0px", threshold: 0 }
+		);
+
+		for (const el of sectionEls) observer.observe(el);
+		return () => observer.disconnect();
+	}, []);
+
 	return (
 		<TooltipProvider>
 			<div className="min-h-svh bg-background text-foreground">
@@ -321,7 +353,11 @@ export default function StyleGuidePage() {
 						<nav className="sticky top-12 flex flex-col gap-1">
 							{SECTIONS.map((s) => (
 								<a
-									className="rounded-md px-3 py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
+									className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+										activeId === s.id
+											? "bg-primary/10 font-medium text-foreground"
+											: "text-muted-foreground hover:bg-muted hover:text-foreground"
+									}`}
 									href={`#${s.id}`}
 									key={s.id}
 								>
