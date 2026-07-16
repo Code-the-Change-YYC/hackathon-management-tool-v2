@@ -663,13 +663,15 @@ export default function StyleGuidePage() {
 						>
 							<Row>
 								<Badge>Default</Badge>
+								<Badge className="bg-strawberry-red text-white">Red</Badge>
+								<Badge className="bg-emerald-green text-white">Green</Badge>
 								<Badge variant="secondary">Secondary</Badge>
 								<Badge variant="destructive">Destructive</Badge>
 								<Badge variant="outline">Outline</Badge>
 								<Badge variant="ghost">Ghost</Badge>
 								<Badge>
 									<CheckLine data-icon="inline-start" />
-									Verified
+									With icon
 								</Badge>
 							</Row>
 						</Section>
