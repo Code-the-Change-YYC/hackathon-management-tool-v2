@@ -242,7 +242,6 @@ const ICON_EXAMPLES: Array<[IconComponent, string]> = [
 	[RightLine, "chevron-right"]
 ];
 
-// [px label, size utility] — icons inherit currentColor and scale with these.
 const ICON_SIZES: Array<[string, string]> = [
 	["16", "size-4"],
 	["20", "size-5"],
@@ -250,11 +249,32 @@ const ICON_SIZES: Array<[string, string]> = [
 	["32", "size-8"]
 ];
 
-// [outline, solid, label] — Line for most UI, Fill for emphasis.
 const LINE_FILL_PAIRS: Array<[IconComponent, IconComponent, string]> = [
 	[StarLine, StarFill, "star"],
 	[HeartLine, HeartFill, "heart"],
 	[NotificationLine, NotificationFill, "notification"]
+];
+
+const BUTTON_COLORS: Array<[string, string]> = [
+	["Primary", "bg-primary text-primary-foreground hover:bg-primary/85"],
+	[
+		"Tonal purple",
+		"bg-lilac-purple text-awesomer-purple hover:bg-lilac-purple/70"
+	],
+	["Tonal pink", "bg-pastel-pink text-dark-pink hover:bg-medium-pink/50"],
+	["Tonal green", "bg-pastel-green text-emerald-green hover:bg-mint-green"],
+	["Destructive", "bg-strawberry-red text-white hover:bg-strawberry-red/90"],
+	["Outline", "border-border bg-background text-foreground hover:bg-muted"],
+	[
+		"Text grey",
+		"bg-transparent text-grey-purple hover:bg-muted hover:text-foreground"
+	]
+];
+
+// type=round | square from the kit — corner radius via a Tailwind class.
+const BUTTON_ROUNDING: Array<[string, string]> = [
+	["Round", "rounded-full"],
+	["Square", "rounded-2xl"]
 ];
 
 function Section({
@@ -550,30 +570,18 @@ export default function StyleGuidePage() {
 
 						{/* Buttons */}
 						<Section
-							description="Variants, sizes, states, and icon usage."
+							description="Size is a Button prop; color and corner style are Tailwind classes passed to the component."
 							id="buttons"
 							title="Buttons"
 						>
 							<div className="flex flex-col gap-6">
 								<div className="flex flex-col gap-2">
-									<h3 className="font-medium text-sm">Variants</h3>
-									<Row>
-										<Button>Default</Button>
-										<Button variant="secondary">Secondary</Button>
-										<Button variant="outline">Outline</Button>
-										<Button variant="ghost">Ghost</Button>
-										<Button variant="destructive">Destructive</Button>
-										<Button variant="link">Link</Button>
-									</Row>
-								</div>
-
-								<div className="flex flex-col gap-2">
 									<h3 className="font-medium text-sm">Sizes</h3>
 									<Row>
-										<Button size="xs">Extra small</Button>
-										<Button size="sm">Small</Button>
-										<Button size="default">Default</Button>
 										<Button size="lg">Large</Button>
+										<Button size="default">Medium (default)</Button>
+										<Button size="sm">Small</Button>
+										<Button size="xs">Xsmall</Button>
 										<Button aria-label="Add" size="icon">
 											<AddLine />
 										</Button>
@@ -581,33 +589,67 @@ export default function StyleGuidePage() {
 								</div>
 
 								<div className="flex flex-col gap-2">
+									<h3 className="font-medium text-sm">Colors</h3>
+									<p className="text-muted-foreground text-sm">
+										Applied via{" "}
+										<code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+											className
+										</code>
+										, not a component variant.
+									</p>
+									<Row>
+										{BUTTON_COLORS.map(([label, cls]) => (
+											<Button className={cls} key={label}>
+												{label}
+											</Button>
+										))}
+									</Row>
+								</div>
+
+								<div className="flex flex-col gap-2">
+									<h3 className="font-medium text-sm">Corners</h3>
+									<p className="text-muted-foreground text-sm">
+										<code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+											rounded-*
+										</code>{" "}
+										utilities passed to the component.
+									</p>
+									<Row>
+										{BUTTON_ROUNDING.map(([label, cls]) => (
+											<Button className={cls} key={label} size="sm">
+												{label}
+											</Button>
+										))}
+									</Row>
+								</div>
+
+								<div className="flex flex-col gap-2">
 									<h3 className="font-medium text-sm">With icons</h3>
 									<Row>
 										<Button>
-											<SearchLine data-icon="inline-start" />
+											<SearchLine />
 											Search
 										</Button>
-										<Button variant="secondary">
+										<Button className="bg-lilac-purple text-awesomer-purple hover:bg-lilac-purple/70">
 											Continue
-											<ArrowRightLine data-icon="inline-end" />
+											<ArrowRightLine />
 										</Button>
-										<Button variant="destructive">
-											<Delete2Line data-icon="inline-start" />
+										<Button className="bg-strawberry-red text-white hover:bg-strawberry-red/90">
+											<Delete2Line />
 											Delete
 										</Button>
 									</Row>
 								</div>
 
 								<div className="flex flex-col gap-2">
-									<h3 className="font-medium text-sm">Disabled</h3>
+									<h3 className="font-medium text-sm">States</h3>
+									<p className="text-muted-foreground text-sm">
+										Hover, focus, and pressed are handled by the component;
+										disabled dims to 50%.
+									</p>
 									<Row>
-										<Button disabled>Default</Button>
-										<Button disabled variant="outline">
-											Outline
-										</Button>
-										<Button disabled variant="destructive">
-											Destructive
-										</Button>
+										<Button>Enabled</Button>
+										<Button disabled>Disabled</Button>
 									</Row>
 								</div>
 							</div>
