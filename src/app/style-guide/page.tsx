@@ -288,7 +288,7 @@ export default function StyleGuidePage() {
 
 						{/* Typography */}
 						<Section
-							description="Type scale in the app's Geist font."
+							description="Type scale in the app's Omnes font."
 							id="typography"
 							title="Typography"
 						>
