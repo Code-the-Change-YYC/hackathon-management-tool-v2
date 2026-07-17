@@ -85,7 +85,7 @@ export default function ScheduleEvent({
 	// Assume start before end
 	const timeUntilStartMs = startTime.getTime() - Date.now();
 	const timeUntilEndMs = endTime.getTime() - Date.now();
-	var timeUntilString: string;
+	let timeUntilString: string;
 	if (timeUntilStartMs > 1000 * 60 * 60) {
 		timeUntilString = `in ${Math.floor(timeUntilStartMs / (1000 * 60 * 60))} hours`;
 	} else if (timeUntilStartMs > 0) {
