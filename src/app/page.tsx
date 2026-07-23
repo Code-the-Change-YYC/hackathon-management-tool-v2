@@ -37,15 +37,15 @@ export default async function Home() {
 			<Judges /> */}
 			<Winners />
 			<Sponsors />
-			<main className={styles.main}>
+			{/* <main className={styles.main}>
 				<div className={styles.container}>
 					<h1 className={styles.title}>
 						Create <span className={styles.pinkSpan}>T3</span> App
-					</h1>
-					{/* {session?.user && (
+					</h1> */}
+			{/* {session?.user && (
 						<div className="text-center">Logged in as {session.user.name}</div>
 					)} */}
-					<div className={styles.cardRow}>
+			{/* <div className={styles.cardRow}>
 						<Link
 							className={styles.card}
 							href="https://create.t3.gg/en/usage/first-steps"
@@ -93,15 +93,15 @@ export default async function Home() {
 					</div>
 					<div className={styles.showcaseContainer}>
 						<p className={styles.showcaseText}>Hackathon Management Tool</p>
-					</div>
+					</div> */}
 
-					{/* <div className={styles.authContainer}>
+			{/* <div className={styles.authContainer}>
 						<p className={styles.showcaseText}>
 							{session && <span>Logged in as {session.user?.name}</span>}
 						</p>
 					</div> */}
-				</div>
-			</main>
+			{/* </div>
+			</main> */}
 			<Footer />
 		</HydrateClient>
 	);
