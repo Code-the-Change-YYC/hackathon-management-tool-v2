@@ -37,7 +37,7 @@ export default function Winners() {
 					‹
 				</button>
 
-				<ul className="flex h-[455px] w-full items-center justify-center gap-2.5 overflow-hidden">
+				<ul className="flex min-h-113.75 w-full items-center justify-center gap-2.5 overflow-hidden py-4">
 					{visibleWinners.map((winner, index) => (
 						<WinnerCard
 							index={index}
