@@ -12,22 +12,31 @@ export default function JudgingDashboard() {
 		teamName: string;
 	} | null>(null);
 
-	// temp hardcoded fetching judging assignments
+	const { data: settings, isLoading: settingsLoading } =
+		api.hackathonSettings.get.useQuery();
+	const activeRoundId = settings?.currentRoundId ?? "";
+
 	const { data: assignments, isLoading: assignmentsLoading } =
-		api.scores.getByRound.useQuery({
-			roundId: "16b7d49b-7044-4c80-b408-953f39f7460e" // this can be replaced with the "id" column in the hackathon_judging_round table
-		});
+		api.scores.getByRound.useQuery(
+			{ roundId: activeRoundId },
+			{ enabled: Boolean(activeRoundId) }
+		);
 
 	// fetch judging criteria from db
 	const { data: criteria, isLoading: criteriaLoading } =
 		api.criteria.getAll.useQuery();
 
-	if (assignmentsLoading || criteriaLoading || !assignments) {
+	if (settingsLoading || assignmentsLoading || criteriaLoading) {
 		return <h1>Loading...</h1>;
 	}
 
-	const totalTeams = assignments.length;
-	const teamsLeft = assignments.filter(
+	if (!activeRoundId) {
+		return <h1>No active judging round has been selected.</h1>;
+	}
+
+	const visibleAssignments = assignments ?? [];
+	const totalTeams = visibleAssignments.length;
+	const teamsLeft = visibleAssignments.filter(
 		(a) => (a.scores?.length ?? 0) === 0
 	).length;
 
@@ -67,7 +76,7 @@ export default function JudgingDashboard() {
 
 			<div className="w-full xl:w-3/4">
 				<ScoresTable
-					assignments={assignments}
+					assignments={visibleAssignments}
 					criteria={criteria ?? []}
 					onOpenModal={handleOpenModal}
 				/>
