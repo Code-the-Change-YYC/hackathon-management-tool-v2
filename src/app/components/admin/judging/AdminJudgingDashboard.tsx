@@ -9,7 +9,7 @@ import {
 	useMemo,
 	useState
 } from "react";
-import { api, type RouterInputs, type RouterOutputs } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import styles from "./AdminJudgingDashboard.module.scss";
 import JudgingManagementSections from "./JudgingManagementSections";
 import { formatTime } from "./judgingFormatters";
@@ -29,8 +29,7 @@ type IconName =
 
 type Assignment = RouterOutputs["judgingAssignments"]["getByRound"][number];
 type Room = RouterOutputs["judgingRooms"]["getLayoutByRound"]["rooms"][number];
-type LayoutInput = RouterInputs["judgingRooms"]["saveLayoutByRound"]["layout"];
-type LayoutRoomInput = NonNullable<LayoutInput["rooms"]>[number];
+type Team = RouterOutputs["teams"]["getAll"][number];
 type SlotMinutes = 15 | 30 | 60;
 
 const navSections = [
@@ -278,10 +277,13 @@ function byNameThenId<T extends { id: string; name: string }>(a: T, b: T) {
 	return nameSort || a.id.localeCompare(b.id);
 }
 
+function isPrescreenPassed(team: Team) {
+	return team.prescreenStatus === "passed";
+}
+
 function calculateClientReadiness({
 	assignments,
 	judgeCount,
-	judgesPerRoom,
 	roomCount,
 	roundEnd,
 	roundStart,
@@ -290,7 +292,6 @@ function calculateClientReadiness({
 }: {
 	assignments: Assignment[];
 	judgeCount: number;
-	judgesPerRoom: number;
 	roomCount: number;
 	roundEnd?: Date;
 	roundStart?: Date;
@@ -303,15 +304,19 @@ function calculateClientReadiness({
 			canAssign: false,
 			freeSlotCount: 0,
 			recommendedRoomCount: 1,
-			slotCount: 0
+			slotCount: 0,
+			totalJudgingMinutes: 0
 		};
 	}
 
 	const slots = buildTimeSlots(roundStart, roundEnd, slotMinutes);
 	const slotCount = slots.length;
 	const safeRoomCount = Math.max(1, roomCount);
-	const requiredJudges = safeRoomCount * Math.max(1, judgesPerRoom);
 	const freeSlotCount = safeRoomCount * slotCount;
+	const totalJudgingMinutes = Math.max(
+		0,
+		Math.floor((roundEnd.getTime() - roundStart.getTime()) / 60_000)
+	);
 	const scoredAssignmentCount = assignments.filter(
 		(assignment) => assignment.scores.length > 0
 	).length;
@@ -320,13 +325,16 @@ function calculateClientReadiness({
 
 	let blockingReason = "";
 	if (teamCount === 0) {
-		blockingReason = "No teams are available to assign.";
-	} else if (slotCount === 0) {
+		blockingReason =
+			"No prescreen-passed teams are available to assign. Pass teams from Admin → Teams first.";
+	} else if (slotCount === 0 || totalJudgingMinutes < 1) {
 		blockingReason = "The selected round has no available time slots.";
-	} else if (judgeCount < requiredJudges) {
-		blockingReason = `Need ${requiredJudges} judges for this setup, but only ${judgeCount} judge${judgeCount === 1 ? "" : "s"} are available.`;
+	} else if (judgeCount === 0) {
+		blockingReason = "No judges found. Assign judge roles before scheduling.";
+	} else if (safeRoomCount > judgeCount) {
+		blockingReason = `Room count cannot be greater than the number of judges (${judgeCount}).`;
 	} else if (freeSlotCount < teamCount) {
-		blockingReason = `Need ${teamCount} slots for all teams, but this setup only has ${freeSlotCount}.`;
+		blockingReason = `Need ${teamCount} slots for all passed teams, but this setup only has ${freeSlotCount}.`;
 	} else if (scoredAssignmentCount > 0) {
 		blockingReason =
 			"This round already has scored assignments. Create a new round or clear scores before rebuilding the schedule.";
@@ -337,7 +345,8 @@ function calculateClientReadiness({
 		canAssign: !blockingReason,
 		freeSlotCount,
 		recommendedRoomCount,
-		slotCount
+		slotCount,
+		totalJudgingMinutes
 	};
 }
 
@@ -474,7 +483,6 @@ export default function AdminJudgingDashboard({
 	const [selectedRoundId, setSelectedRoundId] = useState("");
 	const [selectedRoomId, setSelectedRoomId] = useState("all");
 	const [roomCount, setRoomCount] = useState(1);
-	const [judgesPerRoom, setJudgesPerRoom] = useState(1);
 	const [slotMinutes, setSlotMinutes] = useState<SlotMinutes>(30);
 	const [assignmentMessage, setAssignmentMessage] = useState("");
 
@@ -487,7 +495,6 @@ export default function AdminJudgingDashboard({
 		if (!selectedRoundId && defaultRoundId) {
 			setSelectedRoundId(defaultRoundId);
 			setRoomCount(1);
-			setJudgesPerRoom(1);
 			setAssignmentMessage("");
 		}
 	}, [defaultRoundId, selectedRoundId]);
@@ -516,6 +523,13 @@ export default function AdminJudgingDashboard({
 		() => (teamsQuery.data ?? []).slice().sort(byNameThenId),
 		[teamsQuery.data]
 	);
+	const eligibleTeams = useMemo(() => teams.filter(isPrescreenPassed), [teams]);
+	const pendingTeamCount = teams.filter(
+		(team) => !team.prescreenStatus || team.prescreenStatus === "pending"
+	).length;
+	const failedTeamCount = teams.filter(
+		(team) => team.prescreenStatus === "failed"
+	).length;
 	const selectedRound = roundsQuery.data?.find(
 		(round) => round.id === selectedRoundId
 	);
@@ -553,22 +567,20 @@ export default function AdminJudgingDashboard({
 			calculateClientReadiness({
 				assignments,
 				judgeCount: judges.length,
-				judgesPerRoom,
 				roomCount,
 				roundEnd: selectedRound?.endTime,
 				roundStart: selectedRound?.startTime,
 				slotMinutes,
-				teamCount: teams.length
+				teamCount: eligibleTeams.length
 			}),
 		[
 			assignments,
+			eligibleTeams.length,
 			judges.length,
-			judgesPerRoom,
 			roomCount,
 			selectedRound?.endTime,
 			selectedRound?.startTime,
-			slotMinutes,
-			teams.length
+			slotMinutes
 		]
 	);
 
@@ -579,11 +591,11 @@ export default function AdminJudgingDashboard({
 		}
 	}, [readiness.recommendedRoomCount, roomCount]);
 
-	const saveLayout = api.judgingRooms.saveLayoutByRound.useMutation({
+	const generateSchedule = api.judgingRooms.generateSchedule.useMutation({
 		onError: (error) => {
 			setAssignmentMessage(error.message);
 		},
-		onSuccess: async () => {
+		onSuccess: async (result) => {
 			await Promise.all([
 				utils.judgingRooms.getLayoutByRound.invalidate({
 					roundId: selectedRoundId
@@ -595,7 +607,8 @@ export default function AdminJudgingDashboard({
 			]);
 			setSelectedRoomId("all");
 			setAssignmentMessage(
-				`Assigned ${teams.length} teams across ${roomCount} room${roomCount === 1 ? "" : "s"}.`
+				result.message ??
+					`Assigned ${result.assignmentsCreated} teams across ${result.roomsCreated} room${result.roomsCreated === 1 ? "" : "s"}.`
 			);
 		}
 	});
@@ -627,43 +640,11 @@ export default function AdminJudgingDashboard({
 			return;
 		}
 
-		const slots = buildTimeSlots(
-			selectedRound.startTime,
-			selectedRound.endTime,
-			slotMinutes
-		);
-		const generatedRooms: LayoutRoomInput[] = Array.from(
-			{ length: roomCount },
-			(_, roomIndex) => {
-				const staffStart = roomIndex * judgesPerRoom;
-				return {
-					id: crypto.randomUUID(),
-					name: `Room ${roomIndex + 1}`,
-					roomLink: rooms[roomIndex]?.roomLink ?? "",
-					staffIds: judges
-						.slice(staffStart, staffStart + judgesPerRoom)
-						.map((judge) => judge.id),
-					teamIds: [],
-					teamTimeSlots: {}
-				};
-			}
-		);
-
-		for (const [teamIndex, team] of teams.entries()) {
-			const roomIndex = teamIndex % roomCount;
-			const slotIndex = Math.floor(teamIndex / roomCount);
-			const room = generatedRooms[roomIndex];
-			const slot = slots[slotIndex];
-			if (!room || !slot) continue;
-			room.teamIds ??= [];
-			room.teamTimeSlots ??= {};
-			room.teamIds.push(team.id);
-			room.teamTimeSlots[team.id] = slot.toISOString();
-		}
-
-		saveLayout.mutate({
-			layout: { rooms: generatedRooms },
-			roundId: selectedRoundId
+		generateSchedule.mutate({
+			roundId: selectedRoundId,
+			roomCount,
+			slotDurationMinutes: slotMinutes,
+			totalJudgingMinutes: readiness.totalJudgingMinutes
 		});
 	};
 
@@ -800,7 +781,6 @@ export default function AdminJudgingDashboard({
 									setSelectedRoundId(value);
 									setSelectedRoomId("all");
 									setRoomCount(1);
-									setJudgesPerRoom(1);
 									setAssignmentMessage("");
 								}}
 								value={selectedRoundId}
@@ -849,7 +829,7 @@ export default function AdminJudgingDashboard({
 					<h2 className="m-0 font-medium text-[22px] leading-7">
 						Assign teams to rooms
 					</h2>
-					<div className="grid gap-3 sm:grid-cols-3 sm:gap-6">
+					<div className="grid gap-3 sm:grid-cols-2 sm:gap-6">
 						<label className="flex flex-1 flex-col gap-2">
 							<span className="pl-4 text-sm leading-5">Number of rooms</span>
 							<input
@@ -864,21 +844,6 @@ export default function AdminJudgingDashboard({
 							/>
 						</label>
 						<label className="flex flex-1 flex-col gap-2">
-							<span className="pl-4 text-sm leading-5">
-								Number of judges per room
-							</span>
-							<input
-								className="h-12 rounded-xl border border-[#a5a5a5] bg-[#fcfcfc] px-4 text-base outline-none transition focus:border-[#7054fd] focus:ring-2 focus:ring-[#eae6ff]"
-								max={10}
-								min={1}
-								onChange={(event) =>
-									setJudgesPerRoom(Number.parseInt(event.target.value, 10) || 1)
-								}
-								type="number"
-								value={judgesPerRoom}
-							/>
-						</label>
-						<label className="flex flex-1 flex-col gap-2">
 							<span className="pl-4 text-sm leading-5">Slot duration</span>
 							<select
 								className="h-12 rounded-xl border border-[#a5a5a5] bg-[#fcfcfc] px-4 text-base outline-none transition focus:border-[#7054fd] focus:ring-2 focus:ring-[#eae6ff]"
@@ -887,7 +852,6 @@ export default function AdminJudgingDashboard({
 										Number.parseInt(event.target.value, 10) as SlotMinutes
 									);
 									setRoomCount(1);
-									setJudgesPerRoom(1);
 									setAssignmentMessage("");
 								}}
 								value={slotMinutes}
@@ -901,9 +865,11 @@ export default function AdminJudgingDashboard({
 
 					<div className="grid gap-3 rounded-2xl bg-[#f7f5ff] p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
 						<div>
-							<span className="block text-[#575757]">Teams</span>
+							<span className="block text-[#575757]">Passed teams</span>
 							<strong className="text-base">
-								{teamsQuery.isLoading ? "—" : `${teams.length} total`}
+								{teamsQuery.isLoading
+									? "—"
+									: `${eligibleTeams.length} of ${teams.length}`}
 							</strong>
 						</div>
 						<div>
@@ -926,12 +892,18 @@ export default function AdminJudgingDashboard({
 						</div>
 					</div>
 
+					<p className="m-0 text-[#575757] text-sm">
+						{teamsQuery.isLoading
+							? "Loading team prescreen status…"
+							: `${eligibleTeams.length} teams passed prescreening (${pendingTeamCount} pending, ${failedTeamCount} failed). Only passed teams are scheduled.`}
+					</p>
+
 					<div className="flex flex-col items-end gap-2">
 						<button
 							className="rounded-xl bg-[#7054fd] px-4 py-2.5 font-medium text-base text-white transition hover:bg-[#6044ed] disabled:cursor-not-allowed disabled:opacity-60"
 							disabled={
 								!selectedRoundId ||
-								saveLayout.isPending ||
+								generateSchedule.isPending ||
 								roundsQuery.isLoading ||
 								layoutQuery.isLoading ||
 								assignmentsQuery.isLoading ||
@@ -942,7 +914,7 @@ export default function AdminJudgingDashboard({
 							onClick={handleAutoAssign}
 							type="button"
 						>
-							{saveLayout.isPending ? "Assigning…" : "Assign to rooms"}
+							{generateSchedule.isPending ? "Assigning…" : "Assign to rooms"}
 						</button>
 						<p
 							aria-live="polite"
@@ -962,7 +934,6 @@ export default function AdminJudgingDashboard({
 						setSelectedRoundId(roundId);
 						setSelectedRoomId("all");
 						setRoomCount(1);
-						setJudgesPerRoom(1);
 						setAssignmentMessage("");
 					}}
 					selectedRoundId={selectedRoundId}
