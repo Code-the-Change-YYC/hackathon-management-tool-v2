@@ -9,9 +9,7 @@ export default function Requirements() {
 			bodyTextColor="text-dark-grey"
 			imageAlt="Requirements"
 			imageSrc="/svgs/landingPage/requirements_illustration.svg"
-			paragraphs={[
-				"Open to all Canadian students, at the university, college, or high school level."
-			]}
+			paragraphs={["Open to all Canadian students, at any level of study."]}
 			title=""
 			titleColor="text-awesomer-purple"
 			titleHighlight="Requirements"

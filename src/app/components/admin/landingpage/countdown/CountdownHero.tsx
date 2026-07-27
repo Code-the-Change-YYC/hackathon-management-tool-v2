@@ -3,14 +3,14 @@ import Link from "next/link";
 const EVENT_NAME = "Hack the Change";
 const EVENT_YEAR = "2026";
 const EVENT_BLURB =
-	"Hack the Change 2026 is a hybrid two-day for-charity hackathon with the mission of coding a better world together.";
+	"Hack the Change 2026 is a two-day in-person for-charity hackathon with the mission of coding a better world together.";
 
 export default function CountdownHero() {
 	return (
 		<div className="relative flex w-full flex-col items-center gap-4 overflow-hidden text-center">
-			<h1 className="font-bold text-4xl text-white [text-shadow:_-2px_-2px_0_#7055FD,_2px_-2px_0_#7055FD,_-2px_2px_0_#7055FD,_2px_2px_0_#7055FD] sm:text-6xl lg:text-7xl">
+			<h1 className="font-bold text-4xl text-white [text-shadow:-2px_-2px_0_#7055FD,2px_-2px_0_#7055FD,-2px_2px_0_#7055FD,2px_2px_0_#7055FD] sm:text-6xl lg:text-7xl">
 				{EVENT_NAME}{" "}
-				<span className="text-pastel-green [text-shadow:_-2px_-2px_0_#7055FD,_2px_-2px_0_#7055FD,_-2px_2px_0_#7055FD,_2px_2px_0_#7055FD]">
+				<span className="text-pastel-green [text-shadow:-2px_-2px_0_#7055FD,2px_-2px_0_#7055FD,-2px_2px_0_#7055FD,2px_2px_0_#7055FD]">
 					{EVENT_YEAR}
 				</span>
 			</h1>
