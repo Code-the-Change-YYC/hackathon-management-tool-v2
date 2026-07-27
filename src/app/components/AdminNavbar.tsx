@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import calendar_icon from "public/svgs/admin/calendar_icon.svg";
 import clipboard_icon from "public/svgs/admin/clipboard_icon.svg";
 import food_icon from "public/svgs/admin/food_icon.svg";
-import search_icon from "public/svgs/admin/search_icon.svg";
 import team_icon from "public/svgs/admin/team_icon.svg";
 import user_icon from "public/svgs/admin/user_icon.svg";
 import bell_icon from "public/svgs/navbar/bell_icon.svg";
@@ -24,11 +23,13 @@ function NavbarTitle({ text }: { text: string }) {
 function NavbarLink({
 	icon,
 	children,
-	href
+	href,
+	closeCallback = () => {}
 }: {
 	icon: string | StaticImport;
 	children: React.ReactNode;
 	href: string;
+	closeCallback?: () => void;
 }) {
 	const pathName = usePathname();
 
@@ -39,6 +40,7 @@ function NavbarLink({
 				pathName === href ? "bg-[#EAE6FF] mix-blend-multiply" : ""
 			)}
 			href={href}
+			onClick={closeCallback}
 		>
 			<div className="h-[20px] w-[20px]">
 				<Image
@@ -62,10 +64,12 @@ function NavbarDivider() {
 
 function NavbarLinks({
 	ref,
-	className = ""
+	className = "",
+	closeCallback
 }: {
 	ref?: Ref<HTMLDivElement>;
 	className?: string;
+	closeCallback: () => void;
 }) {
 	return (
 		<div
@@ -94,26 +98,50 @@ function NavbarLinks({
 				<div className="flex flex-col gap-[16px]">
 					<NavbarTitle text="EVENT MANAGEMENT" />
 
-					<NavbarLink href="/admin/schedule" icon={calendar_icon}>
+					<NavbarLink
+						closeCallback={closeCallback}
+						href="/admin/schedule"
+						icon={calendar_icon}
+					>
 						Schedule
 					</NavbarLink>
-					<NavbarLink href="/admin/users" icon={user_icon}>
+					<NavbarLink
+						closeCallback={closeCallback}
+						href="/admin/users"
+						icon={user_icon}
+					>
 						Registered Users
 					</NavbarLink>
-					<NavbarLink href="/admin/teams" icon={team_icon}>
+					<NavbarLink
+						closeCallback={closeCallback}
+						href="/admin/teams"
+						icon={team_icon}
+					>
 						Teams
 					</NavbarLink>
-					<NavbarLink href="/admin/meals" icon={food_icon}>
+					<NavbarLink
+						closeCallback={closeCallback}
+						href="/admin/meals"
+						icon={food_icon}
+					>
 						Meals
 					</NavbarLink>
-					<NavbarLink href="" icon={clipboard_icon}>
+					<NavbarLink
+						closeCallback={closeCallback}
+						href=""
+						icon={clipboard_icon}
+					>
 						Judging Information
 					</NavbarLink>
 				</div>
 				<NavbarDivider />
 				<div className="flex flex-col gap-[20px]">
 					<NavbarTitle text="APP MANAGEMENT" />
-					<NavbarLink href="/admin/reset" icon={clipboard_icon}>
+					<NavbarLink
+						closeCallback={closeCallback}
+						href="/admin/reset"
+						icon={clipboard_icon}
+					>
 						Admin Controls
 					</NavbarLink>
 				</div>
@@ -193,11 +221,11 @@ export default function AdminNavbar() {
 				</div>
 				{navbarOpen && (
 					<div className="fixed inset-0 bg-[rgba(0,0,0,0.25)]">
-						<NavbarLinks ref={linksRef} />
+						<NavbarLinks closeCallback={closeNavbar} ref={linksRef} />
 					</div>
 				)}
 			</div>
-			<NavbarLinks className="hidden lg:flex" />
+			<NavbarLinks className="hidden lg:flex" closeCallback={closeNavbar} />
 		</>
 	);
 }
