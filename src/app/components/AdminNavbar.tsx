@@ -9,6 +9,7 @@ import search_icon from "public/svgs/admin/search_icon.svg";
 import team_icon from "public/svgs/admin/team_icon.svg";
 import user_icon from "public/svgs/admin/user_icon.svg";
 import bell_icon from "public/svgs/navbar/bell_icon.svg";
+import hamburger_icon from "public/svgs/navbar/hamburger_icon.svg";
 import { type Ref, useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 
@@ -176,7 +177,7 @@ export default function AdminNavbar() {
 							alt="Add icon"
 							className="h-full w-full"
 							height={20}
-							src={search_icon}
+							src={hamburger_icon}
 							width={20}
 						/>
 					</button>
