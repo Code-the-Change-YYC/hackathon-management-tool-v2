@@ -148,23 +148,27 @@ export default function ScheduleEvent({
 						<p className="my-[0] py-[0] text-[16px]">{name}</p>
 						<div className="flex flex-row gap-[12px] py-[4px]">
 							<div className="flex flex-row items-center gap-[4px]">
-								<Image
-									alt="filter"
-									className="h-[12px] w-[12px]"
-									height={20}
-									src={pin_icon}
-									width={20}
-								/>
+								<div className="h-[20px] w-[20px]">
+									<Image
+										alt="filter"
+										className="h-full w-full"
+										height={20}
+										src={pin_icon}
+										width={20}
+									/>
+								</div>
 								<p className="text-[12px]">{location}</p>
 							</div>
 							<div className="flex flex-row items-center gap-[4px]">
-								<Image
-									alt="filter"
-									className="h-[12px] w-[12px]"
-									height={20}
-									src={clock_icon}
-									width={20}
-								/>
+								<div className="h-[20px] w-[20px]">
+									<Image
+										alt="filter"
+										className="h-full w-full"
+										height={20}
+										src={clock_icon}
+										width={20}
+									/>
+								</div>
 								<p className="whitespace-nowrap text-[12px]">
 									{startTimeStr} - {endTimeStr}
 								</p>
