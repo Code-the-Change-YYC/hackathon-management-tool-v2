@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import filter_icon from "public/svgs/admin/filter_icon.svg"; // Placeholder icon for edit buttons, which are not visible for now
+import edit_icon from "public/svgs/admin/edit_icon.svg";
+import plus_icon from "public/svgs/admin/plus_icon.svg";
 import { twMerge } from "tailwind-merge";
 import ScheduleCard from "@/app/components/admin/schedule/ScheduleCard";
 import {
@@ -216,10 +217,10 @@ export default function FullSchedule() {
 					<p className="whitespace-nowrap">Edit schedule</p>
 					<div className="h-[20px] w-[20px]">
 						<Image
-							alt="placeholder icon"
+							alt="edit schedule"
 							className="h-full w-full"
 							height={20}
-							src={filter_icon}
+							src={edit_icon}
 							width={20}
 						/>
 					</div>
@@ -228,10 +229,10 @@ export default function FullSchedule() {
 					<p className="whitespace-nowrap text-white">Add event</p>
 					<div className="h-[20px] w-[20px]">
 						<Image
-							alt="placeholder icon"
+							alt="add event"
 							className="h-full w-full"
 							height={20}
-							src={filter_icon}
+							src={plus_icon}
 							width={20}
 						/>
 					</div>
