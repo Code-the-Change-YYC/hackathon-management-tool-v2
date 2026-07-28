@@ -46,3 +46,12 @@ export const ALL_ORGANIZATION_ROLES: OrganizationRole[] = [
 	OrganizationRole.ADMIN,
 	OrganizationRole.OWNER
 ];
+
+export type Event = {
+	name: string;
+	description: string;
+	category: "food" | "ceremony" | "project" | "activity";
+	location: string;
+	startTime: Date;
+	endTime: Date;
+};

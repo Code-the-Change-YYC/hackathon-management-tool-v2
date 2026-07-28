@@ -6,10 +6,11 @@ import plus_icon from "public/svgs/admin/plus_icon.svg";
 import { twMerge } from "tailwind-merge";
 import ScheduleCard from "@/app/components/admin/schedule/ScheduleCard";
 import {
-	createDate,
 	FIRST_DATE,
+	FIRST_DAY_EVENTS,
 	getDayString,
 	SECOND_DATE,
+	SECOND_DAY_EVENTS,
 	sameDay
 } from "@/types/scheduleConstants";
 
@@ -39,102 +40,19 @@ function ScheduleCards({
 				<div className="flex w-full flex-row gap-[8px]">
 					<div className="min-h-full w-[4px] rounded-full bg-grey300" />
 					<div className="flex w-full flex-col gap-[16px]">
-						<ScheduleCard
-							category={"food"}
-							description={
-								"Start your day off right with pastries and coffee. Don't forget your food ticket!"
-							}
-							endTime={createDate("first", 9, 0)}
-							layout={layout}
-							location={"ENA 224"}
-							name={"Breakfast"}
-							size={size}
-							startTime={createDate("first", 10, 0)}
-						/>
-						<ScheduleCard
-							category={"ceremony"}
-							description={
-								"Get ready to hack! Hear from our sponsors and organizers before getting started."
-							}
-							endTime={createDate("first", 11, 30)}
-							layout={layout}
-							location={"Auditorium A"}
-							name={"Opening Ceremony"}
-							size={size}
-							startTime={createDate("first", 10, 30)}
-						/>
-						<ScheduleCard
-							category={"project"}
-							description={
-								"Time to get hacking! Work with your team to make your project a reality."
-							}
-							endTime={createDate("first", 20, 0)}
-							layout={layout}
-							location={"All Rooms"}
-							name={"Hacking Begins"}
-							size={size}
-							startTime={createDate("first", 11, 30)}
-						/>
-						<ScheduleCard
-							category={"food"}
-							description={
-								"Take a break and refuel with a tasty lunch. Vegetarian options will be available."
-							}
-							endTime={createDate("first", 14, 0)}
-							layout={layout}
-							location={"Dining Hall"}
-							name={"Lunch"}
-							size={size}
-							startTime={createDate("first", 13, 0)}
-						/>
-						<ScheduleCard
-							category={"activity"}
-							description={
-								"Show off your CS knowledge and win prizes. It's a great way to unwind from coding!"
-							}
-							endTime={createDate("first", 15, 0)}
-							layout={layout}
-							location={"Room 303"}
-							name={"CS Trivia"}
-							size={size}
-							startTime={createDate("first", 14, 0)}
-						/>
-						<ScheduleCard
-							category={"activity"}
-							description={
-								"Explore the campus and solve puzzles to find hidden keys. Work together to win!"
-							}
-							endTime={createDate("first", 16, 0)}
-							layout={layout}
-							location={"Campus Wide"}
-							name={"Finders Key-pers Scavenger Hunt"}
-							size={size}
-							startTime={createDate("first", 15, 0)}
-						/>
-						<ScheduleCard
-							category={"food"}
-							description={
-								"Enjoy a refreshing ice cream. The perfect way to recharge in the afternoon!"
-							}
-							endTime={createDate("first", 16, 30)}
-							layout={layout}
-							location={"Quad Area"}
-							name={"Ice Cream Break"}
-							size={size}
-							startTime={createDate("first", 16, 0)}
-						/>
-						<ScheduleCard
-							category={"food"}
-							description={
-								"Time for dinner! Refuel for the final ahcking session. Lots of options will be available."
-							}
-							endTime={createDate("first", 20, 0)}
-							layout={layout}
-							location={"Dining Hall"}
-							name={"Dinner"}
-							size={size}
-							startTime={createDate("first", 19, 0)}
-						/>
+						{FIRST_DAY_EVENTS.map((item) => (
+							<ScheduleCard
+								category={item.category}
+								description={item.description}
+								endTime={item.endTime}
+								key={item.name + item.description}
+								layout={layout}
+								location={item.location}
+								name={item.name}
+								size={size}
+								startTime={item.startTime}
+							/>
+						))}
 					</div>
 				</div>
 			</div>
@@ -150,54 +68,19 @@ function ScheduleCards({
 				<div className="flex w-full flex-row gap-[8px]">
 					<div className="min-h-full w-[4px] rounded-full bg-grey300" />
 					<div className="flex w-full flex-col gap-[16px]">
-						<ScheduleCard
-							category={"food"}
-							description={
-								"Power through the last few hours of hacking with a nutricious breakfast."
-							}
-							endTime={createDate("second", 8, 0)}
-							layout={layout}
-							location={"ENA 224"}
-							name={"Dining Hall"}
-							size={size}
-							startTime={createDate("second", 9, 0)}
-						/>
-						<ScheduleCard
-							category={"project"}
-							description={
-								"The dealdine is approaching! Submit your project iwht all required documents."
-							}
-							endTime={createDate("second", 10, 30)}
-							layout={layout}
-							location={"Online"}
-							name={"Submissions Close"}
-							size={size}
-							startTime={createDate("second", 10, 0)}
-						/>
-						<ScheduleCard
-							category={"project"}
-							description={
-								"Our expert judges will evaluate projects based on innovation, impact, and execution."
-							}
-							endTime={createDate("second", 12, 0)}
-							layout={layout}
-							location={"Judges Lounge"}
-							name={"Judging Begins!"}
-							size={size}
-							startTime={createDate("second", 10, 30)}
-						/>
-						<ScheduleCard
-							category={"activity"}
-							description={
-								"Celebrate the achievements of all the hackers and find out who won. Don't miss it!"
-							}
-							endTime={createDate("second", 1, 0)}
-							layout={layout}
-							location={"Auditorium A"}
-							name={"Closing Ceremony"}
-							size={size}
-							startTime={createDate("second", 12, 0)}
-						/>
+						{SECOND_DAY_EVENTS.map((item) => (
+							<ScheduleCard
+								category={item.category}
+								description={item.description}
+								endTime={item.endTime}
+								key={item.name + item.description}
+								layout={layout}
+								location={item.location}
+								name={item.name}
+								size={size}
+								startTime={item.startTime}
+							/>
+						))}
 					</div>
 				</div>
 			</div>
