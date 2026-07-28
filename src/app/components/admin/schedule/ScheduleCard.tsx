@@ -46,30 +46,30 @@ export default function ScheduleEvent({
 		case "food":
 			icon = food_icon;
 
-			tagColour = "bg-[#EC1245]";
-			separatorColour = "bg-[#FE4D6E]";
-			iconbgColour = "bg-[#FFF0F3]";
+			tagColour = "bg-red600";
+			separatorColour = "bg-red500";
+			iconbgColour = "bg-red50";
 			break;
 		case "ceremony":
 			icon = ceremony_icon;
 
-			tagColour = "bg-[#7054FD]";
-			separatorColour = "bg-[#A688FF]";
-			iconbgColour = "bg-[#F7F5FF]";
+			tagColour = "bg-purple500";
+			separatorColour = "bg-purple400";
+			iconbgColour = "bg-purple50";
 			break;
 		case "project":
 			icon = project_icon;
 
-			tagColour = "bg-[#E91E01]";
-			separatorColour = "bg-[#FE957B]";
-			iconbgColour = "bg-[#FFF9F5]";
+			tagColour = "bg-orange700";
+			separatorColour = "bg-orange400";
+			iconbgColour = "bg-orange50";
 			break;
 		case "activity":
 			icon = activity_icon;
 
-			tagColour = "bg-[#038B6F]";
-			separatorColour = "bg-[#1AE5AF]";
-			iconbgColour = "bg-[#F1FEF8]";
+			tagColour = "bg-green700";
+			separatorColour = "bg-green400";
+			iconbgColour = "bg-green50";
 			break;
 	}
 
@@ -115,7 +115,7 @@ export default function ScheduleEvent({
 				<div className={twMerge("w-fit rounded-full px-[8px]", tagColour)}>
 					<p className="text-[11px] text-white">{categoryString}</p>
 				</div>
-				<p className="text-[#575757] text-[11px]">{timeUntilString}</p>
+				<p className="text-[11px] text-grey600">{timeUntilString}</p>
 			</div>
 			{/* Can't get hr to work */}
 			<div

@@ -14,7 +14,7 @@ import { twMerge } from "tailwind-merge";
 
 function NavbarTitle({ text }: { text: string }) {
 	return (
-		<p className="font-medium text-[#575757] text-[11px] leading-[16px]">
+		<p className="font-medium text-[11px] text-grey600 leading-[16px]">
 			{text}
 		</p>
 	);
@@ -37,7 +37,7 @@ function NavbarLink({
 		<Link
 			className={twMerge(
 				"flex flex-row items-center gap-[4px] rounded-[12px] px-[12px] py-[6px]",
-				pathName === href ? "bg-[#EAE6FF] mix-blend-multiply" : ""
+				pathName === href ? "bg-purple100 mix-blend-multiply" : ""
 			)}
 			href={href}
 			onClick={closeCallback}
@@ -51,7 +51,7 @@ function NavbarLink({
 					width={20}
 				/>
 			</div>
-			<p className="whitespace-nowrap align-middle font-medium text-[#292929] text-[14px] leading-[20px] tracking-[0%]">
+			<p className="whitespace-nowrap align-middle font-medium text-[14px] text-grey800 leading-[20px] tracking-[0%]">
 				{children}
 			</p>
 		</Link>
@@ -59,7 +59,7 @@ function NavbarLink({
 }
 
 function NavbarDivider() {
-	return <div className="h-[1px] w-full rounded-full bg-[#D6D6D6]" />;
+	return <div className="h-[1px] w-full rounded-full bg-grey300" />;
 }
 
 function NavbarLinks({
