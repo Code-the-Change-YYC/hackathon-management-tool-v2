@@ -1,0 +1,48 @@
+type DietaryRestrictionProps = {
+	dietaryRestrictions: string[];
+};
+
+export function DietaryRestriction({
+	dietaryRestrictions
+}: DietaryRestrictionProps) {
+	return (
+		<section className="space-y-4">
+			<h2 className="font-semibold text-dark-grey text-lg">
+				Dietary Restrictions
+			</h2>
+
+			<div className="rounded-lg bg-white px-5 py-4 shadow-[0_8px_24px_rgba(51,51,51,0.04)]">
+				<div className="flex items-start justify-between gap-4">
+					<div className="min-w-0 space-y-4">
+						<p className="text-dark-grey text-sm">
+							Your registered dietary restrictions:
+						</p>
+						{dietaryRestrictions.length > 0 ? (
+							<div className="flex flex-wrap gap-2">
+								{dietaryRestrictions.map((restriction) => (
+									<span
+										className="rounded-md bg-lilac-purple/50 px-3 py-1 font-medium text-awesomer-purple text-xs"
+										key={restriction}
+									>
+										{restriction}
+									</span>
+								))}
+							</div>
+						) : (
+							<p className="font-medium text-dark-grey/60 text-sm">
+								None registered
+							</p>
+						)}
+					</div>
+
+					<button
+						className="inline-flex shrink-0 cursor-pointer items-center rounded-md px-3 py-2 font-medium text-dark-grey text-sm transition hover:bg-light-grey"
+						type="button"
+					>
+						Edit
+					</button>
+				</div>
+			</div>
+		</section>
+	);
+}
