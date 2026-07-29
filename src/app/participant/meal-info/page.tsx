@@ -34,17 +34,7 @@ export default async function ParticipantPage() {
 	const emailAddress = session.user.email;
 	const now = new Date();
 
-	const [devpostStatus, meals] = await Promise.all([
-		api.teams
-			.getMyDevpostSubmissionStatus()
-			.catch(
-				() =>
-					null as Awaited<
-						ReturnType<typeof api.teams.getMyDevpostSubmissionStatus>
-					> | null
-			),
-		api.meals.getAllMeals()
-	]);
+	const meals = await api.meals.getAllMeals();
 
 	const ticketMeal = getTicketMeal(meals, now);
 	const ticketMealName = ticketMeal?.title ?? "Meal";
@@ -68,23 +58,6 @@ export default async function ParticipantPage() {
 						Your meal tickets, dietary restrictions, and upcoming meal times
 					</p>
 				</header>
-
-				{devpostStatus?.showWarning ? (
-					<section className="rounded-lg border border-medium-pink bg-white px-5 py-4 text-dark-grey shadow-[0_10px_30px_rgba(255,107,84,0.08)]">
-						<h2 className="font-bold text-grapefruit text-sm uppercase">
-							Devpost Submission Required
-						</h2>
-						<p className="mt-1 text-sm">
-							Your team must submit a Devpost link before submissions close.
-						</p>
-						{devpostStatus.submissionCloseAt ? (
-							<p className="mt-1 font-semibold text-sm">
-								Submissions close on{" "}
-								{devpostStatus.submissionCloseAt.toLocaleString()}.
-							</p>
-						) : null}
-					</section>
-				) : null}
 
 				<MealTicket
 					displayName={displayName}
