@@ -28,7 +28,7 @@ function getTicketMeal(meals: Meal[], now: Date) {
 	);
 }
 
-export default async function ParticipantPage() {
+export default async function MealInfoPage() {
 	const session = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
 	const displayName = session.user.name?.trim() || "Participant";
 	const emailAddress = session.user.email;
