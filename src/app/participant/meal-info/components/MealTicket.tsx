@@ -81,7 +81,7 @@ function TicketEdge({ position }: TicketEdgeProps) {
 			>
 				{horizontalCutoutIds.map((cutoutId) => (
 					<div
-						className="h-5 w-5 shrink-0 rounded-full bg-light-grey"
+						className="h-5 w-5 shrink-0 rounded-full bg-pale-grey"
 						key={cutoutId}
 					/>
 				))}
@@ -101,7 +101,7 @@ function TicketEdge({ position }: TicketEdgeProps) {
 		>
 			{sideTicketCutoutIds.map((cutoutId) => (
 				<div
-					className="h-5 w-5 rounded-full bg-light-grey"
+					className="h-5 w-5 rounded-full bg-pale-grey"
 					key={`${position}-${cutoutId}`}
 				/>
 			))}
@@ -128,7 +128,7 @@ export function MealTicket({
 		<section className="space-y-4">
 			<h2 className="font-semibold text-dark-grey text-lg">Your Meal Ticket</h2>
 
-			<div className="relative grid overflow-hidden bg-pastel-pink shadow-[0_14px_34px_rgba(255,133,156,0.18)] md:grid-cols-[minmax(0,1fr)_280px]">
+			<div className="relative grid overflow-hidden bg-pastel-pink md:grid-cols-[minmax(0,1fr)_280px]">
 				<TicketEdge position="top" />
 				<TicketEdge position="bottom" />
 				<TicketEdge position="left" />
@@ -152,10 +152,10 @@ export function MealTicket({
 				</div>
 
 				<div className="relative flex min-h-56 items-center justify-center border-white/80 border-t-4 border-dashed bg-pastel-pink/60 px-6 py-8 md:border-t-0">
-					<div className="-translate-x-1/2 -translate-y-1/2 absolute top-0 left-0 h-6 w-6 rounded-full bg-light-grey md:hidden" />
-					<div className="-translate-y-1/2 absolute top-0 right-0 h-6 w-6 translate-x-1/2 rounded-full bg-light-grey md:hidden" />
-					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 hidden h-6 w-6 rounded-full bg-light-grey md:block" />
-					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 hidden h-6 w-6 translate-y-1/2 rounded-full bg-light-grey md:block" />
+					<div className="-translate-x-1/2 -translate-y-1/2 absolute top-0 left-0 h-6 w-6 rounded-full bg-pale-grey md:hidden" />
+					<div className="-translate-y-1/2 absolute top-0 right-0 h-6 w-6 translate-x-1/2 rounded-full bg-pale-grey md:hidden" />
+					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 hidden h-6 w-6 rounded-full bg-pale-grey md:block" />
+					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 hidden h-6 w-6 translate-y-1/2 rounded-full bg-pale-grey md:block" />
 					<div className="rounded-lg bg-pale-grey p-4 text-awesomer-purple">
 						<QRCode
 							className="h-44 w-44 [&>path:first-of-type]:fill-pale-grey [&>path:last-of-type]:fill-awesomer-purple"

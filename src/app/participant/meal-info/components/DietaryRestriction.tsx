@@ -11,7 +11,7 @@ export function DietaryRestriction({
 				Dietary Restrictions
 			</h2>
 
-			<div className="rounded-lg bg-white px-5 py-4 shadow-[0_8px_24px_rgba(51,51,51,0.04)]">
+			<div className="rounded-lg bg-white px-5 py-4">
 				<div className="flex items-start justify-between gap-4">
 					<div className="min-w-0 space-y-4">
 						<p className="text-dark-grey text-sm">
