@@ -76,7 +76,7 @@ function TicketEdge({ position }: TicketEdgeProps) {
 		return (
 			<div
 				aria-hidden="true"
-				className={`pointer-events-none absolute inset-x-2 ${verticalPositionClass} z-10 flex h-5 items-center justify-between lg:hidden`}
+				className={`pointer-events-none absolute inset-x-2 ${verticalPositionClass} z-10 flex h-5 items-center justify-between md:hidden`}
 				ref={edgeRef}
 			>
 				{horizontalCutoutIds.map((cutoutId) => (
@@ -91,8 +91,8 @@ function TicketEdge({ position }: TicketEdgeProps) {
 
 	const sidePositionClass =
 		position === "left"
-			? "-translate-x-1/2 inset-y-2 left-0 lg:flex"
-			: "inset-y-2 right-0 translate-x-1/2 lg:flex";
+			? "-translate-x-1/2 inset-y-2 left-0 md:flex"
+			: "inset-y-2 right-0 translate-x-1/2 md:flex";
 
 	return (
 		<div
@@ -128,7 +128,7 @@ export function MealTicket({
 		<section className="space-y-4">
 			<h2 className="font-semibold text-dark-grey text-lg">Your Meal Ticket</h2>
 
-			<div className="relative grid overflow-hidden bg-pastel-pink shadow-[0_14px_34px_rgba(255,133,156,0.18)] lg:grid-cols-[minmax(0,1fr)_280px]">
+			<div className="relative grid overflow-hidden bg-pastel-pink shadow-[0_14px_34px_rgba(255,133,156,0.18)] md:grid-cols-[minmax(0,1fr)_280px]">
 				<TicketEdge position="top" />
 				<TicketEdge position="bottom" />
 				<TicketEdge position="left" />
@@ -137,7 +137,7 @@ export function MealTicket({
 				<div className="relative flex min-h-56 flex-col justify-center gap-2 px-6 py-8 sm:px-10">
 					<div
 						aria-hidden="true"
-						className="absolute inset-y-0 right-0 hidden w-4 border-white/80 border-r-4 border-dashed lg:block"
+						className="absolute inset-y-0 right-0 hidden w-4 border-white/80 border-r-4 border-dashed md:block"
 					/>
 					<p className="font-extrabold text-dark-pink text-xs uppercase">
 						{ticketMealName} Ticket For
@@ -151,11 +151,11 @@ export function MealTicket({
 					</p>
 				</div>
 
-				<div className="relative flex min-h-56 items-center justify-center border-white/80 border-t-4 border-dashed bg-pastel-pink/60 px-6 py-8 lg:border-t-0">
-					<div className="-translate-x-1/2 -translate-y-1/2 absolute top-0 left-0 h-6 w-6 rounded-full bg-light-grey lg:hidden" />
-					<div className="-translate-y-1/2 absolute top-0 right-0 h-6 w-6 translate-x-1/2 rounded-full bg-light-grey lg:hidden" />
-					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 hidden h-6 w-6 rounded-full bg-light-grey lg:block" />
-					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 hidden h-6 w-6 translate-y-1/2 rounded-full bg-light-grey lg:block" />
+				<div className="relative flex min-h-56 items-center justify-center border-white/80 border-t-4 border-dashed bg-pastel-pink/60 px-6 py-8 md:border-t-0">
+					<div className="-translate-x-1/2 -translate-y-1/2 absolute top-0 left-0 h-6 w-6 rounded-full bg-light-grey md:hidden" />
+					<div className="-translate-y-1/2 absolute top-0 right-0 h-6 w-6 translate-x-1/2 rounded-full bg-light-grey md:hidden" />
+					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 hidden h-6 w-6 rounded-full bg-light-grey md:block" />
+					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 hidden h-6 w-6 translate-y-1/2 rounded-full bg-light-grey md:block" />
 					<div className="rounded-lg bg-pale-grey p-4 text-awesomer-purple">
 						<QRCode
 							className="h-44 w-44 [&>path:first-of-type]:fill-pale-grey [&>path:last-of-type]:fill-awesomer-purple"
