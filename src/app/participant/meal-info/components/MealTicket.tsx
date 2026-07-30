@@ -1,6 +1,113 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import QRCode from "react-qr-code";
 
-const ticketEdgeScallops = Array.from({ length: 9 }, (_, index) => index);
+const mobileTicketCircleSize = 20;
+const mobileTicketCircleGap = 6;
+const sideTicketCircleCount = 9;
+const sideTicketCutoutIds = Array.from(
+	{ length: sideTicketCircleCount },
+	(_, cutoutNumber) => `cutout-${cutoutNumber + 1}`
+);
+
+type TicketEdgeProps = {
+	position: "top" | "bottom" | "left" | "right";
+};
+
+/*
+This function renders the ticket cutouts for both the mobile
+top/bottom edges and the desktop left/right edges.
+*/
+function TicketEdge({ position }: TicketEdgeProps) {
+	const edgeRef = useRef<HTMLDivElement | null>(null);
+	const [circleCount, setCircleCount] = useState(2);
+	const isHorizontal = position === "top" || position === "bottom";
+
+	useEffect(() => {
+		if (!isHorizontal) {
+			return;
+		}
+
+		const element = edgeRef.current;
+		if (!element || typeof ResizeObserver === "undefined") {
+			return;
+		}
+
+		const updateCircleCount = (width: number) => {
+			const nextCount = Math.max(
+				2,
+				Math.floor(
+					(width + mobileTicketCircleGap) /
+						(mobileTicketCircleSize + mobileTicketCircleGap)
+				)
+			);
+			setCircleCount(nextCount);
+		};
+
+		updateCircleCount(element.getBoundingClientRect().width);
+
+		const observer = new ResizeObserver((entries) => {
+			const entry = entries[0];
+			if (!entry) {
+				return;
+			}
+
+			updateCircleCount(entry.contentRect.width);
+		});
+
+		observer.observe(element);
+
+		return () => {
+			observer.disconnect();
+		};
+	}, [isHorizontal]);
+
+	if (isHorizontal) {
+		const verticalPositionClass =
+			position === "top"
+				? "top-0 -translate-y-1/2"
+				: "bottom-0 translate-y-1/2";
+		const horizontalCutoutIds = Array.from(
+			{ length: circleCount },
+			(_, cutoutNumber) => `${position}-${cutoutNumber + 1}`
+		);
+
+		return (
+			<div
+				aria-hidden="true"
+				className={`pointer-events-none absolute inset-x-2 ${verticalPositionClass} z-10 flex h-5 items-center justify-between lg:hidden`}
+				ref={edgeRef}
+			>
+				{horizontalCutoutIds.map((cutoutId) => (
+					<div
+						className="h-5 w-5 shrink-0 rounded-full bg-light-grey"
+						key={cutoutId}
+					/>
+				))}
+			</div>
+		);
+	}
+
+	const sidePositionClass =
+		position === "left"
+			? "-translate-x-1/2 inset-y-2 left-0 lg:flex"
+			: "inset-y-2 right-0 translate-x-1/2 lg:flex";
+
+	return (
+		<div
+			aria-hidden="true"
+			className={`pointer-events-none absolute z-10 hidden flex-col justify-between ${sidePositionClass}`}
+		>
+			{sideTicketCutoutIds.map((cutoutId) => (
+				<div
+					className="h-5 w-5 rounded-full bg-light-grey"
+					key={`${position}-${cutoutId}`}
+				/>
+			))}
+		</div>
+	);
+}
 
 type MealTicketProps = {
 	userId: string;
@@ -22,24 +129,10 @@ export function MealTicket({
 			<h2 className="font-semibold text-dark-grey text-lg">Your Meal Ticket</h2>
 
 			<div className="relative grid overflow-hidden bg-pastel-pink shadow-[0_14px_34px_rgba(255,133,156,0.18)] lg:grid-cols-[minmax(0,1fr)_280px]">
-				<div className="-translate-x-1/2 pointer-events-none absolute inset-y-2 left-0 z-10 flex flex-col justify-between">
-					{ticketEdgeScallops.map((scallop) => (
-						<div
-							aria-hidden="true"
-							className="h-5 w-5 rounded-full bg-light-grey"
-							key={`left-${scallop}`}
-						/>
-					))}
-				</div>
-				<div className="pointer-events-none absolute inset-y-2 right-0 z-10 flex translate-x-1/2 flex-col justify-between">
-					{ticketEdgeScallops.map((scallop) => (
-						<div
-							aria-hidden="true"
-							className="h-5 w-5 rounded-full bg-light-grey"
-							key={`right-${scallop}`}
-						/>
-					))}
-				</div>
+				<TicketEdge position="top" />
+				<TicketEdge position="bottom" />
+				<TicketEdge position="left" />
+				<TicketEdge position="right" />
 
 				<div className="relative flex min-h-56 flex-col justify-center gap-2 px-6 py-8 sm:px-10">
 					<div
@@ -59,6 +152,8 @@ export function MealTicket({
 				</div>
 
 				<div className="relative flex min-h-56 items-center justify-center border-white/80 border-t-4 border-dashed bg-pastel-pink/60 px-6 py-8 lg:border-t-0">
+					<div className="-translate-x-1/2 -translate-y-1/2 absolute top-0 left-0 h-6 w-6 rounded-full bg-light-grey lg:hidden" />
+					<div className="-translate-y-1/2 absolute top-0 right-0 h-6 w-6 translate-x-1/2 rounded-full bg-light-grey lg:hidden" />
 					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 hidden h-6 w-6 rounded-full bg-light-grey lg:block" />
 					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 hidden h-6 w-6 translate-y-1/2 rounded-full bg-light-grey lg:block" />
 					<div className="rounded-lg bg-pale-grey p-4 text-awesomer-purple">
