@@ -1,12 +1,12 @@
+import { getScheduleItemStatus } from "@/app/components/ScheduleItem";
+import {
+	type ScheduleItemData,
+	ScheduleSection
+} from "@/app/components/ScheduleSection";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
 import { DietaryRestriction } from "./components/DietaryRestriction";
-import {
-	getMealStatus,
-	MealSchedule,
-	type MealScheduleMeal
-} from "./components/MealSchedule";
 import { MealTicket } from "./components/MealTicket";
 
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -14,8 +14,7 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
 	minute: "2-digit"
 });
 
-type Meal = Awaited<ReturnType<typeof api.meals.getAllMeals>>[number] &
-	MealScheduleMeal;
+type Meal = Awaited<ReturnType<typeof api.meals.getAllMeals>>[number];
 
 function getTicketMeal(meals: Meal[], now: Date) {
 	return (
@@ -35,11 +34,29 @@ export default async function MealInfoPage() {
 	const now = new Date();
 
 	const meals = await api.meals.getAllMeals();
+	const scheduleItems: ScheduleItemData[] = meals.map((meal) => ({
+		id: meal.id,
+		title: meal.title,
+		startTime: meal.startTime,
+		endTime: meal.endTime,
+		badgeLabel: "Food",
+		description: `Show your meal ticket during this window to check in for ${meal.title.toLowerCase()}.`
+	}));
 
 	const ticketMeal = getTicketMeal(meals, now);
 	const ticketMealName = ticketMeal?.title ?? "Meal";
 	const ticketCopy = ticketMeal
-		? `${ticketMealName} is ${getMealStatus(ticketMeal, now).toLowerCase()} until ${timeFormatter.format(ticketMeal.endTime)}.`
+		? `${ticketMealName} is ${getScheduleItemStatus(
+				{
+					id: ticketMeal.id,
+					title: ticketMeal.title,
+					startTime: ticketMeal.startTime,
+					endTime: ticketMeal.endTime,
+					badgeLabel: "Food",
+					description: ""
+				},
+				now
+			).toLowerCase()} until ${timeFormatter.format(ticketMeal.endTime)}.`
 		: "Show this QR code to a Code the Change member to receive your meal.";
 	const dietaryRestrictions =
 		session.user.allergies
@@ -69,7 +86,13 @@ export default async function MealInfoPage() {
 
 				<DietaryRestriction dietaryRestrictions={dietaryRestrictions} />
 
-				<MealSchedule meals={meals} now={now} />
+				<ScheduleSection
+					emptyDescription="Check back soon for meal times and ticket scanning windows."
+					emptyTitle="No meals have been scheduled yet."
+					items={scheduleItems}
+					now={now}
+					title="Meal Schedule"
+				/>
 			</div>
 		</main>
 	);
