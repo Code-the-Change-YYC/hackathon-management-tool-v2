@@ -1,8 +1,8 @@
-import { getScheduleItemStatus } from "@/app/components/ScheduleItem";
 import {
-	type ScheduleItemData,
-	ScheduleSection
-} from "@/app/components/ScheduleSection";
+	getScheduleItemStatus,
+	type ScheduleItemData
+} from "@/app/components/ScheduleItem";
+import { ScheduleSection } from "@/app/components/ScheduleSection";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
