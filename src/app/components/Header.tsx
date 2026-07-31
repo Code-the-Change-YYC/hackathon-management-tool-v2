@@ -12,7 +12,13 @@ export default function Header({ hasTeam }: HeaderProps) {
 	const isSignedIn = !!session?.user;
 
 	const handleSignOut = async () => {
-		await authClient.signOut();
+		const { error } = await authClient.signOut();
+
+		if (error) {
+			console.error("Error signing out:", error);
+			return;
+		}
+
 		router.push("/");
 		router.refresh();
 	};

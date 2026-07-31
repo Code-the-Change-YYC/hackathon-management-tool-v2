@@ -54,7 +54,8 @@ export const usersRouter = createTRPCRouter({
 				.set({
 					school: input.school?.trim() ? input.school.trim() : null,
 					program: input.program ?? null,
-					dietaryRestriction: input.dietaryRestriction ?? null
+					dietaryRestriction: input.dietaryRestriction ?? null,
+					completedRegistration: true
 				})
 				.where(eq(user.email, input.email))
 				.returning();
