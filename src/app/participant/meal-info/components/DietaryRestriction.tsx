@@ -1,10 +1,19 @@
 type DietaryRestrictionProps = {
-	dietaryRestrictions: string[];
+	allergies: string | null | undefined;
 };
 
-export function DietaryRestriction({
-	dietaryRestrictions
-}: DietaryRestrictionProps) {
+function getDietaryRestrictions(allergies: string | null | undefined) {
+	return (
+		allergies
+			?.split(",")
+			.map((restriction) => restriction.trim())
+			.filter(Boolean) ?? []
+	);
+}
+
+export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
+	const dietaryRestrictions = getDietaryRestrictions(allergies);
+
 	return (
 		<section className="space-y-4">
 			<h2 className="font-semibold text-dark-grey text-lg">

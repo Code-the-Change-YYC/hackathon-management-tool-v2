@@ -9,12 +9,6 @@ export default async function MealInfoPage() {
 	const displayName = session.user.name?.trim() || "Participant";
 	const emailAddress = session.user.email;
 
-	const dietaryRestrictions =
-		session.user.allergies
-			?.split(",")
-			.map((restriction) => restriction.trim())
-			.filter(Boolean) ?? [];
-
 	return (
 		<main className="min-h-screen bg-pale-grey px-4 py-6 text-dark-grey sm:px-8 lg:px-12">
 			<div className="mx-auto flex w-full max-w-6xl flex-col gap-10">
@@ -33,7 +27,7 @@ export default async function MealInfoPage() {
 					userId={session.user.id}
 				/>
 
-				<DietaryRestriction dietaryRestrictions={dietaryRestrictions} />
+				<DietaryRestriction allergies={session.user.allergies} />
 
 				<MealScheduleSection />
 			</div>
