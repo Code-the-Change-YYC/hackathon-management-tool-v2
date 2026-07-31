@@ -24,6 +24,7 @@ export default function LoginForm() {
 				password
 			});
 
+			console.log(result);
 			if (result.error) {
 				setError(result.error.message || "Failed to sign in");
 				return;

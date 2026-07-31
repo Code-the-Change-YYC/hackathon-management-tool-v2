@@ -6,7 +6,7 @@ import {
 	protectedProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
-import { PROGRAMS, user } from "@/server/db/auth-schema";
+import { DIETARY_RESTRICTIONS, PROGRAMS, user } from "@/server/db/auth-schema";
 
 export const usersRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -22,7 +22,7 @@ export const usersRouter = createTRPCRouter({
 				name: z.string().min(1).optional(),
 				email: z.string().email().optional(),
 				role: z.string().optional().nullable(),
-				allergies: z.string().optional().nullable(),
+				dietaryRestriction: z.enum(DIETARY_RESTRICTIONS).optional().nullable(),
 				school: z.string().optional().nullable(),
 				program: z.enum(PROGRAMS).optional().nullable(),
 				completedRegistration: z.boolean().optional(),
@@ -44,7 +44,7 @@ export const usersRouter = createTRPCRouter({
 				email: z.string().email(),
 				school: z.string().optional(),
 				program: z.enum(PROGRAMS).optional(),
-				allergies: z.string().optional(),
+				dietaryRestriction: z.enum(DIETARY_RESTRICTIONS).optional().nullable(),
 				wantsFood: z.enum(["yes", "no"]).optional()
 			})
 		)
@@ -54,8 +54,7 @@ export const usersRouter = createTRPCRouter({
 				.set({
 					school: input.school?.trim() ? input.school.trim() : null,
 					program: input.program ?? null,
-					allergies: input.allergies?.trim() ? input.allergies.trim() : null,
-					completedRegistration: true
+					dietaryRestriction: input.dietaryRestriction ?? null
 				})
 				.where(eq(user.email, input.email))
 				.returning();
