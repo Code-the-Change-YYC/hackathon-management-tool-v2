@@ -179,8 +179,8 @@ export function MealTicket({
 				<TicketTeeth position="left" />
 				<TicketTeeth position="right" />
 
-				<div className="flex h-98.5 min-w-0 flex-1 flex-col sm:flex-row md:h-full">
-					<div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-6 py-6 md:px-10">
+				<div className="order-2 flex h-98.5 min-w-0 flex-1 flex-col sm:flex-row md:order-1 md:h-full">
+					<div className="flex min-w-0 flex-col justify-start gap-2 px-6 pt-8 pb-2 md:flex-1 md:justify-center md:px-10 md:py-6">
 						<p className="font-extrabold text-dark-pink text-xs uppercase">
 							{ticketMealName} Ticket For
 						</p>
@@ -193,7 +193,7 @@ export function MealTicket({
 						</p>
 					</div>
 
-					<div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden md:justify-start">
+					<div className="flex min-h-0 min-w-0 flex-1 items-start justify-center overflow-hidden md:items-center md:justify-start">
 						<div className="-translate-x-4 md:-translate-x-10 flex w-fit items-center">
 							<Image
 								alt="Pizza slice"
@@ -213,14 +213,14 @@ export function MealTicket({
 					</div>
 				</div>
 
-				<div className="relative flex h-90.25 w-full shrink-0 items-center justify-center border-white/80 border-t-4 border-dashed bg-pastel-pink/60 px-8 py-11 md:h-full md:w-62.25 md:border-t-0 md:border-l-4 md:p-9">
-					<div className="-translate-x-1/2 -translate-y-1/2 absolute top-0 left-0 h-6 w-6 rounded-full bg-pale-grey md:hidden" />
-					<div className="-translate-y-1/2 absolute top-0 right-0 h-6 w-6 translate-x-1/2 rounded-full bg-pale-grey md:hidden" />
+				<div className="relative order-1 flex h-90.25 w-full shrink-0 items-center justify-center border-white/80 border-b-4 border-dashed bg-pastel-pink/60 px-8 py-11 md:order-2 md:h-full md:w-62.25 md:border-b-0 md:border-l-4 md:p-9">
+					<div className="-translate-x-1/2 absolute bottom-0 left-0 h-6 w-6 translate-y-1/2 rounded-full bg-pale-grey md:hidden" />
+					<div className="absolute right-0 bottom-0 h-6 w-6 translate-x-1/2 translate-y-1/2 rounded-full bg-pale-grey md:hidden" />
 					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 hidden h-6 w-6 rounded-full bg-pale-grey md:block" />
 					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 hidden h-6 w-6 translate-y-1/2 rounded-full bg-pale-grey md:block" />
 					<div className="aspect-square h-full max-h-full max-w-full">
 						<QRCode
-							className="h-full w-full [&>path:first-of-type]:fill-pale-grey [&>path:last-of-type]:fill-awesomer-purple"
+							className="h-full w-full [&>path:first-of-type]:fill-pastel-pink [&>path:last-of-type]:fill-awesomer-purple"
 							value={`${userId}::${displayName}::${emailAddress}`}
 						/>
 					</div>
