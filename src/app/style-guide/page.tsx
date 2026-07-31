@@ -55,10 +55,14 @@ import {
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger
-} from "@/components/ui/accordion";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "@/app/components/ui/accordion";
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage
+} from "@/app/components/ui/avatar";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import {
 	Card,
 	CardAction,
@@ -67,8 +71,8 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+} from "@/app/components/ui/card";
+import { Checkbox } from "@/app/components/ui/checkbox";
 import {
 	Dialog,
 	DialogClose,
@@ -78,7 +82,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger
-} from "@/components/ui/dialog";
+} from "@/app/components/ui/dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -87,16 +91,16 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+} from "@/app/components/ui/dropdown-menu";
 import {
 	Field,
 	FieldDescription,
 	FieldGroup,
 	FieldLabel
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+} from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import {
 	Select,
 	SelectContent,
@@ -105,10 +109,10 @@ import {
 	SelectLabel,
 	SelectTrigger,
 	SelectValue
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
+} from "@/app/components/ui/select";
+import { Separator } from "@/app/components/ui/separator";
+import { Skeleton } from "@/app/components/ui/skeleton";
+import { Switch } from "@/app/components/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -116,15 +120,20 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/app/components/ui/table";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger
+} from "@/app/components/ui/tabs";
+import { Textarea } from "@/app/components/ui/textarea";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger
-} from "@/components/ui/tooltip";
+} from "@/app/components/ui/tooltip";
 
 const SECTIONS = [
 	{ id: "colors", label: "Colors" },

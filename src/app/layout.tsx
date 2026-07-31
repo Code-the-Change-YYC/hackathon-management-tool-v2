@@ -4,7 +4,7 @@ import "./global.css";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/app/components/ui/sonner";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {

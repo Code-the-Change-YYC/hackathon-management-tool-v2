@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import { Button } from "@/app/components/ui/button";
 import styles from "@/app/index.module.scss";
-import { Button } from "@/components/ui/button";
 import { auth } from "@/server/better-auth/config";
 import { HydrateClient } from "@/trpc/server";
 

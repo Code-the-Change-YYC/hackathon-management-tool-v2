@@ -75,7 +75,7 @@
 	// false alarms there. Our own files stay fully linted.
 	"overrides": [
 		{
-			"includes": ["src/components/ui/**"],
+			"includes": ["src/app/components/ui/**"],
 			"linter": {
 				"rules": {
 					"a11y": {
