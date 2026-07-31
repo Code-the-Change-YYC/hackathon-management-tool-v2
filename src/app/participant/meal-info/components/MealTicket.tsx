@@ -70,8 +70,8 @@ export function MealTicket({
 			<h2 className="font-semibold text-dark-grey text-lg">Your Meal Ticket</h2>
 
 			<div className="relative flex flex-col overflow-hidden bg-pastel-pink md:h-62.25 md:flex-row">
-				<div className="flex h-98.5 flex-1 flex-col sm:flex-row md:h-full">
-					<div className="flex flex-1 flex-col justify-center gap-2 px-6 py-6 md:px-10">
+				<div className="flex h-98.5 min-w-0 flex-1 flex-col sm:flex-row md:h-full">
+					<div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-6 py-6 md:px-10">
 						<p className="font-extrabold text-dark-pink text-xs uppercase">
 							{ticketMealName} Ticket For
 						</p>
@@ -84,8 +84,8 @@ export function MealTicket({
 						</p>
 					</div>
 
-					<div className="flex flex-1 items-center justify-center overflow-hidden">
-						<div className="flex w-fit items-center justify-center">
+					<div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden md:justify-start">
+						<div className="-translate-x-4 md:-translate-x-10 flex w-fit items-center">
 							<Image
 								alt="Pizza slice"
 								className="h-63.5 w-63.5 shrink-0 object-contain md:h-73 md:w-73"
@@ -95,7 +95,7 @@ export function MealTicket({
 							/>
 							<Image
 								alt="Cola can"
-								className="-ml-20 md:-ml-28 h-53.25 w-53.25 shrink-0 object-contain md:h-67.5 md:w-67.5"
+								className="-ml-20 sm:-ml-24 md:-ml-28 h-53.25 w-53.25 shrink-0 object-contain md:h-67.5 md:w-67.5"
 								height={249}
 								src="/svgs/cola.svg"
 								width={254}
