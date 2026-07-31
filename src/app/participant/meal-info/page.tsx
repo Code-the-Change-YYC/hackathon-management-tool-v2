@@ -10,22 +10,24 @@ export default async function MealInfoPage() {
 	const emailAddress = session.user.email;
 
 	return (
-		<main className="min-h-screen bg-pale-grey px-4 py-6 text-dark-grey sm:px-8 lg:px-12">
-			<div className="mx-auto flex w-full max-w-6xl flex-col gap-10">
-				<header className="space-y-1">
-					<h1 className="font-extrabold text-3xl text-dark-grey">
-						Meal Information
-					</h1>
-					<p className="text-dark-grey/70 text-sm">
-						Your meal tickets, dietary restrictions, and upcoming meal times
-					</p>
-				</header>
+		<main className="min-h-screen bg-pale-grey px-4 py-6 text-dark-grey md:px-8 lg:px-6">
+			<div className="mx-auto flex w-full max-w-6xl flex-col gap-16">
+				<div className="flex flex-col gap-6">
+					<header className="space-y-1">
+						<h1 className="font-extrabold text-3xl text-dark-grey">
+							Meal Information
+						</h1>
+						<p className="text-dark-grey/70 text-sm">
+							Your meal tickets, dietary restrictions, and upcoming meal times
+						</p>
+					</header>
 
-				<MealTicket
-					displayName={displayName}
-					emailAddress={emailAddress}
-					userId={session.user.id}
-				/>
+					<MealTicket
+						displayName={displayName}
+						emailAddress={emailAddress}
+						userId={session.user.id}
+					/>
+				</div>
 
 				<DietaryRestriction allergies={session.user.allergies} />
 
