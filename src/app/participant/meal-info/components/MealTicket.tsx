@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import QRCode from "react-qr-code";
+import { api, type RouterOutputs } from "@/trpc/react";
 
 const mobileTicketCircleSize = 20;
 const mobileTicketCircleGap = 6;
@@ -10,6 +11,41 @@ const sideTicketCutoutIds = Array.from(
 	{ length: sideTicketCircleCount },
 	(_, cutoutNumber) => `cutout-${cutoutNumber + 1}`
 );
+
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+	hour: "numeric",
+	minute: "2-digit"
+});
+
+type MealTicketMeal = NonNullable<RouterOutputs["meals"]["getNextMeal"]>;
+
+function getMealTicketStatus(
+	meal: Pick<MealTicketMeal, "startTime" | "endTime">,
+	now: Date
+) {
+	const startTime = new Date(meal.startTime).getTime();
+	const endTime = new Date(meal.endTime).getTime();
+	const currentTime = now.getTime();
+
+	if (currentTime >= startTime && currentTime <= endTime) {
+		return "ongoing";
+	}
+
+	if (currentTime > endTime) {
+		return "completed";
+	}
+
+	const minutesUntilStart = Math.max(
+		1,
+		Math.round((startTime - currentTime) / 60000)
+	);
+
+	if (minutesUntilStart <= 60) {
+		return `in ${minutesUntilStart} min`;
+	}
+
+	return "scheduled";
+}
 
 type TicketEdgeProps = {
 	position: "top" | "bottom" | "left" | "right";
@@ -113,17 +149,28 @@ type MealTicketProps = {
 	userId: string;
 	displayName: string;
 	emailAddress: string;
-	ticketMealName: string;
-	ticketCopy: string;
 };
 
 export function MealTicket({
 	userId,
 	displayName,
-	emailAddress,
-	ticketMealName,
-	ticketCopy
+	emailAddress
 }: MealTicketProps) {
+	const { data: ticketMeal, isLoading } = api.meals.getNextMeal.useQuery();
+	const now = new Date();
+	const ticketMealName = ticketMeal?.title ?? "Meal";
+	const ticketDescription = ticketMeal
+		? `${ticketMealName} is ${getMealTicketStatus(
+				{
+					startTime: ticketMeal.startTime,
+					endTime: ticketMeal.endTime
+				},
+				now
+			)} until ${timeFormatter.format(new Date(ticketMeal.endTime))}.`
+		: isLoading
+			? "Checking the next meal window."
+			: "Show this QR code to a Code the Change member to receive your meal.";
+
 	return (
 		<section className="space-y-4">
 			<h2 className="font-semibold text-dark-grey text-lg">Your Meal Ticket</h2>
@@ -147,7 +194,7 @@ export function MealTicket({
 					</p>
 					<p className="max-w-sm text-dark-grey/70 text-sm leading-6">
 						Present this QR code to a member of Code the Change scanning tickets
-						at the door to receive your meal. {ticketCopy}
+						at the door to receive your meal. {ticketDescription}
 					</p>
 				</div>
 

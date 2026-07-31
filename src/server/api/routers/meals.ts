@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { eq, gte } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
@@ -67,6 +67,17 @@ export const mealsRouter = createTRPCRouter({
 	getAllMeals: protectedProcedure.query(async ({ ctx }) => {
 		const meals = await ctx.db.select().from(meal).orderBy(meal.startTime);
 		return meals;
+	}),
+
+	getNextMeal: protectedProcedure.query(async ({ ctx }) => {
+		const [nextMeal] = await ctx.db
+			.select()
+			.from(meal)
+			.where(gte(meal.endTime, new Date()))
+			.orderBy(meal.startTime)
+			.limit(1);
+
+		return nextMeal ?? null;
 	}),
 
 	getMeal: adminProcedure
