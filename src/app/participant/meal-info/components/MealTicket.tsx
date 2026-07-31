@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import QRCode from "react-qr-code";
 import { api, type RouterOutputs } from "@/trpc/react";
+import { StyledQRCode } from "./StyledQRCode";
 import { TicketTeeth } from "./TicketTeeth";
 
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -116,9 +116,8 @@ export function MealTicket({
 					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 hidden h-6 w-6 rounded-full bg-pale-grey md:block" />
 					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 hidden h-6 w-6 translate-y-1/2 rounded-full bg-pale-grey md:block" />
 					<div className="aspect-square h-full max-h-full max-w-full">
-						<QRCode
-							className="h-full w-full [&>path:first-of-type]:fill-pastel-pink [&>path:last-of-type]:fill-awesomer-purple"
-							value={`${userId}::${displayName}::${emailAddress}`}
+						<StyledQRCode
+							value={`${userId}::${displayName}::${emailAddress}`} // TODO: change it so that this is calculated from the server instead, use session maybe?
 						/>
 					</div>
 				</div>
