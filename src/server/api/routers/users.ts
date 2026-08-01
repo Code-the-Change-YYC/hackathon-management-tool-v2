@@ -15,7 +15,7 @@ export const usersRouter = createTRPCRouter({
 		});
 		return users;
 	}),
-	updateMyAllergies: protectedProcedure
+	updateUserAllergies: protectedProcedure
 		.input(z.object({ allergies: z.string().nullable() }))
 		.mutation(async ({ ctx, input }) => {
 			const allergies = input.allergies?.trim() || null;
