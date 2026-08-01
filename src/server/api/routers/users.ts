@@ -8,6 +8,19 @@ import {
 } from "@/server/api/trpc";
 import { DIETARY_RESTRICTIONS, PROGRAMS, user } from "@/server/db/auth-schema";
 
+const dietaryRestrictionsSchema = z
+	.array(z.enum(DIETARY_RESTRICTIONS))
+	.max(DIETARY_RESTRICTIONS.length)
+	.refine(
+		(restrictions) => new Set(restrictions).size === restrictions.length,
+		{ message: "Duplicate dietary restrictions are not allowed" }
+	)
+	.refine(
+		(restrictions) =>
+			!restrictions.includes("none") || restrictions.length === 1,
+		{ message: '"None" cannot be combined with another restriction' }
+	);
+
 export const usersRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
 		const users = await ctx.db.query.user.findMany({
@@ -22,7 +35,7 @@ export const usersRouter = createTRPCRouter({
 				name: z.string().min(1).optional(),
 				email: z.string().email().optional(),
 				role: z.string().optional().nullable(),
-				dietaryRestriction: z.enum(DIETARY_RESTRICTIONS).optional().nullable(),
+				dietaryRestrictions: dietaryRestrictionsSchema.optional().nullable(),
 				school: z.string().optional().nullable(),
 				program: z.enum(PROGRAMS).optional().nullable(),
 				completedRegistration: z.boolean().optional(),
@@ -44,7 +57,7 @@ export const usersRouter = createTRPCRouter({
 				email: z.string().email(),
 				school: z.string().optional(),
 				program: z.enum(PROGRAMS).optional(),
-				dietaryRestriction: z.enum(DIETARY_RESTRICTIONS).optional().nullable(),
+				dietaryRestrictions: dietaryRestrictionsSchema.optional().nullable(),
 				wantsFood: z.enum(["yes", "no"]).optional()
 			})
 		)
@@ -54,7 +67,7 @@ export const usersRouter = createTRPCRouter({
 				.set({
 					school: input.school?.trim() ? input.school.trim() : null,
 					program: input.program ?? null,
-					dietaryRestriction: input.dietaryRestriction ?? null,
+					dietaryRestrictions: input.dietaryRestrictions ?? null,
 					completedRegistration: true
 				})
 				.where(eq(user.email, input.email))

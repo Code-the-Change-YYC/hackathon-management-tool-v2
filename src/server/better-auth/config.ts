@@ -15,8 +15,8 @@ export const auth = betterAuth({
 	plugins: [organization(), admin()],
 	user: {
 		additionalFields: {
-			dietaryRestriction: {
-				type: "string",
+			dietaryRestrictions: {
+				type: "string[]",
 				options: DIETARY_RESTRICTIONS,
 				required: false,
 				input: false
