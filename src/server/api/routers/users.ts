@@ -15,6 +15,25 @@ export const usersRouter = createTRPCRouter({
 		});
 		return users;
 	}),
+	updateMyAllergies: protectedProcedure
+		.input(z.object({ allergies: z.string().nullable() }))
+		.mutation(async ({ ctx, input }) => {
+			const allergies = input.allergies?.trim() || null;
+			const [updated] = await ctx.db
+				.update(user)
+				.set({ allergies })
+				.where(eq(user.id, ctx.session.user.id))
+				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
+			return updated;
+		}),
 	update: protectedProcedure
 		.input(
 			z.object({
