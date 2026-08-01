@@ -29,7 +29,9 @@ export default async function MealInfoPage() {
 					/>
 				</div>
 
-				<DietaryRestriction allergies={session.user.allergies} />
+				<DietaryRestriction
+					dietaryRestrictions={session.user.dietaryRestrictions}
+				/>
 
 				<MealScheduleSection />
 			</div>

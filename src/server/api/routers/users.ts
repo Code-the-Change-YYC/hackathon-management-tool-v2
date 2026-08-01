@@ -28,13 +28,16 @@ export const usersRouter = createTRPCRouter({
 		});
 		return users;
 	}),
-	updateUserAllergies: protectedProcedure
-		.input(z.object({ allergies: z.string().nullable() }))
+	updateUserDietaryRestrictions: protectedProcedure
+		.input(
+			z.object({
+				dietaryRestrictions: dietaryRestrictionsSchema.nullable()
+			})
+		)
 		.mutation(async ({ ctx, input }) => {
-			const allergies = input.allergies?.trim() || null;
 			const [updated] = await ctx.db
 				.update(user)
-				.set({ allergies })
+				.set({ dietaryRestrictions: input.dietaryRestrictions })
 				.where(eq(user.id, ctx.session.user.id))
 				.returning();
 

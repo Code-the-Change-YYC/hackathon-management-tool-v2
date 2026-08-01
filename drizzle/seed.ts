@@ -1,15 +1,24 @@
 import { generateId } from "better-auth";
 import { createOrGetUser } from "drizzle/seedUtils";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { member, organization, user } from "@/server/db/auth-schema";
+import { meal, mealAttendance } from "@/server/db/meal-schema";
 import {
+	hackathonSettings,
 	judgingAssignments,
 	judgingRoomStaff,
 	judgingRooms,
 	judgingRounds
 } from "@/server/db/schema";
 import { criteria, scores } from "@/server/db/scores-schema";
+
+function getEventDate(dayOffset: number, hour: number) {
+	const date = new Date();
+	date.setHours(hour, 0, 0, 0);
+	date.setDate(date.getDate() + dayOffset);
+	return date;
+}
 
 async function main() {
 	console.log("Starting seed...");
@@ -51,12 +60,23 @@ async function main() {
 
 		const judges = await db.select().from(user).where(eq(user.role, "judge"));
 
-		await createOrGetUser({
+		const participantUser = await createOrGetUser({
 			email: participantEmail,
 			password: participantPassword,
 			name: participantName,
 			role: "participant"
 		});
+
+		await db
+			.update(user)
+			.set({
+				role: "participant",
+				dietaryRestrictions: ["halal", "gluten_free"],
+				school: "Hackathon University",
+				program: "computer_science",
+				completedRegistration: true
+			})
+			.where(eq(user.id, participantUser.id));
 
 		console.log("\nCreating Teams...");
 
@@ -122,6 +142,82 @@ async function main() {
 			}
 		}
 
+		const participantTeam = createdTeams[0];
+		if (participantTeam) {
+			const existingMembership = await db
+				.select({ id: member.id })
+				.from(member)
+				.where(
+					and(
+						eq(member.organizationId, participantTeam.id),
+						eq(member.userId, participantUser.id)
+					)
+				)
+				.limit(1);
+
+			if (existingMembership.length === 0) {
+				await db.insert(member).values({
+					id: generateId(),
+					organizationId: participantTeam.id,
+					userId: participantUser.id,
+					role: "member",
+					createdAt: new Date()
+				});
+				console.log(`Added participant to ${participantTeam.name}`);
+			}
+		}
+
+		console.log("\nCreating meals and sample attendance...");
+		const mealSchedule = [
+			{ title: "Day 1 Breakfast", day: 0, startHour: 8, endHour: 10 },
+			{ title: "Day 1 Lunch", day: 0, startHour: 12, endHour: 14 },
+			{ title: "Day 1 Dinner", day: 0, startHour: 18, endHour: 20 },
+			{ title: "Day 2 Breakfast", day: 1, startHour: 8, endHour: 10 },
+			{ title: "Day 2 Lunch", day: 1, startHour: 12, endHour: 14 },
+			{ title: "Day 2 Dinner", day: 1, startHour: 18, endHour: 20 }
+		];
+		const createdMeals = [];
+
+		for (const scheduledMeal of mealSchedule) {
+			const startTime = getEventDate(
+				scheduledMeal.day,
+				scheduledMeal.startHour
+			);
+			const endTime = getEventDate(scheduledMeal.day, scheduledMeal.endHour);
+			const [createdMeal] = await db
+				.insert(meal)
+				.values({ title: scheduledMeal.title, startTime, endTime })
+				.onConflictDoUpdate({
+					target: meal.startTime,
+					set: { title: scheduledMeal.title, endTime }
+				})
+				.returning();
+
+			if (createdMeal) {
+				createdMeals.push(createdMeal);
+			}
+		}
+
+		const attendanceSamples = [
+			{ seededMeal: createdMeals[0], attendees: [participantUser, adminUser] },
+			{ seededMeal: createdMeals[1], attendees: judges }
+		];
+
+		for (const { seededMeal, attendees } of attendanceSamples) {
+			if (!seededMeal) continue;
+
+			for (const attendee of attendees) {
+				await db
+					.insert(mealAttendance)
+					.values({ mealId: seededMeal.id, userId: attendee.id })
+					.onConflictDoNothing({
+						target: [mealAttendance.userId, mealAttendance.mealId]
+					});
+			}
+		}
+
+		console.log(`Created or updated ${createdMeals.length} meals`);
+
 		console.log("\nCreating Judging rounds...");
 		const [round1] = await db
 			.insert(judgingRounds)
@@ -140,6 +236,28 @@ async function main() {
 				endTime: new Date(Date.now() + 10800 * 1000)
 			})
 			.returning();
+
+		if (round1) {
+			console.log("\nCreating hackathon settings...");
+			await db
+				.insert(hackathonSettings)
+				.values({
+					id: 1,
+					startDate: getEventDate(0, 8),
+					endDate: getEventDate(1, 20),
+					isActive: true,
+					currentRoundId: round1.id
+				})
+				.onConflictDoUpdate({
+					target: hackathonSettings.id,
+					set: {
+						startDate: getEventDate(0, 8),
+						endDate: getEventDate(1, 20),
+						isActive: true,
+						currentRoundId: round1.id
+					}
+				});
+		}
 
 		console.log("\nCreating Main Criteria and Sidepots...");
 		const criteriaList = await db
@@ -201,6 +319,8 @@ async function main() {
 		console.log("Summary:");
 		console.log(`Admin user: ${adminEmail}`);
 		console.log(`Organizations created: ${orgs.length}`);
+		console.log(`Meals created or updated: ${createdMeals.length}`);
+		console.log(`Participant user: ${participantEmail}`);
 		console.log("\nLogin credentials:");
 		console.log(`   Email: ${adminEmail}`);
 		console.log(`   Password: ${adminPassword}`);

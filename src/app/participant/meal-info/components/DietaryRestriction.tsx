@@ -26,60 +26,65 @@ import {
 	FieldLegend,
 	FieldSet
 } from "@/app/components/ui/field";
+import {
+	DIETARY_RESTRICTIONS,
+	type DietaryRestriction as DietaryRestrictionValue
+} from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
 
-const restrictionOptions = [
-	"Vegetarian",
-	"Vegan",
-	"Halal",
-	"Dairy-free",
-	"Nut-Allergy"
-];
+const restrictionLabels = {
+	none: "None",
+	halal: "Halal",
+	vegetarian: "Vegetarian",
+	vegan: "Vegan",
+	gluten_free: "Gluten-free",
+	other: "Other"
+} satisfies Record<DietaryRestrictionValue, string>;
 
 type DietaryRestrictionProps = {
-	allergies: string | null | undefined;
+	dietaryRestrictions: string[] | null | undefined;
 };
 
 type DialogMode = "edit" | "discard" | null;
 
-function getDietaryRestrictions(allergies: string | null | undefined) {
-	const restrictions =
-		allergies
-			?.split(",")
-			.map((restriction) => restriction.trim())
-			.filter(Boolean) ?? [];
-
-	return restrictions.filter(
-		(restriction, index) =>
-			restrictions.findIndex(
-				(candidate) => candidate.toLowerCase() === restriction.toLowerCase()
-			) === index
+function getDietaryRestrictions(
+	dietaryRestrictions: string[] | null | undefined
+): DietaryRestrictionValue[] {
+	const restrictions = DIETARY_RESTRICTIONS.filter((restriction) =>
+		dietaryRestrictions?.includes(restriction)
 	);
+
+	return restrictions.includes("none") ? ["none"] : restrictions;
 }
 
-function areRestrictionsEqual(current: string[], draft: string[]) {
+function areRestrictionsEqual(
+	current: DietaryRestrictionValue[],
+	draft: DietaryRestrictionValue[]
+) {
 	return (
 		current.length === draft.length &&
 		current.every((restriction, index) => restriction === draft[index])
 	);
 }
 
-export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
+export function DietaryRestriction({
+	dietaryRestrictions: initialDietaryRestrictions
+}: DietaryRestrictionProps) {
 	const [dietaryRestrictions, setDietaryRestrictions] = useState(() =>
-		getDietaryRestrictions(allergies)
+		getDietaryRestrictions(initialDietaryRestrictions)
 	);
-	const [draftRestrictions, setDraftRestrictions] = useState<string[]>([]);
+	const [draftRestrictions, setDraftRestrictions] = useState<
+		DietaryRestrictionValue[]
+	>([]);
 	const [dialogMode, setDialogMode] = useState<DialogMode>(null);
-	const updateAllergies = api.users.updateUserAllergies.useMutation();
+	const updateDietaryRestrictions =
+		api.users.updateUserDietaryRestrictions.useMutation();
 	const hasUnsavedChanges = !areRestrictionsEqual(
 		dietaryRestrictions,
 		draftRestrictions
 	);
-	const availableRestrictions = restrictionOptions.filter(
-		(option) =>
-			!draftRestrictions.some(
-				(restriction) => restriction.toLowerCase() === option.toLowerCase()
-			)
+	const availableRestrictions = DIETARY_RESTRICTIONS.filter(
+		(restriction) => !draftRestrictions.includes(restriction)
 	);
 
 	function openEditor() {
@@ -109,22 +114,33 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 		setDialogMode(null);
 	}
 
-	function addRestriction(restriction: string) {
-		setDraftRestrictions((current) => [...current, restriction]);
+	function addRestriction(restriction: DietaryRestrictionValue) {
+		setDraftRestrictions((currentRestrictions) => {
+			if (restriction === "none") {
+				return ["none"];
+			}
+
+			return [
+				...currentRestrictions.filter(
+					(currentRestriction) => currentRestriction !== "none"
+				),
+				restriction
+			];
+		});
 	}
 
-	function removeRestriction(restriction: string) {
-		setDraftRestrictions((current) =>
-			current.filter((candidate) => candidate !== restriction)
+	function removeRestriction(restriction: DietaryRestrictionValue) {
+		setDraftRestrictions((currentRestrictions) =>
+			currentRestrictions.filter(
+				(currentRestriction) => currentRestriction !== restriction
+			)
 		);
 	}
 
 	async function saveRestrictions() {
 		try {
-			await updateAllergies.mutateAsync({
-				allergies: draftRestrictions.length
-					? draftRestrictions.join(", ")
-					: null
+			await updateDietaryRestrictions.mutateAsync({
+				dietaryRestrictions: draftRestrictions
 			});
 			setDietaryRestrictions(draftRestrictions);
 			setDialogMode(null);
@@ -161,7 +177,7 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 						<div className="flex flex-wrap gap-2">
 							{dietaryRestrictions.map((restriction) => (
 								<Badge key={restriction} variant="accent">
-									{restriction}
+									{restrictionLabels[restriction]}
 								</Badge>
 							))}
 						</div>
@@ -201,14 +217,14 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 											{draftRestrictions.length > 0 ? (
 												draftRestrictions.map((restriction) => (
 													<Badge
-														aria-label={`Remove ${restriction}`}
+														aria-label={`Remove ${restrictionLabels[restriction]}`}
 														className="cursor-pointer"
 														key={restriction}
 														onClick={() => removeRestriction(restriction)}
 														render={<button type="button" />}
 														variant="accent"
 													>
-														{restriction}
+														{restrictionLabels[restriction]}
 														<CloseLine data-icon="inline-end" />
 													</Badge>
 												))
@@ -236,7 +252,7 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 														type="button"
 														variant="outline"
 													>
-														{restriction}
+														{restrictionLabels[restriction]}
 														<AddLine data-icon="inline-end" />
 													</Button>
 												))
@@ -252,14 +268,18 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 
 							<DialogFooter className="mx-0 mb-0 flex-col border-0 bg-transparent p-0 sm:flex-col">
 								<Button
-									disabled={updateAllergies.isPending || !hasUnsavedChanges}
+									disabled={
+										updateDietaryRestrictions.isPending || !hasUnsavedChanges
+									}
 									size="xs"
 									type="submit"
 								>
-									{updateAllergies.isPending ? "Saving..." : "Save changes"}
+									{updateDietaryRestrictions.isPending
+										? "Saving..."
+										: "Save changes"}
 								</Button>
 								<Button
-									disabled={updateAllergies.isPending}
+									disabled={updateDietaryRestrictions.isPending}
 									onClick={requestEditorClose}
 									size="xs"
 									type="button"
