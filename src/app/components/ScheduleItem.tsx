@@ -1,4 +1,9 @@
-import { Hamburger, LaptopMinimal, Megaphone, Trophy } from "lucide-react";
+import {
+	AnnouncementLine,
+	HamburgerLine,
+	LaptopLine,
+	TrophyLine
+} from "@mingcute/react";
 
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
 	hour: "numeric",
@@ -18,7 +23,7 @@ type ScheduleItemTheme = {
 	badgeClassName: string;
 	lineClassName: string;
 	previewClassName: string;
-	iconClassName: string;
+	iconColor: string;
 };
 
 function formatTimeRange(startTime: Date, endTime: Date) {
@@ -32,49 +37,49 @@ function getScheduleItemTheme(badgeLabel: string): ScheduleItemTheme {
 				badgeClassName: "bg-dark-pink",
 				lineClassName: "bg-medium-pink",
 				previewClassName: "bg-pastel-pink",
-				iconClassName: "text-dark-pink"
+				iconColor: "var(--color-dark-pink)"
 			};
 		case "ceremony":
 			return {
 				badgeClassName: "bg-awesomer-purple",
 				lineClassName: "bg-awesome-purple",
 				previewClassName: "bg-lilac-purple",
-				iconClassName: "text-awesomer-purple"
+				iconColor: "var(--color-awesomer-purple)"
 			};
 		case "project":
 			return {
 				badgeClassName: "bg-grapefruit",
 				lineClassName: "bg-grapefruit",
 				previewClassName: "bg-fuzzy-peach",
-				iconClassName: "text-grapefruit"
+				iconColor: "var(--color-grapefruit)"
 			};
 		case "activity":
 			return {
 				badgeClassName: "bg-emerald-green",
 				lineClassName: "bg-dark-green",
 				previewClassName: "bg-mint-green",
-				iconClassName: "text-dark-green"
+				iconColor: "var(--color-dark-green)"
 			};
 		default:
 			return {
 				badgeClassName: "bg-grey-purple",
 				lineClassName: "bg-medium-grey",
 				previewClassName: "bg-light-grey",
-				iconClassName: "text-grey-purple"
+				iconColor: "var(--color-grey-purple)"
 			};
 	}
 }
 
-function getScheduleItemIcon(badgeLabel: string, className: string) {
+function getScheduleItemIcon(badgeLabel: string, color: string) {
 	switch (badgeLabel.trim().toLowerCase()) {
 		case "food":
-			return <Hamburger className={className} strokeWidth={2} />;
+			return <HamburgerLine className="size-full" color={color} />;
 		case "activity":
-			return <Trophy className={className} strokeWidth={2} />;
+			return <TrophyLine className="size-full" color={color} />;
 		case "project":
-			return <LaptopMinimal className={className} strokeWidth={2} />;
+			return <LaptopLine className="size-full" color={color} />;
 		case "ceremony":
-			return <Megaphone className={className} strokeWidth={2} />;
+			return <AnnouncementLine className="size-full" color={color} />;
 		default:
 			return null;
 	}
@@ -112,12 +117,9 @@ type ScheduleItemProps = {
 
 export function ScheduleItem({ item, now }: ScheduleItemProps) {
 	const status = getScheduleItemStatus(item, now);
-	const { badgeClassName, lineClassName, previewClassName, iconClassName } =
+	const { badgeClassName, lineClassName, previewClassName, iconColor } =
 		getScheduleItemTheme(item.badgeLabel);
-	const icon = getScheduleItemIcon(
-		item.badgeLabel,
-		`h-10 w-10 ${iconClassName}`
-	);
+	const icon = getScheduleItemIcon(item.badgeLabel, iconColor);
 
 	return (
 		<li className="flex items-stretch gap-2">
@@ -140,7 +142,7 @@ export function ScheduleItem({ item, now }: ScheduleItemProps) {
 			<div className="flex min-w-0 flex-1 flex-col gap-4 md:flex-row md:items-start">
 				<div
 					aria-hidden="true"
-					className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-md md:h-24 md:w-24 ${previewClassName}`}
+					className={`flex size-20 shrink-0 items-center justify-center rounded-md p-5 md:size-24 ${previewClassName}`}
 				>
 					{icon}
 				</div>
