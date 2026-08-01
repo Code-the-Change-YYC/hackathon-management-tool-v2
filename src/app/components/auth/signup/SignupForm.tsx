@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { authClient } from "@/server/better-auth/client";
-import { DIETARY_RESTRICTIONS, PROGRAMS } from "@/server/db/auth-schema";
+import { type DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
 
 type MealOption = "yes" | "no" | "";
@@ -19,7 +19,9 @@ export default function SignupForm() {
 	const [school, setSchool] = useState("");
 	const [program, setProgram] = useState("");
 	const [wantsFood, setWantsFood] = useState<MealOption>("");
-	const [dietaryRestriction, setDietaryRestriction] = useState("");
+	const [dietaryRestrictions, setDietaryRestrictions] = useState<
+		DietaryRestriction[]
+	>([]);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 	const completeRegistration =
@@ -33,6 +35,26 @@ export default function SignupForm() {
 		wantsFood !== "";
 
 	const isSubmitDisabled = loading || !isRequiredComplete;
+
+	function handleDietaryRestrictionsChange(
+		event: React.ChangeEvent<HTMLSelectElement>
+	) {
+		const selectedRestrictions = Array.from(
+			event.target.selectedOptions,
+			(option) => option.value as DietaryRestriction
+		);
+		const selectedNone = selectedRestrictions.includes("none");
+		const previouslySelectedNone = dietaryRestrictions.includes("none");
+
+		if (selectedNone && !previouslySelectedNone) {
+			setDietaryRestrictions(["none"]);
+			return;
+		}
+
+		setDietaryRestrictions(
+			selectedRestrictions.filter((restriction) => restriction !== "none")
+		);
+	}
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -63,11 +85,8 @@ export default function SignupForm() {
 				program: PROGRAMS.includes(program as (typeof PROGRAMS)[number])
 					? (program as (typeof PROGRAMS)[number])
 					: undefined,
-				dietaryRestriction: DIETARY_RESTRICTIONS.includes(
-					dietaryRestriction as (typeof DIETARY_RESTRICTIONS)[number]
-				)
-					? (dietaryRestriction as (typeof DIETARY_RESTRICTIONS)[number])
-					: undefined,
+				dietaryRestrictions:
+					dietaryRestrictions.length > 0 ? dietaryRestrictions : undefined,
 				wantsFood
 			});
 
@@ -215,13 +234,13 @@ export default function SignupForm() {
 							restrictions:
 						</label>
 						<select
-							className="h-11 w-full cursor-pointer rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
+							className="min-h-36 w-full cursor-pointer rounded-xl border border-ehhh-grey bg-pale-grey px-4 py-2 text-sm outline-none transition focus:border-awesomer-purple"
 							disabled={loading}
 							id="dietaryRestriction"
-							onChange={(e) => setDietaryRestriction(e.target.value)}
-							value={dietaryRestriction}
+							multiple
+							onChange={handleDietaryRestrictionsChange}
+							value={dietaryRestrictions}
 						>
-							<option value="">Select an option</option>
 							<option value="none">None</option>
 							<option value="halal">Halal</option>
 							<option value="vegetarian">Vegetarian</option>
