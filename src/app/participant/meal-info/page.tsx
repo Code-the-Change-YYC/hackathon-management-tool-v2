@@ -10,7 +10,7 @@ export default async function MealInfoPage() {
 	const emailAddress = session.user.email;
 
 	return (
-		<main className="min-h-screen bg-pale-grey px-4 py-6 text-dark-grey md:px-8 lg:px-6">
+		<main className="min-h-screen bg-background px-4 py-6 text-dark-grey md:px-8 lg:px-6">
 			<div className="mx-auto flex w-full max-w-6xl flex-col gap-16">
 				<div className="flex flex-col gap-6">
 					<header className="space-y-1">
