@@ -45,7 +45,6 @@ export type InfoSectionProps = {
 };
 
 export type HeaderProps = {
-	isSignedIn: boolean;
 	hasTeam: boolean;
 };
 
