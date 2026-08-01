@@ -77,7 +77,7 @@ export function TicketTeeth({ position }: TicketTeethProps) {
 			>
 				{horizontalTicketTeethIds.map((toothId) => (
 					<div
-						className="h-5 w-5 shrink-0 rounded-full bg-pale-grey"
+						className="size-5 shrink-0 rounded-full bg-background"
 						key={toothId}
 					/>
 				))}
@@ -97,7 +97,7 @@ export function TicketTeeth({ position }: TicketTeethProps) {
 		>
 			{sideTicketTeethIds.map((toothId) => (
 				<div
-					className="h-5 w-5 rounded-full bg-pale-grey"
+					className="size-5 rounded-full bg-background"
 					key={`${position}-${toothId}`}
 				/>
 			))}

@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { ScheduleItem, type ScheduleItemData } from "./ScheduleItem";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -52,19 +53,25 @@ export function ScheduleSection({
 	emptyDescription
 }: ScheduleSectionProps) {
 	const groupedItems = groupScheduleItemsByDate(items);
+	const todayKey = formatDateKey(now);
 
 	return (
-		<section className="space-y-5">
-			<h2 className="font-semibold text-dark-grey text-lg">{title}</h2>
+		<section className="flex flex-col gap-5">
+			<h2 className="font-medium text-dark-grey text-lg">{title}</h2>
 
 			{groupedItems.length > 0 ? (
 				<div className="grid gap-8 xl:grid-cols-2">
 					{groupedItems.map((group) => (
-						<div className="space-y-4" key={group.key}>
-							<h3 className="font-bold text-dark-grey text-sm">
+						<div className="flex flex-col gap-4" key={group.key}>
+							<h3
+								className={cn(
+									"text-dark-grey text-sm",
+									group.key === todayKey ? "font-semibold" : "font-normal"
+								)}
+							>
 								{group.label}
 							</h3>
-							<ol className="space-y-8">
+							<ol className="flex flex-col gap-10 border-medium-grey border-l-4 py-1 pl-4 md:gap-8">
 								{group.items.map((item) => (
 									<ScheduleItem item={item} key={item.id} now={now} />
 								))}

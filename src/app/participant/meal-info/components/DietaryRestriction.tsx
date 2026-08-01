@@ -70,7 +70,7 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 	);
 	const [draftRestrictions, setDraftRestrictions] = useState<string[]>([]);
 	const [dialogMode, setDialogMode] = useState<DialogMode>(null);
-	const updateAllergies = api.users.updateMyAllergies.useMutation();
+	const updateAllergies = api.users.updateUserAllergies.useMutation();
 	const hasUnsavedChanges = !areRestrictionsEqual(
 		dietaryRestrictions,
 		draftRestrictions
@@ -142,7 +142,7 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 
 	return (
 		<section className="flex flex-col gap-4">
-			<h2 className="font-semibold text-dark-grey text-lg">
+			<h2 className="font-medium text-dark-grey text-lg">
 				Dietary Restrictions
 			</h2>
 
@@ -166,28 +166,26 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 							))}
 						</div>
 					) : (
-						<p className="font-medium text-muted-foreground text-sm">
-							None registered
-						</p>
+						<p className="text-muted-foreground text-sm">None registered</p>
 					)}
 				</CardContent>
 			</Card>
 
 			<Dialog onOpenChange={handleDialogOpenChange} open={dialogMode !== null}>
 				{dialogMode === "edit" ? (
-					<DialogContent className="gap-6 p-7 sm:max-w-sm">
-						<DialogHeader className="gap-3 pr-6">
-							<DialogTitle className="font-bold text-2xl leading-tight">
+					<DialogContent className="max-w-xs gap-5 p-7">
+						<DialogHeader className="gap-2 pr-6">
+							<DialogTitle className="font-semibold text-lg leading-tight">
 								Edit your dietary restrictions
 							</DialogTitle>
-							<DialogDescription>
+							<DialogDescription className="font-normal text-xs">
 								Update your dietary restrictions so we can accommodate your
 								needs!
 							</DialogDescription>
 						</DialogHeader>
 
 						<form
-							className="flex flex-col gap-6"
+							className="flex flex-col gap-5"
 							onSubmit={(event) => {
 								event.preventDefault();
 								void saveRestrictions();
@@ -195,7 +193,7 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 						>
 							<FieldGroup className="gap-4">
 								<FieldSet>
-									<FieldLegend variant="label">
+									<FieldLegend className="font-normal text-xs" variant="label">
 										Your registered dietary restrictions:
 									</FieldLegend>
 									<Field>
@@ -215,7 +213,7 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 													</Badge>
 												))
 											) : (
-												<span className="text-muted-foreground text-sm">
+												<span className="text-muted-foreground text-xs">
 													None selected
 												</span>
 											)}
@@ -224,7 +222,9 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 								</FieldSet>
 
 								<FieldSet>
-									<FieldLegend variant="label">Add a restriction:</FieldLegend>
+									<FieldLegend className="font-normal text-xs" variant="label">
+										Add a restriction:
+									</FieldLegend>
 									<Field>
 										<div className="flex flex-wrap gap-2">
 											{availableRestrictions.length > 0 ? (
@@ -241,7 +241,7 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 													</Button>
 												))
 											) : (
-												<span className="text-muted-foreground text-sm">
+												<span className="text-muted-foreground text-xs">
 													All options selected
 												</span>
 											)}
@@ -253,6 +253,7 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 							<DialogFooter className="mx-0 mb-0 flex-col border-0 bg-transparent p-0 sm:flex-col">
 								<Button
 									disabled={updateAllergies.isPending || !hasUnsavedChanges}
+									size="xs"
 									type="submit"
 								>
 									{updateAllergies.isPending ? "Saving..." : "Save changes"}
@@ -260,6 +261,7 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 								<Button
 									disabled={updateAllergies.isPending}
 									onClick={requestEditorClose}
+									size="xs"
 									type="button"
 									variant="outline"
 								>
@@ -269,20 +271,28 @@ export function DietaryRestriction({ allergies }: DietaryRestrictionProps) {
 						</form>
 					</DialogContent>
 				) : dialogMode === "discard" ? (
-					<DialogContent className="gap-6 p-7 sm:max-w-sm">
-						<DialogHeader className="gap-3 pr-6">
-							<DialogTitle className="font-bold text-2xl leading-tight">
+					<DialogContent className="max-w-xs gap-5 p-7">
+						<DialogHeader className="gap-2 pr-6">
+							<DialogTitle className="font-semibold text-lg leading-tight">
 								Are you sure you want to discard your changes?
 							</DialogTitle>
-							<DialogDescription>
+							<DialogDescription className="font-normal text-xs">
 								You’ve made edits to your dietary restrictions without saving.
 							</DialogDescription>
 						</DialogHeader>
 						<DialogFooter className="mx-0 mb-0 flex-col border-0 bg-transparent p-0 sm:flex-col">
-							<Button onClick={discardChanges} variant="destructive-solid">
+							<Button
+								onClick={discardChanges}
+								size="xs"
+								variant="destructive-solid"
+							>
 								Yes, discard changes
 							</Button>
-							<Button onClick={() => setDialogMode("edit")} variant="outline">
+							<Button
+								onClick={() => setDialogMode("edit")}
+								size="xs"
+								variant="outline"
+							>
 								No, review changes
 							</Button>
 						</DialogFooter>

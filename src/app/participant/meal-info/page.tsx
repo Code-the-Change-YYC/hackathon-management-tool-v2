@@ -14,7 +14,7 @@ export default async function MealInfoPage() {
 			<div className="mx-auto flex w-full max-w-6xl flex-col gap-16">
 				<div className="flex flex-col gap-6">
 					<header className="space-y-1">
-						<h1 className="font-extrabold text-3xl text-dark-grey">
+						<h1 className="font-semibold text-3xl text-dark-grey">
 							Meal Information
 						</h1>
 						<p className="text-dark-grey/70 text-sm">

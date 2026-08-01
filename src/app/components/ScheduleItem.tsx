@@ -122,24 +122,24 @@ export function ScheduleItem({ item, now }: ScheduleItemProps) {
 	const icon = getScheduleItemIcon(item.badgeLabel, iconColor);
 
 	return (
-		<li className="flex items-stretch gap-2">
-			<div className="flex w-14 shrink-0 flex-col items-end text-right">
+		<li className="flex min-w-0 flex-col gap-3 md:flex-row md:items-stretch md:gap-2">
+			<div className="flex shrink-0 items-center gap-3 md:w-14 md:flex-col md:items-end md:gap-0 md:text-right">
 				<span
-					className={`rounded-full px-2 py-0.5 font-bold text-[10px] text-white ${badgeClassName}`}
+					className={`rounded-full px-3 py-0.5 font-medium text-white text-xs md:px-2 md:text-[10px] ${badgeClassName}`}
 				>
 					{item.badgeLabel}
 				</span>
-				<span className="mt-2 text-[10px] text-dark-grey/70 leading-3">
+				<span className="text-dark-grey/70 text-sm md:mt-2 md:text-[10px] md:leading-3">
 					{status}
 				</span>
 			</div>
 
 			<div
 				aria-hidden="true"
-				className={`w-px shrink-0 self-stretch ${lineClassName}`}
+				className={`h-px w-full shrink-0 md:h-auto md:w-px md:self-stretch ${lineClassName}`}
 			/>
 
-			<div className="flex min-w-0 flex-1 flex-col gap-4 md:flex-row md:items-start">
+			<div className="flex min-w-0 flex-1 items-start gap-3 md:gap-4">
 				<div
 					aria-hidden="true"
 					className={`flex size-20 shrink-0 items-center justify-center rounded-md p-5 md:size-24 ${previewClassName}`}
@@ -147,8 +147,8 @@ export function ScheduleItem({ item, now }: ScheduleItemProps) {
 					{icon}
 				</div>
 
-				<div className="min-w-0 space-y-2">
-					<h4 className="wrap-break-word font-semibold text-base text-dark-grey">
+				<div className="flex min-w-0 flex-1 flex-col gap-2">
+					<h4 className="wrap-break-word font-medium text-base text-dark-grey">
 						{item.title}
 					</h4>
 					<p className="text-dark-grey/70 text-xs">
