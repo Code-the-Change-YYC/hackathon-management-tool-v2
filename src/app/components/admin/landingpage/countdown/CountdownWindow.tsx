@@ -6,7 +6,7 @@ export default function CountdownWindow({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="relative mx-auto hidden w-full max-w-[1143px] flex-col overflow-hidden rounded-sm border border-black/20 bg-white md:flex">
+		<div className="relative mx-auto mb-8 hidden w-full max-w-285 flex-col overflow-hidden rounded-sm border border-black/20 bg-white md:flex">
 			<div className="px-4 pt-4">
 				<Image
 					alt=""

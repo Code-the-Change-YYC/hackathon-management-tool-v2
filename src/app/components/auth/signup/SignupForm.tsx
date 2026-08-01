@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { authClient } from "@/server/better-auth/client";
+import { DIETARY_RESTRICTIONS, PROGRAMS } from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
 
 type MealOption = "yes" | "no" | "";
@@ -18,7 +19,7 @@ export default function SignupForm() {
 	const [school, setSchool] = useState("");
 	const [program, setProgram] = useState("");
 	const [wantsFood, setWantsFood] = useState<MealOption>("");
-	const [allergies, setAllergies] = useState("");
+	const [dietaryRestriction, setDietaryRestriction] = useState("");
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 	const completeRegistration =
@@ -59,14 +60,14 @@ export default function SignupForm() {
 			await completeRegistration.mutateAsync({
 				email,
 				school,
-				program:
-					program === "computer_science" ||
-					program === "software_engineering" ||
-					program === "electrical_engineering" ||
-					program === "other"
-						? program
-						: undefined,
-				allergies,
+				program: PROGRAMS.includes(program as (typeof PROGRAMS)[number])
+					? (program as (typeof PROGRAMS)[number])
+					: undefined,
+				dietaryRestriction: DIETARY_RESTRICTIONS.includes(
+					dietaryRestriction as (typeof DIETARY_RESTRICTIONS)[number]
+				)
+					? (dietaryRestriction as (typeof DIETARY_RESTRICTIONS)[number])
+					: undefined,
 				wantsFood
 			});
 
@@ -209,17 +210,25 @@ export default function SignupForm() {
 					</div>
 
 					<div className="space-y-1">
-						<label className="font-medium text-sm" htmlFor="allergies">
-							*If you wanted provided food, please indicate any allergies:
+						<label className="font-medium text-sm" htmlFor="dietaryRestriction">
+							*If you wanted provided food, please indicate any dietary
+							restrictions:
 						</label>
-						<input
-							className="h-11 w-full rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
+						<select
+							className="h-11 w-full cursor-pointer rounded-xl border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
 							disabled={loading}
-							id="allergies"
-							onChange={(e) => setAllergies(e.target.value)}
-							placeholder="e.g. peanuts"
-							value={allergies}
-						/>
+							id="dietaryRestriction"
+							onChange={(e) => setDietaryRestriction(e.target.value)}
+							value={dietaryRestriction}
+						>
+							<option value="">Select an option</option>
+							<option value="none">None</option>
+							<option value="halal">Halal</option>
+							<option value="vegetarian">Vegetarian</option>
+							<option value="vegan">Vegan</option>
+							<option value="gluten_free">Gluten-Free</option>
+							<option value="other">Other</option>
+						</select>
 					</div>
 				</div>
 			</div>
