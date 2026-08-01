@@ -12,6 +12,10 @@ const dietaryRestrictionsSchema = z
 	.array(z.enum(DIETARY_RESTRICTIONS))
 	.max(DIETARY_RESTRICTIONS.length)
 	.refine(
+		(restrictions) => new Set(restrictions).size === restrictions.length,
+		{ message: "Duplicate dietary restrictions are not allowed" }
+	)
+	.refine(
 		(restrictions) =>
 			!restrictions.includes("none") || restrictions.length === 1,
 		{ message: '"None" cannot be combined with another restriction' }
