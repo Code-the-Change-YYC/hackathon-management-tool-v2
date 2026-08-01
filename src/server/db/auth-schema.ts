@@ -48,9 +48,9 @@ export const user = createTable("user", {
 	banned: boolean("banned").default(false),
 	banReason: text("ban_reason"),
 	banExpires: timestamp("ban_expires"),
-	dietaryRestriction: text("dietary_restriction", {
+	dietaryRestrictions: text("dietary_restriction", {
 		enum: DIETARY_RESTRICTIONS
-	}),
+	}).array(),
 	school: text("school"),
 	program: text("program", { enum: PROGRAMS }),
 	completedRegistration: boolean("completed_registration")

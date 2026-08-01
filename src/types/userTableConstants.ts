@@ -28,7 +28,7 @@ export const EDITABLE_FIELDS = new Set([
 	"name",
 	"email",
 	"role",
-	"dietaryRestriction",
+	"dietaryRestrictions",
 	"school",
 	"program",
 	"completedRegistration",
