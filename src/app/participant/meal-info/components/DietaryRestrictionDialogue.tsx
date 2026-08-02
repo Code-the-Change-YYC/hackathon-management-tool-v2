@@ -140,18 +140,18 @@ export function DietaryRestrictionDialogue({
 	return (
 		<Dialog onOpenChange={handleDialogueOpenChange} open>
 			{dialogueMode === "edit" ? (
-				<DialogContent className="max-w-xs gap-5 p-7">
-					<DialogHeader className="gap-2 pr-6">
-						<DialogTitle className="font-semibold text-lg leading-tight">
+				<DialogContent className="gap-6 p-6 sm:p-8">
+					<DialogHeader className="gap-3 pr-6">
+						<DialogTitle className="font-semibold text-xl leading-tight">
 							Edit your dietary restrictions
 						</DialogTitle>
-						<DialogDescription className="font-normal text-xs">
+						<DialogDescription className="font-normal text-sm">
 							Update your dietary restrictions so we can accommodate your needs!
 						</DialogDescription>
 					</DialogHeader>
 
 					<form
-						className="flex flex-col gap-5"
+						className="flex flex-col gap-6"
 						onSubmit={(event) => {
 							event.preventDefault();
 							void saveRestrictions();
@@ -159,7 +159,7 @@ export function DietaryRestrictionDialogue({
 					>
 						<FieldGroup className="gap-4">
 							<FieldSet>
-								<FieldLegend className="font-normal text-xs" variant="label">
+								<FieldLegend className="font-normal text-sm" variant="label">
 									Your registered dietary restrictions:
 								</FieldLegend>
 								<Field>
@@ -168,7 +168,7 @@ export function DietaryRestrictionDialogue({
 											draftRestrictions.map((restriction) => (
 												<Badge
 													aria-label={`Remove ${restrictionLabels[restriction]}`}
-													className="cursor-pointer"
+													className="h-7 cursor-pointer px-3"
 													key={restriction}
 													onClick={() => removeRestriction(restriction)}
 													render={<button type="button" />}
@@ -179,7 +179,7 @@ export function DietaryRestrictionDialogue({
 												</Badge>
 											))
 										) : (
-											<span className="text-muted-foreground text-xs">
+											<span className="text-muted-foreground text-sm">
 												None selected
 											</span>
 										)}
@@ -188,7 +188,7 @@ export function DietaryRestrictionDialogue({
 							</FieldSet>
 
 							<FieldSet>
-								<FieldLegend className="font-normal text-xs" variant="label">
+								<FieldLegend className="font-normal text-sm" variant="label">
 									Add a restriction:
 								</FieldLegend>
 								<Field>
@@ -198,7 +198,7 @@ export function DietaryRestrictionDialogue({
 												<Button
 													key={restriction}
 													onClick={() => addRestriction(restriction)}
-													size="xs"
+													size="sm"
 													type="button"
 													variant="outline"
 												>
@@ -207,7 +207,7 @@ export function DietaryRestrictionDialogue({
 												</Button>
 											))
 										) : (
-											<span className="text-muted-foreground text-xs">
+											<span className="text-muted-foreground text-sm">
 												All options selected
 											</span>
 										)}
@@ -221,7 +221,7 @@ export function DietaryRestrictionDialogue({
 								disabled={
 									updateDietaryRestrictions.isPending || !hasUnsavedChanges
 								}
-								size="xs"
+								size="sm"
 								type="submit"
 							>
 								{updateDietaryRestrictions.isPending
@@ -231,7 +231,7 @@ export function DietaryRestrictionDialogue({
 							<Button
 								disabled={updateDietaryRestrictions.isPending}
 								onClick={requestEditorClose}
-								size="xs"
+								size="sm"
 								type="button"
 								variant="outline"
 							>
@@ -241,26 +241,26 @@ export function DietaryRestrictionDialogue({
 					</form>
 				</DialogContent>
 			) : (
-				<DialogContent className="max-w-xs gap-5 p-7">
-					<DialogHeader className="gap-2 pr-6">
-						<DialogTitle className="font-semibold text-lg leading-tight">
+				<DialogContent className="gap-6 p-6 sm:p-8">
+					<DialogHeader className="gap-3 pr-6">
+						<DialogTitle className="font-semibold text-xl leading-tight">
 							Are you sure you want to discard your changes?
 						</DialogTitle>
-						<DialogDescription className="font-normal text-xs">
+						<DialogDescription className="font-normal text-sm">
 							You’ve made edits to your dietary restrictions without saving.
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter className="mx-0 mb-0 flex-col border-0 bg-transparent p-0 sm:flex-col">
 						<Button
 							onClick={discardChanges}
-							size="xs"
+							size="sm"
 							variant="destructive-solid"
 						>
 							Yes, discard changes
 						</Button>
 						<Button
 							onClick={() => setDialogueMode("edit")}
-							size="xs"
+							size="sm"
 							variant="outline"
 						>
 							No, review changes
