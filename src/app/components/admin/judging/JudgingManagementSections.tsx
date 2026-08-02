@@ -639,6 +639,9 @@ function AssignmentManagement({
 	);
 	const roundsQuery = api.judgingRounds.getAll.useQuery();
 	const teamsQuery = api.teams.getAll.useQuery();
+	const eligibleTeams = (teamsQuery.data ?? []).filter(
+		(team) => team.prescreenStatus === "passed"
+	);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [teamId, setTeamId] = useState("");
 	const [roomId, setRoomId] = useState("");
@@ -758,7 +761,7 @@ function AssignmentManagement({
 						value={teamId}
 					>
 						<option value="">Select team</option>
-						{(teamsQuery.data ?? []).map((team) => (
+						{eligibleTeams.map((team) => (
 							<option key={team.id} value={team.id}>
 								{team.name}
 							</option>

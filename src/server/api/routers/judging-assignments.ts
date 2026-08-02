@@ -215,6 +215,26 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
+
+			if (data.teamId) {
+				const team = await ctx.db.query.organization.findFirst({
+					where: eq(organization.id, data.teamId)
+				});
+				if (!team) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Team not found"
+					});
+				}
+				if (team.prescreenStatus !== "passed") {
+					throw new TRPCError({
+						code: "CONFLICT",
+						message:
+							"Only prescreen-passed teams can be assigned to judging rooms"
+					});
+				}
+			}
+
 			const [updated] = await ctx.db
 				.update(judgingAssignments)
 				.set(data)

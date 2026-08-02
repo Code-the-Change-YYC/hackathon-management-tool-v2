@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { api } from "@/trpc/react";
 
 interface PrescreenModalProps {
