@@ -26,7 +26,6 @@ import {
 import { api } from "@/trpc/react";
 
 export const restrictionLabels = {
-	none: "None",
 	halal: "Halal",
 	vegetarian: "Vegetarian",
 	vegan: "Vegan",
@@ -94,20 +93,11 @@ export function DietaryRestrictionDialogue({
 
 	function addRestriction(restriction: DietaryRestriction) {
 		setDraftRestrictions((currentRestrictions) => {
-			if (restriction === "none") {
-				return ["none"];
-			}
-
 			if (currentRestrictions.includes(restriction)) {
 				return currentRestrictions;
 			}
 
-			return [
-				...currentRestrictions.filter(
-					(currentRestriction) => currentRestriction !== "none"
-				),
-				restriction
-			];
+			return [...currentRestrictions, restriction];
 		});
 	}
 
@@ -193,24 +183,28 @@ export function DietaryRestrictionDialogue({
 								</FieldLegend>
 								<Field>
 									<div className="flex flex-wrap gap-2">
-										{availableRestrictions.length > 0 ? (
-											availableRestrictions.map((restriction) => (
-												<Button
-													key={restriction}
-													onClick={() => addRestriction(restriction)}
-													size="sm"
-													type="button"
-													variant="outline"
-												>
-													{restrictionLabels[restriction]}
-													<AddLine data-icon="inline-end" />
-												</Button>
-											))
-										) : (
-											<span className="text-muted-foreground text-sm">
-												All options selected
-											</span>
-										)}
+										{draftRestrictions.length > 0 ? (
+											<Button
+												onClick={() => setDraftRestrictions([])}
+												size="sm"
+												type="button"
+												variant="outline"
+											>
+												None
+											</Button>
+										) : null}
+										{availableRestrictions.map((restriction) => (
+											<Button
+												key={restriction}
+												onClick={() => addRestriction(restriction)}
+												size="sm"
+												type="button"
+												variant="outline"
+											>
+												{restrictionLabels[restriction]}
+												<AddLine data-icon="inline-end" />
+											</Button>
+										))}
 									</div>
 								</Field>
 							</FieldSet>

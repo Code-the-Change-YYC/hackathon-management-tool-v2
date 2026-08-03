@@ -27,11 +27,9 @@ type DietaryRestrictionProps = {
 function getDietaryRestrictions(
 	dietaryRestrictions: string[]
 ): DietaryRestrictionValue[] {
-	const restrictions = DIETARY_RESTRICTIONS.filter((restriction) =>
+	return DIETARY_RESTRICTIONS.filter((restriction) =>
 		dietaryRestrictions.includes(restriction)
 	);
-
-	return restrictions.includes("none") ? ["none"] : restrictions;
 }
 
 export function DietaryRestriction({
