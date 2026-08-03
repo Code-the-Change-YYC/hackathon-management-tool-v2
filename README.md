@@ -17,6 +17,8 @@ pnpm install
 
 # then
 
+cp .env.example .env
+
 pnpm dev
 ```
 
