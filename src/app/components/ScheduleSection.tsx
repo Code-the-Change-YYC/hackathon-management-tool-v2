@@ -17,6 +17,7 @@ function formatDateKey(date: Date) {
 	return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
+// TODO: do this grouping logic in the procedure instead
 export function groupScheduleItemsByDate(items: ScheduleItemData[]) {
 	return items.reduce<ScheduleGroup[]>((groups, item) => {
 		const key = formatDateKey(item.startTime);
