@@ -21,14 +21,14 @@ import {
 } from "./DietaryRestrictionDialogue";
 
 type DietaryRestrictionProps = {
-	dietaryRestrictions: string[] | null | undefined;
+	dietaryRestrictions: string[];
 };
 
 function getDietaryRestrictions(
-	dietaryRestrictions: string[] | null | undefined
+	dietaryRestrictions: string[]
 ): DietaryRestrictionValue[] {
 	const restrictions = DIETARY_RESTRICTIONS.filter((restriction) =>
-		dietaryRestrictions?.includes(restriction)
+		dietaryRestrictions.includes(restriction)
 	);
 
 	return restrictions.includes("none") ? ["none"] : restrictions;

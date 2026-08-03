@@ -31,7 +31,7 @@ export const usersRouter = createTRPCRouter({
 	updateUserDietaryRestrictions: protectedProcedure
 		.input(
 			z.object({
-				dietaryRestrictions: dietaryRestrictionsSchema.nullable()
+				dietaryRestrictions: dietaryRestrictionsSchema
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -57,7 +57,7 @@ export const usersRouter = createTRPCRouter({
 				name: z.string().min(1).optional(),
 				email: z.string().email().optional(),
 				role: z.string().optional().nullable(),
-				dietaryRestrictions: dietaryRestrictionsSchema.optional().nullable(),
+				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
 				school: z.string().optional().nullable(),
 				program: z.enum(PROGRAMS).optional().nullable(),
 				completedRegistration: z.boolean().optional(),
@@ -79,7 +79,7 @@ export const usersRouter = createTRPCRouter({
 				email: z.string().email(),
 				school: z.string().optional(),
 				program: z.enum(PROGRAMS).optional(),
-				dietaryRestrictions: dietaryRestrictionsSchema.optional().nullable(),
+				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
 				wantsFood: z.enum(["yes", "no"]).optional()
 			})
 		)
@@ -89,7 +89,7 @@ export const usersRouter = createTRPCRouter({
 				.set({
 					school: input.school?.trim() ? input.school.trim() : null,
 					program: input.program ?? null,
-					dietaryRestrictions: input.dietaryRestrictions ?? null,
+					dietaryRestrictions: input.dietaryRestrictions ?? [],
 					completedRegistration: true
 				})
 				.where(eq(user.email, input.email))
