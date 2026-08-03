@@ -2,15 +2,11 @@
 
 ## Previewing the project
 
-First you want to make sure you have pnpm and bun and docker installed:
+First you want to make sure you have pnpm and docker installed (install Bun below if you don't have it already):
 
-```bash
-pnpm -v
+    pnpm -v
 
-bun -v
-
-docker -v
-```
+    docker -v
 
 Then you can run the project locally:
 
