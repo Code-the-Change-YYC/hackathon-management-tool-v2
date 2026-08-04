@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import CountdownCard from "@/app/components/team/CountdownCard";
 
 interface Props {
-	searchParams: Promise<{ teamId?: string }>;
+	searchParams: Promise<{ teamId?: string | string[] }>;
 }
 
 function formatTeamId(teamId: string): string {
@@ -14,7 +14,7 @@ export default async function RegisterSuccessPage({ searchParams }: Props) {
 	const params = await searchParams;
 	const teamId = params.teamId;
 
-	if (!teamId) {
+	if (!teamId || typeof teamId !== "string") {
 		redirect("/team");
 	}
 

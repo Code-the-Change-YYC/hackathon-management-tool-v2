@@ -68,7 +68,7 @@ export function Modal({
 				<DialogOverlay className="bg-black/40" />
 				<DialogPrimitive.Popup
 					className={cn(
-						"-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 flex w-full max-w-[480px] flex-col gap-6 rounded-[20px] bg-grey-50 p-6 shadow-elevation-200 outline-none sm:p-8",
+						"-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-full max-w-[480px] flex-col gap-6 overflow-y-auto rounded-[20px] bg-grey-50 p-6 shadow-elevation-200 outline-none sm:p-8",
 						showClose && "pt-16 sm:pt-16"
 					)}
 					data-slot="dialog-content"

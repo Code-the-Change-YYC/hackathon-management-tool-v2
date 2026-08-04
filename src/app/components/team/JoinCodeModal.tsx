@@ -87,12 +87,6 @@ export default function JoinCodeModal({
 					Your teammates can share a join code with you to invite members on
 					their "My Team" page.
 				</p>
-				<button
-					className="self-start font-medium text-[14px] text-purple-800 underline"
-					type="button"
-				>
-					Where is this code?
-				</button>
 			</div>
 
 			<div className="flex flex-col items-center gap-2">

@@ -22,7 +22,7 @@ export default function JoinTeamPage() {
 					<li className="flex gap-2">
 						<span className="shrink-0 font-bold">1.</span>
 						<span>
-							Obtain the unique 4-character Team ID from your team member who
+							Obtain the unique 6-character Team ID from your team member who
 							registered your group.
 						</span>
 					</li>

@@ -7,7 +7,7 @@ import { Button, buttonVariants } from "@/app/components/ui/button";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
-const CODE_LENGTH = 4;
+const CODE_LENGTH = 6;
 
 function isValidChar(char: string) {
 	return /^[A-Za-z0-9]$/.test(char);
@@ -108,14 +108,14 @@ export default function JoinTeamForm() {
 		<form className="space-y-6" onSubmit={handleSubmit}>
 			<div className="flex flex-col items-center gap-4 rounded-2xl bg-destructive/10 px-6 py-8">
 				<p className="font-semibold text-destructive text-sm">
-					Enter 4-character Team ID
+					Enter 6-character Team ID
 				</p>
-				<div className="flex gap-3">
+				<div className="flex gap-2 sm:gap-3">
 					{chars.map((char, i) => (
 						<input
 							autoCapitalize="characters"
 							autoComplete="off"
-							className="h-16 w-16 rounded-xl border-2 border-strawberry-red/40 bg-white text-center font-bold text-2xl text-foreground uppercase outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 sm:h-20 sm:w-20 sm:text-3xl"
+							className="h-14 w-14 rounded-xl border-2 border-strawberry-red/40 bg-white text-center font-bold text-foreground text-xl uppercase outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 sm:h-16 sm:w-16 sm:text-2xl"
 							disabled={joinTeam.isPending}
 							inputMode="text"
 							// biome-ignore lint/suspicious/noArrayIndexKey: fixed-length positional input; order never changes

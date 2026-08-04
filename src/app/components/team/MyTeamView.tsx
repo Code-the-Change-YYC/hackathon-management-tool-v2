@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/app/components/ui/button";
 import { api } from "@/trpc/react";
 import EditTeamNameModal from "./EditTeamNameModal";
 import InviteCodeModal from "./InviteCodeModal";
@@ -30,40 +29,21 @@ type ViewTeam = {
 	members: TeamMember[];
 };
 
-// Sample data so every screen can be previewed while the surrounding app and
-// real membership data are still WIP.
-const SAMPLE_TEAM: ViewTeam = {
-	name: "Code Wizards",
-	teamCode: "1X3J56",
-	maxMembers: 5,
-	isOwner: true,
-	members: [
-		{
-			id: "1",
-			name: "Victoria Wong",
-			email: "victoria@email.com",
-			isYou: true
-		},
-		{
-			id: "2",
-			name: "Fiona Truong",
-			email: "fionat12345@email.com",
-			isYou: false
-		},
-		{ id: "3", name: "Grace Ilori", email: "gracei15@email.com", isYou: false }
-	]
-};
-
 export default function MyTeamView() {
 	const router = useRouter();
 	const utils = api.useUtils();
-	const { data: team, isLoading } = api.teams.getMyTeam.useQuery();
+	const {
+		data: team,
+		isLoading,
+		isError,
+		refetch
+	} = api.teams.getMyTeam.useQuery();
 
 	const [modal, setModal] = useState<ModalKind>(null);
 	const [joinError, setJoinError] = useState<string | null>(null);
 	const [editError, setEditError] = useState<string | null>(null);
+	const [leaveError, setLeaveError] = useState<string | null>(null);
 	const [joinedTeamName, setJoinedTeamName] = useState("");
-	const [previewTeam, setPreviewTeam] = useState(false);
 
 	const joinMutation = api.teams.join.useMutation({
 		onSuccess: async (joined) => {
@@ -83,9 +63,11 @@ export default function MyTeamView() {
 
 	const leaveMutation = api.teams.leave.useMutation({
 		onSuccess: async () => {
+			setLeaveError(null);
 			setModal(null);
 			await utils.teams.getMyTeam.invalidate();
-		}
+		},
+		onError: (error) => setLeaveError(error.message)
 	});
 
 	const updateMutation = api.teams.update.useMutation({
@@ -110,9 +92,7 @@ export default function MyTeamView() {
 					isYou: m.isYou
 				}))
 			}
-		: previewTeam
-			? SAMPLE_TEAM
-			: null;
+		: null;
 
 	function handleSituation(situation: Situation) {
 		if (situation === "registered") {
@@ -142,6 +122,19 @@ export default function MyTeamView() {
 
 			{isLoading ? (
 				<div className="h-40 w-full animate-pulse rounded-[12px] bg-grey-100" />
+			) : isError ? (
+				<div className="flex flex-col items-start gap-3 rounded-[12px] border border-red-700/30 bg-red-50 p-6">
+					<p className="font-medium text-[16px] text-red-900">
+						We couldn't load your team. Please try again.
+					</p>
+					<button
+						className="rounded-full bg-red-700 px-4 py-2 font-medium text-[14px] text-white transition hover:bg-red-900"
+						onClick={() => refetch()}
+						type="button"
+					>
+						Retry
+					</button>
+				</div>
 			) : viewTeam ? (
 				<MyTeamTable
 					canEditName={viewTeam.isOwner}
@@ -152,33 +145,28 @@ export default function MyTeamView() {
 						setModal("edit");
 					}}
 					onInvite={() => setModal("invite")}
-					onLeave={() => setModal("leave")}
+					onLeave={() => {
+						setLeaveError(null);
+						setModal("leave");
+					}}
 					teamName={viewTeam.name}
 				/>
 			) : (
 				<NoTeamBanner onAction={() => setModal("situation")} />
 			)}
 
-			<TestingShortcuts
-				onOpen={(kind) => {
-					setJoinError(null);
-					setEditError(null);
-					setModal(kind);
-				}}
-				onTogglePreview={() => setPreviewTeam((v) => !v)}
-				previewTeam={previewTeam}
-			/>
-
 			<SituationModal
 				onClose={() => setModal(null)}
 				onContinue={handleSituation}
 				open={modal === "situation"}
 			/>
-			<InviteCodeModal
-				code={viewTeam?.teamCode ?? SAMPLE_TEAM.teamCode}
-				onClose={() => setModal(null)}
-				open={modal === "invite"}
-			/>
+			{viewTeam && (
+				<InviteCodeModal
+					code={viewTeam.teamCode}
+					onClose={() => setModal(null)}
+					open={modal === "invite"}
+				/>
+			)}
 			<JoinCodeModal
 				error={joinError}
 				loading={joinMutation.isPending}
@@ -189,78 +177,32 @@ export default function MyTeamView() {
 			<JoinedSuccessModal
 				onFinish={() => setModal(null)}
 				open={modal === "joined"}
-				teamName={joinedTeamName || viewTeam?.name || SAMPLE_TEAM.name}
+				teamName={joinedTeamName || viewTeam?.name || ""}
 			/>
-			<LeaveTeamModal
-				loading={leaveMutation.isPending}
-				onCancel={() => setModal(null)}
-				onConfirm={() => leaveMutation.mutate({ confirmDelete: true })}
-				open={modal === "leave"}
-				teamName={viewTeam?.name ?? SAMPLE_TEAM.name}
-			/>
-			<EditTeamNameModal
-				currentName={viewTeam?.name ?? SAMPLE_TEAM.name}
-				error={editError}
-				loading={updateMutation.isPending}
-				onClose={() => setModal(null)}
-				onSave={(name) => {
-					if (team) {
-						updateMutation.mutate({ id: team.id, name });
-					} else {
-						// Preview mode has no real team to persist to.
-						setModal(null);
-					}
-				}}
-				open={modal === "edit"}
-			/>
-		</div>
-	);
-}
-
-function TestingShortcuts({
-	onOpen,
-	onTogglePreview,
-	previewTeam
-}: {
-	onOpen: (kind: Exclude<ModalKind, null>) => void;
-	onTogglePreview: () => void;
-	previewTeam: boolean;
-}) {
-	const buttons: { label: string; kind: Exclude<ModalKind, null> }[] = [
-		{ label: "Situation", kind: "situation" },
-		{ label: "Invite code", kind: "invite" },
-		{ label: "Join code", kind: "join" },
-		{ label: "Joined success", kind: "joined" },
-		{ label: "Leave team", kind: "leave" },
-		{ label: "Edit name", kind: "edit" }
-	];
-
-	return (
-		<div className="flex flex-col gap-2 rounded-[12px] border border-grey-300 border-dashed p-4">
-			<p className="font-medium text-[11px] text-grey-600 uppercase tracking-wide">
-				Testing shortcuts (WIP)
-			</p>
-			<div className="flex flex-wrap gap-2">
-				<Button
-					className="text-[12px]"
-					onClick={onTogglePreview}
-					size="xs"
-					variant="outline"
-				>
-					{previewTeam ? "Hide sample team" : "Show sample team"}
-				</Button>
-				{buttons.map((b) => (
-					<Button
-						className="text-[12px]"
-						key={b.kind}
-						onClick={() => onOpen(b.kind)}
-						size="xs"
-						variant="outline"
-					>
-						{b.label}
-					</Button>
-				))}
-			</div>
+			{viewTeam && (
+				<LeaveTeamModal
+					error={leaveError}
+					loading={leaveMutation.isPending}
+					onCancel={() => setModal(null)}
+					onConfirm={() => leaveMutation.mutate({ confirmDelete: true })}
+					open={modal === "leave"}
+					teamName={viewTeam.name}
+				/>
+			)}
+			{viewTeam && (
+				<EditTeamNameModal
+					currentName={viewTeam.name}
+					error={editError}
+					loading={updateMutation.isPending}
+					onClose={() => setModal(null)}
+					onSave={(name) => {
+						if (team) {
+							updateMutation.mutate({ id: team.id, name });
+						}
+					}}
+					open={modal === "edit"}
+				/>
+			)}
 		</div>
 	);
 }

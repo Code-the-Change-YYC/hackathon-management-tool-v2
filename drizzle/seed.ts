@@ -12,13 +12,35 @@ import {
 import { criteria, scores } from "@/server/db/scores-schema";
 
 const TEAM_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-function makeTeamCode(): string {
+function generateTeamCodeCandidate(): string {
 	let code = "";
 	for (let i = 0; i < 6; i++) {
 		code +=
 			TEAM_CODE_ALPHABET[Math.floor(Math.random() * TEAM_CODE_ALPHABET.length)];
 	}
 	return code;
+}
+
+// teamCode is unique in the schema; retry past collisions (both against
+// codes already used earlier in this seed run and against the database)
+// instead of assuming a single random draw is unique.
+async function makeTeamCode(usedInThisRun: Set<string>): Promise<string> {
+	for (let attempt = 0; attempt < 10; attempt++) {
+		const candidate = generateTeamCodeCandidate();
+		if (usedInThisRun.has(candidate)) {
+			continue;
+		}
+		const existing = await db
+			.select({ id: organization.id })
+			.from(organization)
+			.where(eq(organization.teamCode, candidate))
+			.limit(1);
+		if (existing.length === 0) {
+			usedInThisRun.add(candidate);
+			return candidate;
+		}
+	}
+	throw new Error("Could not generate a unique team code for seeding");
 }
 
 async function main() {
@@ -80,6 +102,7 @@ async function main() {
 		];
 
 		const createdTeams = [];
+		const usedTeamCodes = new Set<string>();
 
 		for (const org of orgs) {
 			try {
@@ -107,7 +130,7 @@ async function main() {
 						name: org.name,
 						slug: org.slug,
 						createdAt: new Date(),
-						teamCode: makeTeamCode()
+						teamCode: await makeTeamCode(usedTeamCodes)
 					})
 					.returning();
 

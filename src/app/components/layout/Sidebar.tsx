@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
 	BellIcon,
 	CloseIcon,
@@ -168,6 +168,25 @@ export default function Sidebar({ userName }: { userName?: string }) {
 	const pathname = usePathname();
 	const [open, setOpen] = useState(false);
 	const close = () => setOpen(false);
+	const menuButtonRef = useRef<HTMLButtonElement>(null);
+	const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+		closeButtonRef.current?.focus();
+		function onKeyDown(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				setOpen(false);
+			}
+		}
+		document.addEventListener("keydown", onKeyDown);
+		return () => {
+			document.removeEventListener("keydown", onKeyDown);
+			menuButtonRef.current?.focus();
+		};
+	}, [open]);
 
 	return (
 		<>
@@ -184,6 +203,7 @@ export default function Sidebar({ userName }: { userName?: string }) {
 					aria-label="Open menu"
 					className="grid size-9 place-items-center rounded-lg text-grey-800 transition hover:bg-purple-50"
 					onClick={() => setOpen(true)}
+					ref={menuButtonRef}
 					type="button"
 				>
 					<MenuIcon className="size-6" />
@@ -206,7 +226,11 @@ export default function Sidebar({ userName }: { userName?: string }) {
 			</header>
 
 			{open && (
-				<div className="fixed inset-0 z-50 lg:hidden">
+				<div
+					aria-modal="true"
+					className="fixed inset-0 z-50 lg:hidden"
+					role="dialog"
+				>
 					<button
 						aria-label="Close menu"
 						className="absolute inset-0 bg-black/40"
@@ -218,6 +242,7 @@ export default function Sidebar({ userName }: { userName?: string }) {
 							aria-label="Close menu"
 							className="mb-2 ml-auto grid size-9 place-items-center rounded-lg text-grey-800 transition hover:bg-purple-50"
 							onClick={close}
+							ref={closeButtonRef}
 							type="button"
 						>
 							<CloseIcon className="size-5" />

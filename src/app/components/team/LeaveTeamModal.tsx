@@ -7,13 +7,15 @@ export default function LeaveTeamModal({
 	onConfirm,
 	onCancel,
 	teamName,
-	loading
+	loading,
+	error
 }: {
 	open: boolean;
 	onConfirm: () => void;
 	onCancel: () => void;
 	teamName: string;
 	loading?: boolean;
+	error?: string | null;
 }) {
 	return (
 		<Modal onClose={onCancel} open={open} showClose={false}>
@@ -25,6 +27,8 @@ export default function LeaveTeamModal({
 					This action can't be undone!
 				</p>
 			</div>
+
+			{error && <p className="font-medium text-[14px] text-red-700">{error}</p>}
 
 			<div className="flex flex-col gap-3">
 				<DangerButton disabled={loading} onClick={onConfirm} type="button">

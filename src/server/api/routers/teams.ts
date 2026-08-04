@@ -4,9 +4,9 @@
  * Team names only allow letters, numbers, spaces, hyphens, and underscores
  * to avoid emoji/special character issues from last year.
  *
- * Each team gets a unique 4-char hex code on creation. Users can only be on
- * one team at a time, enforced by ensureNotInTeam() which is shared across
- * create, join, and acceptInvite.
+ * Each team gets a unique 6-char alphanumeric code on creation. Users can
+ * only be on one team at a time, enforced by ensureNotInTeam() which is
+ * shared across create, join, and acceptInvite.
  *
  * Owners are the only ones who can send invitations. If an owner tries to
  * leave, they must pass confirmDelete: true which deletes the entire team
@@ -26,7 +26,7 @@
 
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
@@ -64,6 +64,11 @@ const MAX_TEAM_SIZE = 5;
 const TEAM_CODE_LENGTH = 6;
 const TEAM_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
+// How many candidate codes to try before giving up. The column is unique, so
+// allocation relies on retrying past unique-constraint conflicts rather than
+// a read-then-write check (which is not atomic under concurrent requests).
+const MAX_TEAM_CODE_ATTEMPTS = 5;
+
 function generateTeamCode(): string {
 	const bytes = crypto.randomBytes(TEAM_CODE_LENGTH);
 	let code = "";
@@ -73,21 +78,15 @@ function generateTeamCode(): string {
 	return code;
 }
 
-// Generates a team code that is not already taken (the column is unique).
-async function ensureUniqueTeamCode(db: typeof dbType): Promise<string> {
-	for (let attempt = 0; attempt < 10; attempt++) {
-		const candidate = generateTeamCode();
-		const existing = await db.query.organization.findFirst({
-			where: eq(organization.teamCode, candidate)
-		});
-		if (!existing) {
-			return candidate;
-		}
-	}
-	throw new TRPCError({
-		code: "INTERNAL_SERVER_ERROR",
-		message: "Could not generate a unique team code"
-	});
+// Postgres unique-violation error code. postgres-js surfaces this as `.code`
+// on the thrown error.
+function isUniqueViolation(error: unknown): boolean {
+	return (
+		typeof error === "object" &&
+		error !== null &&
+		"code" in error &&
+		(error as { code?: unknown }).code === "23505"
+	);
 }
 
 function parseMetadata<T extends Record<string, unknown>>(
@@ -240,13 +239,40 @@ export const teamsRouter = createTRPCRouter({
 
 		// Backfill an invite code for teams created before codes existed
 		// (e.g. seeded teams) so the invite modal always has one to show.
+		// The update is conditioned on teamCode still being null so a
+		// concurrent request that already backfilled it can't be overwritten;
+		// when that happens we just read back whatever code "won".
 		let teamCode = team.teamCode;
 		if (!teamCode) {
-			teamCode = await ensureUniqueTeamCode(ctx.db);
-			await ctx.db
-				.update(organization)
-				.set({ teamCode })
-				.where(eq(organization.id, team.id));
+			for (let attempt = 0; attempt < MAX_TEAM_CODE_ATTEMPTS; attempt++) {
+				try {
+					const [updated] = await ctx.db
+						.update(organization)
+						.set({ teamCode: generateTeamCode() })
+						.where(
+							and(eq(organization.id, team.id), isNull(organization.teamCode))
+						)
+						.returning({ teamCode: organization.teamCode });
+
+					if (updated) {
+						teamCode = updated.teamCode;
+					} else {
+						const refreshed = await ctx.db.query.organization.findFirst({
+							where: eq(organization.id, team.id)
+						});
+						teamCode = refreshed?.teamCode ?? null;
+					}
+					break;
+				} catch (error) {
+					if (
+						isUniqueViolation(error) &&
+						attempt < MAX_TEAM_CODE_ATTEMPTS - 1
+					) {
+						continue;
+					}
+					throw error;
+				}
+			}
 		}
 
 		return {
@@ -276,37 +302,56 @@ export const teamsRouter = createTRPCRouter({
 			const userId = ctx.session.user.id;
 			await ensureNotInTeam(ctx.db, userId);
 
-			const teamId = crypto.randomUUID();
-			const teamCode = await ensureUniqueTeamCode(ctx.db);
 			const slug = input.name
 				.toLowerCase()
 				.replace(/\s+/g, "-")
 				.replace(/[^a-z0-9-]/g, "");
 
-			const team = await ctx.db.transaction(async (tx) => {
-				const [newTeam] = await tx
-					.insert(organization)
-					.values({
-						id: teamId,
-						name: input.name,
-						slug: `${slug}-${crypto.randomBytes(2).toString("hex")}`,
-						createdAt: new Date(),
-						teamCode
-					})
-					.returning();
+			// Retry on a unique-constraint conflict rather than checking for an
+			// existing code first: a check-then-insert is not atomic, so two
+			// concurrent creates could pick the same candidate and only one
+			// insert would succeed anyway.
+			for (let attempt = 0; attempt < MAX_TEAM_CODE_ATTEMPTS; attempt++) {
+				const teamId = crypto.randomUUID();
+				const teamCode = generateTeamCode();
+				try {
+					return await ctx.db.transaction(async (tx) => {
+						const [newTeam] = await tx
+							.insert(organization)
+							.values({
+								id: teamId,
+								name: input.name,
+								slug: `${slug}-${crypto.randomBytes(2).toString("hex")}`,
+								createdAt: new Date(),
+								teamCode
+							})
+							.returning();
 
-				await tx.insert(member).values({
-					id: crypto.randomUUID(),
-					organizationId: teamId,
-					userId,
-					role: MEMBER_ROLES.OWNER,
-					createdAt: new Date()
-				});
+						await tx.insert(member).values({
+							id: crypto.randomUUID(),
+							organizationId: teamId,
+							userId,
+							role: MEMBER_ROLES.OWNER,
+							createdAt: new Date()
+						});
 
-				return newTeam;
+						return newTeam;
+					});
+				} catch (error) {
+					if (
+						isUniqueViolation(error) &&
+						attempt < MAX_TEAM_CODE_ATTEMPTS - 1
+					) {
+						continue;
+					}
+					throw error;
+				}
+			}
+
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: "Could not generate a unique team code"
 			});
-
-			return team;
 		}),
 
 	join: protectedProcedure
@@ -335,25 +380,39 @@ export const teamsRouter = createTRPCRouter({
 				});
 			}
 
-			const currentMembers = await ctx.db.query.member.findMany({
-				where: eq(member.organizationId, team.id)
-			});
-			if (currentMembers.length >= MAX_TEAM_SIZE) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: `This team is full (${MAX_TEAM_SIZE} members maximum)`
+			return await ctx.db.transaction(async (tx) => {
+				// Serialize concurrent joins to this team: an advisory lock keyed
+				// by the team id is held for the rest of the transaction, so a
+				// second concurrent join for the same team waits until this one
+				// commits (or rolls back) before it counts members. Without this,
+				// two joins reading the count at the same time could both pass
+				// the size check and push the team over MAX_TEAM_SIZE.
+				await tx.execute(
+					sql`select pg_advisory_xact_lock(hashtext(${team.id}))`
+				);
+
+				const [row] = await tx
+					.select({ count: sql<number>`count(*)::int` })
+					.from(member)
+					.where(eq(member.organizationId, team.id));
+				const memberCount = row?.count ?? 0;
+				if (memberCount >= MAX_TEAM_SIZE) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: `This team is full (${MAX_TEAM_SIZE} members maximum)`
+					});
+				}
+
+				await tx.insert(member).values({
+					id: crypto.randomUUID(),
+					organizationId: team.id,
+					userId,
+					role: MEMBER_ROLES.MEMBER,
+					createdAt: new Date()
 				});
-			}
 
-			await ctx.db.insert(member).values({
-				id: crypto.randomUUID(),
-				organizationId: team.id,
-				userId,
-				role: MEMBER_ROLES.MEMBER,
-				createdAt: new Date()
+				return team;
 			});
-
-			return team;
 		}),
 
 	invite: protectedProcedure

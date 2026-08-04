@@ -81,7 +81,14 @@ function FlipBox({ value, label }: { value: number; label: string }) {
 }
 
 export default function CountdownCard() {
-	const [timeLeft, setTimeLeft] = useState<TimeLeft>(getTimeLeft);
+	// Start from a deterministic value so server-rendered HTML and the first
+	// client render match; the real countdown is computed after mount.
+	const [timeLeft, setTimeLeft] = useState<TimeLeft>({
+		days: 0,
+		hours: 0,
+		minutes: 0,
+		seconds: 0
+	});
 	const [icsUrl, setIcsUrl] = useState("");
 
 	useEffect(() => {
@@ -94,7 +101,9 @@ export default function CountdownCard() {
 	}, []);
 
 	useEffect(() => {
-		const id = setInterval(() => setTimeLeft(getTimeLeft()), 1000);
+		const updateTimeLeft = () => setTimeLeft(getTimeLeft());
+		updateTimeLeft();
+		const id = setInterval(updateTimeLeft, 1000);
 		return () => clearInterval(id);
 	}, []);
 

@@ -9,6 +9,11 @@ import { Label } from "@/app/components/ui/label";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
+// Mirrors the backend's teamNameSchema regex in
+// src/server/api/routers/teams.ts so the button disables before a doomed
+// mutation is attempted.
+const TEAM_NAME_PATTERN = /^[a-zA-Z0-9\s\-_]+$/;
+
 export default function RegisterTeamForm() {
 	const router = useRouter();
 	const [teamName, setTeamName] = useState("");
@@ -19,12 +24,14 @@ export default function RegisterTeamForm() {
 		}
 	});
 
-	const isDisabled = createTeam.isPending || teamName.trim() === "";
+	const trimmedTeamName = teamName.trim();
+	const isDisabled =
+		createTeam.isPending || !TEAM_NAME_PATTERN.test(trimmedTeamName);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		if (isDisabled) return;
-		createTeam.mutate({ name: teamName.trim() });
+		createTeam.mutate({ name: trimmedTeamName });
 	}
 
 	return (
