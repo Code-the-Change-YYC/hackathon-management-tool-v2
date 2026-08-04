@@ -8,7 +8,8 @@ import {
 	index,
 	pgTableCreator,
 	text,
-	timestamp
+	timestamp,
+	uniqueIndex
 } from "drizzle-orm/pg-core";
 
 export const PROGRAMS = [
@@ -146,7 +147,11 @@ export const member = createTable(
 	},
 	(table) => [
 		index("member_organizationId_idx").on(table.organizationId),
-		index("member_userId_idx").on(table.userId)
+		// A user can only belong to one team at a time (enforced in app code
+		// by ensureNotInTeam()). This unique index makes that a real DB
+		// guarantee, so concurrent join/create requests for the same user
+		// can't both succeed and leave them on multiple teams.
+		uniqueIndex("member_userId_idx").on(table.userId)
 	]
 );
 

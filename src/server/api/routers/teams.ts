@@ -89,6 +89,28 @@ function isUniqueViolation(error: unknown): boolean {
 	);
 }
 
+// member.userId has a unique index (a user can only be on one team). This
+// distinguishes "someone else joined this team/took this user" races from
+// unrelated conflicts (e.g. a team-code collision) so callers can turn it
+// into a friendly error instead of retrying or surfacing a raw 500.
+function isDuplicateMembershipError(error: unknown): boolean {
+	return (
+		isUniqueViolation(error) &&
+		typeof error === "object" &&
+		error !== null &&
+		"constraint_name" in error &&
+		(error as { constraint_name?: unknown }).constraint_name ===
+			"member_userId_idx"
+	);
+}
+
+function alreadyInTeamError(): TRPCError {
+	return new TRPCError({
+		code: "BAD_REQUEST",
+		message: "You are already a member of a team"
+	});
+}
+
 function parseMetadata<T extends Record<string, unknown>>(
 	raw: string | null
 ): T {
@@ -338,6 +360,12 @@ export const teamsRouter = createTRPCRouter({
 						return newTeam;
 					});
 				} catch (error) {
+					if (isDuplicateMembershipError(error)) {
+						// The user was added to a team by a concurrent request
+						// (e.g. another join/create) between our pre-check and
+						// this insert. Retrying with a new code wouldn't help.
+						throw alreadyInTeamError();
+					}
 					if (
 						isUniqueViolation(error) &&
 						attempt < MAX_TEAM_CODE_ATTEMPTS - 1
@@ -380,39 +408,50 @@ export const teamsRouter = createTRPCRouter({
 				});
 			}
 
-			return await ctx.db.transaction(async (tx) => {
-				// Serialize concurrent joins to this team: an advisory lock keyed
-				// by the team id is held for the rest of the transaction, so a
-				// second concurrent join for the same team waits until this one
-				// commits (or rolls back) before it counts members. Without this,
-				// two joins reading the count at the same time could both pass
-				// the size check and push the team over MAX_TEAM_SIZE.
-				await tx.execute(
-					sql`select pg_advisory_xact_lock(hashtext(${team.id}))`
-				);
+			try {
+				return await ctx.db.transaction(async (tx) => {
+					// Serialize concurrent joins to this team: an advisory lock
+					// keyed by the team id is held for the rest of the
+					// transaction, so a second concurrent join for the same team
+					// waits until this one commits (or rolls back) before it
+					// counts members. Without this, two joins reading the count
+					// at the same time could both pass the size check and push
+					// the team over MAX_TEAM_SIZE.
+					await tx.execute(
+						sql`select pg_advisory_xact_lock(hashtext(${team.id}))`
+					);
 
-				const [row] = await tx
-					.select({ count: sql<number>`count(*)::int` })
-					.from(member)
-					.where(eq(member.organizationId, team.id));
-				const memberCount = row?.count ?? 0;
-				if (memberCount >= MAX_TEAM_SIZE) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: `This team is full (${MAX_TEAM_SIZE} members maximum)`
+					const [row] = await tx
+						.select({ count: sql<number>`count(*)::int` })
+						.from(member)
+						.where(eq(member.organizationId, team.id));
+					const memberCount = row?.count ?? 0;
+					if (memberCount >= MAX_TEAM_SIZE) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: `This team is full (${MAX_TEAM_SIZE} members maximum)`
+						});
+					}
+
+					await tx.insert(member).values({
+						id: crypto.randomUUID(),
+						organizationId: team.id,
+						userId,
+						role: MEMBER_ROLES.MEMBER,
+						createdAt: new Date()
 					});
-				}
 
-				await tx.insert(member).values({
-					id: crypto.randomUUID(),
-					organizationId: team.id,
-					userId,
-					role: MEMBER_ROLES.MEMBER,
-					createdAt: new Date()
+					return team;
 				});
-
-				return team;
-			});
+			} catch (error) {
+				// The advisory lock only serializes joins to *this* team. If the
+				// same user concurrently joined/created a different team, the
+				// member.userId unique index (not the lock) is what catches it.
+				if (isDuplicateMembershipError(error)) {
+					throw alreadyInTeamError();
+				}
+				throw error;
+			}
 		}),
 
 	invite: protectedProcedure
@@ -522,20 +561,27 @@ export const teamsRouter = createTRPCRouter({
 				});
 			}
 
-			await ctx.db.transaction(async (tx) => {
-				await tx.insert(member).values({
-					id: crypto.randomUUID(),
-					organizationId: inv.organizationId,
-					userId,
-					role: MEMBER_ROLES.MEMBER,
-					createdAt: new Date()
-				});
+			try {
+				await ctx.db.transaction(async (tx) => {
+					await tx.insert(member).values({
+						id: crypto.randomUUID(),
+						organizationId: inv.organizationId,
+						userId,
+						role: MEMBER_ROLES.MEMBER,
+						createdAt: new Date()
+					});
 
-				await tx
-					.update(invitation)
-					.set({ status: "accepted" })
-					.where(eq(invitation.id, inv.id));
-			});
+					await tx
+						.update(invitation)
+						.set({ status: "accepted" })
+						.where(eq(invitation.id, inv.id));
+				});
+			} catch (error) {
+				if (isDuplicateMembershipError(error)) {
+					throw alreadyInTeamError();
+				}
+				throw error;
+			}
 
 			return { success: true };
 		}),
