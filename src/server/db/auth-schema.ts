@@ -18,6 +18,17 @@ export const PROGRAMS = [
 	"other"
 ] as const;
 
+export const DIETARY_RESTRICTIONS = [
+	"none",
+	"halal",
+	"vegetarian",
+	"vegan",
+	"gluten_free",
+	"other"
+] as const;
+
+export type DietaryRestriction = (typeof DIETARY_RESTRICTIONS)[number];
+
 const MEMBER_ROLE_VALUES = ["owner", "member", "admin"] as const;
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
@@ -37,7 +48,9 @@ export const user = createTable("user", {
 	banned: boolean("banned").default(false),
 	banReason: text("ban_reason"),
 	banExpires: timestamp("ban_expires"),
-	allergies: text("allergies"),
+	dietaryRestrictions: text("dietary_restriction", {
+		enum: DIETARY_RESTRICTIONS
+	}).array(),
 	school: text("school"),
 	program: text("program", { enum: PROGRAMS }),
 	completedRegistration: boolean("completed_registration")
