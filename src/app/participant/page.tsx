@@ -10,11 +10,20 @@ export default async function ParticipantPage() {
 	let devpostStatus: Awaited<
 		ReturnType<typeof api.teams.getMyDevpostSubmissionStatus>
 	> | null = null;
+	let judgingAssignment: Awaited<
+		ReturnType<typeof api.judgingAssignments.getMineForActiveRound>
+	> | null = null;
 
 	try {
 		devpostStatus = await api.teams.getMyDevpostSubmissionStatus();
 	} catch {
 		devpostStatus = null;
+	}
+
+	try {
+		judgingAssignment = await api.judgingAssignments.getMineForActiveRound();
+	} catch {
+		judgingAssignment = null;
 	}
 
 	return (
@@ -41,6 +50,27 @@ export default async function ParticipantPage() {
 						) : null}
 					</div>
 				) : null}
+
+				<div className={styles.card}>
+					<h2 className={styles.welcome}>Judging Schedule</h2>
+					{judgingAssignment ? (
+						<>
+							<p>
+								{judgingAssignment.team.name} judges at{" "}
+								{judgingAssignment.timeSlot
+									? judgingAssignment.timeSlot.toLocaleString()
+									: "a time to be announced"}
+								.
+							</p>
+							<p>Room: {judgingAssignment.room.id.slice(0, 8)}</p>
+							{judgingAssignment.room.roomLink ? (
+								<p>Link: {judgingAssignment.room.roomLink}</p>
+							) : null}
+						</>
+					) : (
+						<p>Your judging time has not been scheduled yet.</p>
+					)}
+				</div>
 
 				<div className={styles.card}>
 					<h2 className={styles.welcome}>Welcome, Hacker!</h2>

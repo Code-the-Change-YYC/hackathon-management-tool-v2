@@ -37,11 +37,15 @@ export default function JudgingRoomsManager() {
 	// Read all data we need to build room management UI.
 	const { data: rounds } = api.judgingRounds.getAll.useQuery();
 	const { data: settings } = api.hackathonSettings.get.useQuery();
+	const { data: teams } = api.teams.getAll.useQuery();
 
 	// Prefer active round; if not available, fall back to first round.
 	const defaultRoundId = settings?.currentRoundId ?? rounds?.[0]?.id ?? "";
 	// This is the round currently being edited in the UI.
 	const [roundId, setRoundId] = useState(defaultRoundId);
+	const [roomCount, setRoomCount] = useState(2);
+	const [slotDurationMinutes, setSlotDurationMinutes] = useState(15);
+	const [totalJudgingMinutes, setTotalJudgingMinutes] = useState(120);
 
 	// Fetch saved room layout for the selected round.
 	const { data: layout } = api.judgingRooms.getLayoutByRound.useQuery(
@@ -56,8 +60,13 @@ export default function JudgingRoomsManager() {
 		}
 	});
 
-	// Placeholder endpoint for future "auto assign" algorithm.
-	const autoAssign = api.judgingRooms.autoAssignStub.useMutation();
+	const autoAssign = api.judgingRooms.generateSchedule.useMutation({
+		onSuccess: async () => {
+			setDraft(null);
+			await utils.judgingRooms.getLayoutByRound.invalidate({ roundId });
+			await utils.judgingAssignments.getByRound.invalidate({ roundId });
+		}
+	});
 	const [isApplying, setIsApplying] = useState(false);
 	const [applyMessage, setApplyMessage] = useState("");
 
@@ -114,20 +123,31 @@ export default function JudgingRoomsManager() {
 		}
 	};
 
+	const handleAutoAssign = () => {
+		if (!roundId) return;
+		setApplyMessage("");
+		autoAssign.mutate({
+			roundId,
+			roomCount,
+			slotDurationMinutes,
+			totalJudgingMinutes
+		});
+	};
+
 	// Build one simple status line so admins always know what happened.
 	const statusMessage = useMemo(() => {
+		if (autoAssign.isPending) return "Generating schedule...";
+		if (autoAssign.isSuccess)
+			return autoAssign.data?.message ?? "Schedule generated.";
+		if (autoAssign.error)
+			return `Auto-assign failed: ${autoAssign.error.message}`;
+
 		if (saveLayout.isPending) return "Saving room layout...";
 		if (saveLayout.isSuccess) return "Room layout saved.";
 		if (saveLayout.error) return `Save failed: ${saveLayout.error.message}`;
 
 		if (isApplying) return "Applying layout to assignments...";
 		if (applyMessage) return applyMessage;
-
-		if (autoAssign.isPending) return "Auto-assign is running...";
-		if (autoAssign.isSuccess)
-			return autoAssign.data?.message ?? "Auto-assign is not ready yet.";
-		if (autoAssign.error)
-			return `Auto-assign failed: ${autoAssign.error.message}`;
 
 		return "";
 	}, [
@@ -189,6 +209,14 @@ export default function JudgingRoomsManager() {
 	// Same visual theme used by other admin tables.
 	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
 
+	const prescreenSummary = useMemo(() => {
+		const all = teams ?? [];
+		const passed = all.filter((t) => t.prescreenStatus === "passed").length;
+		const pending = all.filter((t) => t.prescreenStatus === "pending").length;
+		const failed = all.filter((t) => t.prescreenStatus === "failed").length;
+		return `${passed} teams passed prescreening (${pending} pending, ${failed} failed)`;
+	}, [teams]);
+
 	return (
 		// TODO: remove height and width inline style
 		<div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -217,6 +245,40 @@ export default function JudgingRoomsManager() {
 					))}
 				</select>
 
+				<label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+					<span>Rooms</span>
+					<input
+						min={1}
+						onChange={(e) => setRoomCount(Math.max(1, Number(e.target.value)))}
+						type="number"
+						value={roomCount}
+					/>
+				</label>
+
+				<label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+					<span>Minutes / Team</span>
+					<input
+						min={1}
+						onChange={(e) =>
+							setSlotDurationMinutes(Math.max(1, Number(e.target.value)))
+						}
+						type="number"
+						value={slotDurationMinutes}
+					/>
+				</label>
+
+				<label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+					<span>Total Minutes</span>
+					<input
+						min={1}
+						onChange={(e) =>
+							setTotalJudgingMinutes(Math.max(1, Number(e.target.value)))
+						}
+						type="number"
+						value={totalJudgingMinutes}
+					/>
+				</label>
+
 				<button
 					disabled={!roundId}
 					onClick={() => {
@@ -242,7 +304,7 @@ export default function JudgingRoomsManager() {
 
 				<button
 					disabled={!roundId || autoAssign.isPending}
-					onClick={() => autoAssign.mutate({ roundId })}
+					onClick={handleAutoAssign}
 					type="button"
 				>
 					Auto-assign
@@ -256,6 +318,8 @@ export default function JudgingRoomsManager() {
 					Apply layout → create assignments
 				</button>
 			</div>
+
+			<div style={{ fontSize: 12, opacity: 0.85 }}>{prescreenSummary}</div>
 
 			<div style={{ fontSize: 12, opacity: 0.85, minHeight: 18 }}>
 				{statusMessage}
