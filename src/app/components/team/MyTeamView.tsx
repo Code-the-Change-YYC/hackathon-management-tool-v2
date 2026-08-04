@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/app/components/ui/button";
 import { api } from "@/trpc/react";
 import EditTeamNameModal from "./EditTeamNameModal";
 import InviteCodeModal from "./InviteCodeModal";
@@ -240,22 +241,24 @@ function TestingShortcuts({
 				Testing shortcuts (WIP)
 			</p>
 			<div className="flex flex-wrap gap-2">
-				<button
-					className="rounded-lg border border-grey-300 px-3 py-1.5 font-medium text-[12px] text-grey-800 transition hover:bg-grey-100"
+				<Button
+					className="text-[12px]"
 					onClick={onTogglePreview}
-					type="button"
+					size="xs"
+					variant="outline"
 				>
 					{previewTeam ? "Hide sample team" : "Show sample team"}
-				</button>
+				</Button>
 				{buttons.map((b) => (
-					<button
-						className="rounded-lg border border-grey-300 px-3 py-1.5 font-medium text-[12px] text-grey-800 transition hover:bg-grey-100"
+					<Button
+						className="text-[12px]"
 						key={b.kind}
 						onClick={() => onOpen(b.kind)}
-						type="button"
+						size="xs"
+						variant="outline"
 					>
 						{b.label}
-					</button>
+					</Button>
 				))}
 			</div>
 		</div>

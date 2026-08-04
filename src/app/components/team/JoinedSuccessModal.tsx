@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Modal, primaryButtonClass } from "./Modal";
+import { Modal, PrimaryButton } from "./Modal";
 
 export default function JoinedSuccessModal({
 	open,
@@ -33,9 +33,9 @@ export default function JoinedSuccessModal({
 				/>
 			</div>
 
-			<button className={primaryButtonClass} onClick={onFinish} type="button">
+			<PrimaryButton onClick={onFinish} type="button">
 				Finish
-			</button>
+			</PrimaryButton>
 		</Modal>
 	);
 }

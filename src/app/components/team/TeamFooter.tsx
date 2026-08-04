@@ -28,7 +28,7 @@ const socials = [
 
 export default function TeamFooter() {
 	return (
-		<footer className="bg-awesome-purple py-6 text-center text-white">
+		<footer className="bg-primary py-6 text-center text-primary-foreground">
 			<p className="mb-4 font-semibold text-sm tracking-wide">
 				Keep up with us!
 			</p>
@@ -55,7 +55,7 @@ export default function TeamFooter() {
 					</a>
 				))}
 			</div>
-			<p className="mt-5 text-white/60 text-xs">
+			<p className="mt-5 text-primary-foreground/60 text-xs">
 				Copyright &copy; Code The Change YYC
 			</p>
 		</footer>

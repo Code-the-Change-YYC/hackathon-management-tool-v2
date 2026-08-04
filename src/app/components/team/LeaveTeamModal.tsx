@@ -1,6 +1,6 @@
 "use client";
 
-import { dangerButtonClass, Modal, secondaryButtonClass } from "./Modal";
+import { DangerButton, Modal, SecondaryButton } from "./Modal";
 
 export default function LeaveTeamModal({
 	open,
@@ -27,21 +27,12 @@ export default function LeaveTeamModal({
 			</div>
 
 			<div className="flex flex-col gap-3">
-				<button
-					className={dangerButtonClass}
-					disabled={loading}
-					onClick={onConfirm}
-					type="button"
-				>
+				<DangerButton disabled={loading} onClick={onConfirm} type="button">
 					{loading ? "Leaving..." : "Yes, leave team"}
-				</button>
-				<button
-					className={secondaryButtonClass}
-					onClick={onCancel}
-					type="button"
-				>
+				</DangerButton>
+				<SecondaryButton onClick={onCancel} type="button">
 					Cancel
-				</button>
+				</SecondaryButton>
 			</div>
 		</Modal>
 	);

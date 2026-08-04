@@ -17,7 +17,7 @@ export default function TeamHeader({
 			<div className="w-28 sm:w-36">
 				{breadcrumbLabel && (
 					<Link
-						className="font-semibold text-awesomer-purple text-sm transition hover:text-awesome-purple sm:text-base"
+						className="font-semibold text-primary text-sm transition hover:text-primary/80 sm:text-base"
 						href="/team"
 					>
 						{breadcrumbLabel}

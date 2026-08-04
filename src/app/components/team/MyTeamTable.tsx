@@ -5,6 +5,8 @@ import {
 	PlusIcon,
 	TeamIcon
 } from "@/app/components/layout/icons";
+import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Badge } from "@/app/components/ui/badge";
 
 export type TeamMember = {
 	id: string;
@@ -13,8 +15,15 @@ export type TeamMember = {
 	isYou: boolean;
 };
 
-function Avatar() {
-	return <span className="size-12 shrink-0 rounded-full bg-grey-200" />;
+function MemberAvatar({ name }: { name: string }) {
+	const initial = name.trim().charAt(0).toUpperCase() || "?";
+	return (
+		<Avatar className="size-12" size="lg">
+			<AvatarFallback className="bg-grey-200 text-grey-600">
+				{initial}
+			</AvatarFallback>
+		</Avatar>
+	);
 }
 
 function InviteRow({
@@ -123,7 +132,7 @@ export default function MyTeamTable({
 						className="flex gap-4 border-grey-300 border-b bg-grey-00 px-5 py-5 sm:items-center"
 						key={m.id}
 					>
-						<Avatar />
+						<MemberAvatar name={m.name} />
 						<div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
 							<div className="flex min-w-0 flex-1 flex-col gap-1">
 								<div className="flex items-center gap-2">
@@ -131,9 +140,7 @@ export default function MyTeamTable({
 										{m.name}
 									</p>
 									{m.isYou && (
-										<span className="shrink-0 rounded-full bg-purple-500 px-2 font-medium text-[11px] text-white leading-4">
-											YOU
-										</span>
+										<Badge className="shrink-0 text-[11px]">YOU</Badge>
 									)}
 								</div>
 								<div className="flex items-center gap-1 text-grey-600">

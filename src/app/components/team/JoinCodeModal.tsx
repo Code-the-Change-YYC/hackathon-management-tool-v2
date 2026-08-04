@@ -6,7 +6,8 @@ import {
 	useRef,
 	useState
 } from "react";
-import { Modal, primaryButtonClass } from "./Modal";
+import { Input } from "@/app/components/ui/input";
+import { Modal, PrimaryButton } from "./Modal";
 
 const CODE_LENGTH = 6;
 const CELL_IDS = Array.from(
@@ -100,11 +101,10 @@ export default function JoinCodeModal({
 				</p>
 				<div className="flex justify-center gap-2 sm:gap-3">
 					{CELL_IDS.map((id, index) => (
-						<input
+						<Input
+							aria-invalid={Boolean(error)}
 							aria-label={`Invite code character ${index + 1}`}
-							className={`size-12 rounded-xl border bg-grey-00 text-center font-medium text-[20px] text-grey-800 outline-none transition focus:border-purple-500 sm:size-14 ${
-								error ? "border-red-700" : "border-grey-300"
-							}`}
+							className="h-12 w-12 rounded-xl text-center font-medium text-[20px] sm:h-14 sm:w-14"
 							inputMode="text"
 							key={id}
 							maxLength={1}
@@ -126,14 +126,13 @@ export default function JoinCodeModal({
 				</p>
 			)}
 
-			<button
-				className={primaryButtonClass}
+			<PrimaryButton
 				disabled={!complete || loading}
 				onClick={() => onSubmit(code)}
 				type="button"
 			>
 				{loading ? "Checking..." : "Continue"}
-			</button>
+			</PrimaryButton>
 		</Modal>
 	);
 }

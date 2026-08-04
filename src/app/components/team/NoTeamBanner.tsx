@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { ArrowRightIcon } from "@/app/components/layout/icons";
+import { Button } from "@/app/components/ui/button";
 
 export default function NoTeamBanner({ onAction }: { onAction: () => void }) {
 	return (
@@ -37,14 +38,14 @@ export default function NoTeamBanner({ onAction }: { onAction: () => void }) {
 					</p>
 				</div>
 
-				<button
-					className="flex shrink-0 items-center gap-2 self-start rounded-full bg-grey-00 px-5 py-3 font-medium text-[16px] text-red-900 transition hover:bg-white/90 sm:self-auto"
+				<Button
+					className="self-start rounded-full bg-white px-5 py-3 text-[16px] text-red-900 hover:bg-white/90 sm:self-auto"
 					onClick={onAction}
 					type="button"
 				>
 					Join or register a team
 					<ArrowRightIcon className="size-5" />
-				</button>
+				</Button>
 			</div>
 		</div>
 	);

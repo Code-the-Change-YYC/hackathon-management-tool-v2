@@ -1,16 +1,55 @@
 "use client";
 
-import { useEffect } from "react";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import type { ComponentProps } from "react";
 import { CloseIcon } from "@/app/components/layout/icons";
+import { Button } from "@/app/components/ui/button";
+import {
+	Dialog,
+	DialogOverlay,
+	DialogPortal
+} from "@/app/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
-export const primaryButtonClass =
-	"flex w-full items-center justify-center rounded-xl bg-purple-500 px-4 py-3 font-medium text-[16px] text-white transition hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-50";
+export function PrimaryButton({
+	className,
+	...props
+}: ComponentProps<typeof Button>) {
+	return (
+		<Button
+			className={cn("w-full rounded-xl py-3 text-base", className)}
+			{...props}
+		/>
+	);
+}
 
-export const secondaryButtonClass =
-	"flex w-full items-center justify-center rounded-xl border border-grey-300 bg-grey-00 px-4 py-3 font-medium text-[16px] text-grey-800 transition hover:bg-grey-100";
+export function SecondaryButton({
+	className,
+	...props
+}: ComponentProps<typeof Button>) {
+	return (
+		<Button
+			className={cn("w-full rounded-xl py-3 text-base", className)}
+			variant="outline"
+			{...props}
+		/>
+	);
+}
 
-export const dangerButtonClass =
-	"flex w-full items-center justify-center rounded-xl bg-orange-800 px-4 py-3 font-medium text-[16px] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50";
+export function DangerButton({
+	className,
+	...props
+}: ComponentProps<typeof Button>) {
+	return (
+		<Button
+			className={cn(
+				"w-full rounded-xl bg-destructive py-3 text-base text-white hover:bg-destructive/90",
+				className
+			)}
+			{...props}
+		/>
+	);
+}
 
 export function Modal({
 	open,
@@ -23,50 +62,34 @@ export function Modal({
 	showClose?: boolean;
 	children: React.ReactNode;
 }) {
-	useEffect(() => {
-		if (!open) {
-			return;
-		}
-		function onKey(e: KeyboardEvent) {
-			if (e.key === "Escape") {
-				onClose();
-			}
-		}
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [open, onClose]);
-
-	if (!open) {
-		return null;
-	}
-
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-			<button
-				aria-label="Close"
-				className="absolute inset-0 bg-black/40"
-				onClick={onClose}
-				type="button"
-			/>
-			<div
-				aria-modal="true"
-				className={`relative flex w-full max-w-[480px] flex-col gap-6 rounded-[20px] bg-grey-50 p-6 shadow-elevation-200 sm:p-8 ${
-					showClose ? "pt-16 sm:pt-16" : ""
-				}`}
-				role="dialog"
-			>
-				{showClose && (
-					<button
-						aria-label="Close"
-						className="absolute top-5 right-5 grid size-8 place-items-center rounded-full text-grey-800 transition hover:bg-grey-100"
-						onClick={onClose}
-						type="button"
-					>
-						<CloseIcon className="size-5" />
-					</button>
-				)}
-				{children}
-			</div>
-		</div>
+		<Dialog onOpenChange={(next) => !next && onClose()} open={open}>
+			<DialogPortal>
+				<DialogOverlay className="bg-black/40" />
+				<DialogPrimitive.Popup
+					className={cn(
+						"-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 flex w-full max-w-[480px] flex-col gap-6 rounded-[20px] bg-grey-50 p-6 shadow-elevation-200 outline-none sm:p-8",
+						showClose && "pt-16 sm:pt-16"
+					)}
+					data-slot="dialog-content"
+				>
+					{children}
+					{showClose && (
+						<DialogPrimitive.Close
+							render={
+								<Button
+									className="absolute top-5 right-5 rounded-full text-grey-800 hover:bg-grey-100"
+									size="icon"
+									variant="ghost"
+								/>
+							}
+						>
+							<CloseIcon className="size-5" />
+							<span className="sr-only">Close</span>
+						</DialogPrimitive.Close>
+					)}
+				</DialogPrimitive.Popup>
+			</DialogPortal>
+		</Dialog>
 	);
 }

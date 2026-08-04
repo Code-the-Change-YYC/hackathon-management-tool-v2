@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { Modal, primaryButtonClass } from "./Modal";
+import { Modal, PrimaryButton } from "./Modal";
 
 export default function InviteCodeModal({
 	open,
@@ -60,9 +60,9 @@ export default function InviteCodeModal({
 				))}
 			</div>
 
-			<button className={primaryButtonClass} onClick={copy} type="button">
+			<PrimaryButton onClick={copy} type="button">
 				{copied ? "Copied!" : "Copy code to clipboard"}
-			</button>
+			</PrimaryButton>
 		</Modal>
 	);
 }

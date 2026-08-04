@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Modal, primaryButtonClass, secondaryButtonClass } from "./Modal";
+import { Input } from "@/app/components/ui/input";
+import { Modal, PrimaryButton, SecondaryButton } from "./Modal";
 
 export default function EditTeamNameModal({
 	open,
@@ -39,9 +40,9 @@ export default function EditTeamNameModal({
 				</p>
 			</div>
 
-			<input
+			<Input
 				aria-label="Team name"
-				className="w-full rounded-xl border border-grey-300 bg-grey-00 px-4 py-3 font-medium text-[16px] text-grey-800 outline-none transition focus:border-purple-500"
+				className="h-auto rounded-xl px-4 py-3 font-medium text-[16px]"
 				maxLength={50}
 				onChange={(e) => setName(e.target.value)}
 				value={name}
@@ -50,21 +51,16 @@ export default function EditTeamNameModal({
 			{error && <p className="font-medium text-[14px] text-red-700">{error}</p>}
 
 			<div className="flex flex-col gap-3">
-				<button
-					className={primaryButtonClass}
+				<PrimaryButton
 					disabled={!trimmed || loading}
 					onClick={() => onSave(trimmed)}
 					type="button"
 				>
 					{loading ? "Saving..." : "Save"}
-				</button>
-				<button
-					className={secondaryButtonClass}
-					onClick={onClose}
-					type="button"
-				>
+				</PrimaryButton>
+				<SecondaryButton onClick={onClose} type="button">
 					Cancel
-				</button>
+				</SecondaryButton>
 			</div>
 		</Modal>
 	);

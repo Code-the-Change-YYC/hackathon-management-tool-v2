@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, primaryButtonClass, secondaryButtonClass } from "./Modal";
+import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
+import { Modal, PrimaryButton, SecondaryButton } from "./Modal";
 
 export type Situation = "registered" | "unregistered" | "no-team";
 
@@ -36,53 +37,47 @@ export default function SituationModal({
 				Select the statement that describes your situation best:
 			</h2>
 
-			<div className="flex flex-col gap-3">
+			<RadioGroup
+				className="gap-3"
+				onValueChange={(value) => setSelected(value as Situation)}
+				value={selected ?? undefined}
+			>
 				{OPTIONS.map((option) => {
 					const active = selected === option.value;
 					return (
-						<button
-							className={`flex items-center gap-3 rounded-xl border-2 px-4 py-4 text-left transition ${
+						<label
+							className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-4 text-left transition ${
 								active
-									? "border-purple-500 bg-purple-50"
+									? "border-primary bg-purple-50"
 									: "border-grey-300 bg-grey-00 hover:border-grey-400"
 							}`}
+							htmlFor={option.value}
 							key={option.value}
-							onClick={() => setSelected(option.value)}
-							type="button"
 						>
-							<span
-								className={`grid size-5 shrink-0 place-items-center rounded-full border-2 ${
-									active ? "border-purple-500" : "border-grey-400"
-								}`}
-							>
-								{active && (
-									<span className="size-2.5 rounded-full bg-purple-500" />
-								)}
-							</span>
+							<RadioGroupItem
+								className="shrink-0"
+								id={option.value}
+								value={option.value}
+							/>
 							<span className="font-medium text-[14px] text-grey-800 leading-5">
 								{option.label}
 							</span>
-						</button>
+						</label>
 					);
 				})}
-			</div>
+			</RadioGroup>
 
 			<div className="flex flex-col gap-3">
-				<button
-					className={primaryButtonClass}
+				<PrimaryButton
 					disabled={!selected}
 					onClick={() => selected && onContinue(selected)}
 					type="button"
 				>
 					Continue
-				</button>
-				<button
-					className={secondaryButtonClass}
-					onClick={onClose}
-					type="button"
-				>
+				</PrimaryButton>
+				<SecondaryButton onClick={onClose} type="button">
 					Go back
-				</button>
+				</SecondaryButton>
 			</div>
 		</Modal>
 	);

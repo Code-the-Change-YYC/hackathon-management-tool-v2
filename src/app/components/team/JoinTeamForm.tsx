@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { Button, buttonVariants } from "@/app/components/ui/button";
+import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
 const CODE_LENGTH = 4;
@@ -104,8 +106,8 @@ export default function JoinTeamForm() {
 
 	return (
 		<form className="space-y-6" onSubmit={handleSubmit}>
-			<div className="flex flex-col items-center gap-4 rounded-2xl bg-pastel-pink/30 px-6 py-8">
-				<p className="font-semibold text-sm text-strawberry-red">
+			<div className="flex flex-col items-center gap-4 rounded-2xl bg-destructive/10 px-6 py-8">
+				<p className="font-semibold text-destructive text-sm">
 					Enter 4-character Team ID
 				</p>
 				<div className="flex gap-3">
@@ -113,7 +115,7 @@ export default function JoinTeamForm() {
 						<input
 							autoCapitalize="characters"
 							autoComplete="off"
-							className="h-16 w-16 rounded-xl border-2 border-strawberry-red/40 bg-white text-center font-bold text-2xl text-dark-grey uppercase outline-none transition focus:border-awesomer-purple focus:ring-2 focus:ring-awesomer-purple/20 sm:h-20 sm:w-20 sm:text-3xl"
+							className="h-16 w-16 rounded-xl border-2 border-strawberry-red/40 bg-white text-center font-bold text-2xl text-foreground uppercase outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 sm:h-20 sm:w-20 sm:text-3xl"
 							disabled={joinTeam.isPending}
 							inputMode="text"
 							// biome-ignore lint/suspicious/noArrayIndexKey: fixed-length positional input; order never changes
@@ -133,33 +135,38 @@ export default function JoinTeamForm() {
 			</div>
 
 			{joinTeam.error && (
-				<p className="rounded-lg bg-pastel-pink px-4 py-2.5 text-sm text-strawberry-red">
+				<p className="rounded-lg bg-destructive/10 px-4 py-2.5 text-destructive text-sm">
 					{joinTeam.error.message}
 				</p>
 			)}
 
 			<div className="flex items-center justify-between pt-2">
-				<button
-					className="rounded-full bg-awesomer-purple px-6 py-2.5 font-semibold text-sm text-white transition hover:bg-awesome-purple"
+				<Button
+					className="rounded-full"
 					onClick={() => router.back()}
+					size="sm"
 					type="button"
 				>
 					Back
-				</button>
+				</Button>
 				<div className="flex gap-3">
 					<Link
-						className="rounded-full border border-awesomer-purple px-6 py-2.5 font-semibold text-awesomer-purple text-sm transition hover:bg-lilac-purple"
+						className={cn(
+							buttonVariants({ variant: "outline", size: "sm" }),
+							"rounded-full"
+						)}
 						href="/team"
 					>
 						Cancel
 					</Link>
-					<button
-						className="rounded-full bg-awesomer-purple px-6 py-2.5 font-semibold text-sm text-white transition hover:bg-awesome-purple disabled:cursor-not-allowed disabled:opacity-50"
+					<Button
+						className="rounded-full"
 						disabled={isDisabled}
+						size="sm"
 						type="submit"
 					>
 						{joinTeam.isPending ? "Joining…" : "Join"}
-					</button>
+					</Button>
 				</div>
 			</div>
 		</form>
