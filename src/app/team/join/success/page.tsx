@@ -30,7 +30,7 @@ export default async function JoinSuccessPage({ searchParams }: Props) {
 		typeof teamId !== "string" ||
 		typeof teamName !== "string"
 	) {
-		redirect("/team");
+		redirect("/participant/my-team");
 	}
 
 	return (

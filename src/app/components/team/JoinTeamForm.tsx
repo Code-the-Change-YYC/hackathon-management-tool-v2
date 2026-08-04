@@ -155,7 +155,7 @@ export default function JoinTeamForm() {
 							buttonVariants({ variant: "outline", size: "sm" }),
 							"rounded-full"
 						)}
-						href="/team"
+						href="/participant/my-team"
 					>
 						Cancel
 					</Link>

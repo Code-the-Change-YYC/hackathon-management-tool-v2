@@ -81,7 +81,7 @@ export default function RegisterTeamForm() {
 							buttonVariants({ variant: "outline", size: "sm" }),
 							"rounded-full"
 						)}
-						href="/team"
+						href="/participant/my-team"
 					>
 						Cancel
 					</Link>

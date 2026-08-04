@@ -22,7 +22,7 @@ export default async function RegisterSuccessPage({ searchParams }: Props) {
 	const teamId = params.teamId;
 
 	if (!teamId || typeof teamId !== "string") {
-		redirect("/team");
+		redirect("/participant/my-team");
 	}
 
 	return (
