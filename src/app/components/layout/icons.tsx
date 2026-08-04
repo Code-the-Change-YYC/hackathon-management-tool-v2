@@ -1,10 +1,17 @@
+/**
+ * Icon components used by the layout/team UI.
+ *
+ * Most icons below use the exact geometry exported from the Figma design
+ * (path data lifted directly from the exported renders, with a viewBox per
+ * icon) and render with fill="currentColor" so they recolor with text
+ * color. PlusIcon uses the exact two-stroke geometry from the Figma invite
+ * row. ArrowRightIcon and MenuIcon aren't part of the team renders, so they
+ * are simple line approximations built from the shared `stroke` props.
+ */
+
 import type { SVGProps } from "react";
 
 type IconProps = SVGProps<SVGSVGElement>;
-
-// Filled icons below use the EXACT geometry exported from the Figma design
-// (path data lifted directly from the exported renders, viewBox per icon).
-// They use fill="currentColor" so they recolor with text color.
 
 export function BellIcon(props: IconProps) {
 	return (
@@ -134,7 +141,6 @@ export function LeaveIcon(props: IconProps) {
 	);
 }
 
-// Plus icon: exact two-stroke geometry from the Figma invite row (purple-800 strokes).
 export function PlusIcon(props: IconProps) {
 	return (
 		<svg
@@ -249,7 +255,6 @@ export function LinkIcon(props: IconProps) {
 	);
 }
 
-// Arrow + hamburger are not in the team renders; simple line approximations.
 const stroke = {
 	fill: "none",
 	stroke: "currentColor",

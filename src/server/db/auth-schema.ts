@@ -1,3 +1,19 @@
+/**
+ * Drizzle schema for better-auth's core tables (user, session, account,
+ * verification) plus the organization/member/invitation tables used to
+ * model teams.
+ *
+ * `member_userId_idx` is a unique index, not just a lookup index: a user
+ * can only belong to one team at a time (also enforced in app code by
+ * `ensureNotInTeam()`). Making it unique turns that into a real DB
+ * guarantee, so concurrent join/create requests for the same user can't
+ * both succeed and leave them on multiple teams. Since this project pushes
+ * schema changes with `drizzle-kit push` rather than generated migrations,
+ * `drizzle/dedupe-members.ts` (run automatically by `pnpm db:push`) removes
+ * any pre-existing duplicate `member.userId` rows before this index is
+ * applied.
+ */
+
 import {
 	type InferInsertModel,
 	type InferSelectModel,
@@ -147,10 +163,6 @@ export const member = createTable(
 	},
 	(table) => [
 		index("member_organizationId_idx").on(table.organizationId),
-		// A user can only belong to one team at a time (enforced in app code
-		// by ensureNotInTeam()). This unique index makes that a real DB
-		// guarantee, so concurrent join/create requests for the same user
-		// can't both succeed and leave them on multiple teams.
 		uniqueIndex("member_userId_idx").on(table.userId)
 	]
 );

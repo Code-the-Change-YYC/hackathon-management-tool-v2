@@ -51,6 +51,21 @@ export function DangerButton({
 	);
 }
 
+export function ModalTitle({
+	className,
+	...props
+}: ComponentProps<typeof DialogPrimitive.Title>) {
+	return (
+		<DialogPrimitive.Title
+			className={cn(
+				"font-semibold text-[28px] text-grey-800 leading-9",
+				className
+			)}
+			{...props}
+		/>
+	);
+}
+
 export function Modal({
 	open,
 	onClose,

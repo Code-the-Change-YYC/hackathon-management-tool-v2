@@ -1,3 +1,15 @@
+/**
+ * Local dev seed script (`pnpm seed`). Creates an admin, three judges, a
+ * participant, six demo teams (each owned by the admin), two judging
+ * rounds, criteria, and random scores for all teams except "Team Six" (left
+ * unscored to exercise the create-score flow). Safe to re-run: existing
+ * users/organizations are looked up and reused instead of duplicated.
+ *
+ * `makeTeamCode` retries past collisions, both against codes already used
+ * earlier in this run and against the database, since `organization.teamCode`
+ * is unique and a single random draw isn't guaranteed to be unique.
+ */
+
 import { generateId } from "better-auth";
 import { createOrGetUser } from "drizzle/seedUtils";
 import { eq } from "drizzle-orm";
@@ -21,9 +33,6 @@ function generateTeamCodeCandidate(): string {
 	return code;
 }
 
-// teamCode is unique in the schema; retry past collisions (both against
-// codes already used earlier in this seed run and against the database)
-// instead of assuming a single random draw is unique.
 async function makeTeamCode(usedInThisRun: Set<string>): Promise<string> {
 	for (let attempt = 0; attempt < 10; attempt++) {
 		const candidate = generateTeamCodeCandidate();
@@ -106,7 +115,6 @@ async function main() {
 
 		for (const org of orgs) {
 			try {
-				// Check if organization already exists
 				const existingOrg = await db
 					.select()
 					.from(organization)
@@ -122,7 +130,6 @@ async function main() {
 					continue;
 				}
 
-				// Create organization directly in database
 				const [newOrg] = await db
 					.insert(organization)
 					.values({
@@ -134,7 +141,6 @@ async function main() {
 					})
 					.returning();
 
-				// Add admin user as owner of the organization
 				if (newOrg) {
 					await db.insert(member).values({
 						id: generateId(),
@@ -216,7 +222,6 @@ async function main() {
 							})
 							.returning();
 
-						// Only add scores if not team 6 to test create score functionality
 						if (assignment && team.slug !== "team-6") {
 							const scoreValues = criteriaList.map((crit) => ({
 								assignmentId: assignment.id,
@@ -230,7 +235,6 @@ async function main() {
 			}
 		}
 
-		// ==================== SUMMARY ====================
 		console.log("\nSeed completed successfully!\n");
 		console.log("Summary:");
 		console.log(`Admin user: ${adminEmail}`);

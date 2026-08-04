@@ -4,9 +4,30 @@
  * Team names only allow letters, numbers, spaces, hyphens, and underscores
  * to avoid emoji/special character issues from last year.
  *
- * Each team gets a unique 6-char alphanumeric code on creation. Users can
- * only be on one team at a time, enforced by ensureNotInTeam() which is
- * shared across create, join, and acceptInvite.
+ * Each team gets a unique 6-char alphanumeric code (TEAM_CODE_LENGTH /
+ * TEAM_CODE_ALPHABET) on creation, matching the 6-box code entry in the
+ * design. `create` retries on a unique-constraint conflict (up to
+ * MAX_TEAM_CODE_ATTEMPTS) instead of checking for an existing code first,
+ * since a check-then-insert isn't atomic under concurrent requests.
+ * `getMyTeam` similarly backfills a code for teams created before codes
+ * existed (e.g. seeded teams), conditioned on teamCode still being null so
+ * a concurrent backfill can't be overwritten.
+ *
+ * Users can only be on one team at a time, enforced by ensureNotInTeam()
+ * (shared across create, join, and acceptInvite) and backstopped by a
+ * unique index on member.userId. `isUniqueViolation`/
+ * `isDuplicateMembershipError` inspect the Postgres error code (23505) and
+ * constraint name to distinguish that race from unrelated conflicts (e.g.
+ * a team-code collision), so callers can turn it into a friendly error
+ * instead of retrying or surfacing a raw 500.
+ *
+ * MAX_TEAM_SIZE (surfaced to the My Team UI to gate the invite button) is
+ * enforced on both the `join` and `acceptInvite` paths: each holds a
+ * Postgres advisory lock keyed by the team id for the rest of its
+ * transaction, so concurrent joins/accepts for the same team are
+ * serialized before counting members. The lock only serializes writes to
+ * *that* team - if the same user concurrently joins a *different* team,
+ * the member.userId unique index (not the lock) is what catches it.
  *
  * Owners are the only ones who can send invitations. If an owner tries to
  * leave, they must pass confirmDelete: true which deletes the entire team
@@ -15,6 +36,10 @@
  *
  * Team updates are allowed for app-level admins (any team) or team owners
  * (their own team only).
+ *
+ * getRankings returns each team's total score, descending, for the
+ * leaderboard; the `as unknown as TeamRanking[]` cast works around the raw
+ * SQL result not being recognized as TeamRanking[] by ScoreTable.tsx.
  *
  * Metadata keys used here:
  * - organization.metadata.devpostLink
@@ -52,21 +77,15 @@ const teamNameSchema = z
 	.min(1, "Team name is required")
 	.max(50, "Team name must be 50 characters or less")
 	.regex(
-		/^[a-zA-Z0-9\s\-_]+$/,
+		/^[a-zA-Z0-9 _-]+$/,
 		"Team name can only contain letters, numbers, spaces, hyphens, and underscores"
 	);
 
-// Max members per team, surfaced to the My Team UI to gate the invite button.
 const MAX_TEAM_SIZE = 5;
 
-// 6-char alphanumeric invite codes (uppercase letters + digits) to match the
-// 6-box code entry in the new design.
 const TEAM_CODE_LENGTH = 6;
 const TEAM_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-// How many candidate codes to try before giving up. The column is unique, so
-// allocation relies on retrying past unique-constraint conflicts rather than
-// a read-then-write check (which is not atomic under concurrent requests).
 const MAX_TEAM_CODE_ATTEMPTS = 5;
 
 function generateTeamCode(): string {
@@ -78,8 +97,6 @@ function generateTeamCode(): string {
 	return code;
 }
 
-// Postgres unique-violation error code. postgres-js surfaces this as `.code`
-// on the thrown error.
 function isUniqueViolation(error: unknown): boolean {
 	return (
 		typeof error === "object" &&
@@ -89,10 +106,6 @@ function isUniqueViolation(error: unknown): boolean {
 	);
 }
 
-// member.userId has a unique index (a user can only be on one team). This
-// distinguishes "someone else joined this team/took this user" races from
-// unrelated conflicts (e.g. a team-code collision) so callers can turn it
-// into a friendly error instead of retrying or surfacing a raw 500.
 function isDuplicateMembershipError(error: unknown): boolean {
 	return (
 		isUniqueViolation(error) &&
@@ -226,8 +239,6 @@ export const teamsRouter = createTRPCRouter({
 		return teams;
 	}),
 
-	// Returns the current user's team with its members for the My Team page,
-	// or null when the user is not on a team yet (drives the "no team" banner).
 	getMyTeam: protectedProcedure.query(async ({ ctx }) => {
 		const userId = ctx.session.user.id;
 
@@ -259,11 +270,6 @@ export const teamsRouter = createTRPCRouter({
 			return a.createdAt.getTime() - b.createdAt.getTime();
 		});
 
-		// Backfill an invite code for teams created before codes existed
-		// (e.g. seeded teams) so the invite modal always has one to show.
-		// The update is conditioned on teamCode still being null so a
-		// concurrent request that already backfilled it can't be overwritten;
-		// when that happens we just read back whatever code "won".
 		let teamCode = team.teamCode;
 		if (!teamCode) {
 			for (let attempt = 0; attempt < MAX_TEAM_CODE_ATTEMPTS; attempt++) {
@@ -329,10 +335,6 @@ export const teamsRouter = createTRPCRouter({
 				.replace(/\s+/g, "-")
 				.replace(/[^a-z0-9-]/g, "");
 
-			// Retry on a unique-constraint conflict rather than checking for an
-			// existing code first: a check-then-insert is not atomic, so two
-			// concurrent creates could pick the same candidate and only one
-			// insert would succeed anyway.
 			for (let attempt = 0; attempt < MAX_TEAM_CODE_ATTEMPTS; attempt++) {
 				const teamId = crypto.randomUUID();
 				const teamCode = generateTeamCode();
@@ -361,9 +363,6 @@ export const teamsRouter = createTRPCRouter({
 					});
 				} catch (error) {
 					if (isDuplicateMembershipError(error)) {
-						// The user was added to a team by a concurrent request
-						// (e.g. another join/create) between our pre-check and
-						// this insert. Retrying with a new code wouldn't help.
 						throw alreadyInTeamError();
 					}
 					if (
@@ -410,13 +409,6 @@ export const teamsRouter = createTRPCRouter({
 
 			try {
 				return await ctx.db.transaction(async (tx) => {
-					// Serialize concurrent joins to this team: an advisory lock
-					// keyed by the team id is held for the rest of the
-					// transaction, so a second concurrent join for the same team
-					// waits until this one commits (or rolls back) before it
-					// counts members. Without this, two joins reading the count
-					// at the same time could both pass the size check and push
-					// the team over MAX_TEAM_SIZE.
 					await tx.execute(
 						sql`select pg_advisory_xact_lock(hashtext(${team.id}))`
 					);
@@ -444,9 +436,6 @@ export const teamsRouter = createTRPCRouter({
 					return team;
 				});
 			} catch (error) {
-				// The advisory lock only serializes joins to *this* team. If the
-				// same user concurrently joined/created a different team, the
-				// member.userId unique index (not the lock) is what catches it.
 				if (isDuplicateMembershipError(error)) {
 					throw alreadyInTeamError();
 				}
@@ -563,6 +552,21 @@ export const teamsRouter = createTRPCRouter({
 
 			try {
 				await ctx.db.transaction(async (tx) => {
+					await tx.execute(
+						sql`select pg_advisory_xact_lock(hashtext(${inv.organizationId}))`
+					);
+
+					const [row] = await tx
+						.select({ count: sql<number>`count(*)::int` })
+						.from(member)
+						.where(eq(member.organizationId, inv.organizationId));
+					if ((row?.count ?? 0) >= MAX_TEAM_SIZE) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: `This team is full (${MAX_TEAM_SIZE} members maximum)`
+						});
+					}
+
 					await tx.insert(member).values({
 						id: crypto.randomUUID(),
 						organizationId: inv.organizationId,
@@ -665,7 +669,6 @@ export const teamsRouter = createTRPCRouter({
 				.returning();
 			return updated;
 		}),
-	// New feature: Querying descending for score
 	getRankings: protectedProcedure.query(async ({ ctx }) => {
 		const result = await ctx.db.execute(
 			sql<TeamRanking>`
@@ -683,6 +686,6 @@ export const teamsRouter = createTRPCRouter({
         `
 		);
 
-		return result as unknown as TeamRanking[]; // Fixes the CI/CD error in ScoreTable.tsx where the type of data was not being recognized as TeamRanking[]
+		return result as unknown as TeamRanking[];
 	})
 });

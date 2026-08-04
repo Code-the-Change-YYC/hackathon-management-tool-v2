@@ -1,9 +1,21 @@
 "use client";
 
+/**
+ * Countdown card shown on the team register/join success pages: a "browser
+ * chrome" styled card with a live countdown to HACKATHON_START, date badges,
+ * and add-to-calendar links (Google, Outlook, ICS download).
+ *
+ * The countdown starts from a deterministic zero state on first render and
+ * is computed client-side in a useEffect so the server-rendered HTML and
+ * the first client render match (no hydration mismatch).
+ *
+ * TODO: wire HACKATHON_START/HACKATHON_END to api.hackathonSettings once
+ * that endpoint is available, instead of the hardcoded dates below.
+ */
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-// TODO: Wire this to api.hackathonSettings when available
 const HACKATHON_START = new Date("2026-11-11T09:00:00-07:00");
 const HACKATHON_END = new Date("2026-11-12T18:00:00-07:00");
 
@@ -81,8 +93,6 @@ function FlipBox({ value, label }: { value: number; label: string }) {
 }
 
 export default function CountdownCard() {
-	// Start from a deterministic value so server-rendered HTML and the first
-	// client render match; the real countdown is computed after mount.
 	const [timeLeft, setTimeLeft] = useState<TimeLeft>({
 		days: 0,
 		hours: 0,
@@ -109,7 +119,6 @@ export default function CountdownCard() {
 
 	return (
 		<div className="w-full overflow-hidden rounded-2xl bg-white shadow-lg">
-			{/* Browser-window chrome */}
 			<div className="flex items-center gap-1.5 bg-lilac-purple px-4 py-3">
 				<span className="h-3 w-3 rounded-full bg-white/40" />
 				<span className="h-3 w-3 rounded-full bg-white/40" />
@@ -129,7 +138,6 @@ export default function CountdownCard() {
 					Hack the Change 2026 begins…
 				</p>
 
-				{/* Countdown */}
 				<div className="mt-4 flex justify-center gap-3 sm:gap-4">
 					<FlipBox label="Days" value={timeLeft.days} />
 					<FlipBox label="Hours" value={timeLeft.hours} />
@@ -137,7 +145,6 @@ export default function CountdownCard() {
 					<FlipBox label="Seconds" value={timeLeft.seconds} />
 				</div>
 
-				{/* Date badges */}
 				<div className="mt-6 flex items-center justify-center gap-2">
 					<div className="flex flex-col items-center justify-center rounded-xl bg-awesomer-purple px-4 py-2 font-bold text-white">
 						<span className="text-xl tracking-widest sm:text-2xl">NOV</span>
@@ -166,7 +173,6 @@ export default function CountdownCard() {
 					.
 				</p>
 
-				{/* Calendar buttons */}
 				<div className="mt-6 flex flex-wrap justify-center gap-3">
 					<Link
 						className="rounded-full bg-awesomer-purple px-4 py-2 font-semibold text-sm text-white transition hover:bg-awesome-purple"

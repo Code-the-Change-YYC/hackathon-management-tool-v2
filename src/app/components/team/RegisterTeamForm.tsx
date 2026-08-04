@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * Team registration form used on `/team/register`.
+ *
+ * TEAM_NAME_PATTERN mirrors the backend's `teamNameSchema` regex in
+ * `src/server/api/routers/teams.ts` so the submit button disables before a
+ * doomed mutation is attempted.
+ */
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -9,10 +17,7 @@ import { Label } from "@/app/components/ui/label";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
-// Mirrors the backend's teamNameSchema regex in
-// src/server/api/routers/teams.ts so the button disables before a doomed
-// mutation is attempted.
-const TEAM_NAME_PATTERN = /^[a-zA-Z0-9\s\-_]+$/;
+const TEAM_NAME_PATTERN = /^[a-zA-Z0-9 _-]+$/;
 
 export default function RegisterTeamForm() {
 	const router = useRouter();

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Modal, PrimaryButton } from "./Modal";
+import { Modal, ModalTitle, PrimaryButton } from "./Modal";
 
 export default function JoinedSuccessModal({
 	open,
@@ -15,9 +15,7 @@ export default function JoinedSuccessModal({
 	return (
 		<Modal onClose={onFinish} open={open} showClose={false}>
 			<div className="flex flex-col gap-2">
-				<h2 className="font-semibold text-[28px] text-grey-800 leading-9">
-					You've joined {teamName}!
-				</h2>
+				<ModalTitle>You've joined {teamName}!</ModalTitle>
 				<p className="text-[16px] text-grey-600 leading-6">
 					Congrats! You've joined your teammates at {teamName} as a registered
 					member!

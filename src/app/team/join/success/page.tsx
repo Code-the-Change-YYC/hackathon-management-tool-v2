@@ -1,3 +1,10 @@
+/**
+ * Success page shown after a participant joins a team via `/team/join`.
+ * Expects `teamId` and `teamName` query params (redirects to `/team` if
+ * either is missing); renders a confirmation header, decorative sparkles,
+ * the hackathon countdown card, and a return link back to `/participant`.
+ */
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import CountdownCard from "@/app/components/team/CountdownCard";
@@ -28,7 +35,6 @@ export default async function JoinSuccessPage({ searchParams }: Props) {
 
 	return (
 		<section className="min-h-full bg-mint-green px-4 py-10 sm:px-6 sm:py-14">
-			{/* Decorative sparkles */}
 			<div aria-hidden="true" className="pointer-events-none select-none">
 				<span className="absolute top-32 left-4 text-2xl text-awesomer-purple/20 sm:left-10 sm:text-4xl">
 					✦
@@ -45,7 +51,6 @@ export default async function JoinSuccessPage({ searchParams }: Props) {
 			</div>
 
 			<div className="mx-auto max-w-sm sm:max-w-md">
-				{/* Joined team header */}
 				<div className="mb-6 text-center">
 					<h1 className="font-extrabold text-2xl text-dark-grey leading-tight sm:text-3xl">
 						It&apos;s official!
@@ -57,10 +62,8 @@ export default async function JoinSuccessPage({ searchParams }: Props) {
 					</p>
 				</div>
 
-				{/* Countdown card */}
 				<CountdownCard />
 
-				{/* Return button */}
 				<div className="mt-6 flex justify-end">
 					<Link
 						className="rounded-full bg-awesomer-purple px-8 py-3 font-semibold text-base text-white shadow transition hover:bg-awesome-purple"

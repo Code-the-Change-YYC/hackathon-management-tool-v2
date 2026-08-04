@@ -1,5 +1,15 @@
 "use client";
 
+/**
+ * Top-level "My Team" view rendered on `/participant/my-team`.
+ *
+ * Loads the current user's team via `api.teams.getMyTeam` and renders
+ * either the team table (with modals for invite, join, leave, and edit
+ * name) or a "no team" banner that walks the user through the situation
+ * modal. For the "no-team" situation, users are pointed at the community
+ * Discord to find teammates instead of a modal flow.
+ */
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/trpc/react";
@@ -104,7 +114,6 @@ export default function MyTeamView() {
 			router.push("/team/register");
 			return;
 		}
-		// "no-team": point them at the community to find teammates.
 		window.open("https://discord.gg/codethechangeyyc", "_blank");
 		setModal(null);
 	}

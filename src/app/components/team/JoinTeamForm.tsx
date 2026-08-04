@@ -110,12 +110,12 @@ export default function JoinTeamForm() {
 				<p className="font-semibold text-destructive text-sm">
 					Enter 6-character Team ID
 				</p>
-				<div className="flex gap-2 sm:gap-3">
+				<div className="flex gap-1 sm:gap-3">
 					{chars.map((char, i) => (
 						<input
 							autoCapitalize="characters"
 							autoComplete="off"
-							className="h-14 w-14 rounded-xl border-2 border-strawberry-red/40 bg-white text-center font-bold text-foreground text-xl uppercase outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 sm:h-16 sm:w-16 sm:text-2xl"
+							className="h-10 w-10 rounded-xl border-2 border-strawberry-red/40 bg-white text-center font-bold text-foreground text-lg uppercase outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 sm:h-14 sm:w-14 sm:text-2xl"
 							disabled={joinTeam.isPending}
 							inputMode="text"
 							// biome-ignore lint/suspicious/noArrayIndexKey: fixed-length positional input; order never changes

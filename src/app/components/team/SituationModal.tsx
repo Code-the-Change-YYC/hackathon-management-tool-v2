@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
-import { Modal, PrimaryButton, SecondaryButton } from "./Modal";
+import { Modal, ModalTitle, PrimaryButton, SecondaryButton } from "./Modal";
 
 export type Situation = "registered" | "unregistered" | "no-team";
 
@@ -33,9 +33,9 @@ export default function SituationModal({
 
 	return (
 		<Modal onClose={onClose} open={open}>
-			<h2 className="max-w-[90%] font-semibold text-[28px] text-grey-800 leading-9">
+			<ModalTitle className="max-w-[90%]">
 				Select the statement that describes your situation best:
-			</h2>
+			</ModalTitle>
 
 			<RadioGroup
 				className="gap-3"

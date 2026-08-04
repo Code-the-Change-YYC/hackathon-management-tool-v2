@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { Modal, PrimaryButton } from "./Modal";
+import { Modal, ModalTitle, PrimaryButton } from "./Modal";
 
 export default function InviteCodeModal({
 	open,
@@ -32,9 +32,7 @@ export default function InviteCodeModal({
 	return (
 		<Modal onClose={onClose} open={open}>
 			<div className="flex flex-col gap-2">
-				<h2 className="font-semibold text-[28px] text-grey-800 leading-9">
-					Invite others to join your team!
-				</h2>
+				<ModalTitle>Invite others to join your team!</ModalTitle>
 				<p className="text-[16px] text-grey-600 leading-6">
 					Share this code with your teammates so they can join your team!
 				</p>
