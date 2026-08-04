@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	createTRPCRouter,
@@ -7,6 +7,7 @@ import {
 	publicProcedure
 } from "@/server/api/trpc";
 import { DIETARY_RESTRICTIONS, PROGRAMS, user } from "@/server/db/auth-schema";
+import { Role } from "@/types/types";
 
 const dietaryRestrictionsSchema = z
 	.array(z.enum(DIETARY_RESTRICTIONS))
@@ -68,7 +69,14 @@ export const usersRouter = createTRPCRouter({
 					school: input.school?.trim() ? input.school.trim() : null,
 					program: input.program ?? null,
 					dietaryRestrictions: input.dietaryRestrictions ?? null,
-					completedRegistration: true
+					completedRegistration: true,
+					// better-auth's signUpEmail sets role to its own generic
+					// default ("user"), which isn't one of this app's roles.
+					// Left as-is, new self-service signups get redirected out
+					// of every role-gated page (e.g. /participant, /team).
+					// Only replace it when it's not already a real app role, so
+					// this can't downgrade an existing admin/judge.
+					role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
 				})
 				.where(eq(user.email, input.email))
 				.returning();
