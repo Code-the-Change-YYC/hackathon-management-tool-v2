@@ -9,9 +9,6 @@
 /coverage
 /playwright-report/
 /test-results/
-/playwright/.auth/
-.yarn/install-state.gz
-tests/e2e/storage/*.json
 
 # database
 /drizzle/meta

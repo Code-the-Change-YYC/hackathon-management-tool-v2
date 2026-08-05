@@ -1,4 +1,9 @@
+import "dotenv/config";
+
 import { defineConfig, devices } from "playwright/test";
+import { assertE2EDatabaseSafety, e2eDatabaseURL } from "./tests/e2e/db";
+
+assertE2EDatabaseSafety();
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 
@@ -19,6 +24,9 @@ export default defineConfig({
 	},
 	webServer: {
 		command: "pnpm dev --port 3000",
+		env: {
+			DATABASE_URL: e2eDatabaseURL
+		},
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,
 		url: baseURL

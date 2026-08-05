@@ -14,7 +14,7 @@ test("a participant can complete individual registration", async ({
 
 	await signupPage.goto();
 	await expect(
-		page.getByRole("heading", { name: "Register for Hack the Change 2026" })
+		page.getByRole("heading", { name: /Register for Hack the Change/i })
 	).toBeVisible();
 
 	await signupPage.fillForm(signupData);

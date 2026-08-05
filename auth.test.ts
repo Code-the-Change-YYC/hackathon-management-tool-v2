@@ -4,7 +4,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, testUtils } from "better-auth/plugins";
 
-import { db } from "@/server/db";
+import { e2eDb } from "./tests/e2e/db";
 
 const secret = process.env.BETTER_AUTH_SECRET;
 
@@ -13,7 +13,7 @@ if (!secret) {
 }
 
 export const auth = betterAuth({
-	database: drizzleAdapter(db, {
+	database: drizzleAdapter(e2eDb, {
 		provider: "pg"
 	}),
 	secret,
