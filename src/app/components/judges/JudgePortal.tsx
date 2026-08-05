@@ -1,8 +1,21 @@
 "use client";
 
+import {
+	ArrowLeftLine,
+	ArrowRightLine,
+	Calendar2Line,
+	ClipboardLine,
+	CloseLine,
+	DownLine,
+	Home1Line,
+	More1Line,
+	NotificationLine,
+	VideoLine
+} from "@mingcute/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+	type ComponentType,
 	createContext,
 	type ReactNode,
 	useContext,
@@ -10,22 +23,15 @@ import {
 	useMemo,
 	useState
 } from "react";
+import { Button } from "@/app/components/ui/button";
+import { Card, CardContent } from "@/app/components/ui/card";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { api, type RouterOutputs } from "@/trpc/react";
 
 type JudgeAssignment =
 	RouterOutputs["judgingAssignments"]["getByJudge"][number];
 type Criterion = RouterOutputs["criteria"]["getAll"][number];
-type IconName =
-	| "arrow"
-	| "bell"
-	| "calendar"
-	| "check"
-	| "chevron"
-	| "close"
-	| "dashboard"
-	| "menu"
-	| "rubric"
-	| "video";
+type JudgeNavIcon = ComponentType<{ className?: string }>;
 
 type JudgeUserContextValue = {
 	userId: string;
@@ -34,11 +40,11 @@ type JudgeUserContextValue = {
 
 const JudgeUserContext = createContext<JudgeUserContextValue | null>(null);
 
-const navItems = [
-	{ href: "/judge", icon: "dashboard" as const, label: "Dashboard" },
-	{ href: "/judge/schedule", icon: "calendar" as const, label: "Schedule" },
-	{ href: "/judge/rubric", icon: "rubric" as const, label: "Rubric" }
-] as const;
+const navItems: Array<{ href: string; icon: JudgeNavIcon; label: string }> = [
+	{ href: "/judge", icon: Home1Line, label: "Dashboard" },
+	{ href: "/judge/schedule", icon: Calendar2Line, label: "Schedule" },
+	{ href: "/judge/rubric", icon: ClipboardLine, label: "Rubric" }
+];
 
 function useJudgeUser() {
 	const value = useContext(JudgeUserContext);
@@ -46,83 +52,6 @@ function useJudgeUser() {
 		throw new Error("Judge portal user context is missing.");
 	}
 	return value;
-}
-
-function Icon({
-	className = "size-5",
-	name
-}: {
-	className?: string;
-	name: IconName;
-}) {
-	const paths: Record<IconName, ReactNode> = {
-		arrow: (
-			<>
-				<path d="M5 12h14" />
-				<path d="m13 6 6 6-6 6" />
-			</>
-		),
-		bell: (
-			<>
-				<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-				<path d="M10 21h4" />
-			</>
-		),
-		calendar: (
-			<>
-				<rect height="16" rx="2" width="18" x="3" y="5" />
-				<path d="M16 3v4M8 3v4M3 10h18M7 14h2M11 14h2M15 14h2" />
-			</>
-		),
-		check: <path d="m5 13 4 4L19 7" />,
-		chevron: <path d="m8 10 4 4 4-4" />,
-		close: (
-			<>
-				<path d="m6 6 12 12" />
-				<path d="M18 6 6 18" />
-			</>
-		),
-		dashboard: (
-			<>
-				<rect height="16" rx="1.5" width="16" x="4" y="4" />
-				<path d="M9 4v16" />
-			</>
-		),
-		menu: (
-			<>
-				<path d="M4 7h16" />
-				<path d="M4 12h16" />
-				<path d="M4 17h16" />
-			</>
-		),
-		rubric: (
-			<>
-				<rect height="18" rx="2" width="14" x="5" y="3" />
-				<path d="M9 8h6M9 12h6M9 16h4" />
-			</>
-		),
-		video: (
-			<>
-				<rect height="12" rx="2" width="14" x="3" y="6" />
-				<path d="m17 10 4-2v8l-4-2" />
-			</>
-		)
-	};
-
-	return (
-		<svg
-			aria-hidden="true"
-			className={className}
-			fill="none"
-			stroke="currentColor"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			strokeWidth="1.7"
-			viewBox="0 0 24 24"
-		>
-			{paths[name]}
-		</svg>
-	);
 }
 
 function isActivePath(pathname: string, href: string) {
@@ -154,7 +83,7 @@ function JudgeNavContent({
 					</span>
 				</div>
 				<span aria-hidden="true" className="p-2 text-[#292929]">
-					<Icon className="size-6" name="bell" />
+					<NotificationLine className="size-6" />
 				</span>
 			</div>
 
@@ -165,6 +94,7 @@ function JudgeNavContent({
 				<ul className="m-0 flex list-none flex-col gap-1 p-0">
 					{navItems.map((item) => {
 						const active = isActivePath(pathname, item.href);
+						const Icon = item.icon;
 						return (
 							<li key={item.href}>
 								<Link
@@ -177,7 +107,7 @@ function JudgeNavContent({
 									href={item.href}
 									onClick={onNavigate}
 								>
-									<Icon className="size-5 shrink-0" name={item.icon} />
+									<Icon className="size-5 shrink-0" />
 									<span>{item.label}</span>
 								</Link>
 							</li>
@@ -213,17 +143,18 @@ export function JudgeShell({
 				</aside>
 
 				<header className="flex h-14 items-center justify-between bg-[#fcfcfc] px-6 py-1 lg:hidden">
-					<button
+					<Button
 						aria-expanded={menuOpen}
 						aria-label="Open judge navigation"
-						className="rounded-full p-2 text-[#7054fd] transition hover:bg-[#eae6ff]"
 						onClick={() => setMenuOpen(true)}
+						size="icon-lg"
 						type="button"
+						variant="ghost"
 					>
-						<Icon className="size-6" name="menu" />
-					</button>
+						<More1Line />
+					</Button>
 					<span aria-hidden="true" className="p-2 text-[#292929]">
-						<Icon className="size-6" name="bell" />
+						<NotificationLine className="size-6" />
 					</span>
 				</header>
 
@@ -236,14 +167,16 @@ export function JudgeShell({
 							type="button"
 						/>
 						<aside className="relative h-full w-[280px] bg-[#fafafa] p-4 shadow-xl">
-							<button
+							<Button
 								aria-label="Close judge navigation"
-								className="absolute top-3 right-3 rounded-full p-2 text-[#292929] hover:bg-[#eae6ff]"
+								className="absolute top-3 right-3"
 								onClick={() => setMenuOpen(false)}
+								size="icon"
 								type="button"
+								variant="ghost"
 							>
-								<Icon className="size-5" name="close" />
-							</button>
+								<CloseLine />
+							</Button>
 							<div className="pt-11">
 								<JudgeNavContent
 									onNavigate={() => setMenuOpen(false)}
@@ -297,6 +230,10 @@ function getTeamCode(assignment: JudgeAssignment) {
 	return (
 		assignment.team.teamCode ?? assignment.team.id.slice(0, 4).toUpperCase()
 	);
+}
+
+function getAssignmentRoomName(assignment: JudgeAssignment) {
+	return assignment.room.name || "Room";
 }
 
 function sortAssignments(a: JudgeAssignment, b: JudgeAssignment) {
@@ -381,39 +318,31 @@ function useJudgePortalData() {
 		[criteriaQuery.data]
 	);
 	const roomLabels = useMemo(() => {
-		const roomIds = Array.from(
-			new Set(assignments.map((assignment) => assignment.room.id))
-		).sort();
 		return new Map(
-			roomIds.map((roomId, index) => [roomId, `Room ${index + 1}`])
+			assignments.map((assignment) => [
+				assignment.room.id,
+				getAssignmentRoomName(assignment)
+			])
 		);
 	}, [assignments]);
 
 	const roomSummary = useMemo(() => {
 		const labels = Array.from(
 			new Set(
-				assignments.map(
-					(assignment) =>
-						roomLabels.get(assignment.room.id) ??
-						`Room ${assignment.room.id.slice(0, 8)}`
-				)
+				assignments.map((assignment) => getAssignmentRoomName(assignment))
 			)
 		);
 		if (labels.length === 0) return "No room assigned yet";
 		return `You’ve been assigned to ${labels[0]}`;
-	}, [assignments, roomLabels]);
+	}, [assignments]);
 	const roomLabelSummary = useMemo(() => {
 		const labels = Array.from(
 			new Set(
-				assignments.map(
-					(assignment) =>
-						roomLabels.get(assignment.room.id) ??
-						`Room ${assignment.room.id.slice(0, 8)}`
-				)
+				assignments.map((assignment) => getAssignmentRoomName(assignment))
 			)
 		);
 		return labels.length > 0 ? labels[0] : "No room";
-	}, [assignments, roomLabels]);
+	}, [assignments]);
 
 	const firstMeetingLink =
 		assignments.find((assignment) => assignment.room.roomLink)?.room.roomLink ??
@@ -467,36 +396,22 @@ function PageHeader({
 function JoinMeetingButton({ href }: { href: string }) {
 	if (!href) {
 		return (
-			<button
-				className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#a5a5a5] px-5 font-medium text-base text-white"
-				disabled
-				style={{
-					backgroundColor: "#a5a5a5",
-					color: "#ffffff"
-				}}
-				type="button"
-			>
-				<Icon className="size-5" name="video" />
+			<Button disabled type="button" variant="secondary">
+				<VideoLine data-icon="inline-start" />
 				Join Zoom Meeting
-			</button>
+			</Button>
 		);
 	}
 
 	return (
-		<a
-			className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#7054fd] px-5 font-medium text-base text-white transition hover:bg-[#6044ed]"
-			href={href}
-			rel="noreferrer"
-			style={{
-				backgroundColor: "#7054fd",
-				color: "#ffffff",
-				textDecoration: "none"
-			}}
-			target="_blank"
-		>
-			<Icon className="size-5" name="video" />
-			Join Zoom Meeting
-		</a>
+		<Button
+			render={
+				<a href={href} rel="noreferrer" target="_blank">
+					<VideoLine data-icon="inline-start" />
+					Join Zoom Meeting
+				</a>
+			}
+		/>
 	);
 }
 
@@ -506,20 +421,22 @@ function LoadingCard({
 	label?: string;
 }) {
 	return (
-		<div
-			aria-live="polite"
-			className="flex min-h-56 items-center justify-center rounded-2xl bg-[#f2f2f2] text-[#575757]"
-		>
-			{label}
-		</div>
+		<Card aria-live="polite">
+			<CardContent className="flex min-h-56 flex-col justify-center gap-3">
+				<Skeleton className="h-4 w-48" />
+				<p className="m-0 text-muted-foreground text-sm">{label}</p>
+			</CardContent>
+		</Card>
 	);
 }
 
 function ErrorCard({ message }: { message: string }) {
 	return (
-		<div className="rounded-2xl bg-red-50 px-4 py-3 text-red-700">
-			{message}
-		</div>
+		<Card>
+			<CardContent>
+				<p className="m-0 text-destructive">{message}</p>
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -680,22 +597,15 @@ function JudgeTeamCard({
 			{scored ? null : (
 				<div className="mt-auto flex justify-end">
 					{canScore ? (
-						<Link
-							className="inline-flex h-10 items-center justify-center gap-3 rounded-xl bg-[#7054fd] px-4 font-medium text-white transition hover:bg-[#6044ed]"
-							href={scoreHref}
-						>
+						<Button render={<Link href={scoreHref} />} size="sm">
 							Score team
-							<Icon className="size-5" name="arrow" />
-						</Link>
+							<ArrowRightLine data-icon="inline-end" />
+						</Button>
 					) : (
-						<button
-							className="inline-flex h-10 cursor-not-allowed items-center justify-center gap-3 rounded-xl bg-[#e3e3e3] px-4 font-medium text-[#a5a5a5]"
-							disabled
-							type="button"
-						>
+						<Button disabled size="sm" type="button" variant="secondary">
 							Score team
-							<Icon className="size-5" name="arrow" />
-						</button>
+							<ArrowRightLine data-icon="inline-end" />
+						</Button>
 					)}
 				</div>
 			)}
@@ -1033,41 +943,30 @@ function StepActions({
 }) {
 	return (
 		<div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
-			<button
-				className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#f5f5f5] bg-[#fcfcfc] px-4 font-medium text-[#1a1a1a] text-base transition hover:bg-[#f2f2f2]"
-				onClick={onPrevious}
-				type="button"
-			>
-				<Icon className="size-5 rotate-180" name="arrow" />
+			<Button onClick={onPrevious} type="button" variant="outline">
+				<ArrowLeftLine data-icon="inline-start" />
 				Prev
-			</button>
+			</Button>
 
 			{isLastStep ? (
-				<button
-					className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 font-medium text-base transition sm:min-w-[318px] ${
-						canSubmit
-							? "bg-[#7054fd] text-white hover:bg-[#6044ed]"
-							: "cursor-not-allowed bg-[#e6e6e6] text-[#a5a5a5]"
-					}`}
+				<Button
+					className="sm:min-w-[318px]"
 					disabled={!canSubmit || isPending}
 					onClick={onSubmit}
 					type="button"
+					variant={canSubmit ? "default" : "secondary"}
 				>
 					{isPending
 						? "Submitting…"
 						: canSubmit
 							? "Submit score"
 							: disabledSubmitLabel}
-				</button>
+				</Button>
 			) : (
-				<button
-					className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#7054fd] px-4 font-medium text-base text-white transition hover:bg-[#6044ed]"
-					onClick={onNext}
-					type="button"
-				>
+				<Button onClick={onNext} type="button">
 					Next
-					<Icon className="size-5" name="arrow" />
-				</button>
+					<ArrowRightLine data-icon="inline-end" />
+				</Button>
 			)}
 		</div>
 	);
@@ -1641,7 +1540,7 @@ export function JudgeDashboardPage() {
 										key={assignment.id}
 										roomLabel={
 											data.roomLabels.get(assignment.room.id) ??
-											`Room ${assignment.room.id.slice(0, 8)}`
+											getAssignmentRoomName(assignment)
 										}
 										scoreHref={`/judge/score/${assignment.id}`}
 									/>
@@ -1835,7 +1734,7 @@ export function JudgeSchedulePage() {
 												)}
 												roomLabel={
 													data.roomLabels.get(assignment.room.id) ??
-													`Room ${assignment.room.id.slice(0, 8)}`
+													getAssignmentRoomName(assignment)
 												}
 												scoreHref={`/judge/score/${assignment.id}`}
 											/>
@@ -1907,9 +1806,8 @@ function RubricCriterionRow({
 						{criterion.maxScore} points
 					</p>
 				</div>
-				<Icon
+				<DownLine
 					className={`size-5 shrink-0 transition ${expanded ? "rotate-180" : ""}`}
-					name="chevron"
 				/>
 			</button>
 

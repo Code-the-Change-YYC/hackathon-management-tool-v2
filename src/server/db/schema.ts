@@ -32,6 +32,7 @@ export const judgingRooms = createTable("judging_room", {
 	roundId: uuid("round_id")
 		.references(() => judgingRounds.id, { onDelete: "cascade" })
 		.notNull(),
+	name: text("name").notNull(),
 	roomLink: text("room_link").notNull(), // link to the video meeting
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()

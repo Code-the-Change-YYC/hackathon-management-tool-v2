@@ -94,6 +94,13 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 	getByJudge: protectedProcedure
 		.input(z.object({ judgeId: z.string() }))
 		.query(async ({ ctx, input }) => {
+			if (
+				ctx.session.user.role !== "admin" &&
+				input.judgeId !== ctx.session.user.id
+			) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			const roomStaffRows = await ctx.db.query.judgingRoomStaff.findMany({
 				where: eq(judgingRoomStaff.staffId, input.judgeId),
 				columns: { roomId: true }

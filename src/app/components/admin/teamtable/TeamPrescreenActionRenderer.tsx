@@ -3,7 +3,6 @@
 import type { ICellRendererParams } from "ag-grid-community";
 import {
 	isTeamPrescreenPending,
-	type PrescreenTeam,
 	type TeamTableContext
 } from "@/types/teamTableConstants";
 import type { Organization } from "@/types/types";

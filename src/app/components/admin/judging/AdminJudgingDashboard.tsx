@@ -1,275 +1,80 @@
 "use client";
 
+import {
+	ArrowLeftLine,
+	ArrowRightLine,
+	CloseLine,
+	More1Line,
+	NotificationLine
+} from "@mingcute/react";
 import Image from "next/image";
-import Link from "next/link";
 import {
 	type CSSProperties,
-	type ReactNode,
 	useEffect,
 	useMemo,
+	useRef,
 	useState
 } from "react";
+import { AdminNavbar } from "@/app/components/admin/AdminNavbar";
+import { Button } from "@/app/components/ui/button";
+import { Field, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from "@/app/components/ui/select";
+import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
-import styles from "./AdminJudgingDashboard.module.scss";
 import JudgingManagementSections from "./JudgingManagementSections";
 import { formatTime } from "./judgingFormatters";
-
-type IconName =
-	| "arrow"
-	| "bell"
-	| "calendar"
-	| "chevron"
-	| "clipboard"
-	| "close"
-	| "meal"
-	| "menu"
-	| "settings"
-	| "teams"
-	| "users";
 
 type Assignment = RouterOutputs["judgingAssignments"]["getByRound"][number];
 type Room = RouterOutputs["judgingRooms"]["getLayoutByRound"]["rooms"][number];
 type Team = RouterOutputs["teams"]["getAll"][number];
 type SlotMinutes = 15 | 30 | 60;
 
-const navSections = [
-	{
-		label: "EVENT MANAGEMENT",
-		items: [
-			{
-				href: "/admin/judge#judging-schedule",
-				icon: "calendar" as const,
-				label: "Schedule"
-			},
-			{
-				href: "/admin#users",
-				icon: "users" as const,
-				label: "Registered Users"
-			},
-			{ href: "/admin#teams", icon: "teams" as const, label: "Teams" },
-			{ href: "/meal", icon: "meal" as const, label: "Meals" },
-			{
-				href: "/admin/judge",
-				icon: "clipboard" as const,
-				label: "Judging Information",
-				active: true
-			}
-		]
-	},
-	{
-		label: "APP MANAGEMENT",
-		items: [
-			{
-				href: "/admin",
-				icon: "settings" as const,
-				label: "Admin Controls"
-			}
-		]
-	}
-] as const;
-
-function Icon({
-	className = "size-5",
-	name
-}: {
-	className?: string;
-	name: IconName;
-}) {
-	const paths: Record<IconName, ReactNode> = {
-		arrow: (
-			<>
-				<path d="M5 12h14" />
-				<path d="m13 6 6 6-6 6" />
-			</>
-		),
-		bell: (
-			<>
-				<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-				<path d="M10 21h4" />
-			</>
-		),
-		calendar: (
-			<>
-				<rect height="16" rx="2" width="18" x="3" y="5" />
-				<path d="M16 3v4M8 3v4M3 10h18M7 14h2M11 14h2M15 14h2" />
-			</>
-		),
-		chevron: <path d="m8 10 4 4 4-4" />,
-		clipboard: (
-			<>
-				<rect height="18" rx="2" width="14" x="5" y="3" />
-				<path d="M9 3.5h6v3H9zM8.5 13l2 2 5-5" />
-			</>
-		),
-		close: (
-			<>
-				<path d="m6 6 12 12" />
-				<path d="M18 6 6 18" />
-			</>
-		),
-		meal: (
-			<>
-				<path d="M4 7h16M5 7l1 13h12l1-13M8 4h8" />
-				<path d="M8 11h8M8 15h8" />
-			</>
-		),
-		menu: (
-			<>
-				<path d="M4 7h16" />
-				<path d="M4 12h16" />
-				<path d="M4 17h16" />
-			</>
-		),
-		settings: (
-			<>
-				<circle cx="12" cy="12" r="3" />
-				<path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V21h-4v-.08A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.63 15 1.7 1.7 0 0 0 3.08 14H3v-4h.08A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.63 1.7 1.7 0 0 0 10 3.08V3h4v.08A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.37 9 1.7 1.7 0 0 0 20.92 10H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z" />
-			</>
-		),
-		teams: (
-			<>
-				<circle cx="9" cy="8" r="3" />
-				<circle cx="17" cy="9" r="2" />
-				<path d="M3 20c0-4 2.7-7 6-7s6 3 6 7M15 14c3 0 5 2.3 5 5" />
-			</>
-		),
-		users: (
-			<>
-				<circle cx="12" cy="8" r="3.5" />
-				<path d="M5 21c0-4.4 3.1-8 7-8s7 3.6 7 8" />
-			</>
-		)
-	};
-
-	return (
-		<svg
-			aria-hidden="true"
-			className={className}
-			fill="none"
-			stroke="currentColor"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			strokeWidth="1.6"
-			viewBox="0 0 24 24"
-		>
-			{paths[name]}
-		</svg>
-	);
-}
-
-function SidebarContent({
-	onNavigate,
-	userName
-}: {
-	onNavigate?: () => void;
-	userName: string;
-}) {
-	return (
-		<div className="flex h-full flex-col gap-5">
-			<div className="flex items-center justify-between">
-				<div className="flex min-w-0 items-center gap-2">
-					<Image
-						alt=""
-						className="size-7 shrink-0 rounded-full bg-[#fe957b]"
-						height={28}
-						src="/images/admin-judging/avatar.png"
-						width={28}
-					/>
-					<span className="truncate font-medium text-[#292929] text-base">
-						{userName}
-					</span>
-				</div>
-				<span aria-hidden="true" className="p-2 text-[#292929]">
-					<Icon className="size-6" name="bell" />
-				</span>
-			</div>
-
-			<nav aria-label="Admin navigation" className="flex flex-col gap-5">
-				{navSections.map((section, sectionIndex) => (
-					<div className="flex flex-col gap-4" key={section.label}>
-						{sectionIndex > 0 ? <div className="h-px bg-[#d6d6d6]" /> : null}
-						<p className="m-0 font-medium text-[#575757] text-[11px] leading-4">
-							{section.label}
-						</p>
-						<ul className="m-0 flex list-none flex-col gap-1 p-0">
-							{section.items.map((item) => (
-								<li key={item.label}>
-									<Link
-										aria-current={"active" in item ? "page" : undefined}
-										className={`flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium text-sm transition-colors ${
-											"active" in item
-												? "bg-[#eae6ff] text-[#292929]"
-												: "text-[#292929] hover:bg-[#f2f2f2]"
-										}`}
-										href={item.href}
-										onClick={onNavigate}
-									>
-										<Icon className="size-5 shrink-0" name={item.icon} />
-										<span>{item.label}</span>
-									</Link>
-								</li>
-							))}
-						</ul>
-					</div>
-				))}
-			</nav>
-		</div>
-	);
-}
-
-function SelectField({
-	children,
-	disabled,
-	label,
-	onChange,
-	value
-}: {
-	children: ReactNode;
-	disabled?: boolean;
-	label: string;
-	onChange: (value: string) => void;
-	value: string;
-}) {
-	return (
-		<label className="flex w-full flex-col gap-2">
-			<span className="pl-4 text-[#292929] text-sm leading-5">{label}</span>
-			<span className="relative">
-				<select
-					className="h-12 w-full appearance-none rounded-xl border border-[#a5a5a5] bg-[#fcfcfc] py-2.5 pr-11 pl-4 text-[#292929] text-base outline-none transition focus:border-[#7054fd] focus:ring-2 focus:ring-[#eae6ff] disabled:cursor-not-allowed disabled:opacity-60"
-					disabled={disabled}
-					onChange={(event) => onChange(event.target.value)}
-					value={value}
-				>
-					{children}
-				</select>
-				<Icon
-					className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 size-5 text-[#292929]"
-					name="chevron"
-				/>
-			</span>
-		</label>
-	);
-}
+const scheduleGridClass =
+	"grid min-w-[max(100%,calc(var(--time-column)+var(--room-count)*var(--room-column)))] [--room-column:120px] [--time-column:82px] [grid-template-columns:minmax(var(--time-column),0.8fr)_repeat(var(--room-count),minmax(var(--room-column),1fr))] lg:[--room-column:160px] lg:[--time-column:128px]";
+const scheduleHeaderClass =
+	"flex min-h-10 items-center justify-center border-dashboard-grey border-r border-b bg-primary p-2 text-center font-medium text-primary-foreground text-sm leading-5 lg:min-h-12 lg:text-base lg:leading-6";
+const timeCellClass =
+	"min-h-[68px] border-dashboard-grey border-r border-b bg-background px-2 py-2 font-medium text-foreground text-sm leading-5 lg:min-h-[88px] lg:px-1 lg:text-base lg:leading-6";
+const roomCellClass =
+	"flex min-h-[68px] flex-col justify-center gap-1 border-dashboard-grey border-r border-b bg-light-grey px-1 py-1 lg:min-h-[88px]";
+const teamPillClass =
+	"truncate rounded-lg border border-awesome-purple bg-lilac-purple px-2 py-1.5 text-center font-semibold text-primary text-sm leading-5 lg:px-2 lg:py-2 lg:text-base";
+const slotsPerPage = 48;
 
 function buildTimeSlots(
 	startTime: Date,
 	endTime: Date,
 	slotMinutes: SlotMinutes
 ) {
-	const slots: Date[] = [];
-	const start = startTime.getTime();
-	const end = endTime.getTime();
-	const slotMs = slotMinutes * 60 * 1000;
+	const slotCount = getSlotCount(startTime, endTime, slotMinutes);
+	const slotMs = slotMinutes * 60_000;
 
-	for (
-		let timestamp = start;
-		timestamp < end && slots.length < 96;
-		timestamp += slotMs
-	) {
-		slots.push(new Date(timestamp));
-	}
+	return Array.from({ length: slotCount }, (_, index) => {
+		return new Date(startTime.getTime() + index * slotMs);
+	});
+}
 
-	return slots;
+function getTotalJudgingMinutes(startTime: Date, endTime: Date) {
+	return Math.max(
+		0,
+		Math.floor((endTime.getTime() - startTime.getTime()) / 60_000)
+	);
+}
+
+function getSlotCount(
+	startTime: Date,
+	endTime: Date,
+	slotMinutes: SlotMinutes
+) {
+	return Math.floor(getTotalJudgingMinutes(startTime, endTime) / slotMinutes);
 }
 
 function byNameThenId<T extends { id: string; name: string }>(a: T, b: T) {
@@ -309,14 +114,10 @@ function calculateClientReadiness({
 		};
 	}
 
-	const slots = buildTimeSlots(roundStart, roundEnd, slotMinutes);
-	const slotCount = slots.length;
+	const totalJudgingMinutes = getTotalJudgingMinutes(roundStart, roundEnd);
+	const slotCount = getSlotCount(roundStart, roundEnd, slotMinutes);
 	const safeRoomCount = Math.max(1, roomCount);
 	const freeSlotCount = safeRoomCount * slotCount;
-	const totalJudgingMinutes = Math.max(
-		0,
-		Math.floor((roundEnd.getTime() - roundStart.getTime()) / 60_000)
-	);
 	const scoredAssignmentCount = assignments.filter(
 		(assignment) => assignment.scores.length > 0
 	).length;
@@ -372,6 +173,11 @@ function ScheduleGrid({
 				: [],
 		[roundEnd, roundStart, slotMinutes]
 	);
+	const [slotPage, setSlotPage] = useState(0);
+	const pageCount = Math.max(1, Math.ceil(slots.length / slotsPerPage));
+	const safeSlotPage = Math.min(slotPage, pageCount - 1);
+	const pageStart = safeSlotPage * slotsPerPage;
+	const visibleSlots = slots.slice(pageStart, pageStart + slotsPerPage);
 
 	if (isLoading) {
 		return (
@@ -405,69 +211,116 @@ function ScheduleGrid({
 	} as CSSProperties;
 
 	return (
-		<div className="overflow-x-auto rounded-2xl">
-			<div className={styles.scheduleGrid} style={scheduleStyle}>
-				<div className={`${styles.scheduleHeader} rounded-tl-2xl`}>Times</div>
-				{rooms.map((room, roomIndex) => (
-					<div
-						className={`${styles.scheduleHeader} ${
-							roomIndex === rooms.length - 1 ? "rounded-tr-2xl" : ""
-						}`}
-						key={room.id}
-					>
-						{room.name}
+		<div className="flex flex-col gap-3">
+			{slots.length > slotsPerPage ? (
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<p className="m-0 text-muted-foreground text-sm">
+						Showing slots {pageStart + 1}-
+						{Math.min(pageStart + slotsPerPage, slots.length)} of {slots.length}
+					</p>
+					<div className="flex gap-2">
+						<Button
+							disabled={safeSlotPage === 0}
+							onClick={() => setSlotPage((page) => Math.max(0, page - 1))}
+							size="sm"
+							type="button"
+							variant="outline"
+						>
+							<ArrowLeftLine data-icon="inline-start" />
+							Previous
+						</Button>
+						<Button
+							disabled={safeSlotPage >= pageCount - 1}
+							onClick={() =>
+								setSlotPage((page) => Math.min(pageCount - 1, page + 1))
+							}
+							size="sm"
+							type="button"
+							variant="outline"
+						>
+							Next
+							<ArrowRightLine data-icon="inline-end" />
+						</Button>
 					</div>
-				))}
+				</div>
+			) : null}
 
-				{slots.map((slot, slotIndex) => {
-					const slotEnd = slot.getTime() + slotMinutes * 60 * 1000;
-					return (
-						<div className="contents" key={slot.toISOString()}>
-							<div
-								className={`${styles.timeCell} ${
-									slotIndex % 2 === 0 ? styles.timeCellMuted : ""
-								} ${slotIndex === slots.length - 1 ? "rounded-bl-2xl" : ""}`}
-							>
-								{formatTime(slot)}
-							</div>
-							{rooms.map((room, roomIndex) => {
-								const cellAssignments = assignments.filter((assignment) => {
-									if (assignment.room.id !== room.id || !assignment.timeSlot) {
-										return false;
-									}
-									const assignmentTime = new Date(
-										assignment.timeSlot
-									).getTime();
-									return (
-										assignmentTime >= slot.getTime() && assignmentTime < slotEnd
-									);
-								});
-
-								return (
-									<div
-										className={`${styles.roomCell} ${
-											slotIndex === slots.length - 1 &&
-											roomIndex === rooms.length - 1
-												? "rounded-br-2xl"
-												: ""
-										}`}
-										key={`${slot.toISOString()}-${room.id}`}
-									>
-										{cellAssignments.map((assignment) => (
-											<div
-												className={styles.teamPill}
-												key={assignment.id}
-												title={assignment.team.name}
-											>
-												{assignment.team.name}
-											</div>
-										))}
-									</div>
-								);
-							})}
+			<div className="overflow-x-auto rounded-2xl">
+				<div className={scheduleGridClass} style={scheduleStyle}>
+					<div
+						className={cn(scheduleHeaderClass, "justify-start rounded-tl-2xl")}
+					>
+						Times
+					</div>
+					{rooms.map((room, roomIndex) => (
+						<div
+							className={cn(
+								scheduleHeaderClass,
+								roomIndex === rooms.length - 1 && "rounded-tr-2xl"
+							)}
+							key={room.id}
+						>
+							{room.name}
 						</div>
-					);
-				})}
+					))}
+
+					{visibleSlots.map((slot, slotIndex) => {
+						const slotEnd = slot.getTime() + slotMinutes * 60 * 1000;
+						const isLastVisibleSlot = slotIndex === visibleSlots.length - 1;
+						return (
+							<div className="contents" key={slot.toISOString()}>
+								<div
+									className={cn(
+										timeCellClass,
+										(pageStart + slotIndex) % 2 === 0 && "bg-dashboard-grey",
+										isLastVisibleSlot && "rounded-bl-2xl"
+									)}
+								>
+									{formatTime(slot)}
+								</div>
+								{rooms.map((room, roomIndex) => {
+									const cellAssignments = assignments.filter((assignment) => {
+										if (
+											assignment.room.id !== room.id ||
+											!assignment.timeSlot
+										) {
+											return false;
+										}
+										const assignmentTime = new Date(
+											assignment.timeSlot
+										).getTime();
+										return (
+											assignmentTime >= slot.getTime() &&
+											assignmentTime < slotEnd
+										);
+									});
+
+									return (
+										<div
+											className={cn(
+												roomCellClass,
+												isLastVisibleSlot &&
+													roomIndex === rooms.length - 1 &&
+													"rounded-br-2xl"
+											)}
+											key={`${slot.toISOString()}-${room.id}`}
+										>
+											{cellAssignments.map((assignment) => (
+												<div
+													className={teamPillClass}
+													key={assignment.id}
+													title={assignment.team.name}
+												>
+													{assignment.team.name}
+												</div>
+											))}
+										</div>
+									);
+								})}
+							</div>
+						);
+					})}
+				</div>
 			</div>
 		</div>
 	);
@@ -583,13 +436,25 @@ export default function AdminJudgingDashboard({
 			slotMinutes
 		]
 	);
+	const recommendationContext = [
+		selectedRoundId,
+		slotMinutes,
+		eligibleTeams.length,
+		selectedRound?.startTime?.getTime() ?? "",
+		selectedRound?.endTime?.getTime() ?? ""
+	].join(":");
+	const appliedRecommendationContext = useRef("");
 
 	useEffect(() => {
 		const recommendation = readiness.recommendedRoomCount;
-		if (recommendation && roomCount < recommendation) {
-			setRoomCount(recommendation);
+		if (
+			recommendation &&
+			appliedRecommendationContext.current !== recommendationContext
+		) {
+			appliedRecommendationContext.current = recommendationContext;
+			setRoomCount((current) => Math.max(current, recommendation));
 		}
-	}, [readiness.recommendedRoomCount, roomCount]);
+	}, [readiness.recommendedRoomCount, recommendationContext]);
 
 	const generateSchedule = api.judgingRooms.generateSchedule.useMutation({
 		onError: (error) => {
@@ -657,26 +522,24 @@ export default function AdminJudgingDashboard({
 		teamsQuery.error;
 
 	return (
-		<div
-			className="min-h-screen bg-[#fcfcfc] text-[#292929]"
-			style={{ fontFamily: "var(--font-omnes), sans-serif" }}
-		>
-			<aside className="fixed inset-y-0 left-0 hidden w-[209px] border-[#d6d6d6] border-r bg-[#fafafa] py-4 pr-4 pl-4 lg:block">
-				<SidebarContent userName={userName} />
+		<div className="min-h-screen bg-background text-foreground">
+			<aside className="fixed inset-y-0 left-0 hidden w-[209px] border-border border-r bg-sidebar py-4 pr-4 pl-4 lg:block">
+				<AdminNavbar userName={userName} />
 			</aside>
 
-			<header className="flex h-14 items-center justify-between bg-[#fcfcfc] px-6 py-1 lg:hidden">
-				<button
+			<header className="flex h-14 items-center justify-between bg-background px-6 py-1 lg:hidden">
+				<Button
 					aria-expanded={menuOpen}
 					aria-label="Open admin navigation"
-					className="rounded-full p-2 text-[#7054fd] transition hover:bg-[#eae6ff]"
 					onClick={() => setMenuOpen(true)}
+					size="icon-lg"
 					type="button"
+					variant="ghost"
 				>
-					<Icon className="size-6" name="menu" />
-				</button>
-				<span aria-hidden="true" className="p-2 text-[#292929]">
-					<Icon className="size-6" name="bell" />
+					<More1Line />
+				</Button>
+				<span aria-hidden="true" className="p-2">
+					<NotificationLine className="size-6" />
 				</span>
 			</header>
 
@@ -688,17 +551,19 @@ export default function AdminJudgingDashboard({
 						onClick={() => setMenuOpen(false)}
 						type="button"
 					/>
-					<aside className="relative h-full w-[280px] bg-[#fafafa] p-4 shadow-xl">
-						<button
+					<aside className="relative h-full w-[280px] bg-sidebar p-4 shadow-xl">
+						<Button
 							aria-label="Close admin navigation"
-							className="absolute top-3 right-3 rounded-full p-2 text-[#292929] hover:bg-[#eae6ff]"
+							className="absolute top-3 right-3"
 							onClick={() => setMenuOpen(false)}
+							size="icon"
 							type="button"
+							variant="ghost"
 						>
-							<Icon className="size-5" name="close" />
-						</button>
+							<CloseLine />
+						</Button>
 						<div className="pt-11">
-							<SidebarContent
+							<AdminNavbar
 								onNavigate={() => setMenuOpen(false)}
 								userName={userName}
 							/>
@@ -715,7 +580,7 @@ export default function AdminJudgingDashboard({
 					</p>
 				</header>
 
-				<section className="relative flex min-h-[299px] flex-col overflow-hidden rounded-2xl bg-[#7054fd] p-6 text-white sm:block sm:min-h-[148px]">
+				<section className="relative flex min-h-[299px] flex-col overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground sm:block sm:min-h-[148px]">
 					<div className="relative z-10 max-w-[400px]">
 						<h2 className="m-0 font-semibold text-[28px] leading-9">
 							Release Scores to Teams
@@ -743,13 +608,16 @@ export default function AdminJudgingDashboard({
 						/>
 					</div>
 
-					<button
-						className="absolute bottom-4 left-4 z-20 flex items-center gap-2 rounded-xl bg-[#f7f5ff] px-4 py-2.5 font-medium text-[#2911a7] text-base shadow-[0_0_0.25px_rgba(0,0,0,0.18),0_1px_1.5px_rgba(0,0,0,0.1),0_3px_4px_rgba(0,0,0,0.1)] transition hover:bg-white sm:top-5 sm:right-5 sm:bottom-auto sm:left-auto"
+					<Button
+						className="absolute bottom-4 left-4 z-20 sm:top-5 sm:right-5 sm:bottom-auto sm:left-auto"
+						disabled
+						title="Score release is not wired yet."
 						type="button"
+						variant="secondary"
 					>
-						Release scores
-						<Icon className="size-5" name="arrow" />
-					</button>
+						Release scores unavailable
+						<ArrowRightLine data-icon="inline-end" />
+					</Button>
 				</section>
 
 				<section className="flex flex-col gap-4" id="judging-schedule">
@@ -758,26 +626,36 @@ export default function AdminJudgingDashboard({
 					</h2>
 
 					<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:gap-4">
-						<div className="w-full sm:w-64">
-							<SelectField
+						<Field className="w-full gap-2 sm:w-64">
+							<FieldLabel>Room Selection</FieldLabel>
+							<Select
 								disabled={!selectedRoundId || layoutQuery.isLoading}
-								label="Room Selection"
-								onChange={setSelectedRoomId}
+								onValueChange={(value) => {
+									if (value) setSelectedRoomId(value);
+								}}
 								value={selectedRoomId}
 							>
-								<option value="all">All</option>
-								{rooms.map((room) => (
-									<option key={room.id} value={room.id}>
-										{room.name}
-									</option>
-								))}
-							</SelectField>
-						</div>
-						<div className="w-full sm:w-64">
-							<SelectField
+								<SelectTrigger className="h-12 w-full">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										<SelectItem value="all">All</SelectItem>
+										{rooms.map((room) => (
+											<SelectItem key={room.id} value={room.id}>
+												{room.name}
+											</SelectItem>
+										))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+						</Field>
+						<Field className="w-full gap-2 sm:w-64">
+							<FieldLabel>Round</FieldLabel>
+							<Select
 								disabled={roundsQuery.isLoading}
-								label="Round"
-								onChange={(value) => {
+								onValueChange={(value) => {
+									if (!value) return;
 									setSelectedRoundId(value);
 									setSelectedRoomId("all");
 									setRoomCount(1);
@@ -785,16 +663,20 @@ export default function AdminJudgingDashboard({
 								}}
 								value={selectedRoundId}
 							>
-								<option disabled value="">
-									Select a round
-								</option>
-								{(roundsQuery.data ?? []).map((round) => (
-									<option key={round.id} value={round.id}>
-										{round.name}
-									</option>
-								))}
-							</SelectField>
-						</div>
+								<SelectTrigger className="h-12 w-full">
+									<SelectValue placeholder="Select a round" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										{(roundsQuery.data ?? []).map((round) => (
+											<SelectItem key={round.id} value={round.id}>
+												{round.name}
+											</SelectItem>
+										))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+						</Field>
 					</div>
 
 					{queryError ? (
@@ -809,6 +691,7 @@ export default function AdminJudgingDashboard({
 								layoutQuery.isLoading ||
 								assignmentsQuery.isLoading
 							}
+							key={`${selectedRoundId}:${selectedRoomId}:${slotMinutes}`}
 							rooms={visibleRooms}
 							roundEnd={selectedRound?.endTime}
 							roundStart={selectedRound?.startTime}
@@ -830,10 +713,10 @@ export default function AdminJudgingDashboard({
 						Assign teams to rooms
 					</h2>
 					<div className="grid gap-3 sm:grid-cols-2 sm:gap-6">
-						<label className="flex flex-1 flex-col gap-2">
-							<span className="pl-4 text-sm leading-5">Number of rooms</span>
-							<input
-								className="h-12 rounded-xl border border-[#a5a5a5] bg-[#fcfcfc] px-4 text-base outline-none transition focus:border-[#7054fd] focus:ring-2 focus:ring-[#eae6ff]"
+						<Field className="gap-2">
+							<FieldLabel>Number of rooms</FieldLabel>
+							<Input
+								className="h-12"
 								max={20}
 								min={1}
 								onChange={(event) =>
@@ -842,25 +725,30 @@ export default function AdminJudgingDashboard({
 								type="number"
 								value={roomCount}
 							/>
-						</label>
-						<label className="flex flex-1 flex-col gap-2">
-							<span className="pl-4 text-sm leading-5">Slot duration</span>
-							<select
-								className="h-12 rounded-xl border border-[#a5a5a5] bg-[#fcfcfc] px-4 text-base outline-none transition focus:border-[#7054fd] focus:ring-2 focus:ring-[#eae6ff]"
-								onChange={(event) => {
-									setSlotMinutes(
-										Number.parseInt(event.target.value, 10) as SlotMinutes
-									);
+						</Field>
+						<Field className="gap-2">
+							<FieldLabel>Slot duration</FieldLabel>
+							<Select
+								onValueChange={(value) => {
+									if (!value) return;
+									setSlotMinutes(Number.parseInt(value, 10) as SlotMinutes);
 									setRoomCount(1);
 									setAssignmentMessage("");
 								}}
-								value={slotMinutes}
+								value={String(slotMinutes)}
 							>
-								<option value={15}>15 minutes</option>
-								<option value={30}>30 minutes</option>
-								<option value={60}>60 minutes</option>
-							</select>
-						</label>
+								<SelectTrigger className="h-12 w-full">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										<SelectItem value="15">15 minutes</SelectItem>
+										<SelectItem value="30">30 minutes</SelectItem>
+										<SelectItem value="60">60 minutes</SelectItem>
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+						</Field>
 					</div>
 
 					<div className="grid gap-3 rounded-2xl bg-[#f7f5ff] p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
@@ -899,8 +787,7 @@ export default function AdminJudgingDashboard({
 					</p>
 
 					<div className="flex flex-col items-end gap-2">
-						<button
-							className="rounded-xl bg-[#7054fd] px-4 py-2.5 font-medium text-base text-white transition hover:bg-[#6044ed] disabled:cursor-not-allowed disabled:opacity-60"
+						<Button
 							disabled={
 								!selectedRoundId ||
 								generateSchedule.isPending ||
@@ -915,7 +802,7 @@ export default function AdminJudgingDashboard({
 							type="button"
 						>
 							{generateSchedule.isPending ? "Assigning…" : "Assign to rooms"}
-						</button>
+						</Button>
 						<p
 							aria-live="polite"
 							className="m-0 min-h-5 text-right text-[#575757] text-sm"

@@ -134,7 +134,9 @@ export const organization = createTable("organization", {
 		.default("pending")
 		.notNull(),
 	prescreenComments: text("prescreen_comments"),
-	prescreenedBy: text("prescreened_by").references(() => user.id),
+	prescreenedBy: text("prescreened_by").references(() => user.id, {
+		onDelete: "set null"
+	}),
 	prescreenedAt: timestamp("prescreened_at")
 });
 

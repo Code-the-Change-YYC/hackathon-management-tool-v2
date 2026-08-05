@@ -27,12 +27,15 @@ const LayoutSchema = z.object({
 });
 
 type JudgingRoom = typeof judgingRooms.$inferSelect;
+type DbClient =
+	| typeof dbType
+	| Parameters<Parameters<typeof dbType.transaction>[0]>[0];
 
 function hasPassedPrescreen(team: typeof organization.$inferSelect) {
 	return team.prescreenStatus === "passed";
 }
 
-async function assertRoundHasNoScores(db: typeof dbType, roundId: string) {
+async function assertRoundHasNoScores(db: DbClient, roundId: string) {
 	const scoredAssignments = await db
 		.select({ id: scores.id })
 		.from(scores)
@@ -48,6 +51,29 @@ async function assertRoundHasNoScores(db: typeof dbType, roundId: string) {
 			code: "BAD_REQUEST",
 			message:
 				"Cannot replace this schedule because at least one assignment has scores."
+		});
+	}
+}
+
+async function assertTeamsAreSchedulable(db: DbClient, teamIds: string[]) {
+	const uniqueTeamIds = [...new Set(teamIds)];
+	if (uniqueTeamIds.length === 0) return;
+
+	const teams = await db.query.organization.findMany({
+		where: inArray(organization.id, uniqueTeamIds)
+	});
+	if (teams.length !== uniqueTeamIds.length) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "One or more teams in the layout were not found."
+		});
+	}
+
+	const ineligible = teams.filter((team) => !hasPassedPrescreen(team));
+	if (ineligible.length > 0) {
+		throw new TRPCError({
+			code: "CONFLICT",
+			message: "Only prescreen-passed teams can be assigned to judging rooms."
 		});
 	}
 }
@@ -72,7 +98,7 @@ export const judgingRoomsRouter = createTRPCRouter({
 						});
 						return {
 							id: room.id,
-							name: `Room ${room.id.slice(0, 8)}`,
+							name: room.name,
 							roomLink: room.roomLink,
 							staffIds: staffRows.map((s) => s.staffId),
 							teamIds: room.assignments.map((a) => a.teamId),
@@ -92,32 +118,12 @@ export const judgingRoomsRouter = createTRPCRouter({
 	saveLayoutByRound: adminProcedure
 		.input(z.object({ roundId: z.string().uuid(), layout: LayoutSchema }))
 		.mutation(async ({ ctx, input }) => {
-			await assertRoundHasNoScores(ctx.db, input.roundId);
-
-			const teamIds = [
-				...new Set(input.layout.rooms.flatMap((room) => room.teamIds))
-			];
-			if (teamIds.length > 0) {
-				const teams = await ctx.db.query.organization.findMany({
-					where: inArray(organization.id, teamIds)
-				});
-				if (teams.length !== teamIds.length) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: "One or more teams in the layout were not found."
-					});
-				}
-				const ineligible = teams.filter((team) => !hasPassedPrescreen(team));
-				if (ineligible.length > 0) {
-					throw new TRPCError({
-						code: "CONFLICT",
-						message:
-							"Only prescreen-passed teams can be assigned to judging rooms."
-					});
-				}
-			}
+			const teamIds = input.layout.rooms.flatMap((room) => room.teamIds);
 
 			await ctx.db.transaction(async (tx) => {
+				await assertRoundHasNoScores(tx, input.roundId);
+				await assertTeamsAreSchedulable(tx, teamIds);
+
 				// Replace round room layout in DB tables:
 				// deleting rooms cascades existing staff + assignments for that round.
 				await tx
@@ -128,6 +134,7 @@ export const judgingRoomsRouter = createTRPCRouter({
 					const [createdRoom] = await tx
 						.insert(judgingRooms)
 						.values({
+							name: room.name,
 							roundId: input.roundId,
 							roomLink: room.roomLink ?? ""
 						})
@@ -239,9 +246,6 @@ export const judgingRoomsRouter = createTRPCRouter({
 						"Generated schedule would end after the selected round's end time."
 				});
 			}
-
-			await assertRoundHasNoScores(ctx.db, input.roundId);
-
 			const baseJudgesPerRoom = Math.floor(judges.length / input.roomCount);
 			const extraJudgeRooms = judges.length % input.roomCount;
 			let judgeIndex = 0;
@@ -256,6 +260,12 @@ export const judgingRoomsRouter = createTRPCRouter({
 			);
 
 			await ctx.db.transaction(async (tx) => {
+				await assertRoundHasNoScores(tx, input.roundId);
+				await assertTeamsAreSchedulable(
+					tx,
+					eligibleTeams.map((team) => team.id)
+				);
+
 				await tx
 					.delete(judgingRooms)
 					.where(eq(judgingRooms.roundId, input.roundId));
@@ -265,6 +275,7 @@ export const judgingRoomsRouter = createTRPCRouter({
 					const [createdRoom] = await tx
 						.insert(judgingRooms)
 						.values({
+							name: `Room ${i + 1}`,
 							roundId: input.roundId,
 							roomLink: ""
 						})
