@@ -1,6 +1,11 @@
+import "dotenv/config";
+
 import { auth } from "auth.test";
+import { eq } from "drizzle-orm";
 import type { Page } from "playwright/test";
 import { test as base } from "playwright/test";
+import { db } from "@/server/db";
+import { user } from "@/server/db/auth-schema";
 import type { User } from "@/types/types";
 import { Role } from "@/types/types";
 
@@ -13,6 +18,7 @@ export type AuthUserOptions = {
 type AuthFixtures = {
 	authUser: User;
 	authenticatedPage: Page;
+	registerUserForCleanup: (email: string) => void;
 };
 
 type AuthOptions = {
@@ -41,6 +47,19 @@ export const test = base.extend<AuthFixtures & AuthOptions>({
 			await use(savedUser);
 		} finally {
 			await testUtils.deleteUser(savedUser.id);
+		}
+	},
+
+	// biome-ignore lint/correctness/noEmptyPattern: This fixture has no dependencies.
+	registerUserForCleanup: async ({}, use) => {
+		const emails = new Set<string>();
+
+		await use((email: string) => {
+			emails.add(email);
+		});
+
+		for (const email of emails) {
+			await db.delete(user).where(eq(user.email, email));
 		}
 	},
 
