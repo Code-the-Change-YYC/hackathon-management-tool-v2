@@ -1,0 +1,80 @@
+export type Judge = {
+	id: string;
+	name: string;
+	company: string;
+	image: string;
+};
+
+export type EventInfoItem = {
+	id: string;
+	icon: string;
+	label: string;
+};
+
+export type Criterion = {
+	category: string;
+	description: string;
+};
+
+export type Sponsor = {
+	url: string | undefined;
+	id: string;
+	image: string;
+	name: string;
+};
+
+export type TimeLeft = {
+	days: number;
+	hours: number;
+	minutes: number;
+	seconds: number;
+};
+
+export type InfoSectionProps = {
+	title?: string;
+	titleColor?: string;
+	titleHighlight?: string;
+	bodyTextColor?: string;
+	paragraphs: string[];
+	imageSrc: string;
+	imageAlt: string;
+	bgColor: string;
+	accentSrc?: string;
+	accentPosition?: "before" | "after";
+	reverse?: boolean;
+};
+
+export type HeaderProps = {
+	hasTeam: boolean;
+};
+
+export type CriteriaItemProps = {
+	category: string;
+	text: string;
+};
+
+export type EventDetailProps = {
+	icon: string;
+	label: string;
+};
+
+export type JudgeItemProps = {
+	name: string;
+	company: string;
+	image: string;
+};
+
+export type Winner = {
+	id: string;
+	awardName: string;
+	awardColor: string;
+	projectName: string;
+	image: string;
+	link: string;
+};
+
+export type WinnerCardProps = {
+	winner: Winner;
+	index: number;
+	total: number;
+};
