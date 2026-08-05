@@ -35,7 +35,7 @@ export default function InfoSection({
 }: InfoSectionProps) {
 	return (
 		<SectionWrapper bgColor={bgColor} reverse={reverse}>
-			<div className="flex h-48 w-48 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md sm:h-64 sm:w-64 md:h-96 md:w-96 md:rounded-[30px]">
+			<div className="relative flex size-48 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md sm:h-64 sm:w-64 md:h-96 md:w-96 md:rounded-[30px]">
 				<Image
 					alt={imageAlt}
 					className="h-36 w-40 object-contain sm:h-48 sm:w-52 md:h-72 md:w-80"
