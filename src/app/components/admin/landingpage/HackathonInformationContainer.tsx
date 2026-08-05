@@ -47,8 +47,9 @@ function Squiggle({
 }) {
 	return (
 		<Image
-			alt={src}
-			className={cn(`${className} absolute`)}
+			alt=""
+			aria-hidden="true"
+			className={cn("absolute", className)}
 			height={0}
 			src={SVGS[src]}
 			width={0}
