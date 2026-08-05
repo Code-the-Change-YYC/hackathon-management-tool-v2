@@ -1,88 +1,103 @@
-import type { Asset, BaseEntry } from "contentful";
+import type { Entry, EntryFieldTypes, EntrySkeletonType } from "contentful";
 
-export interface Alumni extends BaseEntry {
-	fields: {
-		fullName: string;
-		linkedin: string;
-		orderNumber: number;
-		position: string;
-		previousRole: string;
-		testimonial: string;
-		profile: Asset;
-	};
-}
-export interface Judge extends BaseEntry {
-	fields: {
-		judgeImg: Asset;
-		judgeName: string;
-		judgeCompany: string;
-		orderNumber?: number;
-		position?: string;
-	};
+interface AlumniFields {
+	fullName: EntryFieldTypes.Symbol;
+	linkedin: EntryFieldTypes.Symbol;
+	orderNumber: EntryFieldTypes.Integer;
+	position: EntryFieldTypes.Symbol;
+	previousRole: EntryFieldTypes.Symbol;
+	testimonial: EntryFieldTypes.Text;
+	profile: EntryFieldTypes.AssetLink;
 }
 
-export interface Alumni extends BaseEntry {
-	fullName: string;
-	linkedin: string;
-	orderNumber: number;
-	position: string;
-	previousRole: string;
-	testimonial: string;
-	profile: Asset;
-}
-export interface Judge extends BaseEntry {
-	judgeImg: Asset;
-	judgeName: string;
-	judgeCompany: string;
-	orderNumber?: number;
-	position?: string;
-}
-export interface HackathonSponsor extends BaseEntry {
-	sponsorOrder: number;
-	sponsorImg: Asset;
-	sponsorName: string;
-	sponsorPage: string;
+type AlumniSkeleton = EntrySkeletonType<AlumniFields, "alumni">;
+export type Alumni = Entry<AlumniSkeleton>;
+
+interface JudgeFields {
+	judgeImg: EntryFieldTypes.AssetLink;
+	judgeName: EntryFieldTypes.Symbol;
+	judgeCompany: EntryFieldTypes.Symbol;
+	orderNumber?: EntryFieldTypes.Integer;
+	position?: EntryFieldTypes.Symbol;
 }
 
-export interface HackathonDetails extends BaseEntry {
-	eventName: string;
-	eventBlurb: string;
-	eventDate: string;
-	locationName: string;
-	locationImage: Asset;
-	prizeAmount: number;
-	closingCeremony: string;
+type JudgeSkeleton = EntrySkeletonType<JudgeFields, "hackathonJudge">;
+export type Judge = Entry<JudgeSkeleton>;
+
+interface HackathonSponsorFields {
+	sponsorOrder: EntryFieldTypes.Integer;
+	sponsorImg: EntryFieldTypes.AssetLink;
+	sponsorName: EntryFieldTypes.Symbol;
+	sponsorPage: EntryFieldTypes.Symbol;
 }
+
+type HackathonSponsorSkeleton = EntrySkeletonType<
+	HackathonSponsorFields,
+	"hackathonSponsor"
+>;
+export type HackathonSponsor = Entry<HackathonSponsorSkeleton>;
+
+interface HackathonDetailsFields {
+	eventName: EntryFieldTypes.Symbol;
+	eventBlurb: EntryFieldTypes.Text;
+	eventDate: EntryFieldTypes.Date;
+	locationName: EntryFieldTypes.Symbol;
+	locationImage: EntryFieldTypes.AssetLink;
+	prizeAmount: EntryFieldTypes.Number;
+	closingCeremony: EntryFieldTypes.Date;
+}
+
+type HackathonDetailsSkeleton = EntrySkeletonType<
+	HackathonDetailsFields,
+	"hackathonDetails"
+>;
+export type HackathonDetails = Entry<HackathonDetailsSkeleton>;
+
+interface CeremonyDetailsFields {
+	openingCeremonyLocation: EntryFieldTypes.Symbol;
+	openingCeremonyDate: EntryFieldTypes.Date;
+	closingCeremonyLocation: EntryFieldTypes.Symbol;
+	closingCeremonyDate: EntryFieldTypes.Date;
+}
+
+type CeremonyDetailsSkeleton = EntrySkeletonType<
+	CeremonyDetailsFields,
+	"ceremonyDetails"
+>;
+export type CeremonyDetails = Entry<CeremonyDetailsSkeleton>;
+
+interface PastHackathonWinnerFields {
+	projectName: EntryFieldTypes.Symbol;
+	projectDescription?: EntryFieldTypes.Text;
+	projectImage?: EntryFieldTypes.AssetLink;
+	hackathonName?: EntryFieldTypes.Symbol;
+	teamName?: EntryFieldTypes.Symbol;
+	teamRanking?: EntryFieldTypes.Integer;
+	awardName?: EntryFieldTypes.Symbol;
+	link?: EntryFieldTypes.Symbol;
+}
+
+type PastHackathonWinnerSkeleton = EntrySkeletonType<
+	PastHackathonWinnerFields,
+	"pastHackathonWinner"
+>;
+export type PastHackathonWinner = Entry<PastHackathonWinnerSkeleton>;
+
+type UnknownContentType<Id extends string> = EntrySkeletonType<
+	Record<string, EntryFieldTypes.Object>,
+	Id
+>;
 
 export interface ContentTypeMap {
-	alumni: Alumni;
-	hackathonJudge: Judge;
-	hackathonSponsor: HackathonSponsor;
-	hackathonDetails: HackathonDetails;
-	event: BaseEntry;
-	executive: BaseEntry;
-	pastEvents: BaseEntry;
-	timeline: BaseEntry;
-	upcomingEvents: BaseEntry;
-	ceremonyDetails: CeremonyDetails;
-	pastHackathonWinner: PastHackathonWinner;
-	// add more types as needed...
-}
-
-export interface CeremonyDetails extends BaseEntry {
-	openingCeremonyLocation: string;
-	openingCeremonyDate: string;
-	closingCeremonyLocation: string;
-	closingCeremonyDate: string;
-}
-
-export interface PastHackathonWinner extends BaseEntry {
-	projectName: string;
-	projectDescription?: string;
-	projectImage?: Asset;
-	hackathonName?: string;
-	teamName?: string;
-	teamRanking?: number;
-	awardName?: string;
-	link?: string;
+	alumni: AlumniSkeleton;
+	hackathonJudge: JudgeSkeleton;
+	hackathonSponsor: HackathonSponsorSkeleton;
+	hackathonDetails: HackathonDetailsSkeleton;
+	event: UnknownContentType<"event">;
+	executive: UnknownContentType<"executive">;
+	pastEvents: UnknownContentType<"pastEvents">;
+	timeline: UnknownContentType<"timeline">;
+	upcomingEvents: UnknownContentType<"upcomingEvents">;
+	ceremonyDetails: CeremonyDetailsSkeleton;
+	pastHackathonWinner: PastHackathonWinnerSkeleton;
 }
