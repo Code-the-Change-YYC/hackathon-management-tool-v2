@@ -9,11 +9,7 @@ import type { User } from "@/types/types";
 import { Role } from "@/types/types";
 import { assertE2EDatabaseSafety, assertLocalE2EOrigin, e2eDb } from "../db";
 
-export type AuthUserOptions = {
-	email?: string;
-	name?: string;
-	role?: Role;
-};
+export type AuthUserOptions = Partial<Pick<User, "email" | "name" | "role">>;
 
 type AuthFixtures = {
 	authUser: User;
@@ -26,9 +22,7 @@ type AuthOptions = {
 };
 
 const getTestBaseURL = (testInfo: TestInfo) =>
-	testInfo.project.use.baseURL ??
-	process.env.PLAYWRIGHT_BASE_URL ??
-	"http://127.0.0.1:3000";
+	testInfo.project.use.baseURL ?? "http://127.0.0.1:3000";
 
 export const test = base.extend<AuthFixtures & AuthOptions>({
 	authUserOptions: [{ role: Role.PARTICIPANT }, { option: true }],
