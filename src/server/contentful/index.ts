@@ -1,25 +1,23 @@
 import * as contentful from "contentful";
 import "server-only";
-import type { BaseEntry } from "contentful";
+import type { Entry } from "contentful";
+import { env } from "@/env";
 import type { ContentTypeMap } from "@/types/contentfulTypes";
 
 const contentfulClient = contentful.createClient({
-	space: process.env.CONTENTFUL_SPACE_ID ?? "",
-	accessToken: process.env.CONTENTFUL_ACCESS_TOKEN ?? ""
+	space: env.CONTENTFUL_SPACE_ID,
+	accessToken: env.CONTENTFUL_ACCESS_TOKEN
 });
-interface ContentfulEntry<T> extends BaseEntry {
-	contentTypeId: string;
-	fields: T;
-}
+
+export type ContentfulEntry<T extends keyof ContentTypeMap> = Entry<
+	ContentTypeMap[T]
+>;
 
 export async function fetchContentful<T extends keyof ContentTypeMap>(
 	contentId: T
-): Promise<ContentfulEntry<ContentTypeMap[T]>[]> {
-	const res = await contentfulClient.getEntries<
-		ContentfulEntry<ContentTypeMap[T]>
-	>({
+): Promise<ContentfulEntry<T>[]> {
+	const res = await contentfulClient.getEntries<ContentTypeMap[T]>({
 		content_type: contentId
 	});
-	const data = res.items;
-	return data as ContentfulEntry<ContentTypeMap[T]>[];
+	return res.items;
 }
