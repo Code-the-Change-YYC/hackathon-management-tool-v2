@@ -161,6 +161,7 @@ async function main() {
 				const [room] = await db
 					.insert(judgingRooms)
 					.values({
+						name: `${judge.name}'s room`,
 						roundId: round.id,
 						roomLink: "https://zoom.us/"
 					})
