@@ -21,12 +21,8 @@
 		"prepare": "lefthook install",
 		"preview": "next build && next start",
 		"start": "next start",
-		"test:e2e:public": "playwright test",
-		"test:e2e:ui:public": "playwright test --ui",
-		"test:e2e:auth": "tsx tests/e2e/storage/auth.setup.ts",
-		"test:e2e": "pnpm test:e2e:auth && playwright test",
-		"test:e2e:ci": "pnpm test:e2e:auth && playwright test --reporter=line,html",
-		"test:e2e:ui": "pnpm test:e2e:auth && playwright test --ui",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
