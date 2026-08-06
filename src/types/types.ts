@@ -39,6 +39,11 @@ export enum EventStatus {
 	ACTIVE = "active"
 }
 
+export enum EventTicketStatus {
+	ACTIVE = "active",
+	ALREADY_CHECKED_IN = "already_checked_in"
+}
+
 export const EVENT_TYPES = [
 	EventType.FOOD,
 	EventType.ACTIVITY,

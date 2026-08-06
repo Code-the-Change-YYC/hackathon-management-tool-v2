@@ -9,7 +9,13 @@ import {
 } from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
-import { EventStatus, EventType, QR_EVENT_TYPES, Role } from "@/types/types";
+import {
+	EventStatus,
+	EventTicketStatus,
+	EventType,
+	QR_EVENT_TYPES,
+	Role
+} from "@/types/types";
 
 const eventTimeRangeSchema = z
 	.object({
@@ -178,7 +184,7 @@ export const eventsRouter = createTRPCRouter({
 
 				if (attendance) {
 					return {
-						status: "already_checked_in" as const,
+						status: EventTicketStatus.ALREADY_CHECKED_IN as const,
 						checkedInAt: attendance.checkedInAt,
 						event: eventDetails
 					};
@@ -203,7 +209,7 @@ export const eventsRouter = createTRPCRouter({
 					});
 
 				return {
-					status: "active" as const,
+					status: EventTicketStatus.ACTIVE as const,
 					token,
 					event: eventDetails
 				};

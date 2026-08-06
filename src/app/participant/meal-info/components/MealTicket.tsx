@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { RouterOutputs } from "@/trpc/react";
+import { EventTicketStatus } from "@/types/types";
 import { StyledQRCode } from "./StyledQRCode";
 import { TicketTeeth } from "./TicketTeeth";
 
@@ -51,7 +52,7 @@ function getTicketDescription(ticket: EventTicket | null, now: Date) {
 		return "There is no upcoming meal ticket available.";
 	}
 
-	if (ticket.status === "already_checked_in") {
+	if (ticket.status === EventTicketStatus.ALREADY_CHECKED_IN) {
 		return `You checked in at ${timeFormatter.format(new Date(ticket.checkedInAt))}.`;
 	}
 
@@ -87,7 +88,7 @@ export function MealTicket({ displayName, ticket }: MealTicketProps) {
 							{displayName}
 						</p>
 						<p className="max-w-sm text-dark-grey/70 text-sm leading-6">
-							{ticket?.status === "active"
+							{ticket?.status === EventTicketStatus.ACTIVE
 								? "Present this QR code to a Code the Change member scanning tickets at the door to receive your meal. "
 								: null}
 							{ticketDescription}
@@ -119,13 +120,13 @@ export function MealTicket({ displayName, ticket }: MealTicketProps) {
 					<div className="absolute right-0 bottom-0 size-6 translate-x-1/2 translate-y-1/2 rounded-full bg-background md:hidden" />
 					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 hidden size-6 rounded-full bg-background md:block" />
 					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 hidden size-6 translate-y-1/2 rounded-full bg-background md:block" />
-					{ticket?.status === "active" ? (
+					{ticket?.status === EventTicketStatus.ACTIVE ? (
 						<div className="aspect-square h-full max-h-full max-w-full">
 							<StyledQRCode value={ticket.token} />
 						</div>
 					) : (
 						<p className="max-w-44 text-center font-medium text-dark-grey text-sm">
-							{ticket?.status === "already_checked_in"
+							{ticket?.status === EventTicketStatus.ALREADY_CHECKED_IN
 								? "Already checked in"
 								: "No ticket available"}
 						</p>
