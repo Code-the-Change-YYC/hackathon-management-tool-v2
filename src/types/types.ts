@@ -44,8 +44,6 @@ export enum EventTicketStatus {
 	ALREADY_CHECKED_IN = "already_checked_in"
 }
 
-export const EVENT_TICKET_TOKEN_PATTERN = /^evt1_[A-Za-z0-9_-]{43}$/;
-
 export const EVENT_TYPES = [
 	EventType.FOOD,
 	EventType.ACTIVITY,
