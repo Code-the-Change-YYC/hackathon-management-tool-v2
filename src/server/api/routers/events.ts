@@ -8,14 +8,8 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
-import {
-	EVENT_STATUSES,
-	EVENT_TYPES,
-	event,
-	eventAttendance,
-	eventTicket,
-	QR_EVENT_TYPES
-} from "@/server/db/event-schema";
+import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
+import { EventStatus, EventType, QR_EVENT_TYPES, Role } from "@/types/types";
 
 const eventTimeRangeSchema = z
 	.object({
@@ -40,7 +34,7 @@ function createTicketToken() {
 	return `evt1_${randomBytes(32).toString("base64url")}`;
 }
 
-function supportsQrTickets(type: string) {
+function supportsQrTickets(type: EventType) {
 	return QR_EVENT_TYPES.some((qrType) => qrType === type);
 }
 
@@ -49,8 +43,8 @@ export const eventsRouter = createTRPCRouter({
 		.input(
 			eventTimeRangeSchema.and(
 				z.object({
-					type: z.enum(EVENT_TYPES),
-					status: z.enum(EVENT_STATUSES).default("draft")
+					type: z.nativeEnum(EventType),
+					status: z.nativeEnum(EventStatus).default(EventStatus.DRAFT)
 				})
 			)
 		)
@@ -67,7 +61,7 @@ export const eventsRouter = createTRPCRouter({
 		return ctx.db
 			.select()
 			.from(event)
-			.where(eq(event.status, "active"))
+			.where(eq(event.status, EventStatus.ACTIVE))
 			.orderBy(event.startTime);
 	}),
 
@@ -86,7 +80,7 @@ export const eventsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				id: z.string().uuid(),
-				status: z.enum(EVENT_STATUSES)
+				status: z.nativeEnum(EventStatus)
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -110,8 +104,8 @@ export const eventsRouter = createTRPCRouter({
 		.input(z.object({ eventId: z.string().uuid() }))
 		.mutation(async ({ input, ctx }) => {
 			if (
-				ctx.session.user.role !== "participant" &&
-				ctx.session.user.role !== "admin"
+				ctx.session.user.role !== Role.PARTICIPANT &&
+				ctx.session.user.role !== Role.ADMIN
 			) {
 				throw new TRPCError({ code: "FORBIDDEN" });
 			}
@@ -137,7 +131,7 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				if (ticketEvent.status !== "active") {
+				if (ticketEvent.status !== EventStatus.ACTIVE) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
 						message: "This event is not active."
@@ -267,7 +261,7 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				if (ticket.eventStatus !== "active") {
+				if (ticket.eventStatus !== EventStatus.ACTIVE) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
 						message: "This event is not active."

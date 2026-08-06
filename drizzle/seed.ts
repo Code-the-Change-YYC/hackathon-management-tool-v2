@@ -12,6 +12,7 @@ import {
 	judgingRounds
 } from "@/server/db/schema";
 import { criteria, scores } from "@/server/db/scores-schema";
+import { EventStatus, EventType } from "@/types/types";
 
 function getEventDate(dayOffset: number, hour: number) {
 	const date = new Date();
@@ -191,7 +192,7 @@ async function main() {
 					and(
 						eq(event.title, scheduledMeal.title),
 						eq(event.startTime, startTime),
-						eq(event.type, "food")
+						eq(event.type, EventType.FOOD)
 					)
 				)
 				.limit(1);
@@ -199,15 +200,15 @@ async function main() {
 			const [createdMeal] = existingMeal
 				? await db
 						.update(event)
-						.set({ endTime, status: "active" })
+						.set({ endTime, status: EventStatus.ACTIVE })
 						.where(eq(event.id, existingMeal.id))
 						.returning()
 				: await db
 						.insert(event)
 						.values({
 							title: scheduledMeal.title,
-							type: "food",
-							status: "active",
+							type: EventType.FOOD,
+							status: EventStatus.ACTIVE,
 							startTime,
 							endTime
 						})

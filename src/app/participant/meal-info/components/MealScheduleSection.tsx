@@ -1,6 +1,7 @@
 import type { ScheduleItemData } from "@/app/components/ScheduleItem";
 import { ScheduleSection } from "@/app/components/ScheduleSection";
 import { api } from "@/trpc/server";
+import { EventType } from "@/types/types";
 
 export async function MealScheduleSection() {
 	const meals = await api.meals.getActiveMeals();
@@ -11,7 +12,7 @@ export async function MealScheduleSection() {
 		title: meal.title,
 		startTime: meal.startTime,
 		endTime: meal.endTime,
-		badgeLabel: "Food",
+		eventType: EventType.FOOD,
 		description: `Show your meal ticket during this window to check in for ${meal.title.toLowerCase()}.`
 	}));
 

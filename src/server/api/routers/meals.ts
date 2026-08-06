@@ -6,6 +6,7 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import { event } from "@/server/db/event-schema";
+import { EventStatus, EventType } from "@/types/types";
 
 export const mealsRouter = createTRPCRouter({
 	addMeal: adminProcedure
@@ -26,8 +27,8 @@ export const mealsRouter = createTRPCRouter({
 				.insert(event)
 				.values({
 					title: input.title,
-					type: "food",
-					status: "draft",
+					type: EventType.FOOD,
+					status: EventStatus.DRAFT,
 					startTime: input.startTime,
 					endTime: input.endTime
 				})
@@ -39,7 +40,7 @@ export const mealsRouter = createTRPCRouter({
 		return ctx.db
 			.select()
 			.from(event)
-			.where(eq(event.type, "food"))
+			.where(eq(event.type, EventType.FOOD))
 			.orderBy(event.startTime);
 	}),
 
@@ -47,7 +48,12 @@ export const mealsRouter = createTRPCRouter({
 		return ctx.db
 			.select()
 			.from(event)
-			.where(and(eq(event.type, "food"), eq(event.status, "active")))
+			.where(
+				and(
+					eq(event.type, EventType.FOOD),
+					eq(event.status, EventStatus.ACTIVE)
+				)
+			)
 			.orderBy(event.startTime);
 	}),
 
@@ -57,8 +63,8 @@ export const mealsRouter = createTRPCRouter({
 			.from(event)
 			.where(
 				and(
-					eq(event.type, "food"),
-					eq(event.status, "active"),
+					eq(event.type, EventType.FOOD),
+					eq(event.status, EventStatus.ACTIVE),
 					gte(event.endTime, new Date())
 				)
 			)
@@ -74,7 +80,7 @@ export const mealsRouter = createTRPCRouter({
 			const [oneMeal] = await ctx.db
 				.select()
 				.from(event)
-				.where(and(eq(event.id, input.id), eq(event.type, "food")));
+				.where(and(eq(event.id, input.id), eq(event.type, EventType.FOOD)));
 			return oneMeal;
 		})
 });
