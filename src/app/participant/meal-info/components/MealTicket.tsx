@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { api, type RouterOutputs } from "@/trpc/react";
+import type { RouterOutputs } from "@/trpc/react";
 import { StyledQRCode } from "./StyledQRCode";
 import { TicketTeeth } from "./TicketTeeth";
 
@@ -10,14 +10,15 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
 	minute: "2-digit"
 });
 
-type MealTicketMeal = NonNullable<RouterOutputs["meals"]["getNextMeal"]>;
+type EventTicket = RouterOutputs["events"]["rotateParticipantEventTicket"];
+type TicketEvent = EventTicket["event"];
 
 function getMealTicketStatus(
-	meal: Pick<MealTicketMeal, "startTime" | "endTime">,
+	event: Pick<TicketEvent, "startTime" | "endTime">,
 	now: Date
 ) {
-	const startTime = new Date(meal.startTime).getTime();
-	const endTime = new Date(meal.endTime).getTime();
+	const startTime = new Date(event.startTime).getTime();
+	const endTime = new Date(event.endTime).getTime();
 	const currentTime = now.getTime();
 
 	if (currentTime >= startTime && currentTime <= endTime) {
@@ -41,33 +42,34 @@ function getMealTicketStatus(
 }
 
 type MealTicketProps = {
-	userId: string;
 	displayName: string;
-	emailAddress: string;
+	ticket: EventTicket | null;
 };
 
-export function MealTicket({
-	userId,
-	displayName,
-	emailAddress
-}: MealTicketProps) {
-	const { data: ticketMeal, isLoading } = api.meals.getNextMeal.useQuery();
-	const now = new Date();
-	const ticketMealName = ticketMeal?.title ?? "Meal";
-	const ticketDescription = ticketMeal
-		? `${ticketMealName} is ${getMealTicketStatus(
-				{
-					startTime: ticketMeal.startTime,
-					endTime: ticketMeal.endTime
-				},
-				now
-			)} until ${timeFormatter.format(new Date(ticketMeal.endTime))}.`
-		: isLoading
-			? "Checking the next meal window."
-			: "Show this QR code to a Code the Change member to receive your meal.";
+function getTicketDescription(ticket: EventTicket | null, now: Date) {
+	if (!ticket) {
+		return "There is no upcoming meal ticket available.";
+	}
+
+	if (ticket.status === "already_checked_in") {
+		return `You checked in at ${timeFormatter.format(new Date(ticket.checkedInAt))}.`;
+	}
+
+	return `${ticket.event.title} is ${getMealTicketStatus(
+		{
+			startTime: ticket.event.startTime,
+			endTime: ticket.event.endTime
+		},
+		now
+	)} until ${timeFormatter.format(new Date(ticket.event.endTime))}.`;
+}
+
+export function MealTicket({ displayName, ticket }: MealTicketProps) {
+	const ticketMealName = ticket?.event.title ?? "Meal";
+	const ticketDescription = getTicketDescription(ticket, new Date());
 
 	return (
-		<section className="space-y-4">
+		<section className="flex flex-col gap-4">
 			<h2 className="font-medium text-dark-grey text-lg">Your Meal Ticket</h2>
 
 			<div className="relative flex flex-col overflow-hidden bg-pastel-pink md:h-62.25 md:flex-row">
@@ -85,8 +87,10 @@ export function MealTicket({
 							{displayName}
 						</p>
 						<p className="max-w-sm text-dark-grey/70 text-sm leading-6">
-							Present this QR code to a member of Code the Change scanning
-							tickets at the door to receive your meal. {ticketDescription}
+							{ticket?.status === "active"
+								? "Present this QR code to a Code the Change member scanning tickets at the door to receive your meal. "
+								: null}
+							{ticketDescription}
 						</p>
 					</div>
 
@@ -115,11 +119,17 @@ export function MealTicket({
 					<div className="absolute right-0 bottom-0 size-6 translate-x-1/2 translate-y-1/2 rounded-full bg-background md:hidden" />
 					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 hidden size-6 rounded-full bg-background md:block" />
 					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 hidden size-6 translate-y-1/2 rounded-full bg-background md:block" />
-					<div className="aspect-square h-full max-h-full max-w-full">
-						<StyledQRCode
-							value={`${userId}::${displayName}::${emailAddress}`} // TODO: change it so that this is calculated from the server instead, use session maybe?
-						/>
-					</div>
+					{ticket?.status === "active" ? (
+						<div className="aspect-square h-full max-h-full max-w-full">
+							<StyledQRCode value={ticket.token} />
+						</div>
+					) : (
+						<p className="max-w-44 text-center font-medium text-dark-grey text-sm">
+							{ticket?.status === "already_checked_in"
+								? "Already checked in"
+								: "No ticket available"}
+						</p>
+					)}
 				</div>
 			</div>
 		</section>

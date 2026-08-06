@@ -3,7 +3,7 @@ import { createOrGetUser } from "drizzle/seedUtils";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { member, organization, user } from "@/server/db/auth-schema";
-import { meal, mealAttendance } from "@/server/db/meal-schema";
+import { event, eventAttendance } from "@/server/db/event-schema";
 import {
 	hackathonSettings,
 	judgingAssignments,
@@ -184,14 +184,34 @@ async function main() {
 				scheduledMeal.startHour
 			);
 			const endTime = getEventDate(scheduledMeal.day, scheduledMeal.endHour);
-			const [createdMeal] = await db
-				.insert(meal)
-				.values({ title: scheduledMeal.title, startTime, endTime })
-				.onConflictDoUpdate({
-					target: meal.startTime,
-					set: { title: scheduledMeal.title, endTime }
-				})
-				.returning();
+			const [existingMeal] = await db
+				.select()
+				.from(event)
+				.where(
+					and(
+						eq(event.title, scheduledMeal.title),
+						eq(event.startTime, startTime),
+						eq(event.type, "food")
+					)
+				)
+				.limit(1);
+
+			const [createdMeal] = existingMeal
+				? await db
+						.update(event)
+						.set({ endTime, status: "active" })
+						.where(eq(event.id, existingMeal.id))
+						.returning()
+				: await db
+						.insert(event)
+						.values({
+							title: scheduledMeal.title,
+							type: "food",
+							status: "active",
+							startTime,
+							endTime
+						})
+						.returning();
 
 			if (createdMeal) {
 				createdMeals.push(createdMeal);
@@ -208,10 +228,10 @@ async function main() {
 
 			for (const attendee of attendees) {
 				await db
-					.insert(mealAttendance)
-					.values({ mealId: seededMeal.id, userId: attendee.id })
+					.insert(eventAttendance)
+					.values({ eventId: seededMeal.id, userId: attendee.id })
 					.onConflictDoNothing({
-						target: [mealAttendance.userId, mealAttendance.mealId]
+						target: [eventAttendance.userId, eventAttendance.eventId]
 					});
 			}
 		}
