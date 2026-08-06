@@ -8,20 +8,18 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
-import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
-	EVENT_TICKET_TOKEN_PATTERN,
-	EventStatus,
-	EventTicketStatus,
-	EventType,
-	QR_EVENT_TYPES,
-	Role
-} from "@/types/types";
+	EVENT_STATUSES,
+	EVENT_TYPES,
+	event,
+	eventAttendance,
+	eventTicket,
+	QR_EVENT_TYPES
+} from "@/server/db/event-schema";
 
 const eventTimeRangeSchema = z
 	.object({
 		title: z.string().trim().min(1),
-		description: z.string().trim().min(1),
 		startTime: z.coerce.date(),
 		endTime: z.coerce.date()
 	})
@@ -32,7 +30,7 @@ const eventTimeRangeSchema = z
 
 const ticketTokenSchema = z
 	.string()
-	.regex(EVENT_TICKET_TOKEN_PATTERN, "Invalid event ticket format.");
+	.regex(/^evt1_[A-Za-z0-9_-]{43}$/, "Invalid event ticket format.");
 
 function hashTicketToken(token: string) {
 	return createHash("sha256").update(token).digest("hex");
@@ -42,7 +40,7 @@ function createTicketToken() {
 	return `evt1_${randomBytes(32).toString("base64url")}`;
 }
 
-function supportsQrTickets(type: EventType) {
+function supportsQrTickets(type: string) {
 	return QR_EVENT_TYPES.some((qrType) => qrType === type);
 }
 
@@ -51,8 +49,8 @@ export const eventsRouter = createTRPCRouter({
 		.input(
 			eventTimeRangeSchema.and(
 				z.object({
-					type: z.nativeEnum(EventType),
-					status: z.nativeEnum(EventStatus).default(EventStatus.DRAFT)
+					type: z.enum(EVENT_TYPES),
+					status: z.enum(EVENT_STATUSES).default("draft")
 				})
 			)
 		)
@@ -69,7 +67,7 @@ export const eventsRouter = createTRPCRouter({
 		return ctx.db
 			.select()
 			.from(event)
-			.where(eq(event.status, EventStatus.ACTIVE))
+			.where(eq(event.status, "active"))
 			.orderBy(event.startTime);
 	}),
 
@@ -88,7 +86,7 @@ export const eventsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				id: z.string().uuid(),
-				status: z.nativeEnum(EventStatus)
+				status: z.enum(EVENT_STATUSES)
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -111,7 +109,10 @@ export const eventsRouter = createTRPCRouter({
 	rotateParticipantEventTicket: protectedProcedure
 		.input(z.object({ eventId: z.string().uuid() }))
 		.mutation(async ({ input, ctx }) => {
-			if (ctx.session.user.role !== Role.PARTICIPANT) {
+			if (
+				ctx.session.user.role !== "participant" &&
+				ctx.session.user.role !== "admin"
+			) {
 				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
@@ -136,7 +137,7 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				if (ticketEvent.status !== EventStatus.ACTIVE) {
+				if (ticketEvent.status !== "active") {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
 						message: "This event is not active."
@@ -183,33 +184,32 @@ export const eventsRouter = createTRPCRouter({
 
 				if (attendance) {
 					return {
-						status: EventTicketStatus.ALREADY_CHECKED_IN as const,
+						status: "already_checked_in" as const,
 						checkedInAt: attendance.checkedInAt,
 						event: eventDetails
 					};
 				}
 
 				const token = createTicketToken();
-				const tokenHash = hashTicketToken(token);
 				await tx
 					.insert(eventTicket)
 					.values({
 						userId: ctx.session.user.id,
 						eventId: input.eventId,
-						tokenHash,
+						tokenHash: hashTicketToken(token),
 						expiresAt: ticketEvent.endTime
 					})
 					.onConflictDoUpdate({
 						target: [eventTicket.userId, eventTicket.eventId],
 						set: {
-							tokenHash,
+							tokenHash: hashTicketToken(token),
 							expiresAt: ticketEvent.endTime,
 							updatedAt: now
 						}
 					});
 
 				return {
-					status: EventTicketStatus.ACTIVE as const,
+					status: "active" as const,
 					token,
 					event: eventDetails
 				};
@@ -224,7 +224,6 @@ export const eventsRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
-			const tokenHash = hashTicketToken(input.token);
 			return ctx.db.transaction(async (tx) => {
 				const [ticket] = await tx
 					.select({
@@ -234,7 +233,6 @@ export const eventsRouter = createTRPCRouter({
 						expiresAt: eventTicket.expiresAt,
 						participantName: user.name,
 						participantEmail: user.email,
-						participantRole: user.role,
 						eventTitle: event.title,
 						eventType: event.type,
 						eventStatus: event.status,
@@ -244,7 +242,7 @@ export const eventsRouter = createTRPCRouter({
 					.from(eventTicket)
 					.innerJoin(user, eq(eventTicket.userId, user.id))
 					.innerJoin(event, eq(eventTicket.eventId, event.id))
-					.where(eq(eventTicket.tokenHash, tokenHash))
+					.where(eq(eventTicket.tokenHash, hashTicketToken(input.token)))
 					.limit(1)
 					.for("update");
 
@@ -252,13 +250,6 @@ export const eventsRouter = createTRPCRouter({
 					throw new TRPCError({
 						code: "NOT_FOUND",
 						message: "This event ticket is invalid or has been replaced."
-					});
-				}
-
-				if (ticket.participantRole !== Role.PARTICIPANT) {
-					throw new TRPCError({
-						code: "FORBIDDEN",
-						message: "Only participant tickets can be redeemed."
 					});
 				}
 
@@ -276,7 +267,7 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				if (ticket.eventStatus !== EventStatus.ACTIVE) {
+				if (ticket.eventStatus !== "active") {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
 						message: "This event is not active."

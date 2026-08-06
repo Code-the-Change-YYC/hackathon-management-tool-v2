@@ -1,29 +1,32 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+	check,
 	index,
-	pgEnum,
 	pgTableCreator,
 	text,
 	timestamp,
 	unique,
 	uuid
 } from "drizzle-orm/pg-core";
-import { EVENT_STATUSES, EVENT_TYPES, EventStatus } from "@/types/types";
 import { user } from "./auth-schema";
 
-export const createTable = pgTableCreator((name) => `hackathon_${name}`);
+export const EVENT_TYPES = ["food", "activity", "project", "ceremony"] as const;
+export const EVENT_STATUSES = ["draft", "active"] as const;
+export const QR_EVENT_TYPES = ["food", "activity"] as const;
 
-export const eventTypeEnum = pgEnum("hackathon_event_type", EVENT_TYPES);
-export const eventStatusEnum = pgEnum("hackathon_event_status", EVENT_STATUSES);
+export type EventType = (typeof EVENT_TYPES)[number];
+export type EventStatus = (typeof EVENT_STATUSES)[number];
+export type QrEventType = (typeof QR_EVENT_TYPES)[number];
+
+export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
 export const event = createTable(
 	"event",
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		title: text("title").notNull(),
-		description: text("description").default("").notNull(),
-		type: eventTypeEnum("type").notNull(),
-		status: eventStatusEnum("status").default(EventStatus.DRAFT).notNull(),
+		type: text("type", { enum: EVENT_TYPES }).default("food").notNull(),
+		status: text("status", { enum: EVENT_STATUSES }).default("draft").notNull(),
 		startTime: timestamp("start_time", { withTimezone: true }).notNull(),
 		endTime: timestamp("end_time", { withTimezone: true }).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -35,6 +38,11 @@ export const event = createTable(
 			.notNull()
 	},
 	(table) => [
+		check(
+			"event_type_check",
+			sql`${table.type} in ('food', 'activity', 'project', 'ceremony')`
+		),
+		check("event_status_check", sql`${table.status} in ('draft', 'active')`),
 		index("event_type_status_start_time_idx").on(
 			table.type,
 			table.status,

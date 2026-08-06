@@ -228,7 +228,7 @@ async function main() {
 					and(
 						eq(event.title, scheduledMeal.title),
 						eq(event.startTime, startTime),
-						eq(event.type, EventType.FOOD)
+						eq(event.type, "food")
 					)
 				)
 				.limit(1);
@@ -236,20 +236,15 @@ async function main() {
 			const [createdMeal] = existingMeal
 				? await db
 						.update(event)
-						.set({
-							description: scheduledMeal.description,
-							endTime,
-							status: EventStatus.ACTIVE
-						})
+						.set({ endTime, status: "active" })
 						.where(eq(event.id, existingMeal.id))
 						.returning()
 				: await db
 						.insert(event)
 						.values({
 							title: scheduledMeal.title,
-							description: scheduledMeal.description,
-							type: EventType.FOOD,
-							status: EventStatus.ACTIVE,
+							type: "food",
+							status: "active",
 							startTime,
 							endTime
 						})
