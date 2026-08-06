@@ -14,7 +14,7 @@ try {
 	parsedDatabaseUrl = new URL(databaseUrl);
 } catch {
 	throw new Error(
-		"DATABASE_URL is invalid. Expected a PostgreSQL URL such as postgresql://postgres:postgres@localhost:5432/postgres."
+		'DATABASE_URL is invalid. Expected a PostgreSQL URL such as "postgresql://postgres:postgres@localhost:5432/postgres".'
 	);
 }
 
@@ -46,8 +46,15 @@ console.log(
 	`DATABASE_URL uses local host "${hostname}"; starting PostgreSQL...`
 );
 
+const postgresPort =
+	parsedDatabaseUrl.port || process.env.POSTGRES_PORT || "5432";
+
 const result = spawnSync("docker", ["compose", "up", "-d", "--wait"], {
-	stdio: "inherit"
+	stdio: "inherit",
+	env: {
+		...process.env,
+		POSTGRES_PORT: postgresPort
+	}
 });
 
 if (result.error) {

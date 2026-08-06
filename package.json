@@ -15,7 +15,7 @@
 		"db:up": "docker compose up -d --wait",
 		"db:generate": "drizzle-kit generate",
 		"db:push": "pnpm db:start-if-local && drizzle-kit push",
-		"db:studio": "drizzle-kit studio",
+		"db:studio": "pnpm db:start-if-local && drizzle-kit studio",
 		"dev": "pnpm db:start-if-local && next dev --turbo",
 		"lint": "biome lint .",
 		"format": "biome format --write .",
