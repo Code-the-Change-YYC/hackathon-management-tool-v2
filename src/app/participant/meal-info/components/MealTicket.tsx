@@ -11,14 +11,15 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
 	minute: "2-digit"
 });
 
-type MealTicketMeal = NonNullable<RouterOutputs["meals"]["getNextMeal"]>;
+type EventTicket = RouterOutputs["events"]["rotateParticipantEventTicket"];
+type TicketEvent = EventTicket["event"];
 
 function getMealTicketStatus(
-	meal: Pick<MealTicketMeal, "startTime" | "endTime">,
+	event: Pick<TicketEvent, "startTime" | "endTime">,
 	now: Date
 ) {
-	const startTime = new Date(meal.startTime).getTime();
-	const endTime = new Date(meal.endTime).getTime();
+	const startTime = new Date(event.startTime).getTime();
+	const endTime = new Date(event.endTime).getTime();
 	const currentTime = now.getTime();
 
 	if (currentTime >= startTime && currentTime <= endTime) {
@@ -42,9 +43,8 @@ function getMealTicketStatus(
 }
 
 type MealTicketProps = {
-	userId: string;
 	displayName: string;
-	emailAddress: string;
+	ticket: EventTicket | null;
 };
 
 function getTicketDescription(ticket: EventTicket | null, now: Date) {
@@ -70,7 +70,7 @@ export function MealTicket({ displayName, ticket }: MealTicketProps) {
 	const ticketDescription = getTicketDescription(ticket, new Date());
 
 	return (
-		<section className="space-y-4">
+		<section className="flex flex-col gap-4">
 			<h2 className="font-medium text-dark-grey text-lg">Your Meal Ticket</h2>
 
 			<div className="relative flex flex-col overflow-hidden bg-pastel-pink md:h-62.25 md:flex-row">

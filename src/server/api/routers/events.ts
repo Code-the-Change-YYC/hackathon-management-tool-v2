@@ -10,6 +10,7 @@ import {
 import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
+	EVENT_TICKET_TOKEN_PATTERN,
 	EventStatus,
 	EventTicketStatus,
 	EventType,

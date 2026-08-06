@@ -1,9 +1,10 @@
 import type { ScheduleItemData } from "@/app/components/ScheduleItem";
 import { ScheduleSection } from "@/app/components/ScheduleSection";
 import { api } from "@/trpc/server";
+import { EventType } from "@/types/types";
 
 export async function MealScheduleSection() {
-	const meals = await api.meals.getAllMeals();
+	const meals = await api.meals.getActiveMeals();
 	const now = new Date();
 
 	const scheduleItems: ScheduleItemData[] = meals.map((meal) => ({

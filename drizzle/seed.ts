@@ -3,7 +3,7 @@ import { createOrGetUser } from "drizzle/seedUtils";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { member, organization, user } from "@/server/db/auth-schema";
-import { meal, mealAttendance } from "@/server/db/meal-schema";
+import { event, eventAttendance } from "@/server/db/event-schema";
 import {
 	hackathonSettings,
 	judgingAssignments,
@@ -12,6 +12,7 @@ import {
 	judgingRounds
 } from "@/server/db/schema";
 import { criteria, scores } from "@/server/db/scores-schema";
+import { EventStatus, EventType } from "@/types/types";
 
 function getEventDate(dayOffset: number, hour: number) {
 	const date = new Date();
@@ -268,10 +269,10 @@ async function main() {
 
 			for (const attendee of attendees) {
 				await db
-					.insert(mealAttendance)
-					.values({ mealId: seededMeal.id, userId: attendee.id })
+					.insert(eventAttendance)
+					.values({ eventId: seededMeal.id, userId: attendee.id })
 					.onConflictDoNothing({
-						target: [mealAttendance.userId, mealAttendance.mealId]
+						target: [eventAttendance.userId, eventAttendance.eventId]
 					});
 			}
 		}
