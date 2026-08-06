@@ -20,10 +20,16 @@ curl -fsSL https://bun.sh/install | bash
 
 cp .env.example .env
 
+# For local PostgreSQL, set the host port and DATABASE_URL in .env to:
+# POSTGRES_PORT=5432
+# DATABASE_URL=postgresql://postgres:postgres@localhost/postgres
+
 pnpm db:generate
 pnpm db:push
 pnpm dev
 ```
+
+Local database URLs (`localhost`, `127.0.0.1`, or `::1`) automatically start Docker before database and development commands. Remote URLs, including Supabase URLs, skip Docker startup.
 
 ## I want to add a new model to my DB, what do I do?
 

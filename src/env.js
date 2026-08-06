@@ -12,6 +12,7 @@ export const env = createEnv({
 				? z.string()
 				: z.string().optional(),
 		DATABASE_URL: z.string().url(),
+		POSTGRES_PORT: z.coerce.number().int().min(1).max(65535).default(5432),
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development")
@@ -33,6 +34,7 @@ export const env = createEnv({
 	runtimeEnv: {
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		DATABASE_URL: process.env.DATABASE_URL,
+		POSTGRES_PORT: process.env.POSTGRES_PORT,
 		NODE_ENV: process.env.NODE_ENV
 	},
 	/**
