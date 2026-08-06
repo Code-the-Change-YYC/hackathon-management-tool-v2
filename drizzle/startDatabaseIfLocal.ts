@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { createConnection } from "node:net";
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -42,19 +43,54 @@ if (!localHostnames.has(hostname)) {
 	process.exit(0);
 }
 
-console.log(
-	`DATABASE_URL uses local host "${hostname}"; starting PostgreSQL...`
+const postgresPort = Number(
+	parsedDatabaseUrl.port || process.env.POSTGRES_PORT || "5432"
 );
 
-const postgresPort =
-	parsedDatabaseUrl.port || process.env.POSTGRES_PORT || "5432";
+if (
+	!Number.isInteger(postgresPort) ||
+	postgresPort < 1 ||
+	postgresPort > 65535
+) {
+	throw new Error("POSTGRES_PORT must be an integer between 1 and 65535.");
+}
+
+function isDatabaseReachable(host: string, port: number) {
+	return new Promise<boolean>((resolve) => {
+		const socket = createConnection({ host, port });
+		let settled = false;
+
+		const finish = (reachable: boolean) => {
+			if (settled) return;
+			settled = true;
+			socket.destroy();
+			resolve(reachable);
+		};
+
+		socket.setTimeout(1000);
+		socket.once("connect", () => finish(true));
+		socket.once("error", () => finish(false));
+		socket.once("timeout", () => finish(false));
+	});
+}
+
+if (await isDatabaseReachable(hostname, postgresPort)) {
+	console.log(
+		`Local database is reachable at "${hostname}:${postgresPort}"; skipping Docker startup.`
+	);
+	process.exit(0);
+}
+
+console.log(
+	`No database is reachable at "${hostname}:${postgresPort}"; starting PostgreSQL with Docker...`
+);
 
 const result = spawnSync("docker", ["compose", "up", "-d", "--wait"], {
 	stdio: "inherit",
 	env: {
 		...process.env,
-		POSTGRES_PORT: postgresPort
-	}
+		POSTGRES_PORT: postgresPort.toString()
+	} as NodeJS.ProcessEnv
 });
 
 if (result.error) {
