@@ -17,6 +17,8 @@ async function main() {
 	const adminEmail = process.env.ADMIN_EMAIL || "admin@hackathon.com";
 	const adminPassword = process.env.ADMIN_PASSWORD || "Password123!";
 	const adminName = process.env.ADMIN_NAME || "Admin User";
+	const adminFName = "Admin";
+	const adminLName = "User";
 
 	const judgeEmails = [
 		"judge1@hackathon.com",
@@ -29,6 +31,8 @@ async function main() {
 	const participantPassword =
 		process.env.PARTICIPANT_PASSWORD || "Password123!";
 	const participantName = process.env.PARTICIPANT_NAME || "Participant User";
+	const participantFName = "Participant";
+	const participantLName = "User";
 
 	try {
 		console.log("Creating admin user...");
@@ -37,7 +41,9 @@ async function main() {
 			email: adminEmail,
 			password: adminPassword,
 			name: adminName,
-			role: "admin"
+			role: "admin",
+			fname: adminFName,
+			lname: adminLName,
 		});
 
 		for (const email of judgeEmails) {
@@ -45,7 +51,9 @@ async function main() {
 				email,
 				password: "Password123!",
 				name: email.split("@")[0] ?? "Unknown Judge".toUpperCase(),
-				role: "judge"
+				role: "judge",
+				fname: email.split("@")[0] ?? "Unknown Judge".toUpperCase(),
+				lname: `${email.split("@")[0] ?? "Unknown Judge".toUpperCase()}'s last name`
 			});
 		}
 
@@ -55,7 +63,9 @@ async function main() {
 			email: participantEmail,
 			password: participantPassword,
 			name: participantName,
-			role: "participant"
+			role: "participant",
+			fname: participantFName,
+			lname: participantLName
 		});
 
 		console.log("\nCreating Teams...");

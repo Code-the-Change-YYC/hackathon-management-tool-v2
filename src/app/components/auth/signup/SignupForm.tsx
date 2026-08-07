@@ -71,7 +71,9 @@ export default function SignupForm() {
 			const result = await authClient.signUp.email({
 				email,
 				name: `${firstName} ${lastName}`.trim(),
-				password
+				password,
+				fname: firstName,
+				lname: lastName,
 			});
 
 			if (result.error) {

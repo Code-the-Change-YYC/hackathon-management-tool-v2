@@ -39,7 +39,9 @@ export const usersRouter = createTRPCRouter({
 				school: z.string().optional().nullable(),
 				program: z.enum(PROGRAMS).optional().nullable(),
 				completedRegistration: z.boolean().optional(),
-				banned: z.boolean().optional()
+				banned: z.boolean().optional(),
+				fname: z.string().min(1).optional(),
+				lname: z.string().min(1).optional(),
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
