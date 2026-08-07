@@ -5,28 +5,32 @@ import { api } from "@/trpc/react";
 import MealAttendees from "./MealAttendees";
 import MealScanner from "./MealScanner";
 
+const RECENT_SCAN_WINDOW_MS = 10_000;
+
 export default function Meal({ mealId }: { mealId: string }) {
 	const recentScansRef = useRef<Map<string, number>>(new Map());
 	const utils = api.useUtils();
+	const redeemTicket = api.events.redeemEventTicket.useMutation();
 
-	const addMealAttendee = api.meals.scanUserIn.useMutation();
+	function handleDetected(token: string) {
+		const now = Date.now();
+		const lastScannedAt = recentScansRef.current.get(token);
 
-	// expects a string in the form "userId::userName"
-	function handleDetected(value: string) {
-		const userInfo = value.split("::");
-		const userId = userInfo[0];
-		const userName = userInfo[1];
+		if (lastScannedAt && now - lastScannedAt < RECENT_SCAN_WINDOW_MS) {
+			return;
+		}
 
-		if (!userId || !userName) return;
-
-		addMealAttendee.mutate(
-			{ userId, mealId },
+		recentScansRef.current.set(token, now);
+		redeemTicket.mutate(
+			{ token, eventId: mealId },
 			{
 				onSuccess: () => {
-					void utils.meals.getMealAttendees.invalidate({ id: mealId });
+					void utils.events.getEventAttendees.invalidate({ eventId: mealId });
 				},
 				onError: () => {
-					recentScansRef.current.delete(userId);
+					window.setTimeout(() => {
+						recentScansRef.current.delete(token);
+					}, RECENT_SCAN_WINDOW_MS);
 				}
 			}
 		);

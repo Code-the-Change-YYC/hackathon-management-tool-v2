@@ -1,13 +1,12 @@
-import { TRPCError } from "@trpc/server";
-import { eq, gte } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
-import { user } from "@/server/db/auth-schema";
-import { meal, mealAttendance } from "@/server/db/meal-schema";
+import { event } from "@/server/db/event-schema";
+import { EventStatus, EventType } from "@/types/types";
 
 export const mealsRouter = createTRPCRouter({
 	addMeal: adminProcedure
@@ -25,9 +24,11 @@ export const mealsRouter = createTRPCRouter({
 		)
 		.mutation(async ({ input, ctx }) => {
 			const [newMeal] = await ctx.db
-				.insert(meal)
+				.insert(event)
 				.values({
 					title: input.title,
+					type: EventType.FOOD,
+					status: EventStatus.DRAFT,
 					startTime: input.startTime,
 					endTime: input.endTime
 				})
@@ -35,46 +36,39 @@ export const mealsRouter = createTRPCRouter({
 			return newMeal;
 		}),
 
-	scanUserIn: adminProcedure
-		.input(
-			z.object({
-				mealId: z.string(),
-				userId: z.string().min(1)
-			})
-		)
-		.mutation(async ({ input, ctx }) => {
-			const [record] = await ctx.db
-				.insert(mealAttendance)
-				.values({
-					mealId: input.mealId,
-					userId: input.userId
-				})
-				.onConflictDoNothing({
-					target: [mealAttendance.userId, mealAttendance.mealId]
-				})
-				.returning();
+	getAllMeals: adminProcedure.query(async ({ ctx }) => {
+		return ctx.db
+			.select()
+			.from(event)
+			.where(eq(event.type, EventType.FOOD))
+			.orderBy(event.startTime);
+	}),
 
-			if (!record) {
-				throw new TRPCError({
-					code: "CONFLICT",
-					message: "User is already checked in for this meal."
-				});
-			}
-
-			return record;
-		}),
-
-	getAllMeals: protectedProcedure.query(async ({ ctx }) => {
-		const meals = await ctx.db.select().from(meal).orderBy(meal.startTime);
-		return meals;
+	getActiveMeals: protectedProcedure.query(async ({ ctx }) => {
+		return ctx.db
+			.select()
+			.from(event)
+			.where(
+				and(
+					eq(event.type, EventType.FOOD),
+					eq(event.status, EventStatus.ACTIVE)
+				)
+			)
+			.orderBy(event.startTime);
 	}),
 
 	getNextMeal: protectedProcedure.query(async ({ ctx }) => {
 		const [nextMeal] = await ctx.db
 			.select()
-			.from(meal)
-			.where(gte(meal.endTime, new Date()))
-			.orderBy(meal.startTime)
+			.from(event)
+			.where(
+				and(
+					eq(event.type, EventType.FOOD),
+					eq(event.status, EventStatus.ACTIVE),
+					gte(event.endTime, new Date())
+				)
+			)
+			.orderBy(event.startTime)
 			.limit(1);
 
 		return nextMeal ?? null;
@@ -85,27 +79,8 @@ export const mealsRouter = createTRPCRouter({
 		.query(async ({ input, ctx }) => {
 			const [oneMeal] = await ctx.db
 				.select()
-				.from(meal)
-				.where(eq(meal.id, input.id));
+				.from(event)
+				.where(and(eq(event.id, input.id), eq(event.type, EventType.FOOD)));
 			return oneMeal;
-		}),
-
-	getMealAttendees: adminProcedure
-		.input(z.object({ id: z.string().uuid() }))
-		.query(async ({ input, ctx }) => {
-			const mealAttendees = await ctx.db
-				.select({
-					id: mealAttendance.id,
-					userId: mealAttendance.userId,
-					mealId: mealAttendance.mealId,
-					userName: user.name,
-					createdAt: mealAttendance.createdAt,
-					updatedAt: mealAttendance.updatedAt
-				})
-				.from(mealAttendance)
-				.innerJoin(user, eq(mealAttendance.userId, user.id))
-				.where(eq(mealAttendance.mealId, input.id))
-				.orderBy(mealAttendance.updatedAt);
-			return mealAttendees;
 		})
 });
