@@ -198,4 +198,8 @@
 	html {
 		@apply font-sans;
 	}
+
+	html:has([data-slot="dialog-overlay"][data-open]) {
+		background-color: color-mix(in srgb, var(--background) 90%, black);
+	}
 }
