@@ -58,7 +58,9 @@ export const user = createTable("user", {
 	program: text("program", { enum: PROGRAMS }),
 	completedRegistration: boolean("completed_registration")
 		.default(false)
-		.notNull()
+		.notNull(),
+	fname: text("fname").notNull(),
+	lname: text("lname").notNull(),
 });
 
 export const session = createTable(

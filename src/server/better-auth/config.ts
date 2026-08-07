@@ -48,7 +48,15 @@ export const auth = betterAuth({
 				type: "boolean",
 				required: false,
 				input: false
-			}
+			},
+			fname: {
+				type: "string",
+				required: true
+			},
+			lname: {
+				type: "string",
+				required: true
+			},
 		}
 	}
 });
