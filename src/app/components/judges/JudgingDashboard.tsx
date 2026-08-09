@@ -1,5 +1,6 @@
 "use client";
 
+import { GroupLine, Task2Line } from "@mingcute/react";
 import { useState } from "react";
 import { api } from "@/trpc/react";
 import ModalPopup from "./ModalPopup";
@@ -34,14 +35,12 @@ export default function JudgingDashboard() {
 	// judging specific stats
 	const panelData = [
 		{
-			icon: "/svgs/judges/team_icon.svg",
-			alt: "Teams assigned icon",
+			icon: GroupLine,
 			stat: totalTeams,
 			text: totalTeams === 1 ? "Team Assigned" : "Teams Assigned"
 		},
 		{
-			icon: "/svgs/judges/teams_left.svg",
-			alt: "Teams left icon",
+			icon: Task2Line,
 			stat: teamsLeft,
 			text: teamsLeft === 1 ? "Team Left to Score" : "Teams Left to Score"
 		}
@@ -56,7 +55,6 @@ export default function JudgingDashboard() {
 			<div className="flex w-full flex-row gap-4 xl:w-1/4 xl:flex-col">
 				{panelData.map((item) => (
 					<StatsPanel
-						alt={item.alt}
 						icon={item.icon}
 						key={item.text}
 						stat={item.stat}

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { More1Line } from "@mingcute/react";
 
 export default function CountdownWindow({
 	children
@@ -8,11 +8,10 @@ export default function CountdownWindow({
 	return (
 		<div className="relative mx-auto mb-8 hidden w-full max-w-285 flex-col overflow-hidden rounded-sm border border-black/20 bg-white md:flex">
 			<div className="px-4 pt-4">
-				<Image
-					alt=""
-					height={12}
-					src="/svgs/landingPage/three_dots.svg"
-					width={70}
+				<More1Line
+					aria-hidden="true"
+					className="text-awesomer-purple"
+					size={24}
 				/>
 			</div>
 
