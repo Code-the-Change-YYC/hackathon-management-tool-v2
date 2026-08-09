@@ -28,7 +28,8 @@ export const auth = betterAuth({
 			dietaryRestrictions: {
 				type: "string[]",
 				options: DIETARY_RESTRICTIONS,
-				required: false,
+				required: true,
+				defaultValue: [],
 				input: false
 			},
 			school: {

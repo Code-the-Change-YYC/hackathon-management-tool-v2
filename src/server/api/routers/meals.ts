@@ -1,7 +1,11 @@
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { eq, gte } from "drizzle-orm";
 import { z } from "zod";
-import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
+import {
+	adminProcedure,
+	createTRPCRouter,
+	protectedProcedure
+} from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
 import { meal, mealAttendance } from "@/server/db/meal-schema";
 
@@ -60,9 +64,20 @@ export const mealsRouter = createTRPCRouter({
 			return record;
 		}),
 
-	getAllMeals: adminProcedure.query(async ({ ctx }) => {
+	getAllMeals: protectedProcedure.query(async ({ ctx }) => {
 		const meals = await ctx.db.select().from(meal).orderBy(meal.startTime);
 		return meals;
+	}),
+
+	getNextMeal: protectedProcedure.query(async ({ ctx }) => {
+		const [nextMeal] = await ctx.db
+			.select()
+			.from(meal)
+			.where(gte(meal.endTime, new Date()))
+			.orderBy(meal.startTime)
+			.limit(1);
+
+		return nextMeal ?? null;
 	}),
 
 	getMeal: adminProcedure
