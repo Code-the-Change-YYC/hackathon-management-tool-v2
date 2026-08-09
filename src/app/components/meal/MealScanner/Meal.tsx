@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { toast } from "sonner";
 import { api } from "@/trpc/react";
 import MealAttendees from "./MealAttendees";
 import MealScanner from "./MealScanner";
@@ -24,10 +25,12 @@ export default function Meal({ mealId }: { mealId: string }) {
 		redeemTicket.mutate(
 			{ token, eventId: mealId },
 			{
-				onSuccess: () => {
+				onSuccess: (result) => {
+					toast.success(`${result.participant.name} checked in successfully.`);
 					void utils.events.getEventAttendees.invalidate({ eventId: mealId });
 				},
-				onError: () => {
+				onError: (error) => {
+					toast.error(error.message);
 					window.setTimeout(() => {
 						recentScansRef.current.delete(token);
 					}, RECENT_SCAN_WINDOW_MS);
