@@ -13,6 +13,8 @@ export const env = createEnv({
 				: z.string().optional(),
 		BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
 		DATABASE_URL: z.string().url(),
+		CONTENTFUL_SPACE_ID: z.string().min(1),
+		CONTENTFUL_ACCESS_TOKEN: z.string().min(1),
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development")
@@ -35,6 +37,8 @@ export const env = createEnv({
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		BETTER_AUTH_TRUSTED_ORIGINS: process.env.BETTER_AUTH_TRUSTED_ORIGINS,
 		DATABASE_URL: process.env.DATABASE_URL,
+		CONTENTFUL_SPACE_ID: process.env.CONTENTFUL_SPACE_ID,
+		CONTENTFUL_ACCESS_TOKEN: process.env.CONTENTFUL_ACCESS_TOKEN,
 		NODE_ENV: process.env.NODE_ENV
 	},
 	/**
