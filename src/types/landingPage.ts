@@ -1,3 +1,8 @@
+import type { IconProps } from "@mingcute/react";
+import type { ElementType } from "react";
+
+export type MingCuteIcon = ElementType<IconProps>;
+
 export type Judge = {
 	id: string;
 	name: string;
@@ -7,7 +12,7 @@ export type Judge = {
 
 export type EventInfoItem = {
 	id: string;
-	icon: string;
+	icon: MingCuteIcon;
 	label: string;
 };
 
@@ -54,7 +59,7 @@ export type CriteriaItemProps = {
 };
 
 export type EventDetailProps = {
-	icon: string;
+	icon: MingCuteIcon;
 	label: string;
 };
 

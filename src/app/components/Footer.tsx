@@ -1,8 +1,13 @@
-import Image from "next/image";
+import {
+	FacebookFill,
+	GithubFill,
+	InstagramFill,
+	LinkedinFill,
+	YoutubeFill
+} from "@mingcute/react";
 import Link from "next/link";
 
 export default function Footer() {
-	const ICON_DIMENSION = 30;
 	return (
 		<footer className="w-full bg-awesome-purple py-4">
 			<div className="flex flex-col items-center gap-3.5">
@@ -17,56 +22,39 @@ export default function Footer() {
 				</Link>
 				<div className="flex items-center gap-8">
 					<Link
+						aria-label="Facebook"
 						href="https://www.facebook.com/CodeTheChangeYYC/"
 						target="_blank"
 					>
-						<Image
-							alt="Facebook"
-							height={ICON_DIMENSION}
-							src="/svgs/socialIcons/facebook_icon.svg"
-							width={ICON_DIMENSION}
-						/>
+						<FacebookFill aria-hidden="true" size={30} />
 					</Link>
 					<Link
+						aria-label="Instagram"
 						href="https://www.instagram.com/codethechangeyyc/"
 						target="_blank"
 					>
-						<Image
-							alt="Instagram"
-							height={ICON_DIMENSION}
-							src="/svgs/socialIcons/instagram_icon.svg"
-							width={ICON_DIMENSION}
-						/>
+						<InstagramFill aria-hidden="true" size={30} />
 					</Link>
 					<Link
+						aria-label="LinkedIn"
 						href="https://www.linkedin.com/company/code-the-change-yyc/"
 						target="_blank"
 					>
-						<Image
-							alt="LinkedIn"
-							height={ICON_DIMENSION}
-							src="/svgs/socialIcons/linkedin_icon.svg"
-							width={ICON_DIMENSION}
-						/>
+						<LinkedinFill aria-hidden="true" size={30} />
 					</Link>
 					<Link
+						aria-label="YouTube"
 						href="https://www.youtube.com/channel/UC4wZt-bCL31HjxUF-zc5U_g"
 						target="_blank"
 					>
-						<Image
-							alt="YouTube"
-							height={ICON_DIMENSION}
-							src="/svgs/socialIcons/youtube_icon.svg"
-							width={ICON_DIMENSION}
-						/>
+						<YoutubeFill aria-hidden="true" size={30} />
 					</Link>
-					<Link href="https://github.com/Code-the-Change-YYC" target="_blank">
-						<Image
-							alt="GitHub"
-							height={ICON_DIMENSION}
-							src="/svgs/socialIcons/github_icon.svg"
-							width={ICON_DIMENSION}
-						/>
+					<Link
+						aria-label="GitHub"
+						href="https://github.com/Code-the-Change-YYC"
+						target="_blank"
+					>
+						<GithubFill aria-hidden="true" size={30} />
 					</Link>
 				</div>
 

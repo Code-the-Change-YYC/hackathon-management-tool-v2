@@ -1,5 +1,6 @@
 "use client";
 
+import { LeftLine, RightLine } from "@mingcute/react";
 import { useState } from "react";
 import { winners } from "./data/winners";
 import { SectionWrapper } from "./ui/InfoSection";
@@ -35,7 +36,7 @@ export default function Winners() {
 						onClick={prev}
 						type="button"
 					>
-						‹
+						<LeftLine aria-hidden="true" size={24} />
 					</button>
 
 					<ul className="flex h-113.75 w-full items-center justify-center gap-2.5 overflow-hidden">
@@ -54,7 +55,7 @@ export default function Winners() {
 						onClick={next}
 						type="button"
 					>
-						›
+						<RightLine aria-hidden="true" size={24} />
 					</button>
 				</div>
 

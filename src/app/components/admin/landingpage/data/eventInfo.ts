@@ -1,20 +1,26 @@
+import {
+	Calendar2Line,
+	GiftLine,
+	LocationLine,
+	WorldLine
+} from "@mingcute/react";
 import type { EventInfoItem } from "@/types/landingPage";
 
 export const eventInfoItems: EventInfoItem[] = [
 	{
 		id: "date",
-		icon: "/svgs/landingPage/date_icon.svg",
+		icon: Calendar2Line,
 		label: "Nov 7 - Nov 8, 2026"
 	},
 	{
 		id: "location",
-		icon: "/svgs/landingPage/location_icon.svg",
+		icon: LocationLine,
 		label: "University of Calgary - ENG 207"
 	},
-	{ id: "public", icon: "/svgs/landingPage/public_icon.svg", label: "Public" },
+	{ id: "public", icon: WorldLine, label: "Public" },
 	{
 		id: "prizes",
-		icon: "/svgs/landingPage/prize_icon.svg",
+		icon: GiftLine,
 		label: "$10,000 in Prizes"
 	}
 ];
