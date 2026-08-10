@@ -220,8 +220,7 @@ async function main() {
 		}
 
 		const attendanceSamples = [
-			{ seededMeal: createdMeals[0], attendees: [participantUser, adminUser] },
-			{ seededMeal: createdMeals[1], attendees: judges }
+			{ seededMeal: createdMeals[0], attendees: [participantUser] }
 		];
 
 		for (const { seededMeal, attendees } of attendanceSamples) {

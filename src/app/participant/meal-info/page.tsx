@@ -6,7 +6,7 @@ import { MealScheduleSection } from "./components/MealScheduleSection";
 import { MealTicket } from "./components/MealTicket";
 
 export default async function MealInfoPage() {
-	const session = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
+	const session = await requireRole([Role.PARTICIPANT]);
 	const displayName = session.user.name?.trim() || "Participant";
 	const nextMeal = await api.meals.getNextMeal();
 	const ticket = nextMeal
