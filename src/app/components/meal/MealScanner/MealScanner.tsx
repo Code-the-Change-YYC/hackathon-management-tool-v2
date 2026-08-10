@@ -12,6 +12,9 @@ export default function MealScanner({ eventId }: { eventId: string }) {
 	const utils = api.useUtils();
 	const redeemTicket = api.events.redeemEventTicket.useMutation();
 
+	// detectedCodes is the batch of QR codes detected by the camera.
+	// can include the same code multiple times, or multiple different
+	// codes from the same scan if there are other visible QR codes.
 	const handleScan = (detectedCodes: IDetectedBarcode[]) => {
 		if (!detectedCodes || detectedCodes.length === 0) return;
 		detectedCodes.forEach((code) => {
