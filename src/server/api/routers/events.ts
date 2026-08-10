@@ -10,6 +10,7 @@ import {
 import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
+	EVENT_TICKET_TOKEN_PATTERN,
 	EventStatus,
 	EventTicketStatus,
 	EventType,
@@ -30,7 +31,7 @@ const eventTimeRangeSchema = z
 
 const ticketTokenSchema = z
 	.string()
-	.regex(/^evt1_[A-Za-z0-9_-]{43}$/, "Invalid event ticket format.");
+	.regex(EVENT_TICKET_TOKEN_PATTERN, "Invalid event ticket format.");
 
 function hashTicketToken(token: string) {
 	return createHash("sha256").update(token).digest("hex");
