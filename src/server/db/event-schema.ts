@@ -1,7 +1,7 @@
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import {
-	check,
 	index,
+	pgEnum,
 	pgTableCreator,
 	text,
 	timestamp,
@@ -18,15 +18,16 @@ import { user } from "./auth-schema";
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
+export const eventTypeEnum = pgEnum("hackathon_event_type", EVENT_TYPES);
+export const eventStatusEnum = pgEnum("hackathon_event_status", EVENT_STATUSES);
+
 export const event = createTable(
 	"event",
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		title: text("title").notNull(),
-		type: text("type", { enum: EVENT_TYPES }).default(EventType.FOOD).notNull(),
-		status: text("status", { enum: EVENT_STATUSES })
-			.default(EventStatus.DRAFT)
-			.notNull(),
+		type: eventTypeEnum("type").default(EventType.FOOD).notNull(),
+		status: eventStatusEnum("status").default(EventStatus.DRAFT).notNull(),
 		startTime: timestamp("start_time", { withTimezone: true }).notNull(),
 		endTime: timestamp("end_time", { withTimezone: true }).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -38,11 +39,6 @@ export const event = createTable(
 			.notNull()
 	},
 	(table) => [
-		check(
-			"event_type_check",
-			sql`${table.type} in ('food', 'activity', 'project', 'ceremony')`
-		),
-		check("event_status_check", sql`${table.status} in ('draft', 'active')`),
 		index("event_type_status_start_time_idx").on(
 			table.type,
 			table.status,

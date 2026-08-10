@@ -191,18 +191,19 @@ export const eventsRouter = createTRPCRouter({
 				}
 
 				const token = createTicketToken();
+				const tokenHash = hashTicketToken(token);
 				await tx
 					.insert(eventTicket)
 					.values({
 						userId: ctx.session.user.id,
 						eventId: input.eventId,
-						tokenHash: hashTicketToken(token),
+						tokenHash,
 						expiresAt: ticketEvent.endTime
 					})
 					.onConflictDoUpdate({
 						target: [eventTicket.userId, eventTicket.eventId],
 						set: {
-							tokenHash: hashTicketToken(token),
+							tokenHash,
 							expiresAt: ticketEvent.endTime,
 							updatedAt: now
 						}
@@ -224,6 +225,7 @@ export const eventsRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
+			const tokenHash = hashTicketToken(input.token);
 			return ctx.db.transaction(async (tx) => {
 				const [ticket] = await tx
 					.select({
@@ -242,7 +244,7 @@ export const eventsRouter = createTRPCRouter({
 					.from(eventTicket)
 					.innerJoin(user, eq(eventTicket.userId, user.id))
 					.innerJoin(event, eq(eventTicket.eventId, event.id))
-					.where(eq(eventTicket.tokenHash, hashTicketToken(input.token)))
+					.where(eq(eventTicket.tokenHash, tokenHash))
 					.limit(1)
 					.for("update");
 
