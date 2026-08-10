@@ -26,7 +26,7 @@ export const event = createTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		title: text("title").notNull(),
-		type: eventTypeEnum("type").default(EventType.FOOD).notNull(),
+		type: eventTypeEnum("type").notNull(),
 		status: eventStatusEnum("status").default(EventStatus.DRAFT).notNull(),
 		startTime: timestamp("start_time", { withTimezone: true }).notNull(),
 		endTime: timestamp("end_time", { withTimezone: true }).notNull(),
