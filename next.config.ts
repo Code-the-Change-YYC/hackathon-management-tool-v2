@@ -1,5 +1,3 @@
-import path from "node:path";
-
 import type { NextConfig } from "next";
 
 import "./src/env.js";
@@ -7,11 +5,6 @@ import "./src/env.js";
 const config: NextConfig = {
 	experimental: {
 		useTypeScriptCli: true
-	},
-	turbopack: {},
-	webpack: (webpackConfig) => {
-		webpackConfig.resolve.alias["@"] = path.resolve(process.cwd(), "src");
-		return webpackConfig;
 	}
 };
 
