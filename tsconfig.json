@@ -25,9 +25,10 @@
 		"incremental": true,
 
 		/* Path Aliases */
-		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"auth.test": ["./auth.test.ts"],
+			"drizzle/*": ["./drizzle/*"]
 		}
 	},
 	"include": [
