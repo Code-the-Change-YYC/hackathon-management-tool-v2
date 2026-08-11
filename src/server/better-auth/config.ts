@@ -15,6 +15,7 @@ const trustedOrigins = env.BETTER_AUTH_TRUSTED_ORIGINS
 		: ["http://localhost:3000", "http://127.0.0.1:3000"];
 
 export const auth = betterAuth({
+	baseURL: env.BETTER_AUTH_URL,
 	database: drizzleAdapter(db, {
 		provider: "pg"
 	}),
