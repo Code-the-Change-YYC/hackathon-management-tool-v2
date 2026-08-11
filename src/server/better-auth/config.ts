@@ -4,7 +4,7 @@ import { admin, organization } from "better-auth/plugins";
 
 import { env } from "@/env";
 import { db } from "@/server/db";
-import { DIETARY_RESTRICTIONS, PROGRAMS } from "@/server/db/auth-schema";
+import { PROGRAMS } from "@/server/db/auth-schema";
 
 const trustedOrigins = env.BETTER_AUTH_TRUSTED_ORIGINS
 	? env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
@@ -14,7 +14,7 @@ const trustedOrigins = env.BETTER_AUTH_TRUSTED_ORIGINS
 		? []
 		: ["http://localhost:3000", "http://127.0.0.1:3000"];
 
-export const betterAuthConfig = {
+export const betterAuthDefaultConfig = {
 	baseURL: env.BETTER_AUTH_URL,
 	database: drizzleAdapter(db, {
 		provider: "pg"
@@ -50,5 +50,5 @@ export const betterAuthConfig = {
 		}
 	}
 } satisfies BetterAuthOptions;
-export const auth = betterAuth(betterAuthConfig);
+export const auth = betterAuth(betterAuthDefaultConfig);
 export type Session = typeof auth.$Infer.Session;

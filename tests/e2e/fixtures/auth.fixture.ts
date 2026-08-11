@@ -8,9 +8,7 @@ import type { User } from "@/types/types";
 import { Role } from "@/types/types";
 import { assertE2EDatabaseSafety, assertLocalE2EOrigin } from "../db";
 
-type AuthUserOptions = Partial<
-	Pick<User, "email" | "name" | "role" | "dietaryRestrictions">
-> & {
+type AuthUserOptions = Partial<Pick<User, "email" | "name" | "role">> & {
 	role?: Role;
 };
 

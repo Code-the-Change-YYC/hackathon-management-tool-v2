@@ -3,9 +3,7 @@ import { env } from "@/env";
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 const BLOCKED_DATABASE_NAMES = /(?:prod|production|staging|live)/i;
 
-export const e2eDatabaseURL = env.DATABASE_URL;
-
-const parsedDatabaseURL = new URL(e2eDatabaseURL);
+const parsedDatabaseURL = new URL(env.DATABASE_URL);
 const databaseName = decodeURIComponent(parsedDatabaseURL.pathname.slice(1));
 
 export function assertE2EDatabaseSafety() {

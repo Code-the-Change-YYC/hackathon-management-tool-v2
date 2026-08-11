@@ -1,9 +1,9 @@
 import { betterAuth } from "better-auth";
 import { testUtils } from "better-auth/plugins";
 
-import { betterAuthConfig } from "@/server/better-auth/config";
+import { betterAuthDefaultConfig } from "@/server/better-auth/config";
 
-const plugins = [...betterAuthConfig.plugins, testUtils()];
-const betterAuthDbConfig = { ...betterAuthConfig, plugins };
+const plugins = [...betterAuthDefaultConfig.plugins, testUtils()];
+const betterAuthDbConfig = { ...betterAuthDefaultConfig, plugins };
 
 export const auth = betterAuth(betterAuthDbConfig);
