@@ -1,15 +1,16 @@
-import Image from "next/image";
+import type { IconProps } from "@mingcute/react";
+import type { ElementType } from "react";
 import Card from "../Dashboard/Card";
 
 interface StatsPanelProps {
-	icon: string;
+	icon: ElementType<IconProps>;
 	stat: number;
-	alt: string;
 	subheader: string;
 }
 
 const StatsPanel = (props: StatsPanelProps) => {
-	const { icon, stat, alt, subheader } = props;
+	const { icon, stat, subheader } = props;
+	const Icon = icon;
 
 	return (
 		<Card className="flex-1">
@@ -18,7 +19,7 @@ const StatsPanel = (props: StatsPanelProps) => {
 					"flex size-12 items-center justify-center rounded-full bg-pastel-pink"
 				}
 			>
-				<Image alt={alt} height={50} src={icon} width={25} />
+				<Icon aria-hidden="true" className="text-dark-pink" size={32} />
 			</div>
 			<h1 className={"my-2 font-semibold text-5xl"}>
 				<i>{stat}</i>
