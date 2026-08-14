@@ -11,8 +11,8 @@ export async function MealScheduleSection() {
 		title: meal.title,
 		startTime: meal.startTime,
 		endTime: meal.endTime,
-		badgeLabel: "Food",
-		description: `Show your meal ticket during this window to check in for ${meal.title.toLowerCase()}.`
+		eventType: EventType.FOOD,
+		description: meal.description
 	}));
 
 	return (

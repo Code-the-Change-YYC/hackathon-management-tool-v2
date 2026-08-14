@@ -169,12 +169,48 @@ async function main() {
 
 		console.log("\nCreating meals and sample attendance...");
 		const mealSchedule = [
-			{ title: "Day 1 Breakfast", day: 0, startHour: 8, endHour: 10 },
-			{ title: "Day 1 Lunch", day: 0, startHour: 12, endHour: 14 },
-			{ title: "Day 1 Dinner", day: 0, startHour: 18, endHour: 20 },
-			{ title: "Day 2 Breakfast", day: 1, startHour: 8, endHour: 10 },
-			{ title: "Day 2 Lunch", day: 1, startHour: 12, endHour: 14 },
-			{ title: "Day 2 Dinner", day: 1, startHour: 18, endHour: 20 }
+			{
+				title: "Day 1 Breakfast",
+				description: "Start the hackathon with breakfast and coffee.",
+				day: 0,
+				startHour: 8,
+				endHour: 10
+			},
+			{
+				title: "Day 1 Lunch",
+				description: "Take a break and join us for lunch.",
+				day: 0,
+				startHour: 12,
+				endHour: 14
+			},
+			{
+				title: "Day 1 Dinner",
+				description: "Recharge with dinner before the evening build session.",
+				day: 0,
+				startHour: 18,
+				endHour: 20
+			},
+			{
+				title: "Day 2 Breakfast",
+				description: "Fuel up for the final day of hacking.",
+				day: 1,
+				startHour: 8,
+				endHour: 10
+			},
+			{
+				title: "Day 2 Lunch",
+				description: "Join us for lunch before final submissions.",
+				day: 1,
+				startHour: 12,
+				endHour: 14
+			},
+			{
+				title: "Day 2 Dinner",
+				description: "Wrap up the weekend with dinner.",
+				day: 1,
+				startHour: 18,
+				endHour: 20
+			}
 		];
 		const createdMeals = [];
 
@@ -184,14 +220,39 @@ async function main() {
 				scheduledMeal.startHour
 			);
 			const endTime = getEventDate(scheduledMeal.day, scheduledMeal.endHour);
-			const [createdMeal] = await db
-				.insert(meal)
-				.values({ title: scheduledMeal.title, startTime, endTime })
-				.onConflictDoUpdate({
-					target: meal.startTime,
-					set: { title: scheduledMeal.title, endTime }
-				})
-				.returning();
+			const [existingMeal] = await db
+				.select()
+				.from(event)
+				.where(
+					and(
+						eq(event.title, scheduledMeal.title),
+						eq(event.startTime, startTime),
+						eq(event.type, EventType.FOOD)
+					)
+				)
+				.limit(1);
+
+			const [createdMeal] = existingMeal
+				? await db
+						.update(event)
+						.set({
+							description: scheduledMeal.description,
+							endTime,
+							status: EventStatus.ACTIVE
+						})
+						.where(eq(event.id, existingMeal.id))
+						.returning()
+				: await db
+						.insert(event)
+						.values({
+							title: scheduledMeal.title,
+							description: scheduledMeal.description,
+							type: EventType.FOOD,
+							status: EventStatus.ACTIVE,
+							startTime,
+							endTime
+						})
+						.returning();
 
 			if (createdMeal) {
 				createdMeals.push(createdMeal);

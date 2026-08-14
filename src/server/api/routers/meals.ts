@@ -15,6 +15,7 @@ export const mealsRouter = createTRPCRouter({
 			z
 				.object({
 					title: z.string().trim().min(1),
+					description: z.string().trim().min(1),
 					startTime: z.coerce.date(),
 					endTime: z.coerce.date()
 				})
@@ -28,6 +29,9 @@ export const mealsRouter = createTRPCRouter({
 				.insert(meal)
 				.values({
 					title: input.title,
+					description: input.description,
+					type: EventType.FOOD,
+					status: EventStatus.DRAFT,
 					startTime: input.startTime,
 					endTime: input.endTime
 				})
