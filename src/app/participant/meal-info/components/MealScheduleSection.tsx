@@ -13,7 +13,7 @@ export async function MealScheduleSection() {
 		startTime: meal.startTime,
 		endTime: meal.endTime,
 		eventType: EventType.FOOD,
-		description: `Show your meal ticket during this window to check in for ${meal.title.toLowerCase()}.`
+		description: meal.description
 	}));
 
 	return (

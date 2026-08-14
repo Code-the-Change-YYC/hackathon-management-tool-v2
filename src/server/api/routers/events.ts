@@ -21,6 +21,7 @@ import {
 const eventTimeRangeSchema = z
 	.object({
 		title: z.string().trim().min(1),
+		description: z.string().trim().min(1),
 		startTime: z.coerce.date(),
 		endTime: z.coerce.date()
 	})

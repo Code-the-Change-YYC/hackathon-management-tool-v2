@@ -8,12 +8,7 @@ import {
 	unique,
 	uuid
 } from "drizzle-orm/pg-core";
-import {
-	EVENT_STATUSES,
-	EVENT_TYPES,
-	EventStatus,
-	EventType
-} from "@/types/types";
+import { EVENT_STATUSES, EVENT_TYPES, EventStatus } from "@/types/types";
 import { user } from "./auth-schema";
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
@@ -26,6 +21,7 @@ export const event = createTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		title: text("title").notNull(),
+		description: text("description").default("").notNull(),
 		type: eventTypeEnum("type").notNull(),
 		status: eventStatusEnum("status").default(EventStatus.DRAFT).notNull(),
 		startTime: timestamp("start_time", { withTimezone: true }).notNull(),
