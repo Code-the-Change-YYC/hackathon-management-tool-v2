@@ -66,7 +66,7 @@ type CeremonyDetailsSkeleton = EntrySkeletonType<
 >;
 export type CeremonyDetails = Entry<CeremonyDetailsSkeleton>;
 
-interface PastHackathonWinnerFields {
+export interface PastHackathonWinnerFields {
 	projectName: EntryFieldTypes.Symbol;
 	projectDescription?: EntryFieldTypes.Text;
 	projectImage?: EntryFieldTypes.AssetLink;

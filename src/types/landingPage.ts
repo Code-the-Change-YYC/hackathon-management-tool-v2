@@ -1,5 +1,6 @@
 import type { IconProps } from "@mingcute/react";
 import type { ElementType } from "react";
+import type { PastHackathonWinner } from "./contentfulTypes";
 
 export type MingCuteIcon = ElementType<IconProps>;
 
@@ -69,17 +70,8 @@ export type JudgeItemProps = {
 	image: string;
 };
 
-export type Winner = {
-	id: string;
-	awardName: string;
-	awardColor: string;
-	projectName: string;
-	image: string;
-	link: string;
-};
-
 export type WinnerCardProps = {
-	winner: Winner;
+	winner: PastHackathonWinner;
 	index: number;
 	total: number;
 };

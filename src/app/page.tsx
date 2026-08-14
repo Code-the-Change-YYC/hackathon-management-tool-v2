@@ -2,6 +2,7 @@ import Sponsors from "@/app/components/admin/landingpage/Sponsors";
 import Footer from "@/app/components/Footer";
 import Header from "@/app/components/Header";
 import { HydrateClient } from "@/trpc/server";
+import { getWinners } from "./actions";
 import AboutChallenge from "./components/admin/landingpage/AboutChallenge";
 import Countdown from "./components/admin/landingpage/countdown/Countdown";
 import EventDetails from "./components/admin/landingpage/EventDetails";
@@ -13,7 +14,7 @@ import Winners from "./components/admin/landingpage/Winners";
 export default async function Home() {
 	// TODO: replace with real team-membership check. addressing this later as the whole participant flow to be fixed in a seperate PR (HMTV2-39)
 	const hasTeam = false;
-
+	const winners = await getWinners();
 	return (
 		<HydrateClient>
 			<Header hasTeam={hasTeam} />
@@ -23,7 +24,7 @@ export default async function Home() {
 				<AboutChallenge />
 				<Requirements />
 				<Prizes />
-				<Winners />
+				<Winners winners={winners} />
 			</HackathonInformationContainer>
 			<Sponsors />
 			<Footer />
