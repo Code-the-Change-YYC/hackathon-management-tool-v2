@@ -14,7 +14,7 @@ export default function WinnerCard({ winner, index, total }: WinnerCardProps) {
 	const scaleValue = (100 - 10 * Math.abs(index - Math.floor(total / 2))) / 100;
 	const fields = getFields(winner);
 	const projectName = getString(fields.projectName) ?? "";
-	const awardName = getString(fields.awardName)?.trim() ?? "";
+	const awardName = getString(fields.awardName)?.trim();
 	const image = getAssetUrl(fields.projectImage);
 	const link = getString(fields.link)?.trim();
 	const awardColor =
@@ -27,7 +27,7 @@ export default function WinnerCard({ winner, index, total }: WinnerCardProps) {
 				className={`${awardColor} mb-2.5 w-48 rounded-tr-20 rounded-br-20 px-2.5 py-2 shadow-[0px_4px_4.8px_0px_rgba(0,0,0,0.25)]`}
 			>
 				<span className="font-bold text-white text-xl">
-					{awardName ?? "Winner"}
+					{awardName || "Winner"}
 				</span>
 			</div>
 
