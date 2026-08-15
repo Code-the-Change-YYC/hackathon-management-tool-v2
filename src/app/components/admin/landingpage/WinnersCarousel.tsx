@@ -1,11 +1,24 @@
 "use client";
 
 import { LeftLine, RightLine } from "@mingcute/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useWindowDimensions from "@/lib/useWindowDimensions";
 import type { PastHackathonWinner } from "@/types/contentfulTypes";
 import WinnerCard from "./WinnerCard";
 
-const VISIBLE_COUNT = 5;
+const VISIBLE_COUNT = {
+	small: 1,
+	medium: 3,
+	large: 5
+} as const;
+
+const getVisibleCount = (width: number) => {
+	if (width >= 1024) return VISIBLE_COUNT.large;
+
+	if (width >= 768) return VISIBLE_COUNT.medium;
+
+	return VISIBLE_COUNT.small;
+};
 
 export default function WinnersCarousel({
 	winners
@@ -13,9 +26,14 @@ export default function WinnersCarousel({
 	winners: PastHackathonWinner[];
 }) {
 	const [startIndex, setStartIndex] = useState(0);
+	const { width } = useWindowDimensions();
+	const [visibleCount, setVisibleCount] = useState<number>(VISIBLE_COUNT.small);
+
+	useEffect(() => setVisibleCount(getVisibleCount(width)), [width]);
+
 	const visibleWinners = [...winners, ...winners].slice(
 		startIndex,
-		startIndex + VISIBLE_COUNT
+		startIndex + visibleCount
 	);
 
 	const prev = () =>
@@ -38,7 +56,7 @@ export default function WinnersCarousel({
 						<WinnerCard
 							index={index}
 							key={`${winner.sys.id}-${index}`}
-							total={VISIBLE_COUNT}
+							total={visibleCount}
 							winner={winner}
 						/>
 					))}

@@ -1,12 +1,9 @@
-import type { PastHackathonWinner } from "@/types/contentfulTypes";
+import { getWinners } from "@/app/actions";
 import { SectionWrapper } from "./ui/InfoSection";
 import WinnersCarousel from "./WinnersCarousel";
 
-type WinnersProps = {
-	winners: PastHackathonWinner[];
-};
-
-export default function Winners({ winners }: WinnersProps) {
+export default async function Winners() {
+	const winners = await getWinners();
 	return (
 		<Header>
 			{winners.length ? (
