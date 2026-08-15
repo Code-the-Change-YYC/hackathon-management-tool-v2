@@ -26,7 +26,7 @@ export default function CountdownHero() {
 			{!isSignedIn && (
 				<>
 					<Link
-						className="flex items-center justify-center rounded-3xl border-5 border-white bg-awesomer-purple transition-opacity hover:opacity-70 md:h-15 md:w-40"
+						className="flex h-15 w-40 items-center justify-center rounded-3xl border-5 border-white bg-awesomer-purple transition-opacity hover:opacity-70"
 						href="/signup"
 					>
 						<p className="font-semibold text-white">Register Now</p>
