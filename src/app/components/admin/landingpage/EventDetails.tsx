@@ -8,7 +8,7 @@ const EVENT_LOCATION_LINK = "https://share.google/YAkQs91U42vi1x1t4";
 export default function EventDetails() {
 	return (
 		<section className="flex w-full flex-col items-center bg-white px-6 py-10 md:px-20 md:py-20">
-			<div className="relative w-[92%] max-w-7xl">
+			<div className="relative w-full max-w-7xl">
 				<div className="absolute inset-0 translate-x-3 translate-y-3 rounded-[30px] bg-medium-pink" />
 
 				<div className="relative flex min-h-125 flex-col overflow-hidden rounded-[33px] border-[7px] border-dark-pink bg-pastel-pink lg:flex-row">
