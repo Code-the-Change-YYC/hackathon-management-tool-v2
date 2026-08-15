@@ -7,6 +7,7 @@ import Countdown from "./components/admin/landingpage/countdown/Countdown";
 import EventDetails from "./components/admin/landingpage/EventDetails";
 import HackathonInformationContainer from "./components/admin/landingpage/HackathonInformationContainer";
 import Judges from "./components/admin/landingpage/Judges";
+import JudgingCriteria from "./components/admin/landingpage/JudgingCriteria";
 import Prizes from "./components/admin/landingpage/Prizes";
 import Requirements from "./components/admin/landingpage/Requirements";
 import Winners from "./components/admin/landingpage/Winners";
@@ -25,6 +26,7 @@ export default async function Home() {
 				<AboutChallenge />
 				<Requirements />
 				<Prizes />
+				<JudgingCriteria />
 				<Judges />
 				<Winners />
 			</HackathonInformationContainer>
