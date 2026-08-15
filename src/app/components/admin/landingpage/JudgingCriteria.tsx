@@ -1,5 +1,6 @@
 import { CheckCircleLine } from "@mingcute/react";
 import { getCriteria } from "@/app/actions";
+import InfoSection from "./ui/InfoSection";
 
 export default async function JudgingCriteria() {
 	const criteria = await getCriteria();
@@ -28,20 +29,20 @@ export default async function JudgingCriteria() {
 		</ul>
 	);
 	return (
-		<Header>{criteria.length ? <CriteriaList /> : <NotAvailable />}</Header>
+		<InfoSection
+			accentPosition="after"
+			accentSrc="accent_green"
+			bgColor="bg-pastel-green"
+			bodyContent={criteria.length ? <CriteriaList /> : <NotAvailable />}
+			bodyTextColor="text-dark-grey"
+			title="Judging"
+			titleColor="text-awesomer-purple"
+			titleHighlight="Criteria"
+			titlePrefixColor="text-black"
+		/>
 	);
 }
 
 const NotAvailable = () => (
 	<p className="text-dark-grey">Judging criteria are currently unavailable.</p>
-);
-const Header = ({ children }: { children: React.ReactNode }) => (
-	<section className="w-full bg-pastel-green p-6 sm:p-8 md:p-10">
-		<div className="flex flex-col gap-8 md:gap-10">
-			<h2 className="font-semibold text-2xl text-dark-grey sm:text-3xl">
-				Judging <span className="text-awesomer-purple italic">Criteria</span>
-			</h2>
-			{children}
-		</div>
-	</section>
 );
