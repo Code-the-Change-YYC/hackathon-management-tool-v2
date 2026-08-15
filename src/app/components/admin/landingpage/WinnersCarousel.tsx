@@ -71,20 +71,22 @@ export default function WinnersCarousel({
 				</button>
 			</div>
 
-			<div className="mt-6 flex justify-center gap-3">
-				{winners.map((winner, index) => (
-					<button
-						className={`h-2 w-2 rounded-full transition ${
-							index === startIndex % winners.length
-								? "scale-110 bg-fuzzy-peach"
-								: "bg-grey-purple/30"
-						}`}
-						key={winner.sys.id}
-						onClick={() => setStartIndex(index)}
-						type="button"
-					/>
-				))}
-			</div>
+			{winners.length !== VISIBLE_COUNT.large && (
+				<div className="mt-6 flex justify-center gap-3">
+					{winners.map((winner, index) => (
+						<button
+							className={`h-2 w-2 rounded-full transition ${
+								index === startIndex % winners.length
+									? "scale-110 bg-fuzzy-peach"
+									: "bg-grey-purple/30"
+							}`}
+							key={winner.sys.id}
+							onClick={() => setStartIndex(index)}
+							type="button"
+						/>
+					))}
+				</div>
+			)}
 		</>
 	);
 }
