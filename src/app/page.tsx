@@ -11,6 +11,8 @@ import Prizes from "./components/admin/landingpage/Prizes";
 import Requirements from "./components/admin/landingpage/Requirements";
 import Winners from "./components/admin/landingpage/Winners";
 
+export const revalidate = 3600;
+
 export default async function Home() {
 	// TODO: replace with real team-membership check. addressing this later as the whole participant flow to be fixed in a seperate PR (HMTV2-39)
 	const hasTeam = false;
