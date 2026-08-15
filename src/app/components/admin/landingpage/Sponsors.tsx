@@ -31,7 +31,7 @@ export default function Sponsors() {
 					<p className="relative w-1/2 text-center text-base">
 						{`Without their support, this event would not be possible.`}
 					</p>
-					<p className="relative text-cente">
+					<p className="relative text-center">
 						Interested in partnering? Contact{" "}
 						<Link
 							className="text-awesomer-purple! underline transition-colors"
