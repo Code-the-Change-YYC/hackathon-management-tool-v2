@@ -10,21 +10,15 @@ export default defineConfig({
 		}
 	},
 	test: {
-		coverage: {
-			provider: "v8"
-		},
 		env: {
 			NODE_ENV: "test",
 			TZ: "UTC"
 		},
-		include: [],
 		projects: [
 			{
 				extends: true,
 				test: {
-					fileParallelism: false,
 					include: ["tests/vitest/integration/**/*.test.ts"],
-					maxWorkers: 1,
 					name: "integration"
 				}
 			},
