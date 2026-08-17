@@ -45,3 +45,34 @@ test("participant can add and save a dietary restriction", async ({
 		authenticatedPage.getByText("Dietary restrictions updated", { exact: true })
 	).toBeVisible();
 });
+
+test("participant can remove and save a dietary restriction", async ({
+	authenticatedPage
+}) => {
+	await authenticatedPage.goto("/participant/meal-info");
+
+	const dietaryRestrictionsSection = authenticatedPage
+		.getByRole("heading", { name: "Dietary Restrictions" })
+		.locator("..");
+	await dietaryRestrictionsSection
+		.getByRole("button", { name: "Edit" })
+		.click();
+
+	const editor = authenticatedPage.getByRole("dialog");
+	await editor.getByRole("button", { name: "Remove Gluten-free" }).click();
+	await expect(
+		editor.getByText("None selected", { exact: true })
+	).toBeVisible();
+	await editor.getByRole("button", { name: "Save changes" }).click();
+
+	await expect(editor).not.toBeVisible();
+	await expect(
+		dietaryRestrictionsSection.getByText("None registered", { exact: true })
+	).toBeVisible();
+	await expect(
+		dietaryRestrictionsSection.getByText("Gluten-free", { exact: true })
+	).not.toBeVisible();
+	await expect(
+		authenticatedPage.getByText("Dietary restrictions updated", { exact: true })
+	).toBeVisible();
+});
