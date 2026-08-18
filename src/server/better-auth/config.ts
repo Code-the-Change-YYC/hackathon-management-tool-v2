@@ -16,6 +16,12 @@ const trustedOrigins = env.BETTER_AUTH_TRUSTED_ORIGINS
 
 export const betterAuthDefaultConfig = {
 	baseURL: env.BETTER_AUTH_URL,
+	socialProviders: {
+		google: {
+			clientId: env.GOOGLE_CLIENT_ID,
+			clientSecret: env.GOOGLE_CLIENT_SECRET
+		}
+	},
 	database: drizzleAdapter(db, {
 		provider: "pg"
 	}),

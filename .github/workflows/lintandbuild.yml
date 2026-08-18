@@ -40,3 +40,5 @@ jobs:
         run: pnpm build
         env:
           SKIP_ENV_VALIDATION: true
+          GOOGLE_CLIENT_ID: ci-google-client-id
+          GOOGLE_CLIENT_SECRET: ci-google-client-secret
