@@ -10,7 +10,6 @@
  * Discord to find teammates instead of a modal flow.
  */
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/trpc/react";
 import EditTeamNameModal from "./EditTeamNameModal";
@@ -20,6 +19,8 @@ import JoinedSuccessModal from "./JoinedSuccessModal";
 import LeaveTeamModal from "./LeaveTeamModal";
 import MyTeamTable, { type TeamMember } from "./MyTeamTable";
 import NoTeamBanner from "./NoTeamBanner";
+import RegisteredSuccessModal from "./RegisteredSuccessModal";
+import RegisterTeamModal from "./RegisterTeamModal";
 import SituationModal, { type Situation } from "./SituationModal";
 
 type ModalKind =
@@ -29,7 +30,9 @@ type ModalKind =
 	| "join"
 	| "joined"
 	| "leave"
-	| "edit";
+	| "edit"
+	| "register"
+	| "registered";
 
 type ViewTeam = {
 	name: string;
@@ -40,7 +43,6 @@ type ViewTeam = {
 };
 
 export default function MyTeamView() {
-	const router = useRouter();
 	const utils = api.useUtils();
 	const {
 		data: team,
@@ -54,6 +56,9 @@ export default function MyTeamView() {
 	const [editError, setEditError] = useState<string | null>(null);
 	const [leaveError, setLeaveError] = useState<string | null>(null);
 	const [joinedTeamName, setJoinedTeamName] = useState("");
+	const [registerError, setRegisterError] = useState<string | null>(null);
+	const [registeredName, setRegisteredName] = useState("");
+	const [registeredCode, setRegisteredCode] = useState("");
 
 	const joinMutation = api.teams.join.useMutation({
 		onSuccess: async (joined) => {
@@ -78,6 +83,17 @@ export default function MyTeamView() {
 			await utils.teams.getMyTeam.invalidate();
 		},
 		onError: (error) => setLeaveError(error.message)
+	});
+
+	const createMutation = api.teams.create.useMutation({
+		onSuccess: async (created) => {
+			setRegisterError(null);
+			setRegisteredName(created?.name ?? "");
+			setRegisteredCode(created?.teamCode ?? "");
+			setModal("registered");
+			await utils.teams.getMyTeam.invalidate();
+		},
+		onError: (error) => setRegisterError(error.message)
 	});
 
 	const updateMutation = api.teams.update.useMutation({
@@ -111,7 +127,8 @@ export default function MyTeamView() {
 			return;
 		}
 		if (situation === "unregistered") {
-			router.push("/team/register");
+			setRegisterError(null);
+			setModal("register");
 			return;
 		}
 		window.open("https://discord.gg/codethechangeyyc", "_blank");
@@ -168,6 +185,19 @@ export default function MyTeamView() {
 				onClose={() => setModal(null)}
 				onContinue={handleSituation}
 				open={modal === "situation"}
+			/>
+			<RegisterTeamModal
+				error={registerError}
+				loading={createMutation.isPending}
+				onClose={() => setModal(null)}
+				onSubmit={(name) => createMutation.mutate({ name })}
+				open={modal === "register"}
+			/>
+			<RegisteredSuccessModal
+				onFinish={() => setModal(null)}
+				open={modal === "registered"}
+				teamCode={registeredCode}
+				teamName={registeredName}
 			/>
 			{viewTeam && (
 				<InviteCodeModal
