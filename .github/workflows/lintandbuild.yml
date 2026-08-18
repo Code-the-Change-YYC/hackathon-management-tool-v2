@@ -8,6 +8,13 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    env:
+      CI: "true"
+      BETTER_AUTH_SECRET: ci-secret-N6YSVvVEVnHap0eyYQLffI1BmlHw0vTIo1eNJcP0eN0=
+      BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_TRUSTED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      CONTENTFUL_SPACE_ID: ci-test-space
+      CONTENTFUL_ACCESS_TOKEN: ci-test-token
     steps:
       - uses: actions/checkout@v6
 
