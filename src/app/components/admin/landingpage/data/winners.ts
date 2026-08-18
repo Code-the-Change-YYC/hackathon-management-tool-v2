@@ -1,44 +1,39 @@
-import type { Winner } from "@/types/landingPage";
+import { getFields, getNumber, getString } from "@/lib/contentful";
+import type { PastHackathonWinner } from "@/types/contentfulTypes";
 
-export const winners: Winner[] = [
-	{
-		id: "winner-1",
-		awardName: "2025 2nd Place",
-		awardColor: "bg-strawberry-red",
-		projectName: "VirtualQuake",
-		image: "/svgs/landingpage/winners/virtualQuake.png",
-		link: "https://www.youtube.com/watch?v=2iLhdd1cufc"
-	},
-	{
-		id: "winner-2",
-		awardName: "2025 3rd Place",
-		awardColor: "bg-awesome-purple",
-		projectName: "Telepod",
-		image: "/svgs/landingpage/winners/telepod.png",
-		link: "https://www.youtube.com/watch?v=ilNkV5YugsQ"
-	},
-	{
-		id: "winner-3",
-		awardName: "2025 1st Place",
-		awardColor: "bg-dark-pink",
-		projectName: "Accessibility",
-		image: "/svgs/landingpage/winners/accessibilityPlus.png",
-		link: "https://www.youtube.com/watch?v=rTMOzazIh6I"
-	},
-	{
-		id: "winner-4",
-		awardName: "Best Design",
-		awardColor: "bg-dark-green",
-		projectName: "Grantly",
-		image: "/svgs/landingpage/winners/grantly.png",
-		link: "https://www.youtube.com/watch?v=q0QOq_q_79Q"
-	},
-	{
-		id: "winner-5",
-		awardName: "Benevity Side-Pot",
-		awardColor: "bg-medium-pink",
-		projectName: "Aegis",
-		image: "/svgs/landingpage/winners/aegis.png",
-		link: "https://www.youtube.com/watch?v=hOqCZ52hX-s"
+function compareWinners(
+	left: PastHackathonWinner,
+	right: PastHackathonWinner
+): number {
+	const leftFields = getFields(left);
+	const rightFields = getFields(right);
+	const leftRanking =
+		getNumber(leftFields.teamRanking) ?? Number.POSITIVE_INFINITY;
+	const rightRanking =
+		getNumber(rightFields.teamRanking) ?? Number.POSITIVE_INFINITY;
+
+	if (leftRanking !== rightRanking) {
+		return leftRanking - rightRanking;
 	}
-];
+	const [awardNameLeft, awardNameRight] = [
+		getString(leftFields.awardName)?.trim() ?? "",
+		getString(rightFields.awardName)?.trim() ?? ""
+	];
+	const awardComparison = awardNameLeft.localeCompare(awardNameRight);
+	if (awardComparison !== 0) {
+		return awardComparison;
+	}
+
+	return (getString(leftFields.projectName) ?? "").localeCompare(
+		getString(rightFields.projectName) ?? ""
+	);
+}
+
+export function mapPastHackathonWinners(
+	entries: readonly PastHackathonWinner[]
+): PastHackathonWinner[] {
+	return entries
+		.filter((entry) => (getString(getFields(entry).projectName) ?? "").trim())
+		.slice()
+		.sort(compareWinners);
+}

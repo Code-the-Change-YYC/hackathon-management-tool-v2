@@ -13,7 +13,6 @@ import Winners from "./components/admin/landingpage/Winners";
 export default async function Home() {
 	// TODO: replace with real team-membership check. addressing this later as the whole participant flow to be fixed in a seperate PR (HMTV2-39)
 	const hasTeam = false;
-
 	return (
 		<HydrateClient>
 			<Header hasTeam={hasTeam} />
