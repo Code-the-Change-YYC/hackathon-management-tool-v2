@@ -17,7 +17,8 @@
 import {
 	type InferInsertModel,
 	type InferSelectModel,
-	relations
+	relations,
+	sql
 } from "drizzle-orm";
 import {
 	boolean,
@@ -36,7 +37,6 @@ export const PROGRAMS = [
 ] as const;
 
 export const DIETARY_RESTRICTIONS = [
-	"none",
 	"halal",
 	"vegetarian",
 	"vegan",
@@ -67,7 +67,10 @@ export const user = createTable("user", {
 	banExpires: timestamp("ban_expires"),
 	dietaryRestrictions: text("dietary_restriction", {
 		enum: DIETARY_RESTRICTIONS
-	}).array(),
+	})
+		.array()
+		.default(sql`ARRAY[]::text[]`)
+		.notNull(),
 	school: text("school"),
 	program: text("program", { enum: PROGRAMS }),
 	completedRegistration: boolean("completed_registration")

@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { authClient } from "@/server/better-auth/client";
-import { type DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
+import {
+	DIETARY_RESTRICTIONS,
+	type DietaryRestriction,
+	PROGRAMS
+} from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
 
 type MealOption = "yes" | "no" | "";
@@ -39,20 +43,20 @@ export default function SignupForm() {
 	function handleDietaryRestrictionsChange(
 		event: React.ChangeEvent<HTMLSelectElement>
 	) {
-		const selectedRestrictions = Array.from(
+		const selectedValues = Array.from(
 			event.target.selectedOptions,
-			(option) => option.value as DietaryRestriction
+			(option) => option.value
 		);
-		const selectedNone = selectedRestrictions.includes("none");
-		const previouslySelectedNone = dietaryRestrictions.includes("none");
 
-		if (selectedNone && !previouslySelectedNone) {
-			setDietaryRestrictions(["none"]);
+		if (selectedValues.includes("none")) {
+			setDietaryRestrictions([]);
 			return;
 		}
 
 		setDietaryRestrictions(
-			selectedRestrictions.filter((restriction) => restriction !== "none")
+			DIETARY_RESTRICTIONS.filter((restriction) =>
+				selectedValues.includes(restriction)
+			)
 		);
 	}
 
@@ -85,8 +89,7 @@ export default function SignupForm() {
 				program: PROGRAMS.includes(program as (typeof PROGRAMS)[number])
 					? (program as (typeof PROGRAMS)[number])
 					: undefined,
-				dietaryRestrictions:
-					dietaryRestrictions.length > 0 ? dietaryRestrictions : undefined,
+				dietaryRestrictions,
 				wantsFood
 			});
 

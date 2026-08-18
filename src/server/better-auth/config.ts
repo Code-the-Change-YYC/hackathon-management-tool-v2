@@ -1,10 +1,10 @@
-import { betterAuth } from "better-auth";
+import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, organization } from "better-auth/plugins";
 
 import { env } from "@/env";
 import { db } from "@/server/db";
-import { DIETARY_RESTRICTIONS, PROGRAMS } from "@/server/db/auth-schema";
+import { PROGRAMS } from "@/server/db/auth-schema";
 
 const trustedOrigins = env.BETTER_AUTH_TRUSTED_ORIGINS
 	? env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
@@ -14,7 +14,8 @@ const trustedOrigins = env.BETTER_AUTH_TRUSTED_ORIGINS
 		? []
 		: ["http://localhost:3000", "http://127.0.0.1:3000"];
 
-export const auth = betterAuth({
+export const betterAuthDefaultConfig = {
+	baseURL: env.BETTER_AUTH_URL,
 	database: drizzleAdapter(db, {
 		provider: "pg"
 	}),
@@ -27,8 +28,8 @@ export const auth = betterAuth({
 		additionalFields: {
 			dietaryRestrictions: {
 				type: "string[]",
-				options: DIETARY_RESTRICTIONS,
-				required: false,
+				required: true,
+				defaultValue: [],
 				input: false
 			},
 			school: {
@@ -37,9 +38,8 @@ export const auth = betterAuth({
 				input: false
 			},
 			program: {
-				type: "string",
+				type: [...PROGRAMS],
 				required: false,
-				options: PROGRAMS,
 				input: false
 			},
 			completedRegistration: {
@@ -49,6 +49,6 @@ export const auth = betterAuth({
 			}
 		}
 	}
-});
-
+} satisfies BetterAuthOptions;
+export const auth = betterAuth(betterAuthDefaultConfig);
 export type Session = typeof auth.$Infer.Session;

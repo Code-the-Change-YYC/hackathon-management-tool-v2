@@ -1,7 +1,7 @@
 import "dotenv/config";
-
 import { defineConfig, devices } from "playwright/test";
-import { assertE2EDatabaseSafety, e2eDatabaseURL } from "./tests/e2e/db";
+import { env } from "@/env";
+import { assertE2EDatabaseSafety } from "./tests/e2e/db";
 
 assertE2EDatabaseSafety();
 
@@ -23,9 +23,11 @@ export default defineConfig({
 		video: "retain-on-failure"
 	},
 	webServer: {
-		command: "pnpm dev --port 3000",
+		command: process.env.CI
+			? "pnpm exec next dev --port 3000"
+			: "pnpm dev --port 3000",
 		env: {
-			DATABASE_URL: e2eDatabaseURL
+			DATABASE_URL: env.DATABASE_URL
 		},
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,

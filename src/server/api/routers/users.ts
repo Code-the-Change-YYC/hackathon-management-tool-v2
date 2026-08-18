@@ -26,11 +26,6 @@ const dietaryRestrictionsSchema = z
 	.refine(
 		(restrictions) => new Set(restrictions).size === restrictions.length,
 		{ message: "Duplicate dietary restrictions are not allowed" }
-	)
-	.refine(
-		(restrictions) =>
-			!restrictions.includes("none") || restrictions.length === 1,
-		{ message: '"None" cannot be combined with another restriction' }
 	);
 
 export const usersRouter = createTRPCRouter({
@@ -40,6 +35,28 @@ export const usersRouter = createTRPCRouter({
 		});
 		return users;
 	}),
+	updateUserDietaryRestrictions: protectedProcedure
+		.input(
+			z.object({
+				dietaryRestrictions: dietaryRestrictionsSchema
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const [updated] = await ctx.db
+				.update(user)
+				.set({ dietaryRestrictions: input.dietaryRestrictions })
+				.where(eq(user.id, ctx.session.user.id))
+				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
+			return updated;
+		}),
 	update: protectedProcedure
 		.input(
 			z.object({
@@ -47,7 +64,7 @@ export const usersRouter = createTRPCRouter({
 				name: z.string().min(1).optional(),
 				email: z.string().email().optional(),
 				role: z.string().optional().nullable(),
-				dietaryRestrictions: dietaryRestrictionsSchema.optional().nullable(),
+				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
 				school: z.string().optional().nullable(),
 				program: z.enum(PROGRAMS).optional().nullable(),
 				completedRegistration: z.boolean().optional(),
@@ -69,7 +86,7 @@ export const usersRouter = createTRPCRouter({
 				email: z.string().email(),
 				school: z.string().optional(),
 				program: z.enum(PROGRAMS).optional(),
-				dietaryRestrictions: dietaryRestrictionsSchema.optional().nullable(),
+				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
 				wantsFood: z.enum(["yes", "no"]).optional()
 			})
 		)
@@ -79,7 +96,7 @@ export const usersRouter = createTRPCRouter({
 				.set({
 					school: input.school?.trim() ? input.school.trim() : null,
 					program: input.program ?? null,
-					dietaryRestrictions: input.dietaryRestrictions ?? null,
+					dietaryRestrictions: input.dietaryRestrictions ?? [],
 					completedRegistration: true,
 					role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
 				})

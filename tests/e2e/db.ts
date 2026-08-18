@@ -1,28 +1,13 @@
-import "dotenv/config";
-
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-
-import * as authSchema from "@/server/db/auth-schema";
+import { env } from "@/env";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 const BLOCKED_DATABASE_NAMES = /(?:prod|production|staging|live)/i;
 
-const configuredE2EDatabaseURL = process.env.DATABASE_URL;
-
-if (!configuredE2EDatabaseURL) {
-	throw new Error(
-		"E2E_DATABASE_URL must be set to a dedicated local E2E database"
-	);
-}
-
-export const e2eDatabaseURL = configuredE2EDatabaseURL;
-
-const parsedDatabaseURL = new URL(e2eDatabaseURL);
+const parsedDatabaseURL = new URL(env.DATABASE_URL);
 const databaseName = decodeURIComponent(parsedDatabaseURL.pathname.slice(1));
 
 export function assertE2EDatabaseSafety() {
-	if (process.env.NODE_ENV === "production") {
+	if (env.NODE_ENV === "production") {
 		throw new Error("E2E database access is disabled in production");
 	}
 
@@ -60,9 +45,3 @@ export function assertLocalE2EOrigin(origin: string) {
 }
 
 assertE2EDatabaseSafety();
-
-const client = postgres(e2eDatabaseURL);
-
-export const e2eDb = drizzle(client, {
-	schema: authSchema
-});

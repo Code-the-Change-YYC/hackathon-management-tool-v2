@@ -1,24 +1,27 @@
-"use client";
-
-import { useState } from "react";
-import { winners } from "./data/winners";
+import { getWinners } from "@/app/actions";
 import { SectionWrapper } from "./ui/InfoSection";
-import WinnerCard from "./WinnerCard";
+import WinnersCarousel from "./WinnersCarousel";
 
-const VISIBLE_COUNT = 5;
-
-export default function Winners() {
-	const [startIndex, setStartIndex] = useState(0);
-
-	const visibleWinners = [...winners, ...winners].slice(
-		startIndex,
-		startIndex + VISIBLE_COUNT
+export default async function Winners() {
+	const winners = await getWinners();
+	return (
+		<Header>
+			{winners.length ? (
+				<WinnersCarousel winners={winners} />
+			) : (
+				<NotAvailable />
+			)}
+		</Header>
 	);
-
-	const prev = () =>
-		setStartIndex((i) => (i === 0 ? winners.length - 1 : i - 1));
-
-	const next = () => setStartIndex((i) => (i + 1) % winners.length);
+}
+const NotAvailable = () => {
+	return (
+		<p className="text-dark-grey">
+			Winner information is currently unavailable. Please check back soon.
+		</p>
+	);
+};
+const Header = ({ children }: { children: React.ReactNode }) => {
 	return (
 		<SectionWrapper bgColor="bg-pinky-peach">
 			<div className="w-full max-w-7xl">
@@ -28,51 +31,8 @@ export default function Winners() {
 						<span className="text-awesomer-purple italic">Winners</span>
 					</h2>
 				</div>
-
-				<div className="flex w-full items-center gap-4">
-					<button
-						className="shrink-0 text-2xl text-fuzzy-peach transition hover:scale-110"
-						onClick={prev}
-						type="button"
-					>
-						‹
-					</button>
-
-					<ul className="flex h-113.75 w-full items-center justify-center gap-2.5 overflow-hidden">
-						{visibleWinners.map((winner, index) => (
-							<WinnerCard
-								index={index}
-								key={`${winner.id}-${startIndex}-${index}`}
-								total={VISIBLE_COUNT}
-								winner={winner}
-							/>
-						))}
-					</ul>
-
-					<button
-						className="shrink-0 text-2xl text-fuzzy-peach transition hover:scale-110"
-						onClick={next}
-						type="button"
-					>
-						›
-					</button>
-				</div>
-
-				<div className="mt-6 flex justify-center gap-3">
-					{winners.map((winner, index) => (
-						<button
-							className={`h-2 w-2 rounded-full transition ${
-								index === startIndex % winners.length
-									? "scale-110 bg-fuzzy-peach"
-									: "bg-grey-purple/30"
-							}`}
-							key={winner.id}
-							onClick={() => setStartIndex(index)}
-							type="button"
-						/>
-					))}
-				</div>
+				{children}
 			</div>
 		</SectionWrapper>
 	);
-}
+};

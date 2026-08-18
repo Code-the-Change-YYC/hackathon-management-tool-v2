@@ -1,5 +1,5 @@
 import type { Page } from "playwright/test";
-import type { SignupFormData } from "../helpers/signup-data";
+import type { createSignupData } from "../helpers/signup-data";
 
 const SIGNUP_PAGE = "/signup";
 const SUBMIT_BUTTON_NAME = "Sign up";
@@ -11,7 +11,7 @@ export class SignupPage {
 		await this.page.goto(SIGNUP_PAGE);
 	}
 
-	async fillForm(data: SignupFormData) {
+	async fillForm(data: ReturnType<typeof createSignupData>) {
 		await this.page.getByLabel("*First Name").fill(data.firstName);
 		await this.page.getByLabel("*Last Name").fill(data.lastName);
 		await this.page.getByLabel("*Email").fill(data.email);
