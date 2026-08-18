@@ -1,3 +1,15 @@
+/**
+ * Local dev seed script (`pnpm seed`). Creates an admin, three judges, a
+ * participant, six demo teams (each owned by the admin), two judging
+ * rounds, criteria, and random scores for all teams except "Team Six" (left
+ * unscored to exercise the create-score flow). Safe to re-run: existing
+ * users/organizations are looked up and reused instead of duplicated.
+ *
+ * `makeTeamCode` retries past collisions, both against codes already used
+ * earlier in this run and against the database, since `organization.teamCode`
+ * is unique and a single random draw isn't guaranteed to be unique.
+ */
+
 import { generateId } from "better-auth";
 import { createOrGetUser } from "drizzle/seedUtils";
 import { and, eq } from "drizzle-orm";
@@ -12,6 +24,35 @@ import {
 	judgingRounds
 } from "@/server/db/schema";
 import { criteria, scores } from "@/server/db/scores-schema";
+
+const TEAM_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+function generateTeamCodeCandidate(): string {
+	let code = "";
+	for (let i = 0; i < 6; i++) {
+		code +=
+			TEAM_CODE_ALPHABET[Math.floor(Math.random() * TEAM_CODE_ALPHABET.length)];
+	}
+	return code;
+}
+
+async function makeTeamCode(usedInThisRun: Set<string>): Promise<string> {
+	for (let attempt = 0; attempt < 10; attempt++) {
+		const candidate = generateTeamCodeCandidate();
+		if (usedInThisRun.has(candidate)) {
+			continue;
+		}
+		const existing = await db
+			.select({ id: organization.id })
+			.from(organization)
+			.where(eq(organization.teamCode, candidate))
+			.limit(1);
+		if (existing.length === 0) {
+			usedInThisRun.add(candidate);
+			return candidate;
+		}
+	}
+	throw new Error("Could not generate a unique team code for seeding");
+}
 
 function getEventDate(dayOffset: number, hour: number) {
 	const date = new Date();
@@ -90,10 +131,10 @@ async function main() {
 		];
 
 		const createdTeams = [];
+		const usedTeamCodes = new Set<string>();
 
 		for (const org of orgs) {
 			try {
-				// Check if organization already exists
 				const existingOrg = await db
 					.select()
 					.from(organization)
@@ -109,18 +150,17 @@ async function main() {
 					continue;
 				}
 
-				// Create organization directly in database
 				const [newOrg] = await db
 					.insert(organization)
 					.values({
 						id: generateId(),
 						name: org.name,
 						slug: org.slug,
-						createdAt: new Date()
+						createdAt: new Date(),
+						teamCode: await makeTeamCode(usedTeamCodes)
 					})
 					.returning();
 
-				// Add admin user as owner of the organization
 				if (newOrg) {
 					await db.insert(member).values({
 						id: generateId(),
@@ -300,7 +340,6 @@ async function main() {
 							})
 							.returning();
 
-						// Only add scores if not team 6 to test create score functionality
 						if (assignment && team.slug !== "team-6") {
 							const scoreValues = criteriaList.map((crit) => ({
 								assignmentId: assignment.id,
@@ -314,7 +353,6 @@ async function main() {
 			}
 		}
 
-		// ==================== SUMMARY ====================
 		console.log("\nSeed completed successfully!\n");
 		console.log("Summary:");
 		console.log(`Admin user: ${adminEmail}`);
