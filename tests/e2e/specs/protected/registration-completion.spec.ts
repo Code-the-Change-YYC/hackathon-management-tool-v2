@@ -7,7 +7,7 @@ test("an authenticated incomplete user completes their own registration", async 
 	authenticatedPage,
 	authUser
 }) => {
-	await authenticatedPage.goto("/signup/identity");
+	await authenticatedPage.goto("/signup/identity?provider=google");
 
 	await expect(
 		authenticatedPage.getByText("Your Google account is connected")

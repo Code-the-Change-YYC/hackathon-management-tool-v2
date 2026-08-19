@@ -17,19 +17,19 @@ type RegistrationDetails = {
 
 type SocialSignInOptions = {
 	errorCallbackURL: string;
-	newUserCallbackURL: string;
+	newUserCallbackPath: string;
 };
 
 function useSocialSignIn({
 	errorCallbackURL,
-	newUserCallbackURL
+	newUserCallbackPath
 }: SocialSignInOptions) {
 	return useMutation({
 		mutationFn: async ({ provider }: { provider: SocialProviderId }) => {
 			const result = await authClient.signIn.social({
 				provider,
-				callbackURL: "/",
-				newUserCallbackURL,
+				callbackURL: "/signup/event-details",
+				newUserCallbackURL: `${newUserCallbackPath}?provider=${provider}`,
 				errorCallbackURL
 			});
 
@@ -51,12 +51,15 @@ export function useLoginMutations() {
 			if (result.error) {
 				throw new Error(result.error.message || "Failed to sign in");
 			}
+
+			return result.data?.user;
 		},
-		onSuccess: () => router.push("/")
+		onSuccess: (user) =>
+			router.push(user?.completedRegistration ? "/" : "/signup/event-details")
 	});
 	const socialSignIn = useSocialSignIn({
 		errorCallbackURL: "/login",
-		newUserCallbackURL: "/signup/identity"
+		newUserCallbackPath: "/signup/identity"
 	});
 
 	return {
@@ -111,7 +114,7 @@ export function useSignupMutations() {
 	});
 	const socialSignIn = useSocialSignIn({
 		errorCallbackURL: "/signup",
-		newUserCallbackURL: "/signup/identity"
+		newUserCallbackPath: "/signup/identity"
 	});
 
 	return {
