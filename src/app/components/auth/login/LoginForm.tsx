@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
 import {
-	enabledSocialProviders,
+	ENABLED_SOCIAL_PROVIDERS,
 	type SocialProviderId
 } from "../social-providers";
 import { useLoginMutations } from "../useAuthMutations";
@@ -95,7 +95,7 @@ export default function LoginForm() {
 				<Separator className="flex-1" />
 			</div>
 
-			{enabledSocialProviders.map(({ icon: Icon, id, label }) => (
+			{ENABLED_SOCIAL_PROVIDERS.map(({ icon: Icon, id, label }) => (
 				<Button
 					className="w-full rounded-full"
 					disabled={isPending}
