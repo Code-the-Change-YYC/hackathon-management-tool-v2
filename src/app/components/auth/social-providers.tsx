@@ -1,5 +1,3 @@
-"use client";
-
 import { GoogleLine } from "@mingcute/react";
 
 export const enabledSocialProviders = [
