@@ -56,6 +56,9 @@ importers:
       drizzle-orm:
         specifier: ^0.41.0
         version: 0.41.0(gel@2.2.0)(kysely@0.29.4)(postgres@3.4.7)
+      little-state-machine:
+        specifier: 5.0.1
+        version: 5.0.1(react@19.2.0)
       next:
         specifier: ^16.3.0
         version: 16.3.0(@babel/core@7.29.7)(@types/node@20.19.25)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.94.2)
@@ -2504,6 +2507,11 @@ packages:
 
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
+
+  little-state-machine@5.0.1:
+    resolution: {integrity: sha512-EjP/l1oAq/Woy5ZQULvWjWfQwzTrf/PHA0we/XQHSC+1FVArlBb545n9wsOPky5qNI6mnvEkGsaIejfImO2+/g==}
+    peerDependencies:
+      react: ^18 || ^19
 
   locate-path@3.0.0:
     resolution: {integrity: sha512-7AO748wWnIhNqAuaty2ZWHkQHRSNfPVIsPIfwEOWO22AmaoVrWavlOcMR5nzTLNYvp36X220/maaRsrec1G65A==}
@@ -5097,6 +5105,10 @@ snapshots:
       lightningcss-win32-x64-msvc: 1.31.1
 
   lines-and-columns@1.2.4: {}
+
+  little-state-machine@5.0.1(react@19.2.0):
+    dependencies:
+      react: 19.2.0
 
   locate-path@3.0.0:
     dependencies:
