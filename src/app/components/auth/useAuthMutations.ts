@@ -28,7 +28,7 @@ function useSocialSignIn({
 		mutationFn: async ({ provider }: { provider: SocialProviderId }) => {
 			const result = await authClient.signIn.social({
 				provider,
-				callbackURL: "/",
+				callbackURL: "/signup/event-details",
 				newUserCallbackURL,
 				errorCallbackURL
 			});
@@ -51,8 +51,11 @@ export function useLoginMutations() {
 			if (result.error) {
 				throw new Error(result.error.message || "Failed to sign in");
 			}
+
+			return result.data?.user;
 		},
-		onSuccess: () => router.push("/")
+		onSuccess: (user) =>
+			router.push(user?.completedRegistration ? "/" : "/signup/event-details")
 	});
 	const socialSignIn = useSocialSignIn({
 		errorCallbackURL: "/login",
