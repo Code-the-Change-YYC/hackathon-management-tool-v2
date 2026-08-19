@@ -4,11 +4,11 @@ import { createStore } from "little-state-machine";
 import type { DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
 import type { SocialProviderId } from "../social-providers";
 
-export type SignupMethod = "email" | SocialProviderId | null;
+type SignupMethod = "email" | SocialProviderId | null;
 export type ProgramValue = (typeof PROGRAMS)[number] | "";
 export type MealOption = "yes" | "no" | "";
 
-export type SignupWizardState = {
+type SignupWizardState = {
 	method: SignupMethod;
 	firstName: string;
 	lastName: string;
