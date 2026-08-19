@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/server/better-auth/client";
 import type { DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
+import type { SocialProviderId } from "./social-providers";
 
 export type RegistrationDetails = {
 	school: string;
@@ -14,19 +15,27 @@ export type RegistrationDetails = {
 	wantsFood: "yes" | "no";
 };
 
-function useGoogleSignIn(errorCallbackURL: string) {
+type SocialSignInOptions = {
+	errorCallbackURL: string;
+	newUserCallbackURL: string;
+};
+
+function useSocialSignIn({
+	errorCallbackURL,
+	newUserCallbackURL
+}: SocialSignInOptions) {
 	return useMutation({
-		mutationFn: async () => {
+		mutationFn: async ({ provider }: { provider: SocialProviderId }) => {
 			const result = await authClient.signIn.social({
-				provider: "google",
+				provider,
 				callbackURL: "/",
-				newUserCallbackURL: "/signup",
+				newUserCallbackURL,
 				errorCallbackURL
 			});
 
 			if (result.error) {
 				throw new Error(
-					result.error.message || "Failed to start Google sign in"
+					result.error.message || "Failed to start social sign in"
 				);
 			}
 		}
@@ -45,18 +54,20 @@ export function useLoginMutations() {
 		},
 		onSuccess: () => router.push("/")
 	});
-	const googleSignIn = useGoogleSignIn("/login");
+	const socialSignIn = useSocialSignIn({
+		errorCallbackURL: "/login",
+		newUserCallbackURL: "/signup/identity"
+	});
 
 	return {
 		emailSignIn,
-		googleSignIn,
-		isPending: emailSignIn.isPending || googleSignIn.isPending,
-		error: emailSignIn.error ?? googleSignIn.error
+		socialSignIn,
+		isPending: emailSignIn.isPending || socialSignIn.isPending,
+		error: emailSignIn.error ?? socialSignIn.error
 	};
 }
 
 export function useSignupMutations() {
-	const router = useRouter();
 	const completeRegistration = api.users.completeRegistration.useMutation();
 	const emailSignUp = useMutation({
 		mutationFn: async ({
@@ -77,27 +88,43 @@ export function useSignupMutations() {
 			}
 
 			await completeRegistration.mutateAsync(details);
-		},
-		onSuccess: () => router.push("/login")
+		}
 	});
-	const googleRegistrationCompletion = useMutation({
-		mutationFn: (details: RegistrationDetails) =>
-			completeRegistration.mutateAsync(details),
-		onSuccess: () => router.push("/")
+	const socialRegistrationCompletion = useMutation({
+		mutationFn: async ({
+			details,
+			name
+		}: {
+			details: RegistrationDetails;
+			name?: string;
+		}) => {
+			if (name) {
+				const result = await authClient.updateUser({ name });
+
+				if (result.error) {
+					throw new Error(result.error.message || "Failed to update your name");
+				}
+			}
+
+			await completeRegistration.mutateAsync(details);
+		}
 	});
-	const googleSignIn = useGoogleSignIn("/signup");
+	const socialSignIn = useSocialSignIn({
+		errorCallbackURL: "/signup",
+		newUserCallbackURL: "/signup/identity"
+	});
 
 	return {
 		emailSignUp,
-		googleRegistrationCompletion,
-		googleSignIn,
+		socialRegistrationCompletion,
+		socialSignIn,
 		isPending:
 			emailSignUp.isPending ||
-			googleRegistrationCompletion.isPending ||
-			googleSignIn.isPending,
+			socialRegistrationCompletion.isPending ||
+			socialSignIn.isPending,
 		error:
 			emailSignUp.error ??
-			googleRegistrationCompletion.error ??
-			googleSignIn.error
+			socialRegistrationCompletion.error ??
+			socialSignIn.error
 	};
 }
