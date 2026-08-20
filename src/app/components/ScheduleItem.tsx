@@ -4,6 +4,7 @@ import {
 	LaptopLine,
 	TrophyLine
 } from "@mingcute/react";
+import { EventType } from "@/types/types";
 
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
 	hour: "numeric",
@@ -15,7 +16,7 @@ export type ScheduleItemData = {
 	title: string;
 	startTime: Date;
 	endTime: Date;
-	badgeLabel: string;
+	eventType: EventType;
 	description: string;
 };
 
@@ -30,30 +31,30 @@ function formatTimeRange(startTime: Date, endTime: Date) {
 	return `${timeFormatter.format(startTime)} - ${timeFormatter.format(endTime)}`;
 }
 
-function getScheduleItemTheme(badgeLabel: string): ScheduleItemTheme {
-	switch (badgeLabel.trim().toLowerCase()) {
-		case "food":
+function getScheduleItemTheme(eventType: EventType): ScheduleItemTheme {
+	switch (eventType) {
+		case EventType.FOOD:
 			return {
 				badgeClassName: "bg-dark-pink",
 				lineClassName: "bg-medium-pink",
 				previewClassName: "bg-pastel-pink",
 				iconColor: "var(--color-dark-pink)"
 			};
-		case "ceremony":
+		case EventType.CEREMONY:
 			return {
 				badgeClassName: "bg-awesomer-purple",
 				lineClassName: "bg-awesome-purple",
 				previewClassName: "bg-lilac-purple",
 				iconColor: "var(--color-awesomer-purple)"
 			};
-		case "project":
+		case EventType.PROJECT:
 			return {
 				badgeClassName: "bg-grapefruit",
 				lineClassName: "bg-grapefruit",
 				previewClassName: "bg-fuzzy-peach",
 				iconColor: "var(--color-grapefruit)"
 			};
-		case "activity":
+		case EventType.ACTIVITY:
 			return {
 				badgeClassName: "bg-emerald-green",
 				lineClassName: "bg-dark-green",
@@ -70,15 +71,15 @@ function getScheduleItemTheme(badgeLabel: string): ScheduleItemTheme {
 	}
 }
 
-function getScheduleItemIcon(badgeLabel: string, color: string) {
-	switch (badgeLabel.trim().toLowerCase()) {
-		case "food":
+function getScheduleItemIcon(eventType: EventType, color: string) {
+	switch (eventType) {
+		case EventType.FOOD:
 			return <HamburgerLine className="size-full" color={color} />;
-		case "activity":
+		case EventType.ACTIVITY:
 			return <TrophyLine className="size-full" color={color} />;
-		case "project":
+		case EventType.PROJECT:
 			return <LaptopLine className="size-full" color={color} />;
-		case "ceremony":
+		case EventType.CEREMONY:
 			return <AnnouncementLine className="size-full" color={color} />;
 		default:
 			return null;
@@ -118,8 +119,10 @@ type ScheduleItemProps = {
 export function ScheduleItem({ item, now }: ScheduleItemProps) {
 	const status = getScheduleItemStatus(item, now);
 	const { badgeClassName, lineClassName, previewClassName, iconColor } =
-		getScheduleItemTheme(item.badgeLabel);
-	const icon = getScheduleItemIcon(item.badgeLabel, iconColor);
+		getScheduleItemTheme(item.eventType);
+	const icon = getScheduleItemIcon(item.eventType, iconColor);
+	const badgeLabel =
+		item.eventType.charAt(0).toUpperCase() + item.eventType.slice(1);
 
 	return (
 		<li className="flex min-w-0 flex-col gap-3 md:flex-row md:items-stretch md:gap-2">
@@ -127,7 +130,7 @@ export function ScheduleItem({ item, now }: ScheduleItemProps) {
 				<span
 					className={`rounded-full px-3 py-0.5 font-medium text-white text-xs md:px-2 md:text-[10px] ${badgeClassName}`}
 				>
-					{item.badgeLabel}
+					{badgeLabel}
 				</span>
 				<span className="text-dark-grey/70 text-sm md:mt-2 md:text-[10px] md:leading-3">
 					{status}

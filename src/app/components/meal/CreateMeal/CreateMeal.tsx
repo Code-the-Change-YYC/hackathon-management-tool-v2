@@ -5,6 +5,7 @@ import { api } from "@/trpc/react";
 
 export default function CreateMeal() {
 	const [title, setTitle] = useState("");
+	const [description, setDescription] = useState("");
 	const [startTime, setStartTime] = useState<Date | null>(null);
 	const [endTime, setEndTime] = useState<Date | null>(null);
 
@@ -13,14 +14,20 @@ export default function CreateMeal() {
 		onSuccess: async () => {
 			await utils.meals.getAllMeals.invalidate(); // re-fetch meals
 			setTitle("");
+			setDescription("");
 			setStartTime(null);
 			setEndTime(null);
 		}
 	});
 
 	function handleCreateMeal() {
-		if (!title.trim() || !startTime || !endTime) return;
-		createMeal.mutate({ title: title.trim(), startTime, endTime });
+		if (!title.trim() || !description.trim() || !startTime || !endTime) return;
+		createMeal.mutate({
+			title: title.trim(),
+			description: description.trim(),
+			startTime,
+			endTime
+		});
 	}
 
 	return (
@@ -38,6 +45,16 @@ export default function CreateMeal() {
 				onChange={(e) => setTitle(e.target.value)}
 				type="text"
 				value={title}
+			/>
+			<label className="mb-2 block font-medium text-sm" htmlFor="description">
+				Description:
+			</label>
+			<textarea
+				className="mb-4 min-h-24 w-full resize-y rounded-lg border border-medium-grey bg-white px-3 py-2 outline-none transition focus:border-awesomer-purple focus:ring-2 focus:ring-awesomer-purple/20"
+				id="description"
+				name="description"
+				onChange={(e) => setDescription(e.target.value)}
+				value={description}
 			/>
 			<label className="mb-2 block font-medium text-sm" htmlFor="start-time">
 				Start time:
