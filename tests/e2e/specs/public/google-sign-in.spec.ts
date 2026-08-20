@@ -34,7 +34,7 @@ test("Google sign-in starts the Better Auth social flow", async ({ page }) => {
 	const request = await requestPromise;
 	expect(request.postDataJSON()).toMatchObject({
 		provider: "google",
-		callbackURL: "/",
-		newUserCallbackURL: "/signup/identity"
+		callbackURL: "/signup/event-details",
+		newUserCallbackURL: "/signup/identity?provider=google"
 	});
 });

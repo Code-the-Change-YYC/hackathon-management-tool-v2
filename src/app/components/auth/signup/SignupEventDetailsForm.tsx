@@ -56,6 +56,8 @@ export default function SignupEventDetailsForm() {
 	const { emailSignUp, error, socialRegistrationCompletion } =
 		useSignupMutations();
 	const method = state.signupWizard.method;
+	const isAuthenticatedIncomplete =
+		Boolean(session?.user) && !session?.user.completedRegistration;
 	const isCompletingRegistration = useRef(false);
 	const isSubmitting =
 		emailSignUp.isPending || socialRegistrationCompletion.isPending;
@@ -73,12 +75,22 @@ export default function SignupEventDetailsForm() {
 			return;
 		}
 
-		if (!method && !isCompletingRegistration.current) {
+		if (
+			!method &&
+			!isAuthenticatedIncomplete &&
+			!isCompletingRegistration.current
+		) {
 			router.replace(session?.user ? "/signup/identity" : "/signup");
 		}
-	}, [isSessionPending, method, router, session?.user]);
+	}, [
+		isAuthenticatedIncomplete,
+		isSessionPending,
+		method,
+		router,
+		session?.user
+	]);
 
-	if (isSessionPending || !method) {
+	if (isSessionPending || (!method && !isAuthenticatedIncomplete)) {
 		return (
 			<p className="py-8 text-center text-muted-foreground">
 				Loading registration…
@@ -148,6 +160,11 @@ export default function SignupEventDetailsForm() {
 	};
 
 	const handleBack = () => {
+		if (!method) {
+			router.push("/");
+			return;
+		}
+
 		actions.updateSignupWizard(form.getValues());
 		router.push("/signup/identity");
 	};
@@ -309,7 +326,7 @@ export default function SignupEventDetailsForm() {
 					type="button"
 					variant="outline"
 				>
-					Back
+					{method ? "Back" : "Cancel"}
 				</Button>
 				<Button disabled={isSubmitting} type="submit">
 					{isSubmitting ? "Saving…" : "Complete registration"}

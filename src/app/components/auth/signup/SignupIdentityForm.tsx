@@ -1,7 +1,7 @@
 "use client";
 
 import { useStateMachine } from "little-state-machine";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
@@ -14,6 +14,10 @@ import {
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
 import { authClient } from "@/server/better-auth/client";
+import {
+	enabledSocialProviders,
+	type SocialProviderId
+} from "../social-providers";
 import { getNameParts, resetSignupWizard, updateSignupWizard } from "./wizard";
 
 type IdentityFormValues = {
@@ -25,13 +29,20 @@ type IdentityFormValues = {
 
 export default function SignupIdentityForm() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const { actions, state } = useStateMachine({
 		actions: { resetSignupWizard, updateSignupWizard }
 	});
 	const { data: session, isPending: isSessionPending } =
 		authClient.useSession();
-	const isGoogleRegistration =
-		Boolean(session?.user) && !session?.user.completedRegistration;
+	const requestedProvider = searchParams.get("provider");
+	const socialProvider = enabledSocialProviders.find(
+		({ id }) => id === requestedProvider
+	);
+	const isSocialRegistration =
+		Boolean(session?.user) &&
+		!session?.user.completedRegistration &&
+		Boolean(socialProvider);
 	const form = useForm<IdentityFormValues>({
 		defaultValues: state.signupWizard
 	});
@@ -46,20 +57,25 @@ export default function SignupIdentityForm() {
 			return;
 		}
 
-		const googleUser = isGoogleRegistration ? session?.user : null;
-		if (googleUser) {
-			const name = getNameParts(googleUser.name);
+		const socialUser = isSocialRegistration ? session?.user : null;
+		if (socialUser && socialProvider) {
+			const name = getNameParts(socialUser.name);
 			actions.updateSignupWizard({
-				method: "google",
+				method: socialProvider.id as SocialProviderId,
 				...name,
-				email: googleUser.email,
+				email: socialUser.email,
 				password: ""
 			});
 			form.reset({
 				...name,
-				email: googleUser.email,
+				email: socialUser.email,
 				password: ""
 			});
+			return;
+		}
+
+		if (session?.user) {
+			router.replace("/signup/event-details");
 			return;
 		}
 
@@ -69,16 +85,19 @@ export default function SignupIdentityForm() {
 	}, [
 		actions,
 		form,
-		isGoogleRegistration,
+		isSocialRegistration,
 		isSessionPending,
 		router,
 		session?.user,
+		socialProvider,
 		state.signupWizard.method
 	]);
 
 	if (
 		isSessionPending ||
-		(!isGoogleRegistration && state.signupWizard.method !== "email")
+		(!isSocialRegistration &&
+			!session?.user &&
+			state.signupWizard.method !== "email")
 	) {
 		return (
 			<p className="py-8 text-center text-muted-foreground">
@@ -111,10 +130,10 @@ export default function SignupIdentityForm() {
 			<div className="flex flex-col gap-1">
 				<p className="font-medium text-muted-foreground text-sm">Step 2 of 3</p>
 				<h3 className="font-semibold text-xl">Your details</h3>
-				{isGoogleRegistration && (
+				{isSocialRegistration && (
 					<p className="text-muted-foreground text-sm">
-						Your Google account is connected. Review your details before
-						continuing.
+						Your {socialProvider?.label} account is connected. Review your
+						details before continuing.
 					</p>
 				)}
 			</div>
@@ -152,9 +171,9 @@ export default function SignupIdentityForm() {
 					<FieldLabel htmlFor="email">Email</FieldLabel>
 					<Input
 						aria-invalid={Boolean(form.formState.errors.email)}
-						disabled={isGoogleRegistration || form.formState.isSubmitting}
+						disabled={isSocialRegistration || form.formState.isSubmitting}
 						id="email"
-						readOnly={isGoogleRegistration}
+						readOnly={isSocialRegistration}
 						type="email"
 						{...form.register("email", {
 							pattern: {
@@ -167,7 +186,7 @@ export default function SignupIdentityForm() {
 					<FieldError errors={[form.formState.errors.email]} />
 				</Field>
 
-				{!isGoogleRegistration && (
+				{!isSocialRegistration && (
 					<Field data-invalid={Boolean(form.formState.errors.password)}>
 						<FieldLabel htmlFor="password">Password</FieldLabel>
 						<Input
