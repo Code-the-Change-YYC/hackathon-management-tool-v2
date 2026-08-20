@@ -23,6 +23,7 @@ import {
 const eventTimeRangeSchema = z
 	.object({
 		title: z.string().trim().min(1),
+		description: z.string().trim().min(1),
 		startTime: z.coerce.date(),
 		endTime: z.coerce.date()
 	})
@@ -111,10 +112,7 @@ export const eventsRouter = createTRPCRouter({
 	rotateParticipantEventTicket: protectedProcedure
 		.input(z.object({ eventId: z.string().uuid() }))
 		.mutation(async ({ input, ctx }) => {
-			if (
-				ctx.session.user.role !== Role.PARTICIPANT &&
-				ctx.session.user.role !== Role.ADMIN
-			) {
+			if (ctx.session.user.role !== Role.PARTICIPANT) {
 				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
@@ -230,6 +228,7 @@ export const eventsRouter = createTRPCRouter({
 						expiresAt: eventTicket.expiresAt,
 						participantName: user.name,
 						participantEmail: user.email,
+						participantRole: user.role,
 						eventTitle: event.title,
 						eventType: event.type,
 						eventStatus: event.status,
@@ -247,6 +246,13 @@ export const eventsRouter = createTRPCRouter({
 					throw new TRPCError({
 						code: "NOT_FOUND",
 						message: "This event ticket is invalid or has been replaced."
+					});
+				}
+
+				if (ticket.participantRole !== Role.PARTICIPANT) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message: "Only participant tickets can be redeemed."
 					});
 				}
 
