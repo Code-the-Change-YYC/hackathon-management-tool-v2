@@ -22,15 +22,15 @@ test("an authenticated incomplete user completes their own registration", async 
 		.getByRole("button", { name: "Continue to event details" })
 		.click();
 
-	await authenticatedPage
-		.getByLabel("Which institution do you go to?")
-		.selectOption("SAIT");
-	await authenticatedPage
-		.getByLabel("Which program are you in?")
-		.selectOption("computer_science");
-	await authenticatedPage
-		.getByLabel("Do you want provided food at the hackathon?")
-		.selectOption("yes");
+	const selectOption = async (label: string, option: string) => {
+		await authenticatedPage.getByLabel(label).click();
+		await authenticatedPage
+			.getByRole("option", { name: option, exact: true })
+			.click();
+	};
+	await selectOption("Which institution do you go to?", "SAIT");
+	await selectOption("Which program are you in?", "computer science");
+	await selectOption("Do you want provided food at the hackathon?", "Yes");
 	await authenticatedPage
 		.getByRole("button", { name: "Complete registration" })
 		.click();
