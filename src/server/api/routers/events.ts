@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
@@ -8,14 +8,17 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
+import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
 	EVENT_STATUSES,
+	EVENT_TICKET_TOKEN_PATTERN,
 	EVENT_TYPES,
-	event,
-	eventAttendance,
-	eventTicket,
-	QR_EVENT_TYPES
-} from "@/server/db/event-schema";
+	EventStatus,
+	EventTicketStatus,
+	type EventType,
+	QR_EVENT_TYPES,
+	Role
+} from "@/types/types";
 
 const eventTimeRangeSchema = z
 	.object({
@@ -30,7 +33,7 @@ const eventTimeRangeSchema = z
 
 const ticketTokenSchema = z
 	.string()
-	.regex(/^evt1_[A-Za-z0-9_-]{43}$/, "Invalid event ticket format.");
+	.regex(EVENT_TICKET_TOKEN_PATTERN, "Invalid event ticket format.");
 
 function hashTicketToken(token: string) {
 	return createHash("sha256").update(token).digest("hex");
@@ -40,7 +43,7 @@ function createTicketToken() {
 	return `evt1_${randomBytes(32).toString("base64url")}`;
 }
 
-function supportsQrTickets(type: string) {
+function supportsQrTickets(type: EventType) {
 	return QR_EVENT_TYPES.some((qrType) => qrType === type);
 }
 
@@ -50,7 +53,7 @@ export const eventsRouter = createTRPCRouter({
 			eventTimeRangeSchema.and(
 				z.object({
 					type: z.enum(EVENT_TYPES),
-					status: z.enum(EVENT_STATUSES).default("draft")
+					status: z.enum(EVENT_STATUSES).default(EventStatus.DRAFT)
 				})
 			)
 		)
@@ -60,25 +63,24 @@ export const eventsRouter = createTRPCRouter({
 		}),
 
 	getAllEvents: adminProcedure.query(async ({ ctx }) => {
-		return ctx.db.select().from(event).orderBy(event.startTime);
+		return ctx.db.query.event.findMany({
+			orderBy: [asc(event.startTime)]
+		});
 	}),
 
 	getActiveEvents: protectedProcedure.query(async ({ ctx }) => {
-		return ctx.db
-			.select()
-			.from(event)
-			.where(eq(event.status, "active"))
-			.orderBy(event.startTime);
+		return ctx.db.query.event.findMany({
+			where: eq(event.status, EventStatus.ACTIVE),
+			orderBy: [asc(event.startTime)]
+		});
 	}),
 
 	getEvent: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			const [selectedEvent] = await ctx.db
-				.select()
-				.from(event)
-				.where(eq(event.id, input.id))
-				.limit(1);
+			const selectedEvent = await ctx.db.query.event.findFirst({
+				where: eq(event.id, input.id)
+			});
 			return selectedEvent ?? null;
 		}),
 
@@ -110,18 +112,16 @@ export const eventsRouter = createTRPCRouter({
 		.input(z.object({ eventId: z.string().uuid() }))
 		.mutation(async ({ input, ctx }) => {
 			if (
-				ctx.session.user.role !== "participant" &&
-				ctx.session.user.role !== "admin"
+				ctx.session.user.role !== Role.PARTICIPANT &&
+				ctx.session.user.role !== Role.ADMIN
 			) {
 				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
 			return ctx.db.transaction(async (tx) => {
-				const [ticketEvent] = await tx
-					.select()
-					.from(event)
-					.where(eq(event.id, input.eventId))
-					.limit(1);
+				const ticketEvent = await tx.query.event.findFirst({
+					where: eq(event.id, input.eventId)
+				});
 
 				if (!ticketEvent) {
 					throw new TRPCError({
@@ -137,7 +137,7 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				if (ticketEvent.status !== "active") {
+				if (ticketEvent.status !== EventStatus.ACTIVE) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
 						message: "This event is not active."
@@ -163,16 +163,13 @@ export const eventsRouter = createTRPCRouter({
 					)
 					.for("update");
 
-				const [attendance] = await tx
-					.select({ checkedInAt: eventAttendance.createdAt })
-					.from(eventAttendance)
-					.where(
-						and(
-							eq(eventAttendance.userId, ctx.session.user.id),
-							eq(eventAttendance.eventId, input.eventId)
-						)
+				const attendance = await tx.query.eventAttendance.findFirst({
+					columns: { createdAt: true },
+					where: and(
+						eq(eventAttendance.userId, ctx.session.user.id),
+						eq(eventAttendance.eventId, input.eventId)
 					)
-					.limit(1);
+				});
 
 				const eventDetails = {
 					id: ticketEvent.id,
@@ -184,10 +181,10 @@ export const eventsRouter = createTRPCRouter({
 
 				if (attendance) {
 					return {
-						status: "already_checked_in" as const,
-						checkedInAt: attendance.checkedInAt,
+						status: EventTicketStatus.ALREADY_CHECKED_IN,
+						checkedInAt: attendance.createdAt,
 						event: eventDetails
-					};
+					} as const;
 				}
 
 				const token = createTicketToken();
@@ -209,10 +206,10 @@ export const eventsRouter = createTRPCRouter({
 					});
 
 				return {
-					status: "active" as const,
+					status: EventTicketStatus.ACTIVE,
 					token,
 					event: eventDetails
-				};
+				} as const;
 			});
 		}),
 
@@ -267,7 +264,7 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				if (ticket.eventStatus !== "active") {
+				if (ticket.eventStatus !== EventStatus.ACTIVE) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
 						message: "This event is not active."

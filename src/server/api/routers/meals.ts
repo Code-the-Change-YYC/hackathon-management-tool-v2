@@ -1,4 +1,4 @@
-import { and, eq, gte } from "drizzle-orm";
+import { and, asc, eq, gte } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
@@ -6,6 +6,7 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import { event } from "@/server/db/event-schema";
+import { EventStatus, EventType } from "@/types/types";
 
 export const mealsRouter = createTRPCRouter({
 	addMeal: adminProcedure
@@ -28,8 +29,8 @@ export const mealsRouter = createTRPCRouter({
 				.values({
 					title: input.title,
 					description: input.description,
-					type: "food",
-					status: "draft",
+					type: EventType.FOOD,
+					status: EventStatus.DRAFT,
 					startTime: input.startTime,
 					endTime: input.endTime
 				})
@@ -38,34 +39,31 @@ export const mealsRouter = createTRPCRouter({
 		}),
 
 	getAllMeals: adminProcedure.query(async ({ ctx }) => {
-		return ctx.db
-			.select()
-			.from(event)
-			.where(eq(event.type, "food"))
-			.orderBy(event.startTime);
+		return ctx.db.query.event.findMany({
+			where: eq(event.type, EventType.FOOD),
+			orderBy: [asc(event.startTime)]
+		});
 	}),
 
 	getActiveMeals: protectedProcedure.query(async ({ ctx }) => {
-		return ctx.db
-			.select()
-			.from(event)
-			.where(and(eq(event.type, "food"), eq(event.status, "active")))
-			.orderBy(event.startTime);
+		return ctx.db.query.event.findMany({
+			where: and(
+				eq(event.type, EventType.FOOD),
+				eq(event.status, EventStatus.ACTIVE)
+			),
+			orderBy: [asc(event.startTime)]
+		});
 	}),
 
 	getNextMeal: protectedProcedure.query(async ({ ctx }) => {
-		const [nextMeal] = await ctx.db
-			.select()
-			.from(event)
-			.where(
-				and(
-					eq(event.type, "food"),
-					eq(event.status, "active"),
-					gte(event.endTime, new Date())
-				)
-			)
-			.orderBy(event.startTime)
-			.limit(1);
+		const nextMeal = await ctx.db.query.event.findFirst({
+			where: and(
+				eq(event.type, EventType.FOOD),
+				eq(event.status, EventStatus.ACTIVE),
+				gte(event.endTime, new Date())
+			),
+			orderBy: [asc(event.startTime)]
+		});
 
 		return nextMeal ?? null;
 	}),
@@ -73,10 +71,8 @@ export const mealsRouter = createTRPCRouter({
 	getMeal: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			const [oneMeal] = await ctx.db
-				.select()
-				.from(event)
-				.where(and(eq(event.id, input.id), eq(event.type, "food")));
-			return oneMeal;
+			return ctx.db.query.event.findFirst({
+				where: and(eq(event.id, input.id), eq(event.type, EventType.FOOD))
+			});
 		})
 });

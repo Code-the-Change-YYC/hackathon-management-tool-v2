@@ -8,15 +8,13 @@ import {
 	unique,
 	uuid
 } from "drizzle-orm/pg-core";
+import {
+	EVENT_STATUSES,
+	EVENT_TYPES,
+	EventStatus,
+	EventType
+} from "@/types/types";
 import { user } from "./auth-schema";
-
-export const EVENT_TYPES = ["food", "activity", "project", "ceremony"] as const;
-export const EVENT_STATUSES = ["draft", "active"] as const;
-export const QR_EVENT_TYPES = ["food", "activity"] as const;
-
-export type EventType = (typeof EVENT_TYPES)[number];
-export type EventStatus = (typeof EVENT_STATUSES)[number];
-export type QrEventType = (typeof QR_EVENT_TYPES)[number];
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
@@ -26,8 +24,10 @@ export const event = createTable(
 		id: uuid("id").primaryKey().defaultRandom(),
 		title: text("title").notNull(),
 		description: text("description").default("").notNull(),
-		type: text("type", { enum: EVENT_TYPES }).default("food").notNull(),
-		status: text("status", { enum: EVENT_STATUSES }).default("draft").notNull(),
+		type: text("type", { enum: EVENT_TYPES }).default(EventType.FOOD).notNull(),
+		status: text("status", { enum: EVENT_STATUSES })
+			.default(EventStatus.DRAFT)
+			.notNull(),
 		startTime: timestamp("start_time", { withTimezone: true }).notNull(),
 		endTime: timestamp("end_time", { withTimezone: true }).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
