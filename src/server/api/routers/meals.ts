@@ -27,6 +27,7 @@ export const mealsRouter = createTRPCRouter({
 				.insert(event)
 				.values({
 					title: input.title,
+					description: input.description,
 					type: "food",
 					status: "draft",
 					startTime: input.startTime,

@@ -3,37 +3,7 @@
 import MealAttendees from "./MealAttendees";
 import MealScanner from "./MealScanner";
 
-const RECENT_SCAN_WINDOW_MS = 10_000;
-
 export default function Meal({ mealId }: { mealId: string }) {
-	const recentScansRef = useRef<Map<string, number>>(new Map());
-	const utils = api.useUtils();
-	const redeemTicket = api.events.redeemEventTicket.useMutation();
-
-	function handleDetected(token: string) {
-		const now = Date.now();
-		const lastScannedAt = recentScansRef.current.get(token);
-
-		if (lastScannedAt && now - lastScannedAt < RECENT_SCAN_WINDOW_MS) {
-			return;
-		}
-
-		recentScansRef.current.set(token, now);
-		redeemTicket.mutate(
-			{ token, eventId: mealId },
-			{
-				onSuccess: () => {
-					void utils.events.getEventAttendees.invalidate({ eventId: mealId });
-				},
-				onError: () => {
-					window.setTimeout(() => {
-						recentScansRef.current.delete(token);
-					}, RECENT_SCAN_WINDOW_MS);
-				}
-			}
-		);
-	}
-
 	return (
 		<div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
 			<div className="h-full min-w-0 rounded-xl border border-light-grey bg-white p-4 sm:p-6">
