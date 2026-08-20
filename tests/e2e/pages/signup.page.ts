@@ -2,7 +2,16 @@ import type { Page } from "playwright/test";
 import type { createSignupData } from "../helpers/signup-data";
 
 const SIGNUP_PAGE = "/signup";
-const SUBMIT_BUTTON_NAME = "Complete registration";
+
+const dietaryRestrictionLabels: Record<string, string> = {
+	dairy_free: "Dairy-free",
+	gluten_free: "Gluten-free",
+	halal: "Halal",
+	nut_allergy: "Nut allergy",
+	other: "Other",
+	vegetarian: "Vegetarian",
+	vegan: "Vegan"
+};
 
 export class SignupPage {
 	constructor(private readonly page: Page) {}
@@ -12,31 +21,34 @@ export class SignupPage {
 	}
 
 	async fillForm(data: ReturnType<typeof createSignupData>) {
+		await this.page.getByLabel("Email").fill(data.email);
+		await this.page.getByLabel("Password", { exact: true }).fill(data.password);
 		await this.page
-			.getByRole("button", { name: "Continue with email and password" })
+			.getByRole("button", { exact: true, name: "Sign Up" })
 			.click();
 		await this.page.getByLabel("First name").fill(data.firstName);
 		await this.page.getByLabel("Last name").fill(data.lastName);
-		await this.page.getByLabel("Email").fill(data.email);
-		await this.page.getByLabel("Password").fill(data.password);
-		await this.page
-			.getByRole("button", { name: "Continue to event details" })
-			.click();
-		await this.page
-			.getByLabel("Which institution do you go to?")
-			.selectOption(data.school);
-		await this.page
-			.getByLabel("Which program are you in?")
-			.selectOption(data.program);
-		await this.page
-			.getByLabel("Do you want provided food at the hackathon?")
-			.selectOption(data.wantsFood);
+		await this.selectOption(/Which institution are you attending/, data.school);
+		await this.page.getByRole("button", { name: "Continue" }).click();
+		await this.selectOption(
+			/Do you want to be provided free meals at the hackathon/,
+			data.wantsFood === "yes" ? "Yes" : "No"
+		);
 		for (const restriction of data.dietaryRestrictions) {
-			await this.page.getByRole("checkbox", { name: restriction }).check();
+			await this.page
+				.getByRole("button", {
+					name: dietaryRestrictionLabels[restriction]
+				})
+				.click();
 		}
 	}
 
 	async submit() {
-		await this.page.getByRole("button", { name: SUBMIT_BUTTON_NAME }).click();
+		await this.page.getByRole("button", { name: "Continue" }).click();
+	}
+
+	private async selectOption(label: string | RegExp, option: string) {
+		await this.page.getByLabel(label).click();
+		await this.page.getByRole("option", { name: option, exact: true }).click();
 	}
 }

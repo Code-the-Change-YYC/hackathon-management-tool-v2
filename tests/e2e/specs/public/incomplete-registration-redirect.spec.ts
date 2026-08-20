@@ -19,11 +19,11 @@ test("an incomplete email user is sent to event details after signing in", async
 
 	await page.goto("/login");
 	await page.getByLabel("Email").fill(email);
-	await page.getByLabel("Password").fill(password);
-	await page.getByRole("button", { name: "Sign in" }).click();
+	await page.getByLabel("Password", { exact: true }).fill(password);
+	await page.getByRole("button", { exact: true, name: "Sign in" }).click();
 
 	await expect(page).toHaveURL(/\/signup\/event-details$/);
 	await expect(
-		page.getByLabel("Which institution do you go to?")
+		page.getByLabel(/Do you want to be provided free meals at the hackathon/)
 	).toBeVisible();
 });

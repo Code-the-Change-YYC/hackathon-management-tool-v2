@@ -5,7 +5,6 @@ export const createSignupData = (suffix: string) =>
 		firstName: "E2E",
 		lastName: "Participant",
 		password: "Password123!",
-		program: "computer_science",
 		school: "University of Calgary",
 		wantsFood: "yes"
 	}) as const;

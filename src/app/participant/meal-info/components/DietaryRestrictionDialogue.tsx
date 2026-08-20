@@ -25,13 +25,15 @@ import {
 } from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
 
-export const restrictionLabels = {
+export const restrictionLabels: Record<DietaryRestriction, string> = {
+	dairy_free: "Dairy-free",
 	halal: "Halal",
+	nut_allergy: "Nut allergy",
 	vegetarian: "Vegetarian",
 	vegan: "Vegan",
 	gluten_free: "Gluten-free",
 	other: "Other"
-} satisfies Record<DietaryRestriction, string>;
+};
 
 type DietaryRestrictionDialogueProps = {
 	currentRestrictions: DietaryRestriction[];

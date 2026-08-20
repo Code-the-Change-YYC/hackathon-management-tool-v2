@@ -4,13 +4,12 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import { authClient } from "@/server/better-auth/client";
-import type { DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
+import type { DietaryRestriction } from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
 import type { SocialProviderId } from "./social-providers";
 
 type RegistrationDetails = {
 	school: string;
-	program?: (typeof PROGRAMS)[number];
 	dietaryRestrictions: DietaryRestriction[];
 	wantsFood: "yes" | "no";
 };

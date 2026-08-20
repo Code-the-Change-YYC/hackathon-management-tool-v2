@@ -1,38 +1,52 @@
 "use client";
 
+import { AddLine, CloseLine } from "@mingcute/react";
 import { useStateMachine } from "little-state-machine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 
+import { AuthHeading, AuthShell } from "@/app/components/auth/AuthShell";
 import { Button } from "@/app/components/ui/button";
-import { Checkbox } from "@/app/components/ui/checkbox";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
-	FieldLabel,
-	FieldLegend,
-	FieldSet
+	FieldLabel
 } from "@/app/components/ui/field";
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from "@/app/components/ui/select";
+import { cn } from "@/lib/utils";
 import { authClient } from "@/server/better-auth/client";
 import {
 	DIETARY_RESTRICTIONS,
-	type DietaryRestriction,
-	PROGRAMS
+	type DietaryRestriction
 } from "@/server/db/auth-schema";
 import { useSignupMutations } from "../useAuthMutations";
 import {
 	getFullName,
 	type MealOption,
-	type ProgramValue,
 	resetSignupWizard,
 	updateSignupWizard
 } from "./wizard";
 
+const dietaryLabels: Record<DietaryRestriction, string> = {
+	dairy_free: "Dairy-free",
+	gluten_free: "Gluten-free",
+	halal: "Halal",
+	nut_allergy: "Nut allergy",
+	other: "Other",
+	vegetarian: "Vegetarian",
+	vegan: "Vegan"
+};
+
 type EventDetailsFormValues = {
-	school: string;
-	program: ProgramValue;
 	dietaryRestrictions: DietaryRestriction[];
 	wantsFood: MealOption;
 };
@@ -53,8 +67,13 @@ export default function SignupEventDetailsForm() {
 	const isSubmitting =
 		emailSignUp.isPending || socialRegistrationCompletion.isPending;
 	const form = useForm<EventDetailsFormValues>({
-		defaultValues: state.signupWizard
+		defaultValues: {
+			dietaryRestrictions: state.signupWizard.dietaryRestrictions,
+			wantsFood: state.signupWizard.wantsFood
+		}
 	});
+	const dietaryRestrictions = form.watch("dietaryRestrictions");
+	const wantsFood = form.watch("wantsFood");
 
 	useEffect(() => {
 		if (isSessionPending) {
@@ -83,9 +102,11 @@ export default function SignupEventDetailsForm() {
 
 	if (isSessionPending || (!method && !isAuthenticatedIncomplete)) {
 		return (
-			<p className="py-8 text-center text-muted-foreground">
-				Loading registration…
-			</p>
+			<AuthShell background="food">
+				<p className="my-auto text-center text-grey-purple">
+					Loading registration…
+				</p>
+			</AuthShell>
 		);
 	}
 
@@ -99,8 +120,7 @@ export default function SignupEventDetailsForm() {
 
 		const details = {
 			dietaryRestrictions: values.dietaryRestrictions,
-			program: values.program || undefined,
-			school: values.school,
+			school: state.signupWizard.school,
 			wantsFood: values.wantsFood
 		};
 		isCompletingRegistration.current = true;
@@ -117,12 +137,12 @@ export default function SignupEventDetailsForm() {
 					password: state.signupWizard.password
 				},
 				{
+					onError: () => {
+						isCompletingRegistration.current = false;
+					},
 					onSuccess: () => {
 						actions.resetSignupWizard();
 						router.push("/login");
-					},
-					onError: () => {
-						isCompletingRegistration.current = false;
 					}
 				}
 			);
@@ -139,153 +159,138 @@ export default function SignupEventDetailsForm() {
 				name: name === session?.user.name ? undefined : name
 			},
 			{
+				onError: () => {
+					isCompletingRegistration.current = false;
+				},
 				onSuccess: () => {
 					actions.resetSignupWizard();
 					router.push("/");
-				},
-				onError: () => {
-					isCompletingRegistration.current = false;
 				}
 			}
 		);
 	};
 
-	const handleBack = () => {
-		if (!method) {
-			router.push("/");
-			return;
-		}
-
-		actions.updateSignupWizard(form.getValues());
-		router.push("/signup/identity");
-	};
-
-	const handleDietaryRestrictionChange = (
-		restriction: DietaryRestriction,
-		checked: boolean
-	) => {
-		const current = form.getValues("dietaryRestrictions");
-		form.setValue(
-			"dietaryRestrictions",
-			checked
-				? [...new Set([...current, restriction])]
-				: current.filter((value) => value !== restriction),
-			{ shouldDirty: true }
-		);
+	const setDietaryRestrictions = (nextRestrictions: DietaryRestriction[]) => {
+		form.setValue("dietaryRestrictions", nextRestrictions, {
+			shouldDirty: true
+		});
+		actions.updateSignupWizard({ dietaryRestrictions: nextRestrictions });
 	};
 
 	return (
-		<form
-			className="flex flex-col gap-6"
-			onSubmit={form.handleSubmit(onSubmit)}
-		>
-			<div className="flex flex-col gap-1">
-				<p className="font-medium text-muted-foreground text-sm">Step 3 of 3</p>
-				<h3 className="font-semibold text-xl">Event details</h3>
-			</div>
-
-			<FieldGroup>
-				<Field>
-					<FieldLabel htmlFor="school">
-						Which institution do you go to?
-					</FieldLabel>
-					<select
-						className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-						disabled={isSubmitting}
-						id="school"
-						{...form.register("school")}
-					>
-						<option value="">Select institution</option>
-						<option value="University of Calgary">University of Calgary</option>
-						<option value="Mount Royal University">
-							Mount Royal University
-						</option>
-						<option value="SAIT">SAIT</option>
-						<option value="Other">Other</option>
-					</select>
-				</Field>
-
-				<Field>
-					<FieldLabel htmlFor="program">Which program are you in?</FieldLabel>
-					<select
-						className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-						disabled={isSubmitting}
-						id="program"
-						{...form.register("program")}
-					>
-						<option value="">Select program</option>
-						{PROGRAMS.map((program) => (
-							<option key={program} value={program}>
-								{program
-									.split("_")
-									.map((word) => word[0]?.toUpperCase() + word.slice(1))
-									.join(" ")}
-							</option>
-						))}
-					</select>
-				</Field>
-
-				<Field data-invalid={Boolean(form.formState.errors.wantsFood)}>
-					<FieldLabel htmlFor="food">
-						Do you want provided food at the hackathon?
-					</FieldLabel>
-					<select
-						aria-invalid={Boolean(form.formState.errors.wantsFood)}
-						className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-						disabled={isSubmitting}
-						id="food"
-						{...form.register("wantsFood", {
-							required: "Select whether you want provided food"
-						})}
-					>
-						<option value="">Select an option</option>
-						<option value="yes">Yes</option>
-						<option value="no">No</option>
-					</select>
-					<FieldError errors={[form.formState.errors.wantsFood]} />
-				</Field>
-
-				<FieldSet>
-					<FieldLegend variant="label">Dietary restrictions</FieldLegend>
-					{DIETARY_RESTRICTIONS.map((restriction) => {
-						const id = `dietary-${restriction}`;
-
-						return (
-							<Field key={restriction} orientation="horizontal">
-								<Checkbox
-									checked={form
-										.watch("dietaryRestrictions")
-										.includes(restriction)}
-									disabled={isSubmitting}
-									id={id}
-									onCheckedChange={(checked) =>
-										handleDietaryRestrictionChange(restriction, checked)
-									}
-								/>
-								<FieldLabel htmlFor={id}>
-									{restriction.replace("_", " ")}
-								</FieldLabel>
-							</Field>
-						);
-					})}
-				</FieldSet>
-			</FieldGroup>
-
-			{error && <FieldError>{error.message}</FieldError>}
-
-			<div className="flex justify-between gap-3">
+		<AuthShell background="food">
+			<form
+				className="my-auto flex w-full flex-col gap-6"
+				onSubmit={form.handleSubmit(onSubmit)}
+			>
+				<AuthHeading>Fill out your food preferences</AuthHeading>
+				<FieldGroup className="gap-4">
+					<Field data-invalid={Boolean(form.formState.errors.wantsFood)}>
+						<FieldLabel className="pl-4 text-sm" htmlFor="food">
+							Do you want to be provided free meals at the hackathon?*
+						</FieldLabel>
+						<Select
+							name="food"
+							onValueChange={(value) => {
+								const wantsFood = (value ?? "") as MealOption;
+								form.setValue("wantsFood", wantsFood, {
+									shouldDirty: true,
+									shouldValidate: true
+								});
+								actions.updateSignupWizard({ wantsFood });
+							}}
+							value={wantsFood || null}
+						>
+							<SelectTrigger
+								aria-invalid={Boolean(form.formState.errors.wantsFood)}
+								className="h-12 w-full rounded-xl border-ehhh-grey bg-pale-grey px-4 text-base"
+								id="food"
+							>
+								<SelectValue placeholder="Please select an option" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectGroup>
+									<SelectItem value="yes">Yes</SelectItem>
+									<SelectItem value="no">No</SelectItem>
+								</SelectGroup>
+							</SelectContent>
+						</Select>
+						<FieldError errors={[form.formState.errors.wantsFood]} />
+					</Field>
+					<Field>
+						<FieldLabel className="pl-4 text-grey-purple text-xs">
+							Please indicate any dietary restrictions you may have:
+						</FieldLabel>
+						<div className="flex flex-col gap-5 rounded-2xl bg-background p-4 shadow-sm">
+							<div className="flex flex-col gap-2">
+								<p className="font-medium text-base">
+									Your dietary restrictions:
+								</p>
+								<div className="flex flex-wrap gap-2">
+									{dietaryRestrictions.length === 0 ? (
+										<p className="text-grey-purple text-sm">None selected</p>
+									) : (
+										dietaryRestrictions.map((restriction) => (
+											<button
+												aria-label={`Remove ${dietaryLabels[restriction]}`}
+												className="flex items-center gap-2 rounded-lg bg-lilac-purple px-4 py-1.5 font-medium text-awesomer-purple text-sm outline-none focus-visible:ring-3 focus-visible:ring-awesome-purple/30"
+												disabled={isSubmitting}
+												key={restriction}
+												onClick={() =>
+													setDietaryRestrictions(
+														dietaryRestrictions.filter(
+															(value) => value !== restriction
+														)
+													)
+												}
+												type="button"
+											>
+												{dietaryLabels[restriction]}
+												<CloseLine aria-hidden="true" className="size-4" />
+											</button>
+										))
+									)}
+								</div>
+							</div>
+							<div className="flex flex-col gap-2">
+								<p className="font-medium text-sm">Add a restriction:</p>
+								<div className="flex flex-wrap gap-2">
+									{DIETARY_RESTRICTIONS.filter(
+										(restriction) => !dietaryRestrictions.includes(restriction)
+									).map((restriction) => (
+										<button
+											className={cn(
+												"flex items-center gap-2 rounded-lg border border-medium-grey px-4 py-1.5 font-medium text-dark-grey text-sm outline-none focus-visible:ring-3 focus-visible:ring-awesome-purple/30",
+												isSubmitting && "cursor-not-allowed opacity-50"
+											)}
+											disabled={isSubmitting}
+											key={restriction}
+											onClick={() =>
+												setDietaryRestrictions([
+													...dietaryRestrictions,
+													restriction
+												])
+											}
+											type="button"
+										>
+											{dietaryLabels[restriction]}
+											<AddLine aria-hidden="true" className="size-4" />
+										</button>
+									))}
+								</div>
+							</div>
+						</div>
+					</Field>
+				</FieldGroup>
+				<FieldError>{error?.message}</FieldError>
 				<Button
+					className="h-11 w-full rounded-xl"
 					disabled={isSubmitting}
-					onClick={handleBack}
-					type="button"
-					variant="outline"
+					type="submit"
 				>
-					{method ? "Back" : "Cancel"}
+					{isSubmitting ? "Saving…" : "Continue"}
 				</Button>
-				<Button disabled={isSubmitting} type="submit">
-					{isSubmitting ? "Saving…" : "Complete registration"}
-				</Button>
-			</div>
-		</form>
+			</form>
+		</AuthShell>
 	);
 }

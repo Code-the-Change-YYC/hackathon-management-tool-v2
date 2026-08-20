@@ -2,9 +2,10 @@
 
 import { useStateMachine } from "little-state-machine";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 
+import { AuthHeading, AuthShell } from "@/app/components/auth/AuthShell";
 import { Button } from "@/app/components/ui/button";
 import {
 	Field,
@@ -13,26 +14,41 @@ import {
 	FieldLabel
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from "@/app/components/ui/select";
 import { authClient } from "@/server/better-auth/client";
 import {
 	enabledSocialProviders,
 	type SocialProviderId
 } from "../social-providers";
-import { getNameParts, resetSignupWizard, updateSignupWizard } from "./wizard";
+import { getNameParts, updateSignupWizard } from "./wizard";
 
-type IdentityFormValues = {
+const institutions = [
+	"University of Calgary",
+	"Mount Royal University",
+	"SAIT",
+	"Other"
+] as const;
+
+type PersonalProfileFormValues = {
 	firstName: string;
 	lastName: string;
-	email: string;
-	password: string;
+	school: string;
 };
 
 export default function SignupIdentityForm() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const { actions, state } = useStateMachine({
-		actions: { resetSignupWizard, updateSignupWizard }
+		actions: { updateSignupWizard }
 	});
+	const hasInitializedSocialProfile = useRef(false);
 	const { data: session, isPending: isSessionPending } =
 		authClient.useSession();
 	const requestedProvider = searchParams.get("provider");
@@ -43,8 +59,12 @@ export default function SignupIdentityForm() {
 		Boolean(session?.user) &&
 		!session?.user.completedRegistration &&
 		Boolean(socialProvider);
-	const form = useForm<IdentityFormValues>({
-		defaultValues: state.signupWizard
+	const form = useForm<PersonalProfileFormValues>({
+		defaultValues: {
+			firstName: state.signupWizard.firstName,
+			lastName: state.signupWizard.lastName,
+			school: state.signupWizard.school
+		}
 	});
 
 	useEffect(() => {
@@ -59,18 +79,20 @@ export default function SignupIdentityForm() {
 
 		const socialUser = isSocialRegistration ? session?.user : null;
 		if (socialUser && socialProvider) {
-			const name = getNameParts(socialUser.name);
-			actions.updateSignupWizard({
-				method: socialProvider.id as SocialProviderId,
-				...name,
-				email: socialUser.email,
-				password: ""
-			});
-			form.reset({
-				...name,
-				email: socialUser.email,
-				password: ""
-			});
+			if (!hasInitializedSocialProfile.current) {
+				hasInitializedSocialProfile.current = true;
+				const name = getNameParts(socialUser.name);
+				actions.updateSignupWizard({
+					method: socialProvider.id as SocialProviderId,
+					...name,
+					email: socialUser.email,
+					password: ""
+				});
+				form.reset({
+					...name,
+					school: state.signupWizard.school
+				});
+			}
 			return;
 		}
 
@@ -85,12 +107,13 @@ export default function SignupIdentityForm() {
 	}, [
 		actions,
 		form,
-		isSocialRegistration,
 		isSessionPending,
+		isSocialRegistration,
 		router,
 		session?.user,
 		socialProvider,
-		state.signupWizard.method
+		state.signupWizard.method,
+		state.signupWizard.school
 	]);
 
 	if (
@@ -100,50 +123,47 @@ export default function SignupIdentityForm() {
 			state.signupWizard.method !== "email")
 	) {
 		return (
-			<p className="py-8 text-center text-muted-foreground">
-				Loading registration…
-			</p>
+			<AuthShell background="profile">
+				<p className="my-auto text-center text-grey-purple">
+					Loading registration…
+				</p>
+			</AuthShell>
 		);
 	}
 
 	if (session?.user.completedRegistration) {
 		return (
-			<p className="py-8 text-center text-muted-foreground">Taking you home…</p>
+			<AuthShell background="profile">
+				<p className="my-auto text-center text-grey-purple">Taking you home…</p>
+			</AuthShell>
 		);
 	}
 
-	const onSubmit = (values: IdentityFormValues) => {
+	const onSubmit = (values: PersonalProfileFormValues) => {
+		if (!values.school) {
+			form.setError("school", { message: "Select an institution" });
+			return;
+		}
+
 		actions.updateSignupWizard(values);
 		router.push("/signup/event-details");
 	};
 
-	const handleCancel = () => {
-		actions.resetSignupWizard();
-		router.push("/login");
-	};
-
 	return (
-		<form
-			className="flex flex-col gap-6"
-			onSubmit={form.handleSubmit(onSubmit)}
-		>
-			<div className="flex flex-col gap-1">
-				<p className="font-medium text-muted-foreground text-sm">Step 2 of 3</p>
-				<h3 className="font-semibold text-xl">Your details</h3>
-				{isSocialRegistration && (
-					<p className="text-muted-foreground text-sm">
-						Your {socialProvider?.label} account is connected. Review your
-						details before continuing.
-					</p>
-				)}
-			</div>
-
-			<FieldGroup>
-				<div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+		<AuthShell background="profile">
+			<form
+				className="my-auto flex w-full flex-col gap-6"
+				onSubmit={form.handleSubmit(onSubmit)}
+			>
+				<AuthHeading>Fill out your personal profile</AuthHeading>
+				<FieldGroup className="gap-4">
 					<Field data-invalid={Boolean(form.formState.errors.firstName)}>
-						<FieldLabel htmlFor="firstName">First name</FieldLabel>
+						<FieldLabel className="pl-4 text-sm" htmlFor="firstName">
+							First name*
+						</FieldLabel>
 						<Input
 							aria-invalid={Boolean(form.formState.errors.firstName)}
+							className="h-12 rounded-xl border-ehhh-grey bg-pale-grey px-4 text-base"
 							disabled={form.formState.isSubmitting}
 							id="firstName"
 							{...form.register("firstName", {
@@ -152,11 +172,13 @@ export default function SignupIdentityForm() {
 						/>
 						<FieldError errors={[form.formState.errors.firstName]} />
 					</Field>
-
 					<Field data-invalid={Boolean(form.formState.errors.lastName)}>
-						<FieldLabel htmlFor="lastName">Last name</FieldLabel>
+						<FieldLabel className="pl-4 text-sm" htmlFor="lastName">
+							Last name*
+						</FieldLabel>
 						<Input
 							aria-invalid={Boolean(form.formState.errors.lastName)}
+							className="h-12 rounded-xl border-ehhh-grey bg-pale-grey px-4 text-base"
 							disabled={form.formState.isSubmitting}
 							id="lastName"
 							{...form.register("lastName", {
@@ -165,50 +187,48 @@ export default function SignupIdentityForm() {
 						/>
 						<FieldError errors={[form.formState.errors.lastName]} />
 					</Field>
-				</div>
-
-				<Field data-invalid={Boolean(form.formState.errors.email)}>
-					<FieldLabel htmlFor="email">Email</FieldLabel>
-					<Input
-						aria-invalid={Boolean(form.formState.errors.email)}
-						disabled={isSocialRegistration || form.formState.isSubmitting}
-						id="email"
-						readOnly={isSocialRegistration}
-						type="email"
-						{...form.register("email", {
-							pattern: {
-								message: "Enter a valid email address",
-								value: /^\S+@\S+\.\S+$/
-							},
-							required: "Email is required"
-						})}
-					/>
-					<FieldError errors={[form.formState.errors.email]} />
-				</Field>
-
-				{!isSocialRegistration && (
-					<Field data-invalid={Boolean(form.formState.errors.password)}>
-						<FieldLabel htmlFor="password">Password</FieldLabel>
-						<Input
-							aria-invalid={Boolean(form.formState.errors.password)}
-							disabled={form.formState.isSubmitting}
-							id="password"
-							type="password"
-							{...form.register("password", {
-								required: "Password is required"
-							})}
-						/>
-						<FieldError errors={[form.formState.errors.password]} />
+					<Field data-invalid={Boolean(form.formState.errors.school)}>
+						<FieldLabel className="pl-4 text-sm" htmlFor="school">
+							Which institution are you attending?*
+						</FieldLabel>
+						<Select
+							name="school"
+							onValueChange={(value) => {
+								form.setValue("school", value ?? "", {
+									shouldDirty: true,
+									shouldValidate: true
+								});
+							}}
+							value={form.watch("school") || null}
+						>
+							<SelectTrigger
+								aria-invalid={Boolean(form.formState.errors.school)}
+								className="h-12 w-full rounded-xl border-ehhh-grey bg-pale-grey px-4 text-base"
+								id="school"
+							>
+								<SelectValue placeholder="Select an institution" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectGroup>
+									{institutions.map((institution) => (
+										<SelectItem key={institution} value={institution}>
+											{institution}
+										</SelectItem>
+									))}
+								</SelectGroup>
+							</SelectContent>
+						</Select>
+						<FieldError errors={[form.formState.errors.school]} />
 					</Field>
-				)}
-			</FieldGroup>
-
-			<div className="flex justify-between gap-3">
-				<Button onClick={handleCancel} type="button" variant="outline">
-					Cancel
+				</FieldGroup>
+				<Button
+					className="h-11 w-full rounded-xl"
+					disabled={form.formState.isSubmitting}
+					type="submit"
+				>
+					Continue
 				</Button>
-				<Button type="submit">Continue to event details</Button>
-			</div>
-		</form>
+			</form>
+		</AuthShell>
 	);
 }

@@ -1,12 +1,7 @@
-"use client";
-
-import { GoogleLine } from "@mingcute/react";
-
 export const enabledSocialProviders = [
 	{
 		id: "google",
-		label: "Google",
-		icon: GoogleLine
+		label: "Google"
 	}
 ] as const;
 

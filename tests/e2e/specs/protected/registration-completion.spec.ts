@@ -9,31 +9,24 @@ test("an authenticated incomplete user completes their own registration", async 
 }) => {
 	await authenticatedPage.goto("/signup/identity?provider=google");
 
-	await expect(
-		authenticatedPage.getByText("Your Google account is connected")
-	).toBeVisible();
-	await expect(authenticatedPage.getByLabel("Email")).toHaveAttribute(
-		"readonly"
-	);
-	await expect(authenticatedPage.getByLabel("Password")).toHaveCount(0);
 	await authenticatedPage.getByLabel("First name").fill("Updated");
 	await authenticatedPage.getByLabel("Last name").fill("Participant");
 	await authenticatedPage
-		.getByRole("button", { name: "Continue to event details" })
+		.getByLabel(/Which institution are you attending/)
 		.click();
+	await authenticatedPage.getByRole("option", { name: "SAIT" }).click();
+	await authenticatedPage.getByRole("button", { name: "Continue" }).click();
 
 	await authenticatedPage
-		.getByLabel("Which institution do you go to?")
-		.selectOption("SAIT");
-	await authenticatedPage
-		.getByLabel("Which program are you in?")
-		.selectOption("computer_science");
-	await authenticatedPage
-		.getByLabel("Do you want provided food at the hackathon?")
-		.selectOption("yes");
-	await authenticatedPage
-		.getByRole("button", { name: "Complete registration" })
+		.getByLabel(/Do you want to be provided free meals at the hackathon/)
 		.click();
+	await authenticatedPage.getByRole("option", { name: "Yes" }).click();
+	await authenticatedPage.getByRole("button", { name: "Dairy-free" }).click();
+	await authenticatedPage.getByRole("button", { name: "Nut allergy" }).click();
+	await authenticatedPage
+		.getByRole("button", { name: "Remove Dairy-free" })
+		.click();
+	await authenticatedPage.getByRole("button", { name: "Continue" }).click();
 
 	await expect(authenticatedPage).toHaveURL(/\/$/);
 
@@ -42,8 +35,8 @@ test("an authenticated incomplete user completes their own registration", async 
 	});
 	expect(savedUser).toMatchObject({
 		completedRegistration: true,
+		dietaryRestrictions: ["nut_allergy"],
 		school: "SAIT",
-		program: "computer_science",
 		name: "Updated Participant"
 	});
 });

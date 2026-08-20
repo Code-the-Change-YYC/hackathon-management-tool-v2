@@ -1,11 +1,10 @@
 "use client";
 
 import { createStore } from "little-state-machine";
-import type { DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
+import type { DietaryRestriction } from "@/server/db/auth-schema";
 import type { SocialProviderId } from "../social-providers";
 
 type SignupMethod = "email" | SocialProviderId | null;
-export type ProgramValue = (typeof PROGRAMS)[number] | "";
 export type MealOption = "yes" | "no" | "";
 
 type SignupWizardState = {
@@ -15,7 +14,6 @@ type SignupWizardState = {
 	email: string;
 	password: string;
 	school: string;
-	program: ProgramValue;
 	dietaryRestrictions: DietaryRestriction[];
 	wantsFood: MealOption;
 };
@@ -27,7 +25,6 @@ const initialSignupWizardState: SignupWizardState = {
 	email: "",
 	password: "",
 	school: "",
-	program: "",
 	dietaryRestrictions: [],
 	wantsFood: ""
 };

@@ -6,13 +6,13 @@ const invalidCredentialsMessage = "Incorrect email or password";
 test("shows a generic error for an unknown email address", async ({ page }) => {
 	await page.goto("/login");
 	await page.getByLabel("Email").fill("unknown@example.com");
-	await page.getByLabel("Password").fill("Password123!");
-	await page.getByRole("button", { name: "Sign in" }).click();
+	await page.getByLabel("Password", { exact: true }).fill("Password123!");
+	await page.getByRole("button", { exact: true, name: "Sign in" }).click();
 
 	await expect(page).toHaveURL(/\/login$/);
-	await expect(page.locator("p[role='alert']")).toHaveText(
-		invalidCredentialsMessage
-	);
+	await expect(
+		page.getByRole("alert").filter({ hasText: invalidCredentialsMessage })
+	).toBeVisible();
 });
 
 test("shows the same generic error for an incorrect password", async ({
@@ -32,11 +32,11 @@ test("shows the same generic error for an incorrect password", async ({
 
 	await page.goto("/login");
 	await page.getByLabel("Email").fill(email);
-	await page.getByLabel("Password").fill("WrongPassword123!");
-	await page.getByRole("button", { name: "Sign in" }).click();
+	await page.getByLabel("Password", { exact: true }).fill("WrongPassword123!");
+	await page.getByRole("button", { exact: true, name: "Sign in" }).click();
 
 	await expect(page).toHaveURL(/\/login$/);
-	await expect(page.locator("p[role='alert']")).toHaveText(
-		invalidCredentialsMessage
-	);
+	await expect(
+		page.getByRole("alert").filter({ hasText: invalidCredentialsMessage })
+	).toBeVisible();
 });

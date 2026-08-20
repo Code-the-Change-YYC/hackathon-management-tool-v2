@@ -20,7 +20,9 @@ export const PROGRAMS = [
 ] as const;
 
 export const DIETARY_RESTRICTIONS = [
+	"dairy_free",
 	"halal",
+	"nut_allergy",
 	"vegetarian",
 	"vegan",
 	"gluten_free",
