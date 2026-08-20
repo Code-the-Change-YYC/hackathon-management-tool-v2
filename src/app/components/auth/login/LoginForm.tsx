@@ -15,7 +15,8 @@ export default function LoginForm() {
 	const [password, setPassword] = useState("");
 	const { emailSignIn, error, isPending, socialSignIn } = useLoginMutations();
 
-	const handleSubmit = () => {
+	const handleSubmit = (event: React.SubmitEvent) => {
+		event.preventDefault();
 		socialSignIn.reset();
 		emailSignIn.mutate({ email, password });
 	};
@@ -76,7 +77,10 @@ export default function LoginForm() {
 			</div>
 
 			{error && (
-				<p className="rounded-md bg-pastel-pink px-3 py-2 text-sm text-strawberry-red">
+				<p
+					className="rounded-md bg-pastel-pink px-3 py-2 text-sm text-strawberry-red"
+					role="alert"
+				>
 					{error.message}
 				</p>
 			)}

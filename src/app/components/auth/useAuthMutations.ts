@@ -49,6 +49,10 @@ export function useLoginMutations() {
 			const result = await authClient.signIn.email(credentials);
 
 			if (result.error) {
+				if (result.error.code === "INVALID_EMAIL_OR_PASSWORD") {
+					throw new Error("Incorrect email or password");
+				}
+
 				throw new Error(result.error.message || "Failed to sign in");
 			}
 
