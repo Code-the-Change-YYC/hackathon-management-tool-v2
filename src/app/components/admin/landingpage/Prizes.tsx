@@ -52,7 +52,7 @@ export default function Prizes() {
 	return (
 		<InfoSection
 			accentPosition="after"
-			accentSrc="/svgs/landingPage/accent_green.svg"
+			accentSrc="accent_green"
 			bgColor="bg-fuzzy-peach"
 			bodyContent={<Podium />}
 			bodyTextColor="text-dark-grey"

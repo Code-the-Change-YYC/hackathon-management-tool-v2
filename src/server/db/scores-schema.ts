@@ -15,6 +15,8 @@ export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 export const criteria = createTable("criteria", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
+	description: text("description").notNull().default(""),
+	displayOrder: integer("display_order").notNull().default(0),
 	maxScore: integer("max_score").notNull(),
 	isSidepot: boolean("is_sidepot").default(false).notNull()
 });

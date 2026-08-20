@@ -263,10 +263,38 @@ async function main() {
 		const criteriaList = await db
 			.insert(criteria)
 			.values([
-				{ name: "Technical Execution", maxScore: 10, isSidepot: false },
-				{ name: "Innovation", maxScore: 10, isSidepot: false },
-				{ name: "Best use of AI", maxScore: 5, isSidepot: true },
-				{ name: "Best UI", maxScore: 5, isSidepot: true }
+				{
+					name: "Technical Execution",
+					description:
+						"Quality of the implementation (working prototype, technical depth, stability)? Use of appropriate technology stack. Is the solution technically sound and well-built?",
+					displayOrder: 1,
+					maxScore: 10,
+					isSidepot: false
+				},
+				{
+					name: "Innovation",
+					description:
+						"Is the idea original or a fresh take on existing solutions? Does it creatively apply technology to urban challenges (e.g., housing, mobility, disaster resilience, inclusivity)?",
+					displayOrder: 2,
+					maxScore: 10,
+					isSidepot: false
+				},
+				{
+					name: "Best use of AI",
+					description:
+						"How effectively does the solution use AI to address the challenge?",
+					displayOrder: 3,
+					maxScore: 5,
+					isSidepot: true
+				},
+				{
+					name: "Best UI",
+					description:
+						"Is the solution intuitive, accessible and user-friendly? Is the solution aesthetically pleasing? Does the design of the product elevate its function and original idea?",
+					displayOrder: 4,
+					maxScore: 5,
+					isSidepot: true
+				}
 			])
 			.returning();
 
