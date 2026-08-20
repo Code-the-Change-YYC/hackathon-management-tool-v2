@@ -35,10 +35,10 @@ export default function InfoSection({
 }: InfoSectionProps) {
 	return (
 		<SectionWrapper bgColor={bgColor} reverse={reverse}>
-			<div className="relative flex size-48 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md sm:h-64 sm:w-64 md:h-96 md:w-96 md:rounded-[30px]">
+			<div className="relative flex size-48 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md sm:size-64 md:size-72 md:rounded-[30px] xl:size-96">
 				<Image
 					alt={imageAlt}
-					className="h-36 w-40 object-contain sm:h-48 sm:w-52 md:h-72 md:w-80"
+					className="object-contain"
 					height={298}
 					src={imageSrc}
 					width={326}
@@ -81,7 +81,7 @@ export default function InfoSection({
 					? bodyContent
 					: paragraphs?.map((para) => (
 							<p
-								className={`${bodyTextColor} font-medium text-base leading-6 sm:text-xl sm:leading-7 md:text-2xl md:leading-8`}
+								className={`${bodyTextColor} relative font-medium text-base leading-6 sm:text-xl sm:leading-7 md:text-2xl md:leading-8`}
 								key={para}
 							>
 								{para}
