@@ -25,6 +25,13 @@ pnpm db:push
 pnpm dev
 ```
 
+## Google sign-in setup
+
+Create a Google OAuth 2.0 Web application credential in Google Cloud Console. Add
+`{BETTER_AUTH_URL}/api/auth/callback/google` as an authorized redirect URI (for
+local development, this is `http://localhost:3000/api/auth/callback/google`),
+then set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`.
+
 ## I want to add a new model to my DB, what do I do?
 
 1. Create a new file in `src/server/db`
