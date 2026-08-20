@@ -2,7 +2,7 @@
 
 import { useStateMachine } from "little-state-machine";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/app/components/ui/button";
@@ -32,6 +32,7 @@ export default function SignupIdentityForm() {
 		authClient.useSession();
 	const isGoogleRegistration =
 		Boolean(session?.user) && !session?.user.completedRegistration;
+	const hasPrefilledGoogleDetails = useRef(false);
 	const form = useForm<IdentityFormValues>({
 		defaultValues: state.signupWizard
 	});
@@ -48,6 +49,10 @@ export default function SignupIdentityForm() {
 
 		const googleUser = isGoogleRegistration ? session?.user : null;
 		if (googleUser) {
+			if (hasPrefilledGoogleDetails.current) {
+				return;
+			}
+			hasPrefilledGoogleDetails.current = true;
 			const name = getNameParts(googleUser.name);
 			actions.updateSignupWizard({
 				method: "google",
