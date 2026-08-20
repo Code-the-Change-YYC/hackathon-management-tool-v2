@@ -3,7 +3,7 @@
 import { useStateMachine } from "little-state-machine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
@@ -15,11 +15,20 @@ import {
 	FieldLegend,
 	FieldSet
 } from "@/app/components/ui/field";
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from "@/app/components/ui/select";
 import { authClient } from "@/server/better-auth/client";
 import {
 	DIETARY_RESTRICTIONS,
 	type DietaryRestriction,
-	PROGRAMS
+	PROGRAMS,
+	SCHOOLS
 } from "@/server/db/auth-schema";
 import { useSignupMutations } from "../useAuthMutations";
 import {
@@ -168,65 +177,102 @@ export default function SignupEventDetailsForm() {
 			</div>
 
 			<FieldGroup>
-				<Field>
-					<FieldLabel htmlFor="school">
-						Which institution do you go to?
-					</FieldLabel>
-					<select
-						className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-						disabled={isSubmitting}
-						id="school"
-						{...form.register("school")}
-					>
-						<option value="">Select institution</option>
-						<option value="University of Calgary">University of Calgary</option>
-						<option value="Mount Royal University">
-							Mount Royal University
-						</option>
-						<option value="SAIT">SAIT</option>
-						<option value="Other">Other</option>
-					</select>
-				</Field>
+				<Controller
+					control={form.control}
+					name="school"
+					render={({ field }) => (
+						<Field>
+							<FieldLabel htmlFor="school">
+								Which institution do you go to?
+							</FieldLabel>
+							<Select
+								disabled={isSubmitting}
+								onValueChange={(value) => field.onChange(value ?? "")}
+								value={field.value}
+							>
+								<SelectTrigger className="w-full" id="school">
+									<SelectValue placeholder="Select institution" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										{SCHOOLS.map((school) => (
+											<SelectItem key={school} value={school}>
+												{school}
+											</SelectItem>
+										))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+						</Field>
+					)}
+				/>
 
-				<Field>
-					<FieldLabel htmlFor="program">Which program are you in?</FieldLabel>
-					<select
-						className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-						disabled={isSubmitting}
-						id="program"
-						{...form.register("program")}
-					>
-						<option value="">Select program</option>
-						{PROGRAMS.map((program) => (
-							<option key={program} value={program}>
-								{program
-									.split("_")
-									.map((word) => word[0]?.toUpperCase() + word.slice(1))
-									.join(" ")}
-							</option>
-						))}
-					</select>
-				</Field>
+				<Controller
+					control={form.control}
+					name="program"
+					render={({ field }) => (
+						<Field>
+							<FieldLabel htmlFor="program">
+								Which program are you in?
+							</FieldLabel>
+							<Select
+								disabled={isSubmitting}
+								onValueChange={(value) => field.onChange(value ?? "")}
+								value={field.value}
+							>
+								<SelectTrigger className="w-full" id="program">
+									<SelectValue placeholder="Select program" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										{PROGRAMS.map((program) => (
+											<SelectItem
+												className="capitalize"
+												key={program}
+												value={program}
+											>
+												{program.split("_").join(" ")}
+											</SelectItem>
+										))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+						</Field>
+					)}
+				/>
 
-				<Field data-invalid={Boolean(form.formState.errors.wantsFood)}>
-					<FieldLabel htmlFor="food">
-						Do you want provided food at the hackathon?
-					</FieldLabel>
-					<select
-						aria-invalid={Boolean(form.formState.errors.wantsFood)}
-						className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-						disabled={isSubmitting}
-						id="food"
-						{...form.register("wantsFood", {
-							required: "Select whether you want provided food"
-						})}
-					>
-						<option value="">Select an option</option>
-						<option value="yes">Yes</option>
-						<option value="no">No</option>
-					</select>
-					<FieldError errors={[form.formState.errors.wantsFood]} />
-				</Field>
+				<Controller
+					control={form.control}
+					name="wantsFood"
+					render={({ field }) => (
+						<Field data-invalid={Boolean(form.formState.errors.wantsFood)}>
+							<FieldLabel htmlFor="food">
+								Do you want provided food at the hackathon?
+							</FieldLabel>
+							<Select
+								disabled={isSubmitting}
+								onValueChange={(value) => field.onChange(value ?? "")}
+								value={field.value}
+							>
+								<SelectTrigger
+									aria-invalid={Boolean(form.formState.errors.wantsFood)}
+									className="w-full"
+									id="food"
+								>
+									<SelectValue placeholder="Select an option" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										<SelectItem value="yes">Yes</SelectItem>
+										<SelectItem value="no">No</SelectItem>
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+							<FieldError errors={[form.formState.errors.wantsFood]} />
+						</Field>
+					)}
+					rules={{ required: "Select whether you want provided food" }}
+				/>
 
 				<FieldSet>
 					<FieldLegend variant="label">Dietary restrictions</FieldLegend>
