@@ -40,3 +40,5 @@ jobs:
         run: pnpm build
         env:
           SKIP_ENV_VALIDATION: true
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
