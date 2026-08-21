@@ -26,10 +26,10 @@ const PODIUM_DATA = [
 
 function Podium() {
 	return (
-		<div className="mx-8 flex w-[calc(100%+4rem)] items-end justify-center gap-6 md:gap-10">
+		<div className="flex items-end justify-around gap-4 lg:gap-10">
 			{PODIUM_DATA.map((prize) => (
 				<div
-					className={`flex w-24 flex-col items-center md:w-40 ${prize.order}`}
+					className={`flex w-24 flex-col items-center lg:w-40 ${prize.order}`}
 					key={prize.place}
 				>
 					<p className="mb-2 font-bold text-dark-grey text-lg md:text-xl">
@@ -52,7 +52,7 @@ export default function Prizes() {
 	return (
 		<InfoSection
 			accentPosition="after"
-			accentSrc="/svgs/landingPage/accent_green.svg"
+			accentSrc="accent_green"
 			bgColor="bg-fuzzy-peach"
 			bodyContent={<Podium />}
 			bodyTextColor="text-dark-grey"

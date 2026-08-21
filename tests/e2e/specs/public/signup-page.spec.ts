@@ -22,3 +22,25 @@ test("a participant can complete individual registration", async ({
 
 	await expect(page).toHaveURL(/\/login$/);
 });
+
+test("manual registration retains identity details when navigating back", async ({
+	page
+}) => {
+	await page.goto("/signup");
+	await page
+		.getByRole("button", { name: "Continue with email and password" })
+		.click();
+	await page.getByLabel("First name").fill("Ada");
+	await page.getByLabel("Last name").fill("Lovelace");
+	await page.getByLabel("Email").fill("ada@example.com");
+	await page.getByLabel("Password").fill("Password123!");
+	expect(
+		await page.evaluate(() => sessionStorage.getItem("signup-wizard"))
+	).toBeNull();
+	await page.getByRole("button", { name: "Continue to event details" }).click();
+	await page.getByRole("button", { name: "Back" }).click();
+
+	await expect(page.getByLabel("First name")).toHaveValue("Ada");
+	await expect(page.getByLabel("Last name")).toHaveValue("Lovelace");
+	await expect(page.getByLabel("Email")).toHaveValue("ada@example.com");
+});

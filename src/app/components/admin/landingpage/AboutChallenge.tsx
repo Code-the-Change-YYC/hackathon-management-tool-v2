@@ -4,7 +4,7 @@ export default function AboutChallenge() {
 	return (
 		<InfoSection
 			accentPosition="after"
-			accentSrc="/svgs/landingPage/accent_pink.svg"
+			accentSrc="accent_pink"
 			bgColor="bg-awesomer-purple"
 			bodyTextColor="text-pale-grey"
 			imageAlt="About the challenge"

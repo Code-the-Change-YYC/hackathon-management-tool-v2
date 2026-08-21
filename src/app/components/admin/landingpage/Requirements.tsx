@@ -4,7 +4,7 @@ export default function Requirements() {
 	return (
 		<InfoSection
 			accentPosition="before"
-			accentSrc="/svgs/landingPage/accent_purple.svg"
+			accentSrc="accent_purple"
 			bgColor="bg-light-grey"
 			bodyTextColor="text-dark-grey"
 			imageAlt="Requirements"

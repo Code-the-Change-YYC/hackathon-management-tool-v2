@@ -6,7 +6,19 @@ const config: NextConfig = {
 	experimental: {
 		useTypeScriptCli: true
 	},
-	allowedDevOrigins: ["http://localhost:3000", "127.0.0.1"]
+	allowedDevOrigins: ["http://localhost:3000", "127.0.0.1", "http://127.0.0.1"],
+	images: {
+		remotePatterns: [
+			{
+				hostname: "images.ctfassets.net",
+				protocol: "https"
+			},
+			{
+				hostname: "downloads.ctfassets.net",
+				protocol: "https"
+			}
+		]
+	}
 };
 
 export default config;
