@@ -8,7 +8,7 @@ import { Button } from "@/app/components/ui/button";
 import { FieldError } from "@/app/components/ui/field";
 import { authClient } from "@/server/better-auth/client";
 import {
-	enabledSocialProviders,
+	ENABLED_SOCIAL_PROVIDERS,
 	type SocialProviderId
 } from "../social-providers";
 import { useSignupMutations } from "../useAuthMutations";
@@ -63,7 +63,7 @@ export default function SignupForm() {
 				>
 					Continue with email and password
 				</Button>
-				{enabledSocialProviders.map(({ icon: Icon, id, label }) => (
+				{ENABLED_SOCIAL_PROVIDERS.map(({ icon: Icon, id, label }) => (
 					<Button
 						disabled={socialSignIn.isPending}
 						key={id}

@@ -1,10 +1,11 @@
 "use client";
 
+import type { User } from "better-auth";
 import { useStateMachine } from "little-state-machine";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-
 import { Button } from "@/app/components/ui/button";
 import {
 	Field,
@@ -13,7 +14,6 @@ import {
 	FieldLabel
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
-import { authClient } from "@/server/better-auth/client";
 import { getNameParts, resetSignupWizard, updateSignupWizard } from "./wizard";
 
 type IdentityFormValues = {
@@ -23,91 +23,32 @@ type IdentityFormValues = {
 	password: string;
 };
 
-export default function SignupIdentityForm() {
+export default function SignupIdentityForm({ user }: { user?: User }) {
 	const router = useRouter();
+	const isSocialRegistration = !!user?.email;
+	const hasPrefilledSocialDetails = useRef(false);
 	const { actions, state } = useStateMachine({
 		actions: { resetSignupWizard, updateSignupWizard }
 	});
-	const { data: session, isPending: isSessionPending } =
-		authClient.useSession();
-	const isGoogleRegistration =
-		Boolean(session?.user) && !session?.user.completedRegistration;
-	const hasPrefilledGoogleDetails = useRef(false);
 	const form = useForm<IdentityFormValues>({
 		defaultValues: state.signupWizard
 	});
-
-	useEffect(() => {
-		if (isSessionPending) {
-			return;
-		}
-
-		if (session?.user.completedRegistration) {
-			router.replace("/");
-			return;
-		}
-
-		const googleUser = isGoogleRegistration ? session?.user : null;
-		if (googleUser) {
-			if (hasPrefilledGoogleDetails.current) {
-				return;
-			}
-			hasPrefilledGoogleDetails.current = true;
-			const name = getNameParts(googleUser.name);
-			actions.updateSignupWizard({
-				method: "google",
-				...name,
-				email: googleUser.email,
-				password: ""
-			});
-			form.reset({
-				...name,
-				email: googleUser.email,
-				password: ""
-			});
-			return;
-		}
-
-		if (state.signupWizard.method !== "email") {
-			router.replace("/signup");
-		}
-	}, [
-		actions,
-		form,
-		isGoogleRegistration,
-		isSessionPending,
-		router,
-		session?.user,
-		state.signupWizard.method
-	]);
-
-	if (
-		isSessionPending ||
-		(!isGoogleRegistration && state.signupWizard.method !== "email")
-	) {
-		return (
-			<p className="py-8 text-center text-muted-foreground">
-				Loading registration…
-			</p>
-		);
-	}
-
-	if (session?.user.completedRegistration) {
-		return (
-			<p className="py-8 text-center text-muted-foreground">Taking you home…</p>
-		);
-	}
-
 	const onSubmit = (values: IdentityFormValues) => {
 		actions.updateSignupWizard(values);
 		router.push("/signup/event-details");
 	};
-
-	const handleCancel = () => {
-		actions.resetSignupWizard();
-		router.push("/login");
-	};
-
+	useEffect(() => {
+		if (!user || hasPrefilledSocialDetails.current) return;
+		hasPrefilledSocialDetails.current = true;
+		const name = getNameParts(user.name);
+		const formState = {
+			...name,
+			email: user.email,
+			password: ""
+		};
+		actions.updateSignupWizard(formState);
+		form.reset(formState);
+	}, [actions, form, user]);
 	return (
 		<form
 			className="flex flex-col gap-6"
@@ -116,12 +57,6 @@ export default function SignupIdentityForm() {
 			<div className="flex flex-col gap-1">
 				<p className="font-medium text-muted-foreground text-sm">Step 2 of 3</p>
 				<h3 className="font-semibold text-xl">Your details</h3>
-				{isGoogleRegistration && (
-					<p className="text-muted-foreground text-sm">
-						Your Google account is connected. Review your details before
-						continuing.
-					</p>
-				)}
 			</div>
 
 			<FieldGroup>
@@ -157,9 +92,9 @@ export default function SignupIdentityForm() {
 					<FieldLabel htmlFor="email">Email</FieldLabel>
 					<Input
 						aria-invalid={Boolean(form.formState.errors.email)}
-						disabled={isGoogleRegistration || form.formState.isSubmitting}
+						disabled={isSocialRegistration || form.formState.isSubmitting}
 						id="email"
-						readOnly={isGoogleRegistration}
+						readOnly={isSocialRegistration}
 						type="email"
 						{...form.register("email", {
 							pattern: {
@@ -172,7 +107,7 @@ export default function SignupIdentityForm() {
 					<FieldError errors={[form.formState.errors.email]} />
 				</Field>
 
-				{!isGoogleRegistration && (
+				{!isSocialRegistration && (
 					<Field data-invalid={Boolean(form.formState.errors.password)}>
 						<FieldLabel htmlFor="password">Password</FieldLabel>
 						<Input
@@ -190,9 +125,9 @@ export default function SignupIdentityForm() {
 			</FieldGroup>
 
 			<div className="flex justify-between gap-3">
-				<Button onClick={handleCancel} type="button" variant="outline">
-					Cancel
-				</Button>
+				<Link href="/signup">
+					<Button variant="outline">Back</Button>
+				</Link>
 				<Button type="submit">Continue to event details</Button>
 			</div>
 		</form>
