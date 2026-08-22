@@ -3,6 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { DIETARY_RESTRICTIONS, PROGRAMS, user } from "@/server/db/auth-schema";
+import { Role } from "@/types/types";
 import { nameRegex } from "@/types/validation";
 
 const dietaryRestrictionsSchema = z
@@ -53,17 +54,43 @@ export const usersRouter = createTRPCRouter({
 				school: z.string().optional().nullable(),
 				program: z.enum(PROGRAMS).optional().nullable(),
 				completedRegistration: z.boolean().optional(),
-				banned: z.boolean().optional(),
-				fname: z.string().min(1).optional(),
-				lname: z.string().min(1).optional()
+				banned: z.boolean().optional()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
 
 			//--Input check--
-			if (
-				data.school &&
+			if (ctx.session.user.id !== id && ctx.session.user.role !== Role.ADMIN) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Only admins can change the information of other accounts"
+				});
+			} else if (data.name !== undefined && data.name !== null) {
+				//Name provided
+				const name = data.name.split(" ");
+				if (
+					name.length !== 2 ||
+					name.map((name) => nameRegex.test(name)).includes(false)
+				) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Invalid name given"
+					});
+				}
+			} else if (
+				ctx.session.user.role !== Role.ADMIN &&
+				ctx.session.user.role !== Role.JUDGE &&
+				ctx.session.user.role !== Role.PARTICIPANT
+			) {
+				//Invalid user role
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Invalid user role"
+				});
+			} else if (
+				data.school !== undefined &&
+				data.school !== null &&
 				![
 					"University of Calgary",
 					"Mount Royal University",
@@ -77,48 +104,35 @@ export const usersRouter = createTRPCRouter({
 					message: "Invalid institution name given"
 				});
 			} else if (
-				!(
-					(data.fname && data.lname && data.name) ||
-					(!data.fname && !data.lname && !data.name)
-				)
+				data.completedRegistration !== undefined &&
+				ctx.session.user.id === id &&
+				ctx.session.user.role !== Role.ADMIN
 			) {
-				//Somehow gave some of the required field forms (ex. fname but no lname)
+				//Tries to adjust own registration bool
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "Missing required name inputs"
+					message: "Cannot bypass registration"
 				});
 			} else if (
-				data.fname &&
-				data.lname &&
-				data.name &&
-				(!nameRegex.test(data.fname) ||
-					!nameRegex.test(data.lname) ||
-					data.name !== `${data.fname} ${data.lname}`)
+				data.banned !== undefined &&
+				ctx.session.user.id === id &&
+				ctx.session.user.role !== Role.ADMIN
 			) {
-				//All name-related inputs given but improper
+				//Tries to adjust own banned bool
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "Invalid name given"
+					message: "Cannot bypass ban"
 				});
 			}
 			//---------------
 
+			let updated = undefined as undefined | { id: string };
 			try {
-				const [updated] = await ctx.db
+				[updated] = await ctx.db
 					.update(user)
 					.set(data)
 					.where(eq(user.id, id))
-					.returning();
-
-				if (!updated) {
-					//Did not update anything
-					throw new TRPCError({
-						code: "NOT_FOUND",
-						message: "Specified user not found"
-					});
-				}
-
-				return updated;
+					.returning({ id: user.id });
 			} catch (errorObject) {
 				if (errorObject instanceof Error) {
 					throw new TRPCError({
@@ -127,6 +141,16 @@ export const usersRouter = createTRPCRouter({
 					});
 				}
 			}
+
+			if (!updated) {
+				//Did not update anything
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Specified user not found"
+				});
+			}
+
+			return updated;
 		}),
 	completeRegistration: protectedProcedure
 		.input(

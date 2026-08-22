@@ -91,7 +91,7 @@ export default function Profile() {
 			setFNameError("Field too long");
 			passedChecks = false;
 		} else if (!nameRegex.test(firstName)) {
-			setFNameError("Only alphabetic characters or spaces are allowed");
+			setFNameError("Only alphabetic characters are allowed");
 			passedChecks = false;
 		}
 		if (lastName === null) {
@@ -106,7 +106,7 @@ export default function Profile() {
 			setLNameError("Field too long");
 			passedChecks = false;
 		} else if (!nameRegex.test(lastName)) {
-			setLNameError("Only alphabetic characters or spaces are allowed");
+			setLNameError("Only alphabetic characters are allowed");
 			passedChecks = false;
 		}
 		if (program === null) {
@@ -161,8 +161,6 @@ export default function Profile() {
 				updateUsers.mutate({
 					id: session.user.id,
 					//--Type assertions due to above checks guaranteeing their types--
-					fname: firstName as string,
-					lname: lastName as string,
 					name: `${firstName} ${lastName}` as string,
 					school: school as
 						| "University of Calgary"
@@ -208,7 +206,7 @@ export default function Profile() {
 								alt="Profile Picture"
 								className="aspect-square rounded-[64px] bg-[#FE957B] bg-center bg-cover bg-no-repeat"
 								height={64}
-								src={"svgs/NewMemberPFP.svg"}
+								src={"/svgs/NewMemberPFP.svg"}
 								width={64}
 							/>
 						</div>
@@ -218,7 +216,9 @@ export default function Profile() {
 								className={`
                   ${fontStyles.titleLargePrimary}self-stretch text-[var(--grey-800,#292929)]`}
 							>
-								{session?.user.name ?? "John Doe"}
+								{session?.user.name && session.user.name !== ""
+									? session.user.name
+									: "John Doe"}
 							</p>
 							<div className="pb-[var(--spacing-2,8px)]" />
 							<div className="flex">
@@ -323,7 +323,9 @@ export default function Profile() {
 										<p
 											className={`${fontStyles.bodyLargePrimary}self-stretch text-[var(--grey-800,#292929)]`}
 										>
-											{session?.user.fname ?? "John"}
+											{session?.user.name?.split(" ")[0]
+												? session.user.name.split(" ")[0]
+												: "John"}
 										</p>
 									)}
 									{isEditing && (
@@ -332,7 +334,11 @@ export default function Profile() {
 												<Input
 													aria-invalid={fNameError !== null}
 													className="text-[16px] md:text-[16px]"
-													defaultValue={session?.user.fname ?? "John"}
+													defaultValue={
+														session?.user.name?.split(" ")[0]
+															? session.user.name.split(" ")[0]
+															: "John"
+													}
 													name="firstName"
 													onChange={() => setFNameError(null)}
 												/>
@@ -354,7 +360,10 @@ export default function Profile() {
 										<p
 											className={`${fontStyles.bodyLargePrimary}self-stretch text-[var(--grey-800,#292929)]`}
 										>
-											{session?.user.lname ?? "Doe"}
+											{session?.user.name &&
+											(session.user.name.split(" ")[1] ?? false)
+												? session.user.name.split(" ")[1]
+												: "Doe"}
 										</p>
 									)}
 									{isEditing && (
@@ -363,7 +372,12 @@ export default function Profile() {
 												<Input
 													aria-invalid={lNameError !== null}
 													className="text-[16px] md:text-[16px]"
-													defaultValue={session?.user.lname ?? "Doe"}
+													defaultValue={
+														session?.user.name &&
+														(session.user.name.split(" ")[1] ?? false)
+															? session.user.name.split(" ")[1]
+															: "Doe"
+													}
 													name="lastName"
 													onChange={() => setLNameError(null)}
 												/>
@@ -442,7 +456,7 @@ export default function Profile() {
 										<p
 											className={`${fontStyles.bodyLargePrimary}self-stretch text-[var(--grey-800,#292929)]`}
 										>
-											{session && session.user.program
+											{session?.user.program
 												? formatProgramString(session.user.program)
 												: "Computer Science"}
 										</p>
@@ -450,7 +464,7 @@ export default function Profile() {
 									{isEditing && (
 										<Select
 											defaultValue={
-												session && session.user.program
+												session?.user.program
 													? formatProgramString(session.user.program)
 													: "Computer Science"
 											}

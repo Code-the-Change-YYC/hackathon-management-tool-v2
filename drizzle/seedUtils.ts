@@ -9,17 +9,13 @@ type CreateUserInput = {
 	password: string;
 	name: string;
 	role?: User["role"];
-	fname: string;
-	lname: string;
 };
 
 export async function createOrGetUser({
 	email,
 	password,
 	name,
-	role,
-	fname,
-	lname,
+	role
 }: CreateUserInput): Promise<User> {
 	// Check if user exists
 	const existingUser = await db
@@ -38,9 +34,7 @@ export async function createOrGetUser({
 		body: {
 			name,
 			email,
-			password,
-			fname,
-			lname,
+			password
 		}
 	});
 
