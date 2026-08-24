@@ -31,7 +31,7 @@ export default function Sponsors() {
 					<p className="relative w-1/2 text-center text-base">
 						{`Without their support, this event would not be possible.`}
 					</p>
-					<p className="relative text-cente">
+					<p className="relative text-center">
 						Interested in partnering? Contact{" "}
 						<Link
 							className="text-awesomer-purple! underline transition-colors"
@@ -42,7 +42,7 @@ export default function Sponsors() {
 					</p>
 				</div>
 
-				<div className="grid w-full grid-cols-2 gap-x-8 gap-y-10 px-21 md:grid-cols-4">
+				<div className="grid w-full max-w-7xl grid-cols-2 gap-x-8 gap-y-10 px-21 md:grid-cols-4">
 					{sponsors.map((sponsor) => {
 						const logo = (
 							<div className="group-hover:-translate-y-1 flex size-32 items-center justify-center overflow-hidden rounded-full bg-white transition-all duration-300 group-hover:shadow-2xl md:size-37.5">

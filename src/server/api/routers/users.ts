@@ -1,11 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import {
-	createTRPCRouter,
-	protectedProcedure,
-	publicProcedure
-} from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { DIETARY_RESTRICTIONS, PROGRAMS, user } from "@/server/db/auth-schema";
 
 const dietaryRestrictionsSchema = z
@@ -14,11 +10,6 @@ const dietaryRestrictionsSchema = z
 	.refine(
 		(restrictions) => new Set(restrictions).size === restrictions.length,
 		{ message: "Duplicate dietary restrictions are not allowed" }
-	)
-	.refine(
-		(restrictions) =>
-			!restrictions.includes("none") || restrictions.length === 1,
-		{ message: '"None" cannot be combined with another restriction' }
 	);
 
 export const usersRouter = createTRPCRouter({
@@ -28,6 +19,28 @@ export const usersRouter = createTRPCRouter({
 		});
 		return users;
 	}),
+	updateUserDietaryRestrictions: protectedProcedure
+		.input(
+			z.object({
+				dietaryRestrictions: dietaryRestrictionsSchema
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const [updated] = await ctx.db
+				.update(user)
+				.set({ dietaryRestrictions: input.dietaryRestrictions })
+				.where(eq(user.id, ctx.session.user.id))
+				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
+			return updated;
+		}),
 	update: protectedProcedure
 		.input(
 			z.object({
@@ -35,7 +48,7 @@ export const usersRouter = createTRPCRouter({
 				name: z.string().min(1).optional(),
 				email: z.string().email().optional(),
 				role: z.string().optional().nullable(),
-				dietaryRestrictions: dietaryRestrictionsSchema.optional().nullable(),
+				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
 				school: z.string().optional().nullable(),
 				program: z.enum(PROGRAMS).optional().nullable(),
 				completedRegistration: z.boolean().optional(),
@@ -51,13 +64,12 @@ export const usersRouter = createTRPCRouter({
 				.returning();
 			return updated;
 		}),
-	completeRegistrationByEmail: publicProcedure
+	completeRegistration: protectedProcedure
 		.input(
 			z.object({
-				email: z.string().email(),
 				school: z.string().optional(),
 				program: z.enum(PROGRAMS).optional(),
-				dietaryRestrictions: dietaryRestrictionsSchema.optional().nullable(),
+				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
 				wantsFood: z.enum(["yes", "no"]).optional()
 			})
 		)
@@ -67,16 +79,16 @@ export const usersRouter = createTRPCRouter({
 				.set({
 					school: input.school?.trim() ? input.school.trim() : null,
 					program: input.program ?? null,
-					dietaryRestrictions: input.dietaryRestrictions ?? null,
+					dietaryRestrictions: input.dietaryRestrictions ?? [],
 					completedRegistration: true
 				})
-				.where(eq(user.email, input.email))
+				.where(eq(user.id, ctx.session.user.id))
 				.returning();
 
 			if (!updated) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
-					message: "User not found for registration update"
+					message: "Authenticated user not found"
 				});
 			}
 

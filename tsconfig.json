@@ -9,25 +9,27 @@
 		"moduleDetection": "force",
 		"isolatedModules": true,
 		"verbatimModuleSyntax": true,
-
 		/* Strictness */
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
 		"checkJs": true,
-
 		/* Bundled projects */
 		"lib": ["dom", "dom.iterable", "ES2022"],
 		"noEmit": true,
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
-		"jsx": "preserve",
-		"plugins": [{ "name": "next" }],
+		"jsx": "react-jsx",
+		"plugins": [
+			{
+				"name": "next"
+			}
+		],
 		"incremental": true,
-
 		/* Path Aliases */
-		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"auth.test": ["./auth.test.ts"],
+			"drizzle/*": ["./drizzle/*"]
 		}
 	},
 	"include": [
@@ -37,7 +39,8 @@
 		"**/*.cjs",
 		"**/*.js",
 		".next/types/**/*.ts",
-		"postcss.config.mjs"
+		"postcss.config.mjs",
+		".next/dev/types/**/*.ts"
 	],
-	"exclude": ["node_modules", "generated"]
+	"exclude": ["node_modules", "generated", "playwright-report", "test-results"]
 }
