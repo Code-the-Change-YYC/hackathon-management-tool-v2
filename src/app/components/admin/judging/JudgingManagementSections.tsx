@@ -1,29 +1,46 @@
 "use client";
 
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import {
-	cloneElement,
-	isValidElement,
-	type ReactElement,
-	useEffect,
-	useId,
-	useMemo,
-	useState
-} from "react";
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle
+} from "@/app/components/ui/card";
+import { Checkbox } from "@/app/components/ui/checkbox";
+import {
+	Field,
+	FieldLabel,
+	FieldLegend,
+	FieldSet
+} from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from "@/app/components/ui/select";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow
+} from "@/app/components/ui/table";
 import { api, type RouterInputs, type RouterOutputs } from "@/trpc/react";
 import { formatDateTime, toDateTimeLocalValue } from "./judgingFormatters";
 
 type LayoutInput = RouterInputs["judgingRooms"]["saveLayoutByRound"]["layout"];
 type LayoutRoomInput = NonNullable<LayoutInput["rooms"]>[number];
 type SlotMinutes = 15 | 30 | 60;
-
-const inputClass =
-	"h-12 w-full rounded-xl border border-[#a5a5a5] bg-[#fcfcfc] px-4 text-base outline-none transition focus:border-[#7054fd] focus:ring-2 focus:ring-[#eae6ff] disabled:cursor-not-allowed disabled:opacity-60";
-const primaryButtonClass =
-	"rounded-xl bg-[#7054fd] px-4 py-2.5 font-medium text-white transition hover:bg-[#6044ed] disabled:cursor-not-allowed disabled:opacity-60";
-const secondaryButtonClass =
-	"rounded-xl border border-[#7054fd] bg-white px-4 py-2.5 font-medium text-[#2911a7] transition hover:bg-[#f7f5ff] disabled:cursor-not-allowed disabled:opacity-60";
-const dangerButtonClass =
-	"rounded-xl border border-red-300 bg-white px-3 py-2 font-medium text-red-700 text-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60";
 
 function byNameThenId<T extends { id: string; name: string }>(a: T, b: T) {
 	const nameSort = a.name.localeCompare(b.name);
@@ -36,51 +53,32 @@ function ManagementSection({
 	id,
 	title
 }: {
-	children: React.ReactNode;
+	children: ReactNode;
 	description: string;
 	id: string;
 	title: string;
 }) {
 	return (
 		<section className="scroll-mt-6" id={id}>
-			<div className="mb-4">
-				<h2 className="m-0 font-medium text-[22px] leading-7">{title}</h2>
-				<p className="mt-1 mb-0 text-[#575757] text-sm">{description}</p>
-			</div>
-			<div className="rounded-2xl border border-[#e3e3e3] bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:p-6">
-				{children}
-			</div>
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-[22px] leading-7">{title}</CardTitle>
+					<CardDescription>{description}</CardDescription>
+				</CardHeader>
+				<CardContent>{children}</CardContent>
+			</Card>
 		</section>
 	);
 }
 
-function FieldLabel({
-	children,
-	label
-}: {
-	children: ReactElement<Record<string, unknown>>;
-	label: string;
-}) {
-	const labelId = useId();
-	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-2">
-			<span className="pl-2 text-[#292929] text-sm" id={labelId}>
-				{label}
-			</span>
-			{isValidElement(children)
-				? cloneElement(children, { "aria-labelledby": labelId })
-				: children}
-		</div>
-	);
-}
-
-function RoundManagement({
+export function RoundManagement({
 	onSelectRound,
 	selectedRoundId
 }: {
 	onSelectRound: (roundId: string) => void;
 	selectedRoundId: string;
 }) {
+	const { confirm, dialog } = useConfirmDialog();
 	const utils = api.useUtils();
 	const roundsQuery = api.judgingRounds.getAll.useQuery();
 	const settingsQuery = api.hackathonSettings.get.useQuery();
@@ -168,38 +166,40 @@ function RoundManagement({
 
 	return (
 		<ManagementSection
-			description="Create judging windows, adjust unscored rounds, and choose the active round."
+			description="Start here. Each round is a judging window with a start and end time. Set one as active, then generate rooms below."
 			id="round-management"
 			title="Judging rounds"
 		>
 			<div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-				<FieldLabel label="Round name">
-					<input
-						className={inputClass}
+				<Field className="min-w-0 flex-1 gap-2">
+					<FieldLabel>Round name</FieldLabel>
+					<Input
+						className="h-12"
 						onChange={(event) => setName(event.target.value)}
 						placeholder="Preliminary round"
 						value={name}
 					/>
-				</FieldLabel>
-				<FieldLabel label="Starts">
-					<input
-						className={inputClass}
+				</Field>
+				<Field className="min-w-0 flex-1 gap-2">
+					<FieldLabel>Starts</FieldLabel>
+					<Input
+						className="h-12"
 						onChange={(event) => setStartTime(event.target.value)}
 						type="datetime-local"
 						value={startTime}
 					/>
-				</FieldLabel>
-				<FieldLabel label="Ends">
-					<input
-						className={inputClass}
+				</Field>
+				<Field className="min-w-0 flex-1 gap-2">
+					<FieldLabel>Ends</FieldLabel>
+					<Input
+						className="h-12"
 						onChange={(event) => setEndTime(event.target.value)}
 						type="datetime-local"
 						value={endTime}
 					/>
-				</FieldLabel>
+				</Field>
 				<div className="flex gap-2">
-					<button
-						className={primaryButtonClass}
+					<Button
 						disabled={
 							!name.trim() ||
 							!startTime ||
@@ -211,71 +211,66 @@ function RoundManagement({
 						type="button"
 					>
 						{editingId ? "Save round" : "Add round"}
-					</button>
+					</Button>
 					{editingId ? (
-						<button
-							className={secondaryButtonClass}
-							onClick={resetForm}
-							type="button"
-						>
+						<Button onClick={resetForm} type="button" variant="outline">
 							Cancel
-						</button>
+						</Button>
 					) : null}
 				</div>
 			</div>
 
-			<div className="mt-6 overflow-x-auto">
-				<table className="w-full min-w-[760px] border-collapse text-left text-sm">
-					<thead>
-						<tr className="border-[#d6d6d6] border-b text-[#575757]">
-							<th className="px-3 py-3 font-medium">Round</th>
-							<th className="px-3 py-3 font-medium">Start</th>
-							<th className="px-3 py-3 font-medium">End</th>
-							<th className="px-3 py-3 font-medium">Status</th>
-							<th className="px-3 py-3 text-right font-medium">Actions</th>
-						</tr>
-					</thead>
-					<tbody>
+			<div className="mt-6">
+				<Table className="min-w-[760px]">
+					<TableHeader>
+						<TableRow>
+							<TableHead className="px-3 py-3">Round</TableHead>
+							<TableHead className="px-3 py-3">Start</TableHead>
+							<TableHead className="px-3 py-3">End</TableHead>
+							<TableHead className="px-3 py-3">Status</TableHead>
+							<TableHead className="px-3 py-3 text-right">Actions</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
 						{(roundsQuery.data ?? []).map((round) => {
 							const isActive = settingsQuery.data?.currentRoundId === round.id;
 							const hasScores = scoredRoundIds.has(round.id);
 							return (
-								<tr
-									className="border-[#ededed] border-b last:border-0"
-									key={round.id}
-								>
-									<td className="px-3 py-4 font-medium">{round.name}</td>
-									<td className="px-3 py-4">
+								<TableRow key={round.id}>
+									<TableCell className="px-3 py-4 font-medium">
+										{round.name}
+									</TableCell>
+									<TableCell className="px-3 py-4">
 										{formatDateTime(round.startTime)}
-									</td>
-									<td className="px-3 py-4">{formatDateTime(round.endTime)}</td>
-									<td className="px-3 py-4">
+									</TableCell>
+									<TableCell className="px-3 py-4">
+										{formatDateTime(round.endTime)}
+									</TableCell>
+									<TableCell className="px-3 py-4">
 										{isActive ? (
-											<span className="rounded-full bg-[#eae6ff] px-3 py-1 font-medium text-[#2911a7]">
-												Active
-											</span>
+											<Badge variant="secondary">Active</Badge>
 										) : (
-											<span className="text-[#575757]">Inactive</span>
+											<span className="text-muted-foreground">Inactive</span>
 										)}
-									</td>
-									<td className="px-3 py-4">
+									</TableCell>
+									<TableCell className="px-3 py-4">
 										<div className="flex justify-end gap-2">
 											{!isActive ? (
-												<button
-													className={secondaryButtonClass}
+												<Button
 													disabled={setActiveRound.isPending}
 													onClick={() =>
 														setActiveRound.mutate({
 															currentRoundId: round.id
 														})
 													}
+													size="sm"
 													type="button"
+													variant="outline"
 												>
 													Set active
-												</button>
+												</Button>
 											) : null}
-											<button
-												className={secondaryButtonClass}
+											<Button
 												disabled={hasScores}
 												onClick={() => {
 													setEditingId(round.id);
@@ -284,19 +279,20 @@ function RoundManagement({
 													setEndTime(toDateTimeLocalValue(round.endTime));
 													setMessage("");
 												}}
+												size="sm"
 												title={
 													hasScores
 														? "Scored rounds cannot be edited."
 														: undefined
 												}
 												type="button"
+												variant="outline"
 											>
 												Edit
-											</button>
-											<button
-												className={dangerButtonClass}
+											</Button>
+											<Button
 												disabled={hasScores || deleteRound.isPending}
-												onClick={() => {
+												onClick={async () => {
 													if (hasScores) {
 														setMessage(
 															"This round has scored assignments and cannot be deleted."
@@ -304,41 +300,50 @@ function RoundManagement({
 														return;
 													}
 													if (
-														window.confirm(
-															`Delete "${round.name}"? Unscored rooms and assignments in it will also be deleted.`
-														)
+														!(await confirm({
+															title: `Delete "${round.name}"?`,
+															description:
+																"Unscored rooms and assignments in it will also be deleted.",
+															confirmLabel: "Delete",
+															destructive: true
+														}))
 													) {
-														deleteRound.mutate({ id: round.id });
+														return;
 													}
+													deleteRound.mutate({ id: round.id });
 												}}
+												size="sm"
 												title={
 													hasScores
 														? "Scored rounds are protected in the client."
 														: undefined
 												}
 												type="button"
+												variant="destructive"
 											>
 												Delete
-											</button>
+											</Button>
 										</div>
-									</td>
-								</tr>
+									</TableCell>
+								</TableRow>
 							);
 						})}
-					</tbody>
-				</table>
+					</TableBody>
+				</Table>
 			</div>
 			<p
 				aria-live="polite"
-				className="mt-3 mb-0 min-h-5 text-[#575757] text-sm"
+				className="mt-3 mb-0 min-h-5 text-muted-foreground text-sm"
 			>
 				{message}
 			</p>
+			{dialog}
 		</ManagementSection>
 	);
 }
 
-function RoomManagement({ roundId }: { roundId: string }) {
+export function RoomManagement({ roundId }: { roundId: string }) {
+	const { confirm, dialog } = useConfirmDialog();
 	const utils = api.useUtils();
 	const layoutQuery = api.judgingRooms.getLayoutByRound.useQuery(
 		{ roundId },
@@ -412,9 +417,12 @@ function RoomManagement({ roundId }: { roundId: string }) {
 		}
 		if (
 			(assignmentsQuery.data?.length ?? 0) > 0 &&
-			!window.confirm(
-				"This will replace the selected round's current unscored room layout and assignments. Continue?"
-			)
+			!(await confirm({
+				title: "Replace room layout?",
+				description:
+					"This will replace the selected round's current unscored room layout and assignments. Continue?",
+				confirmLabel: "Continue"
+			}))
 		) {
 			setMessage("Room change cancelled.");
 			return;
@@ -448,18 +456,17 @@ function RoomManagement({ roundId }: { roundId: string }) {
 
 	return (
 		<ManagementSection
-			description="Create rooms, maintain meeting links, and choose the judges assigned to each room."
+			description="Optional. Add meeting links, extra rooms, or change judges after generating the schedule."
 			id="room-management"
 			title="Rooms"
 		>
 			<div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-				<p className="m-0 text-[#575757] text-sm">
+				<p className="m-0 text-muted-foreground text-sm">
 					{roundId
 						? `${rooms.length} rooms in the selected round`
 						: "Select a round to manage its rooms."}
 				</p>
-				<button
-					className={primaryButtonClass}
+				<Button
 					disabled={
 						!roundId ||
 						saveLayout.isPending ||
@@ -490,144 +497,156 @@ function RoomManagement({ roundId }: { roundId: string }) {
 					type="button"
 				>
 					+ Add room
-				</button>
+				</Button>
 			</div>
 
 			<div className="grid gap-4 xl:grid-cols-2">
 				{rooms.map((room) => (
-					<article
-						className="rounded-2xl border border-[#d6d6d6] bg-[#fcfcfc] p-4"
-						key={room.id}
-					>
-						<div className="flex items-start justify-between gap-3">
-							<div>
-								<h3 className="m-0 font-medium text-lg">{room.name}</h3>
-								<p className="mt-1 mb-0 text-[#575757] text-sm">
-									{room.teamIds.length}{" "}
-									{room.teamIds.length === 1 ? "team" : "teams"} assigned
-								</p>
-							</div>
-							<button
-								className={dangerButtonClass}
-								disabled={saveLayout.isPending || hasScoredAssignments}
-								onClick={async () => {
-									if (
-										!window.confirm(
-											`Delete ${room.name}? Its unscored assignments will also be removed from the saved layout.`
-										)
-									) {
-										return;
+					<Card className="bg-muted" key={room.id}>
+						<CardContent className="pt-6">
+							<div className="flex items-start justify-between gap-3">
+								<div>
+									<h3 className="m-0 font-medium text-lg">{room.name}</h3>
+									<p className="mt-1 mb-0 text-muted-foreground text-sm">
+										{room.teamIds.length}{" "}
+										{room.teamIds.length === 1 ? "team" : "teams"} assigned
+									</p>
+								</div>
+								<Button
+									disabled={saveLayout.isPending || hasScoredAssignments}
+									onClick={async () => {
+										if (
+											!(await confirm({
+												title: `Delete ${room.name}?`,
+												description:
+													"Its unscored assignments will also be removed from the saved layout.",
+												confirmLabel: "Delete",
+												destructive: true
+											}))
+										) {
+											return;
+										}
+										await persistRooms({
+											nextRooms: rooms.filter(
+												(candidate) => candidate.id !== room.id
+											),
+											roomId: room.id,
+											successMessage: "Room deleted."
+										});
+									}}
+									size="sm"
+									title={
+										hasScoredAssignments
+											? "Scored rounds cannot be changed."
+											: undefined
 									}
-									await persistRooms({
-										nextRooms: rooms.filter(
-											(candidate) => candidate.id !== room.id
-										),
-										roomId: room.id,
-										successMessage: "Room deleted."
-									});
-								}}
-								title={
-									hasScoredAssignments
-										? "Scored rounds cannot be changed."
-										: undefined
-								}
-								type="button"
-							>
-								Delete
-							</button>
-						</div>
-
-						<div className="mt-4">
-							<FieldLabel label="Meeting link">
-								<input
-									className={inputClass}
-									onChange={(event) =>
-										setLinks((current) => ({
-											...current,
-											[room.id]: event.target.value
-										}))
-									}
-									placeholder="https://..."
-									value={links[room.id] ?? ""}
-								/>
-							</FieldLabel>
-						</div>
-
-						<fieldset className="mt-4">
-							<legend className="mb-2 px-2 text-sm">Assigned judges</legend>
-							<div className="grid gap-2 sm:grid-cols-2">
-								{judges.map((judge) => (
-									<label
-										className="flex items-center gap-2 rounded-lg border border-[#e3e3e3] bg-white px-3 py-2 text-sm"
-										key={judge.id}
-									>
-										<input
-											checked={(staff[room.id] ?? []).includes(judge.id)}
-											className="accent-[#7054fd]"
-											onChange={(event) =>
-												setStaff((current) => {
-													const selected = current[room.id] ?? [];
-													return {
-														...current,
-														[room.id]: event.target.checked
-															? [...selected, judge.id]
-															: selected.filter((id) => id !== judge.id)
-													};
-												})
-											}
-											type="checkbox"
-										/>
-										<span className="truncate">{judge.name}</span>
-									</label>
-								))}
+									type="button"
+									variant="destructive"
+								>
+									Delete
+								</Button>
 							</div>
-						</fieldset>
 
-						<div className="mt-4 flex justify-end">
-							<button
-								className={primaryButtonClass}
-								disabled={
-									saveLayout.isPending ||
-									busyRoomId === room.id ||
-									hasScoredAssignments
-								}
-								onClick={() => void saveRoom(room.id)}
-								title={
-									hasScoredAssignments
-										? "Scored rounds cannot be changed."
-										: undefined
-								}
-								type="button"
-							>
-								{busyRoomId === room.id ? "Saving…" : "Save room"}
-							</button>
-						</div>
-					</article>
+							<div className="mt-4">
+								<Field className="min-w-0 flex-1 gap-2">
+									<FieldLabel>Meeting link</FieldLabel>
+									<Input
+										className="h-12"
+										onChange={(event) =>
+											setLinks((current) => ({
+												...current,
+												[room.id]: event.target.value
+											}))
+										}
+										placeholder="https://..."
+										value={links[room.id] ?? ""}
+									/>
+								</Field>
+							</div>
+
+							<FieldSet className="mt-4">
+								<FieldLegend className="mb-2 px-2 text-sm" variant="label">
+									Assigned judges
+								</FieldLegend>
+								<div className="grid gap-2 sm:grid-cols-2">
+									{judges.map((judge) => (
+										<div
+											className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+											key={judge.id}
+										>
+											<Checkbox
+												checked={(staff[room.id] ?? []).includes(judge.id)}
+												id={`room-${room.id}-judge-${judge.id}`}
+												onCheckedChange={(checked) => {
+													setStaff((current) => {
+														const selected = current[room.id] ?? [];
+														return {
+															...current,
+															[room.id]: checked
+																? [...selected, judge.id]
+																: selected.filter((id) => id !== judge.id)
+														};
+													});
+												}}
+											/>
+											<label
+												className="truncate"
+												htmlFor={`room-${room.id}-judge-${judge.id}`}
+											>
+												{judge.name}
+											</label>
+										</div>
+									))}
+								</div>
+							</FieldSet>
+
+							<div className="mt-4 flex justify-end">
+								<Button
+									disabled={
+										saveLayout.isPending ||
+										busyRoomId === room.id ||
+										hasScoredAssignments
+									}
+									onClick={() => void saveRoom(room.id)}
+									title={
+										hasScoredAssignments
+											? "Scored rounds cannot be changed."
+											: undefined
+									}
+									type="button"
+								>
+									{busyRoomId === room.id ? "Saving…" : "Save room"}
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
 				))}
 			</div>
 
 			{roundId && !layoutQuery.isLoading && rooms.length === 0 ? (
-				<p className="rounded-xl border border-[#d6d6d6] border-dashed p-6 text-center text-[#575757]">
+				<p className="rounded-xl border border-border border-dashed p-6 text-center text-muted-foreground">
 					This round has no rooms yet.
 				</p>
 			) : null}
 			<p
 				aria-live="polite"
-				className="mt-3 mb-0 min-h-5 text-[#575757] text-sm"
+				className="mt-3 mb-0 min-h-5 text-muted-foreground text-sm"
 			>
 				{message}
 			</p>
+			{dialog}
 		</ManagementSection>
 	);
 }
 
-function AssignmentManagement({
+export function AssignmentManagement({
 	roundId,
 	slotMinutes
 }: {
 	roundId: string;
 	slotMinutes: SlotMinutes;
 }) {
+	const { confirm, dialog } = useConfirmDialog();
 	const utils = api.useUtils();
 	const assignmentsQuery = api.judgingAssignments.getByRound.useQuery(
 		{ roundId },
@@ -748,53 +767,69 @@ function AssignmentManagement({
 
 	return (
 		<ManagementSection
-			description="Place or move individual teams when the generated schedule needs a manual adjustment."
+			description="Optional. Move or add a single team after generating the schedule."
 			id="assignment-management"
 			title="Manual assignments"
 		>
 			<div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-				<FieldLabel label="Team">
-					<select
-						className={inputClass}
+				<Field className="min-w-0 flex-1 gap-2">
+					<FieldLabel>Team</FieldLabel>
+					<Select
 						disabled={!roundId}
-						onChange={(event) => setTeamId(event.target.value)}
-						value={teamId}
+						onValueChange={(value) => {
+							if (value != null) setTeamId(value);
+						}}
+						value={teamId || null}
 					>
-						<option value="">Select team</option>
-						{eligibleTeams.map((team) => (
-							<option key={team.id} value={team.id}>
-								{team.name}
-							</option>
-						))}
-					</select>
-				</FieldLabel>
-				<FieldLabel label="Room">
-					<select
-						className={inputClass}
+						<SelectTrigger className="h-12 w-full">
+							<SelectValue placeholder="Select team" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								{eligibleTeams.map((team) => (
+									<SelectItem key={team.id} value={team.id}>
+										{team.name}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+				</Field>
+				<Field className="min-w-0 flex-1 gap-2">
+					<FieldLabel>Room</FieldLabel>
+					<Select
 						disabled={!roundId}
-						onChange={(event) => setRoomId(event.target.value)}
-						value={roomId}
+						onValueChange={(value) => {
+							if (value != null) setRoomId(value);
+						}}
+						value={roomId || null}
 					>
-						<option value="">Select room</option>
-						{(layoutQuery.data?.rooms ?? []).map((room) => (
-							<option key={room.id} value={room.id}>
-								{room.name}
-							</option>
-						))}
-					</select>
-				</FieldLabel>
-				<FieldLabel label="Time slot">
-					<input
-						className={inputClass}
+						<SelectTrigger className="h-12 w-full">
+							<SelectValue placeholder="Select room" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								{(layoutQuery.data?.rooms ?? []).map((room) => (
+									<SelectItem key={room.id} value={room.id}>
+										{room.name}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+				</Field>
+				<Field className="min-w-0 flex-1 gap-2">
+					<FieldLabel>Time slot</FieldLabel>
+					<Input
+						className="h-12"
 						disabled={!roundId}
 						onChange={(event) => setTimeSlot(event.target.value)}
 						type="datetime-local"
 						value={timeSlot}
 					/>
-				</FieldLabel>
+				</Field>
 				<div className="flex gap-2">
-					<button
-						className={primaryButtonClass}
+					<Button
 						disabled={
 							!teamId ||
 							!roomId ||
@@ -806,54 +841,48 @@ function AssignmentManagement({
 						type="button"
 					>
 						{editingId ? "Save assignment" : "Add assignment"}
-					</button>
+					</Button>
 					{editingId ? (
-						<button
-							className={secondaryButtonClass}
-							onClick={resetForm}
-							type="button"
-						>
+						<Button onClick={resetForm} type="button" variant="outline">
 							Cancel
-						</button>
+						</Button>
 					) : null}
 				</div>
 			</div>
 
-			<div className="mt-6 overflow-x-auto">
-				<table className="w-full min-w-[720px] border-collapse text-left text-sm">
-					<thead>
-						<tr className="border-[#d6d6d6] border-b text-[#575757]">
-							<th className="px-3 py-3 font-medium">Team</th>
-							<th className="px-3 py-3 font-medium">Room</th>
-							<th className="px-3 py-3 font-medium">Time</th>
-							<th className="px-3 py-3 font-medium">Scores</th>
-							<th className="px-3 py-3 text-right font-medium">Actions</th>
-						</tr>
-					</thead>
-					<tbody>
+			<div className="mt-6">
+				<Table className="min-w-[720px]">
+					<TableHeader>
+						<TableRow>
+							<TableHead className="px-3 py-3">Team</TableHead>
+							<TableHead className="px-3 py-3">Room</TableHead>
+							<TableHead className="px-3 py-3">Time</TableHead>
+							<TableHead className="px-3 py-3">Scores</TableHead>
+							<TableHead className="px-3 py-3 text-right">Actions</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
 						{(assignmentsQuery.data ?? []).map((assignment) => {
 							const isScored = assignment.scores.length > 0;
 							return (
-								<tr
-									className="border-[#ededed] border-b last:border-0"
-									key={assignment.id}
-								>
-									<td className="px-3 py-4 font-medium">
+								<TableRow key={assignment.id}>
+									<TableCell className="px-3 py-4 font-medium">
 										{assignment.team.name}
-									</td>
-									<td className="px-3 py-4">
+									</TableCell>
+									<TableCell className="px-3 py-4">
 										{roomNames.get(assignment.room.id) ?? "Room"}
-									</td>
-									<td className="px-3 py-4">
+									</TableCell>
+									<TableCell className="px-3 py-4">
 										{assignment.timeSlot
 											? formatDateTime(assignment.timeSlot)
 											: "Unscheduled"}
-									</td>
-									<td className="px-3 py-4">{assignment.scores.length}</td>
-									<td className="px-3 py-4">
+									</TableCell>
+									<TableCell className="px-3 py-4">
+										{assignment.scores.length}
+									</TableCell>
+									<TableCell className="px-3 py-4">
 										<div className="flex justify-end gap-2">
-											<button
-												className={secondaryButtonClass}
+											<Button
 												disabled={isScored}
 												onClick={() => {
 													setEditingId(assignment.id);
@@ -866,23 +895,27 @@ function AssignmentManagement({
 													);
 													setMessage("");
 												}}
+												size="sm"
 												title={
 													isScored
 														? "Scored assignments cannot be edited"
 														: undefined
 												}
 												type="button"
+												variant="outline"
 											>
 												Edit
-											</button>
-											<button
-												className={dangerButtonClass}
+											</Button>
+											<Button
 												disabled={isScored || deleteAssignment.isPending}
 												onClick={async () => {
 													if (
-														!window.confirm(
-															`Delete the assignment for ${assignment.team.name}?`
-														)
+														!(await confirm({
+															title: `Delete the assignment for ${assignment.team.name}?`,
+															description: "This action cannot be undone.",
+															confirmLabel: "Delete",
+															destructive: true
+														}))
 													) {
 														return;
 													}
@@ -901,43 +934,47 @@ function AssignmentManagement({
 														);
 													}
 												}}
+												size="sm"
 												title={
 													isScored
 														? "Scored assignments cannot be deleted"
 														: undefined
 												}
 												type="button"
+												variant="destructive"
 											>
 												Delete
-											</button>
+											</Button>
 										</div>
-									</td>
-								</tr>
+									</TableCell>
+								</TableRow>
 							);
 						})}
-					</tbody>
-				</table>
+					</TableBody>
+				</Table>
 			</div>
 			{roundId &&
 			!assignmentsQuery.isLoading &&
 			!assignmentsQuery.data?.length ? (
-				<p className="py-5 text-center text-[#575757]">
+				<p className="py-5 text-center text-muted-foreground">
 					No assignments exist for this round.
 				</p>
 			) : null}
 			<p
 				aria-live="polite"
-				className="mt-3 mb-0 min-h-5 text-[#575757] text-sm"
+				className="mt-3 mb-0 min-h-5 text-muted-foreground text-sm"
 			>
 				{message}
 			</p>
+			{dialog}
 		</ManagementSection>
 	);
 }
 
 type Criterion = RouterOutputs["criteria"]["getAll"][number];
 
-function CriteriaManagement() {
+export function CriteriaManagement() {
+	const { confirm, dialog } = useConfirmDialog();
 	const utils = api.useUtils();
 	const criteriaQuery = api.criteria.getAll.useQuery();
 	const [editingId, setEditingId] = useState<string | null>(null);
@@ -985,7 +1022,16 @@ function CriteriaManagement() {
 		}
 	};
 	const removeCriterion = async (criterion: Criterion) => {
-		if (!window.confirm(`Delete "${criterion.name}"?`)) return;
+		if (
+			!(await confirm({
+				title: `Delete "${criterion.name}"?`,
+				description: "This criterion will be removed from judging.",
+				confirmLabel: "Delete",
+				destructive: true
+			}))
+		) {
+			return;
+		}
 		setMessage("");
 		try {
 			await deleteCriterion.mutateAsync({ id: criterion.id });
@@ -1004,22 +1050,24 @@ function CriteriaManagement() {
 
 	return (
 		<ManagementSection
-			description="Maintain the scoring criteria and sidepot categories shown to judges."
+			description="Scoring categories judges see. Set these up before judging starts."
 			id="criteria-management"
 			title="Judging criteria"
 		>
 			<div className="grid gap-3 lg:grid-cols-[1fr_160px_160px_auto] lg:items-end">
-				<FieldLabel label="Criterion name">
-					<input
-						className={inputClass}
+				<Field className="min-w-0 flex-1 gap-2">
+					<FieldLabel>Criterion name</FieldLabel>
+					<Input
+						className="h-12"
 						onChange={(event) => setName(event.target.value)}
 						placeholder="Technical execution"
 						value={name}
 					/>
-				</FieldLabel>
-				<FieldLabel label="Maximum score">
-					<input
-						className={inputClass}
+				</Field>
+				<Field className="min-w-0 flex-1 gap-2">
+					<FieldLabel>Maximum score</FieldLabel>
+					<Input
+						className="h-12"
 						max={100}
 						min={1}
 						onChange={(event) =>
@@ -1028,19 +1076,17 @@ function CriteriaManagement() {
 						type="number"
 						value={maxScore}
 					/>
-				</FieldLabel>
-				<label className="flex h-12 items-center gap-2 rounded-xl border border-[#a5a5a5] px-4">
-					<input
+				</Field>
+				<div className="flex h-12 items-center gap-2 rounded-xl border border-border bg-background px-4">
+					<Checkbox
 						checked={isSidepot}
-						className="accent-[#7054fd]"
-						onChange={(event) => setIsSidepot(event.target.checked)}
-						type="checkbox"
+						id="criterion-sidepot"
+						onCheckedChange={(checked) => setIsSidepot(checked === true)}
 					/>
-					<span>Sidepot</span>
-				</label>
+					<label htmlFor="criterion-sidepot">Sidepot</label>
+				</div>
 				<div className="flex gap-2">
-					<button
-						className={primaryButtonClass}
+					<Button
 						disabled={
 							!name.trim() ||
 							createCriterion.isPending ||
@@ -1050,44 +1096,40 @@ function CriteriaManagement() {
 						type="button"
 					>
 						{editingId ? "Save criterion" : "Add criterion"}
-					</button>
+					</Button>
 					{editingId ? (
-						<button
-							className={secondaryButtonClass}
-							onClick={resetForm}
-							type="button"
-						>
+						<Button onClick={resetForm} type="button" variant="outline">
 							Cancel
-						</button>
+						</Button>
 					) : null}
 				</div>
 			</div>
 
-			<div className="mt-6 overflow-x-auto">
-				<table className="w-full min-w-[620px] border-collapse text-left text-sm">
-					<thead>
-						<tr className="border-[#d6d6d6] border-b text-[#575757]">
-							<th className="px-3 py-3 font-medium">Name</th>
-							<th className="px-3 py-3 font-medium">Maximum</th>
-							<th className="px-3 py-3 font-medium">Type</th>
-							<th className="px-3 py-3 text-right font-medium">Actions</th>
-						</tr>
-					</thead>
-					<tbody>
+			<div className="mt-6">
+				<Table className="min-w-[620px]">
+					<TableHeader>
+						<TableRow>
+							<TableHead className="px-3 py-3">Name</TableHead>
+							<TableHead className="px-3 py-3">Maximum</TableHead>
+							<TableHead className="px-3 py-3">Type</TableHead>
+							<TableHead className="px-3 py-3 text-right">Actions</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
 						{(criteriaQuery.data ?? []).map((criterion) => (
-							<tr
-								className="border-[#ededed] border-b last:border-0"
-								key={criterion.id}
-							>
-								<td className="px-3 py-4 font-medium">{criterion.name}</td>
-								<td className="px-3 py-4">{criterion.maxScore}</td>
-								<td className="px-3 py-4">
+							<TableRow key={criterion.id}>
+								<TableCell className="px-3 py-4 font-medium">
+									{criterion.name}
+								</TableCell>
+								<TableCell className="px-3 py-4">
+									{criterion.maxScore}
+								</TableCell>
+								<TableCell className="px-3 py-4">
 									{criterion.isSidepot ? "Sidepot" : "Main"}
-								</td>
-								<td className="px-3 py-4">
+								</TableCell>
+								<TableCell className="px-3 py-4">
 									<div className="flex justify-end gap-2">
-										<button
-											className={secondaryButtonClass}
+										<Button
 											onClick={() => {
 												setEditingId(criterion.id);
 												setName(criterion.name);
@@ -1095,102 +1137,77 @@ function CriteriaManagement() {
 												setIsSidepot(criterion.isSidepot);
 												setMessage("");
 											}}
+											size="sm"
 											type="button"
+											variant="outline"
 										>
 											Edit
-										</button>
-										<button
-											className={dangerButtonClass}
+										</Button>
+										<Button
 											disabled={deleteCriterion.isPending}
 											onClick={() => void removeCriterion(criterion)}
+											size="sm"
 											type="button"
+											variant="destructive"
 										>
 											Delete
-										</button>
+										</Button>
 									</div>
-								</td>
-							</tr>
+								</TableCell>
+							</TableRow>
 						))}
-					</tbody>
-				</table>
+					</TableBody>
+				</Table>
 			</div>
 			<p
 				aria-live="polite"
-				className="mt-3 mb-0 min-h-5 text-[#575757] text-sm"
+				className="mt-3 mb-0 min-h-5 text-muted-foreground text-sm"
 			>
 				{message}
 			</p>
+			{dialog}
 		</ManagementSection>
 	);
 }
 
-function ResultsManagement() {
+export function ResultsManagement() {
 	const rankingsQuery = api.teams.getRankings.useQuery();
 
 	return (
 		<ManagementSection
-			description="Review live team totals."
+			description="Live team totals after scores are submitted."
 			id="results-management"
 			title="Results"
 		>
-			<div className="overflow-x-auto">
-				<table className="w-full min-w-[520px] border-collapse text-left text-sm">
-					<thead>
-						<tr className="border-[#d6d6d6] border-b text-[#575757]">
-							<th className="w-24 px-3 py-3 font-medium">Rank</th>
-							<th className="px-3 py-3 font-medium">Team</th>
-							<th className="px-3 py-3 text-right font-medium">Total score</th>
-						</tr>
-					</thead>
-					<tbody>
-						{(rankingsQuery.data ?? []).map((team, index) => (
-							<tr
-								className="border-[#ededed] border-b last:border-0"
-								key={team.id}
-							>
-								<td className="px-3 py-4 font-semibold text-[#7054fd]">
-									{index + 1}
-								</td>
-								<td className="px-3 py-4 font-medium">{team.name}</td>
-								<td className="px-3 py-4 text-right">
-									{Number(team.totalScore)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
+			<Table className="min-w-[520px]">
+				<TableHeader>
+					<TableRow>
+						<TableHead className="w-24 px-3 py-3">Rank</TableHead>
+						<TableHead className="px-3 py-3">Team</TableHead>
+						<TableHead className="px-3 py-3 text-right">Total score</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{(rankingsQuery.data ?? []).map((team, index) => (
+						<TableRow key={team.id}>
+							<TableCell className="px-3 py-4 font-semibold text-primary">
+								{index + 1}
+							</TableCell>
+							<TableCell className="px-3 py-4 font-medium">
+								{team.name}
+							</TableCell>
+							<TableCell className="px-3 py-4 text-right">
+								{Number(team.totalScore)}
+							</TableCell>
+						</TableRow>
+					))}
+				</TableBody>
+			</Table>
 			{!rankingsQuery.isLoading && !rankingsQuery.data?.length ? (
-				<p className="py-5 text-center text-[#575757]">
+				<p className="py-5 text-center text-muted-foreground">
 					No teams are available for ranking.
 				</p>
 			) : null}
 		</ManagementSection>
-	);
-}
-
-export default function JudgingManagementSections({
-	onSelectRound,
-	selectedRoundId,
-	slotMinutes
-}: {
-	onSelectRound: (roundId: string) => void;
-	selectedRoundId: string;
-	slotMinutes: 15 | 30 | 60;
-}) {
-	return (
-		<div className="mt-10 flex flex-col gap-16">
-			<RoundManagement
-				onSelectRound={onSelectRound}
-				selectedRoundId={selectedRoundId}
-			/>
-			<RoomManagement roundId={selectedRoundId} />
-			<AssignmentManagement
-				roundId={selectedRoundId}
-				slotMinutes={slotMinutes}
-			/>
-			<CriteriaManagement />
-			<ResultsManagement />
-		</div>
 	);
 }

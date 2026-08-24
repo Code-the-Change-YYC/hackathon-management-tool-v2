@@ -88,13 +88,14 @@ export default function TeamTable() {
 				/>
 			</div>
 
-			{selectedTeam && (
+			{selectedTeam ? (
 				<PrescreenModal
 					onClose={() => setSelectedTeam(null)}
+					open={Boolean(selectedTeam)}
 					teamId={selectedTeam.id}
 					teamName={selectedTeam.name}
 				/>
-			)}
+			) : null}
 		</>
 	);
 }

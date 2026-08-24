@@ -37,7 +37,7 @@ function NavbarItem({
 				className={cn(
 					"flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium text-sm transition-colors",
 					active
-						? "bg-sidebar-accent text-foreground"
+						? "bg-accent text-foreground"
 						: "text-foreground hover:bg-muted"
 				)}
 				href={href}

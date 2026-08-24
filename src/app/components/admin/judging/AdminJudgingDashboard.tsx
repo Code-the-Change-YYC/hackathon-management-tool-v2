@@ -3,19 +3,15 @@
 import {
 	ArrowLeftLine,
 	ArrowRightLine,
-	CloseLine,
 	More1Line,
 	NotificationLine
 } from "@mingcute/react";
 import Image from "next/image";
-import {
-	type CSSProperties,
-	useEffect,
-	useMemo,
-	useRef,
-	useState
-} from "react";
+import Link from "next/link";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { AdminNavbar } from "@/app/components/admin/AdminNavbar";
+import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
+import { MobileNavSheet } from "@/app/components/MobileNavSheet";
 import { Button } from "@/app/components/ui/button";
 import { Field, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
@@ -29,7 +25,13 @@ import {
 } from "@/app/components/ui/select";
 import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
-import JudgingManagementSections from "./JudgingManagementSections";
+import {
+	AssignmentManagement,
+	CriteriaManagement,
+	ResultsManagement,
+	RoomManagement,
+	RoundManagement
+} from "./JudgingManagementSections";
 import { formatTime } from "./judgingFormatters";
 
 type Assignment = RouterOutputs["judgingAssignments"]["getByRound"][number];
@@ -89,6 +91,7 @@ function isPrescreenPassed(team: Team) {
 function calculateClientReadiness({
 	assignments,
 	judgeCount,
+	judgesPerRoom,
 	roomCount,
 	roundEnd,
 	roundStart,
@@ -97,6 +100,7 @@ function calculateClientReadiness({
 }: {
 	assignments: Assignment[];
 	judgeCount: number;
+	judgesPerRoom: number;
 	roomCount: number;
 	roundEnd?: Date;
 	roundStart?: Date;
@@ -117,7 +121,9 @@ function calculateClientReadiness({
 	const totalJudgingMinutes = getTotalJudgingMinutes(roundStart, roundEnd);
 	const slotCount = getSlotCount(roundStart, roundEnd, slotMinutes);
 	const safeRoomCount = Math.max(1, roomCount);
+	const safeJudgesPerRoom = Math.max(1, judgesPerRoom);
 	const freeSlotCount = safeRoomCount * slotCount;
+	const judgesNeeded = safeRoomCount * safeJudgesPerRoom;
 	const scoredAssignmentCount = assignments.filter(
 		(assignment) => assignment.scores.length > 0
 	).length;
@@ -132,8 +138,8 @@ function calculateClientReadiness({
 		blockingReason = "The selected round has no available time slots.";
 	} else if (judgeCount === 0) {
 		blockingReason = "No judges found. Assign judge roles before scheduling.";
-	} else if (safeRoomCount > judgeCount) {
-		blockingReason = `Room count cannot be greater than the number of judges (${judgeCount}).`;
+	} else if (judgesNeeded > judgeCount) {
+		blockingReason = `Need ${judgesNeeded} judges (${safeJudgesPerRoom} per room × ${safeRoomCount} rooms), but only ${judgeCount} are available.`;
 	} else if (freeSlotCount < teamCount) {
 		blockingReason = `Need ${teamCount} slots for all passed teams, but this setup only has ${freeSlotCount}.`;
 	} else if (scoredAssignmentCount > 0) {
@@ -183,7 +189,7 @@ function ScheduleGrid({
 		return (
 			<div
 				aria-live="polite"
-				className="flex min-h-56 items-center justify-center rounded-2xl bg-[#f2f2f2] text-[#575757]"
+				className="flex min-h-56 items-center justify-center rounded-2xl bg-muted text-muted-foreground"
 			>
 				Loading schedule…
 			</div>
@@ -192,16 +198,17 @@ function ScheduleGrid({
 
 	if (!roundStart || !roundEnd) {
 		return (
-			<div className="flex min-h-48 items-center justify-center rounded-2xl border border-[#a5a5a5] border-dashed px-6 text-center text-[#575757]">
-				Select a judging round to view its schedule.
+			<div className="flex min-h-48 items-center justify-center rounded-2xl border border-border border-dashed px-6 text-center text-muted-foreground">
+				Create or select a judging round above to view its schedule.
 			</div>
 		);
 	}
 
 	if (rooms.length === 0) {
 		return (
-			<div className="flex min-h-48 items-center justify-center rounded-2xl border border-[#a5a5a5] border-dashed px-6 text-center text-[#575757]">
-				No rooms have been assigned for this round yet.
+			<div className="flex min-h-48 items-center justify-center rounded-2xl border border-border border-dashed px-6 text-center text-muted-foreground">
+				No rooms yet. Use Assign to rooms above to create rooms and place passed
+				teams.
 			</div>
 		);
 	}
@@ -332,10 +339,12 @@ export default function AdminJudgingDashboard({
 	userName: string;
 }) {
 	const utils = api.useUtils();
+	const { confirm, dialog } = useConfirmDialog();
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [selectedRoundId, setSelectedRoundId] = useState("");
 	const [selectedRoomId, setSelectedRoomId] = useState("all");
 	const [roomCount, setRoomCount] = useState(1);
+	const [judgesPerRoom, setJudgesPerRoom] = useState(1);
 	const [slotMinutes, setSlotMinutes] = useState<SlotMinutes>(30);
 	const [assignmentMessage, setAssignmentMessage] = useState("");
 
@@ -347,7 +356,6 @@ export default function AdminJudgingDashboard({
 	useEffect(() => {
 		if (!selectedRoundId && defaultRoundId) {
 			setSelectedRoundId(defaultRoundId);
-			setRoomCount(1);
 			setAssignmentMessage("");
 		}
 	}, [defaultRoundId, selectedRoundId]);
@@ -377,12 +385,6 @@ export default function AdminJudgingDashboard({
 		[teamsQuery.data]
 	);
 	const eligibleTeams = useMemo(() => teams.filter(isPrescreenPassed), [teams]);
-	const pendingTeamCount = teams.filter(
-		(team) => !team.prescreenStatus || team.prescreenStatus === "pending"
-	).length;
-	const failedTeamCount = teams.filter(
-		(team) => team.prescreenStatus === "failed"
-	).length;
 	const selectedRound = roundsQuery.data?.find(
 		(round) => round.id === selectedRoundId
 	);
@@ -420,6 +422,7 @@ export default function AdminJudgingDashboard({
 			calculateClientReadiness({
 				assignments,
 				judgeCount: judges.length,
+				judgesPerRoom,
 				roomCount,
 				roundEnd: selectedRound?.endTime,
 				roundStart: selectedRound?.startTime,
@@ -430,31 +433,13 @@ export default function AdminJudgingDashboard({
 			assignments,
 			eligibleTeams.length,
 			judges.length,
+			judgesPerRoom,
 			roomCount,
 			selectedRound?.endTime,
 			selectedRound?.startTime,
 			slotMinutes
 		]
 	);
-	const recommendationContext = [
-		selectedRoundId,
-		slotMinutes,
-		eligibleTeams.length,
-		selectedRound?.startTime?.getTime() ?? "",
-		selectedRound?.endTime?.getTime() ?? ""
-	].join(":");
-	const appliedRecommendationContext = useRef("");
-
-	useEffect(() => {
-		const recommendation = readiness.recommendedRoomCount;
-		if (
-			recommendation &&
-			appliedRecommendationContext.current !== recommendationContext
-		) {
-			appliedRecommendationContext.current = recommendationContext;
-			setRoomCount((current) => Math.max(current, recommendation));
-		}
-	}, [readiness.recommendedRoomCount, recommendationContext]);
 
 	const generateSchedule = api.judgingRooms.generateSchedule.useMutation({
 		onError: (error) => {
@@ -478,7 +463,7 @@ export default function AdminJudgingDashboard({
 		}
 	});
 
-	const handleAutoAssign = () => {
+	const handleAutoAssign = async () => {
 		setAssignmentMessage("");
 		if (!selectedRoundId) {
 			setAssignmentMessage("Select a judging round before assigning rooms.");
@@ -497,9 +482,12 @@ export default function AdminJudgingDashboard({
 
 		if (
 			(rooms.length > 0 || assignments.length > 0) &&
-			!window.confirm(
-				"This will replace the selected round's current unscored room layout and assignments. Continue?"
-			)
+			!(await confirm({
+				title: "Replace schedule?",
+				description:
+					"This will replace the selected round's current unscored room layout and assignments. Continue?",
+				confirmLabel: "Continue"
+			}))
 		) {
 			setAssignmentMessage("Assignment cancelled.");
 			return;
@@ -508,6 +496,7 @@ export default function AdminJudgingDashboard({
 		generateSchedule.mutate({
 			roundId: selectedRoundId,
 			roomCount,
+			judgesPerRoom,
 			slotDurationMinutes: slotMinutes,
 			totalJudgingMinutes: readiness.totalJudgingMinutes
 		});
@@ -523,6 +512,7 @@ export default function AdminJudgingDashboard({
 
 	return (
 		<div className="min-h-screen bg-background text-foreground">
+			{dialog}
 			<aside className="fixed inset-y-0 left-0 hidden w-[209px] border-border border-r bg-sidebar py-4 pr-4 pl-4 lg:block">
 				<AdminNavbar userName={userName} />
 			</aside>
@@ -543,40 +533,25 @@ export default function AdminJudgingDashboard({
 				</span>
 			</header>
 
-			{menuOpen ? (
-				<div className="fixed inset-0 z-50 lg:hidden">
-					<button
-						aria-label="Close admin navigation"
-						className="absolute inset-0 bg-black/25"
-						onClick={() => setMenuOpen(false)}
-						type="button"
+			<div className="lg:hidden">
+				<MobileNavSheet
+					onOpenChange={setMenuOpen}
+					open={menuOpen}
+					title="Admin navigation"
+				>
+					<AdminNavbar
+						onNavigate={() => setMenuOpen(false)}
+						userName={userName}
 					/>
-					<aside className="relative h-full w-[280px] bg-sidebar p-4 shadow-xl">
-						<Button
-							aria-label="Close admin navigation"
-							className="absolute top-3 right-3"
-							onClick={() => setMenuOpen(false)}
-							size="icon"
-							type="button"
-							variant="ghost"
-						>
-							<CloseLine />
-						</Button>
-						<div className="pt-11">
-							<AdminNavbar
-								onNavigate={() => setMenuOpen(false)}
-								userName={userName}
-							/>
-						</div>
-					</aside>
-				</div>
-			) : null}
+				</MobileNavSheet>
+			</div>
 
 			<main className="flex flex-col gap-6 p-6 lg:ml-[209px]">
 				<header>
 					<h1 className="m-0 font-semibold text-[32px] leading-10">Judging</h1>
-					<p className="m-0 text-[#575757] text-base leading-6">
-						View judging schedule, rooms, assign teams to rooms, etc.
+					<p className="m-0 text-base text-muted-foreground leading-6">
+						Create a round, generate rooms and team slots, then review the
+						schedule.
 					</p>
 				</header>
 
@@ -615,17 +590,141 @@ export default function AdminJudgingDashboard({
 						type="button"
 						variant="secondary"
 					>
-						Release scores unavailable
+						Release scores
 						<ArrowRightLine data-icon="inline-end" />
 					</Button>
 				</section>
 
-				<section className="flex flex-col gap-4" id="judging-schedule">
-					<h2 className="m-0 font-medium text-[22px] leading-7">
-						Judging Schedule
-					</h2>
+				<RoundManagement
+					onSelectRound={(roundId) => {
+						setSelectedRoundId(roundId);
+						setSelectedRoomId("all");
+						setAssignmentMessage("");
+					}}
+					selectedRoundId={selectedRoundId}
+				/>
 
-					<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:gap-4">
+				<section className="flex flex-col gap-4" id="assign-teams">
+					<div>
+						<h2 className="m-0 font-medium text-[22px] leading-7">
+							Assign teams to rooms
+						</h2>
+						<p className="mt-1 mb-0 text-muted-foreground text-sm">
+							This creates the rooms and places prescreen-passed teams into time
+							slots.
+						</p>
+					</div>
+					{!selectedRoundId ? (
+						<p className="m-0 text-muted-foreground text-sm">
+							Add a round above first.
+						</p>
+					) : null}
+					{selectedRoundId &&
+					!teamsQuery.isLoading &&
+					eligibleTeams.length === 0 ? (
+						<p className="m-0 text-muted-foreground text-sm">
+							No passed teams yet.{" "}
+							<Link
+								className="text-primary underline-offset-4 hover:underline"
+								href="/admin#teams"
+							>
+								Prescreen teams
+							</Link>{" "}
+							before generating a schedule.
+						</p>
+					) : null}
+					<div className="grid gap-6 sm:grid-cols-2">
+						<Field className="gap-2">
+							<FieldLabel>Number of rooms</FieldLabel>
+							<Input
+								className="h-12"
+								max={20}
+								min={1}
+								onChange={(event) =>
+									setRoomCount(Number.parseInt(event.target.value, 10) || 1)
+								}
+								type="number"
+								value={roomCount}
+							/>
+						</Field>
+						<Field className="gap-2">
+							<FieldLabel>Number of judges per room</FieldLabel>
+							<Input
+								className="h-12"
+								max={20}
+								min={1}
+								onChange={(event) =>
+									setJudgesPerRoom(Number.parseInt(event.target.value, 10) || 1)
+								}
+								type="number"
+								value={judgesPerRoom}
+							/>
+						</Field>
+					</div>
+					<Field className="max-w-xs gap-2">
+						<FieldLabel>Slot duration</FieldLabel>
+						<Select
+							onValueChange={(value) => {
+								if (!value) return;
+								setSlotMinutes(Number.parseInt(value, 10) as SlotMinutes);
+								setAssignmentMessage("");
+							}}
+							value={String(slotMinutes)}
+						>
+							<SelectTrigger className="h-12 w-full">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectGroup>
+									<SelectItem value="15">15 minutes</SelectItem>
+									<SelectItem value="30">30 minutes</SelectItem>
+									<SelectItem value="60">60 minutes</SelectItem>
+								</SelectGroup>
+							</SelectContent>
+						</Select>
+					</Field>
+
+					<div className="flex flex-col items-end gap-2">
+						<Button
+							disabled={
+								!selectedRoundId ||
+								generateSchedule.isPending ||
+								roundsQuery.isLoading ||
+								layoutQuery.isLoading ||
+								assignmentsQuery.isLoading ||
+								usersQuery.isLoading ||
+								teamsQuery.isLoading ||
+								!readiness.canAssign
+							}
+							onClick={() => void handleAutoAssign()}
+							type="button"
+						>
+							{generateSchedule.isPending ? "Assigning…" : "Assign to rooms"}
+						</Button>
+						<p
+							aria-live="polite"
+							className="m-0 min-h-5 text-right text-muted-foreground text-sm"
+						>
+							{assignmentMessage ||
+								readiness.blockingReason ||
+								(usersQuery.isLoading || teamsQuery.isLoading
+									? "Checking assignment capacity…"
+									: `${eligibleTeams.length} passed teams · ${judges.length} judges available`)}
+						</p>
+					</div>
+				</section>
+
+				<section className="flex flex-col gap-4" id="judging-schedule">
+					<div>
+						<h2 className="m-0 font-medium text-[22px] leading-7">
+							Judging schedule
+						</h2>
+						<p className="mt-1 mb-0 text-muted-foreground text-sm">
+							The grid updates after you assign teams to rooms.
+						</p>
+					</div>
+
+					<div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row">
 						<Field className="w-full gap-2 sm:w-64">
 							<FieldLabel>Room Selection</FieldLabel>
 							<Select
@@ -658,7 +757,6 @@ export default function AdminJudgingDashboard({
 									if (!value) return;
 									setSelectedRoundId(value);
 									setSelectedRoomId("all");
-									setRoomCount(1);
 									setAssignmentMessage("");
 								}}
 								value={selectedRoundId}
@@ -680,7 +778,7 @@ export default function AdminJudgingDashboard({
 					</div>
 
 					{queryError ? (
-						<p className="m-0 rounded-xl bg-red-50 px-4 py-3 text-red-700">
+						<p className="m-0 rounded-xl bg-destructive/10 px-4 py-3 text-destructive">
 							Schedule data could not be loaded: {queryError.message}
 						</p>
 					) : (
@@ -700,7 +798,7 @@ export default function AdminJudgingDashboard({
 					)}
 
 					{unscheduledCount > 0 ? (
-						<p className="m-0 text-[#575757] text-sm">
+						<p className="m-0 text-muted-foreground text-sm">
 							{unscheduledCount}{" "}
 							{unscheduledCount === 1 ? "assignment has" : "assignments have"}{" "}
 							no time slot and cannot appear in the grid.
@@ -708,124 +806,26 @@ export default function AdminJudgingDashboard({
 					) : null}
 				</section>
 
-				<section className="mt-6 flex flex-col gap-4">
-					<h2 className="m-0 font-medium text-[22px] leading-7">
-						Assign teams to rooms
-					</h2>
-					<div className="grid gap-3 sm:grid-cols-2 sm:gap-6">
-						<Field className="gap-2">
-							<FieldLabel>Number of rooms</FieldLabel>
-							<Input
-								className="h-12"
-								max={20}
-								min={1}
-								onChange={(event) =>
-									setRoomCount(Number.parseInt(event.target.value, 10) || 1)
-								}
-								type="number"
-								value={roomCount}
-							/>
-						</Field>
-						<Field className="gap-2">
-							<FieldLabel>Slot duration</FieldLabel>
-							<Select
-								onValueChange={(value) => {
-									if (!value) return;
-									setSlotMinutes(Number.parseInt(value, 10) as SlotMinutes);
-									setRoomCount(1);
-									setAssignmentMessage("");
-								}}
-								value={String(slotMinutes)}
-							>
-								<SelectTrigger className="h-12 w-full">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectGroup>
-										<SelectItem value="15">15 minutes</SelectItem>
-										<SelectItem value="30">30 minutes</SelectItem>
-										<SelectItem value="60">60 minutes</SelectItem>
-									</SelectGroup>
-								</SelectContent>
-							</Select>
-						</Field>
+				<div className="mt-4 flex flex-col gap-16">
+					<div className="flex flex-col gap-4">
+						<div>
+							<h2 className="m-0 font-medium text-[22px] leading-7">
+								Adjustments
+							</h2>
+							<p className="mt-1 mb-0 text-muted-foreground text-sm">
+								Optional. Edit meeting links, extra rooms, or a single team
+								after generating the schedule.
+							</p>
+						</div>
+						<RoomManagement roundId={selectedRoundId} />
+						<AssignmentManagement
+							roundId={selectedRoundId}
+							slotMinutes={slotMinutes}
+						/>
 					</div>
-
-					<div className="grid gap-3 rounded-2xl bg-[#f7f5ff] p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-						<div>
-							<span className="block text-[#575757]">Passed teams</span>
-							<strong className="text-base">
-								{teamsQuery.isLoading
-									? "—"
-									: `${eligibleTeams.length} of ${teams.length}`}
-							</strong>
-						</div>
-						<div>
-							<span className="block text-[#575757]">Judges</span>
-							<strong className="text-base">
-								{usersQuery.isLoading ? "—" : `${judges.length} available`}
-							</strong>
-						</div>
-						<div>
-							<span className="block text-[#575757]">Free slots</span>
-							<strong className="text-base">
-								{readiness.freeSlotCount || "—"}
-							</strong>
-						</div>
-						<div>
-							<span className="block text-[#575757]">Suggested rooms</span>
-							<strong className="text-base">
-								{readiness.recommendedRoomCount || "—"}
-							</strong>
-						</div>
-					</div>
-
-					<p className="m-0 text-[#575757] text-sm">
-						{teamsQuery.isLoading
-							? "Loading team prescreen status…"
-							: `${eligibleTeams.length} teams passed prescreening (${pendingTeamCount} pending, ${failedTeamCount} failed). Only passed teams are scheduled.`}
-					</p>
-
-					<div className="flex flex-col items-end gap-2">
-						<Button
-							disabled={
-								!selectedRoundId ||
-								generateSchedule.isPending ||
-								roundsQuery.isLoading ||
-								layoutQuery.isLoading ||
-								assignmentsQuery.isLoading ||
-								usersQuery.isLoading ||
-								teamsQuery.isLoading ||
-								!readiness.canAssign
-							}
-							onClick={handleAutoAssign}
-							type="button"
-						>
-							{generateSchedule.isPending ? "Assigning…" : "Assign to rooms"}
-						</Button>
-						<p
-							aria-live="polite"
-							className="m-0 min-h-5 text-right text-[#575757] text-sm"
-						>
-							{assignmentMessage ||
-								readiness.blockingReason ||
-								(usersQuery.isLoading || teamsQuery.isLoading
-									? "Checking assignment capacity…"
-									: "")}
-						</p>
-					</div>
-				</section>
-
-				<JudgingManagementSections
-					onSelectRound={(roundId) => {
-						setSelectedRoundId(roundId);
-						setSelectedRoomId("all");
-						setRoomCount(1);
-						setAssignmentMessage("");
-					}}
-					selectedRoundId={selectedRoundId}
-					slotMinutes={slotMinutes}
-				/>
+					<CriteriaManagement />
+					<ResultsManagement />
+				</div>
 			</main>
 		</div>
 	);

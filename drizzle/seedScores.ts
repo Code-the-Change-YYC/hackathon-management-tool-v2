@@ -60,7 +60,6 @@ async function main() {
 			// Create a room for this judge
 			await db.insert(judgingRooms).values({
 				id: roomId,
-				name: `${judge.name}'s room`,
 				roundId,
 				roomLink: `https://meet.example.com/room-${roomId}`,
 				createdAt: new Date(),

@@ -1,6 +1,10 @@
 import { TRPCError } from "@trpc/server";
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
+import {
+	getRoomDisplayNames,
+	withRoomDisplayName
+} from "@/server/api/routers/judging-rooms";
 import {
 	adminProcedure,
 	createTRPCRouter,
@@ -13,6 +17,20 @@ import {
 	judgingRoomStaff,
 	judgingRooms
 } from "@/server/db/schema";
+
+async function attachRoomNames<T extends { room: { id: string } }>(
+	db: Parameters<typeof getRoomDisplayNames>[0],
+	assignments: T[]
+) {
+	const names = await getRoomDisplayNames(
+		db,
+		assignments.map((assignment) => assignment.room.id)
+	);
+	return assignments.map((assignment) => ({
+		...assignment,
+		room: withRoomDisplayName(assignment.room, names)
+	}));
+}
 
 export const judgingAssignmentsRouter = createTRPCRouter({
 	// Get all assignments
@@ -32,9 +50,9 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				},
 				scores: true
 			},
-			orderBy: (assignments, { desc }) => [desc(assignments.createdAt)]
+			orderBy: (rows, { desc }) => [desc(rows.createdAt)]
 		});
-		return assignments;
+		return attachRoomNames(ctx.db, assignments);
 	}),
 
 	// Get assignments by room ID
@@ -58,19 +76,22 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 					scores: true
 				}
 			});
-			return assignments;
+			return attachRoomNames(ctx.db, assignments);
 		}),
 
 	// Get assignments by round ID
 	getByRound: adminProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
+			const roundRooms = await ctx.db
+				.select({ id: judgingRooms.id })
+				.from(judgingRooms)
+				.where(eq(judgingRooms.roundId, input.roundId));
+			const roomIds = roundRooms.map((room) => room.id);
+			if (roomIds.length === 0) return [];
+
 			const assignments = await ctx.db.query.judgingAssignments.findMany({
-				where: (assignments, { eq }) =>
-					eq(
-						sql`(SELECT round_id FROM ${judgingRooms} WHERE id = ${assignments.roomId})`,
-						input.roundId
-					),
+				where: inArray(judgingAssignments.roomId, roomIds),
 				with: {
 					team: true,
 					room: {
@@ -85,9 +106,9 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 					},
 					scores: true
 				},
-				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
+				orderBy: (rows, { asc }) => [asc(rows.timeSlot)]
 			});
-			return assignments;
+			return attachRoomNames(ctx.db, assignments);
 		}),
 
 	// Get assignments for a specific room staff user
@@ -121,7 +142,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				},
 				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
 			});
-			return assignments;
+			return attachRoomNames(ctx.db, assignments);
 		}),
 
 	// Get assignments for a specific team
@@ -139,7 +160,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 					scores: true
 				}
 			});
-			return assignments;
+			return attachRoomNames(ctx.db, assignments);
 		}),
 
 	getMineForActiveRound: protectedProcedure.query(async ({ ctx }) => {
@@ -153,15 +174,18 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		});
 		if (!membership) return null;
 
+		const roundRooms = await ctx.db
+			.select({ id: judgingRooms.id })
+			.from(judgingRooms)
+			.where(eq(judgingRooms.roundId, settings.currentRoundId));
+		const roomIds = roundRooms.map((room) => room.id);
+		if (roomIds.length === 0) return null;
+
 		const assignment = await ctx.db.query.judgingAssignments.findFirst({
-			where: (assignments, { and, eq }) =>
-				and(
-					eq(assignments.teamId, membership.organizationId),
-					eq(
-						sql`(SELECT round_id FROM ${judgingRooms} WHERE id = ${assignments.roomId})`,
-						settings.currentRoundId
-					)
-				),
+			where: and(
+				eq(judgingAssignments.teamId, membership.organizationId),
+				inArray(judgingAssignments.roomId, roomIds)
+			),
 			with: {
 				team: true,
 				room: {
@@ -170,10 +194,12 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 					}
 				}
 			},
-			orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
+			orderBy: (rows, { asc: orderAsc }) => [orderAsc(rows.timeSlot)]
 		});
 
-		return assignment ?? null;
+		if (!assignment) return null;
+		const [named] = await attachRoomNames(ctx.db, [assignment]);
+		return named ?? null;
 	}),
 
 	// Create a new assignment

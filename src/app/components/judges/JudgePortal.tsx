@@ -5,8 +5,6 @@ import {
 	ArrowRightLine,
 	Calendar2Line,
 	ClipboardLine,
-	CloseLine,
-	DownLine,
 	Home1Line,
 	More1Line,
 	NotificationLine,
@@ -23,9 +21,18 @@ import {
 	useMemo,
 	useState
 } from "react";
+import { MobileNavSheet } from "@/app/components/MobileNavSheet";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger
+} from "@/app/components/ui/accordion";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
 
 type JudgeAssignment =
@@ -78,17 +85,17 @@ function JudgeNavContent({
 					<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#fe957b] font-semibold text-sm text-white">
 						{initial}
 					</span>
-					<span className="truncate font-medium text-[#292929] text-base">
+					<span className="truncate font-medium text-base text-foreground">
 						{userName}
 					</span>
 				</div>
-				<span aria-hidden="true" className="p-2 text-[#292929]">
+				<span aria-hidden="true" className="p-2 text-foreground">
 					<NotificationLine className="size-6" />
 				</span>
 			</div>
 
 			<nav aria-label="Judge navigation" className="flex flex-col gap-4">
-				<p className="m-0 font-medium text-[#575757] text-[11px] leading-4">
+				<p className="m-0 font-medium text-[11px] text-muted-foreground leading-4">
 					JUDGING INFORMATION
 				</p>
 				<ul className="m-0 flex list-none flex-col gap-1 p-0">
@@ -99,11 +106,12 @@ function JudgeNavContent({
 							<li key={item.href}>
 								<Link
 									aria-current={active ? "page" : undefined}
-									className={`flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium text-sm transition-colors ${
+									className={cn(
+										"flex items-center gap-1 rounded-lg px-3 py-1.5 font-medium text-sm transition-colors",
 										active
-											? "bg-[#eae6ff] text-[#292929]"
-											: "text-[#292929] hover:bg-[#f2f2f2]"
-									}`}
+											? "bg-accent text-foreground"
+											: "text-foreground hover:bg-muted"
+									)}
 									href={item.href}
 									onClick={onNavigate}
 								>
@@ -135,14 +143,14 @@ export function JudgeShell({
 	return (
 		<JudgeUserContext.Provider value={{ userId, userName }}>
 			<div
-				className="min-h-screen bg-[#fcfcfc] text-[#292929]"
+				className="min-h-screen bg-background text-foreground"
 				style={{ fontFamily: "var(--font-omnes), sans-serif" }}
 			>
-				<aside className="fixed inset-y-0 left-0 hidden w-[209px] border-[#d6d6d6] border-r bg-[#fafafa] py-4 pr-4 pl-4 lg:block">
+				<aside className="fixed inset-y-0 left-0 hidden w-[209px] border-border border-r bg-sidebar py-4 pr-4 pl-4 lg:block">
 					<JudgeNavContent userName={userName} />
 				</aside>
 
-				<header className="flex h-14 items-center justify-between bg-[#fcfcfc] px-6 py-1 lg:hidden">
+				<header className="flex h-14 items-center justify-between bg-background px-6 py-1 lg:hidden">
 					<Button
 						aria-expanded={menuOpen}
 						aria-label="Open judge navigation"
@@ -153,39 +161,23 @@ export function JudgeShell({
 					>
 						<More1Line />
 					</Button>
-					<span aria-hidden="true" className="p-2 text-[#292929]">
+					<span aria-hidden="true" className="p-2 text-foreground">
 						<NotificationLine className="size-6" />
 					</span>
 				</header>
 
-				{menuOpen ? (
-					<div className="fixed inset-0 z-50 lg:hidden">
-						<button
-							aria-label="Close judge navigation"
-							className="absolute inset-0 bg-black/25"
-							onClick={() => setMenuOpen(false)}
-							type="button"
+				<div className="lg:hidden">
+					<MobileNavSheet
+						onOpenChange={setMenuOpen}
+						open={menuOpen}
+						title="Judge navigation"
+					>
+						<JudgeNavContent
+							onNavigate={() => setMenuOpen(false)}
+							userName={userName}
 						/>
-						<aside className="relative h-full w-[280px] bg-[#fafafa] p-4 shadow-xl">
-							<Button
-								aria-label="Close judge navigation"
-								className="absolute top-3 right-3"
-								onClick={() => setMenuOpen(false)}
-								size="icon"
-								type="button"
-								variant="ghost"
-							>
-								<CloseLine />
-							</Button>
-							<div className="pt-11">
-								<JudgeNavContent
-									onNavigate={() => setMenuOpen(false)}
-									userName={userName}
-								/>
-							</div>
-						</aside>
-					</div>
-				) : null}
+					</MobileNavSheet>
+				</div>
 
 				<main
 					className={
@@ -452,14 +444,16 @@ function RoundStatsCard({
 	scored: number;
 }) {
 	return (
-		<article className="flex flex-col gap-2">
+		<div className="flex flex-col gap-2">
 			<h2 className="m-0 font-medium text-[20px] leading-6">{name}</h2>
-			<div className="grid min-h-[96px] grid-cols-3 rounded-2xl border border-[#d6d6d6] bg-white px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-				<StatNumber label="Assigned" value={assigned} />
-				<StatNumber label="Scored" tone="green" value={scored} />
-				<StatNumber label="Remaining" tone="red" value={remaining} />
-			</div>
-		</article>
+			<Card className="rounded-2xl border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+				<CardContent className="grid min-h-[96px] grid-cols-3 px-4 py-3">
+					<StatNumber label="Assigned" value={assigned} />
+					<StatNumber label="Scored" tone="green" value={scored} />
+					<StatNumber label="Remaining" tone="red" value={remaining} />
+				</CardContent>
+			</Card>
+		</div>
 	);
 }
 
@@ -512,104 +506,106 @@ function JudgeTeamCard({
 	const total = getAssignmentTotal(assignment, criteria);
 
 	return (
-		<article className="flex min-h-[138px] flex-col gap-3 rounded-2xl border border-[#d6d6d6] bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-				<div className="min-w-0">
-					<div className="flex flex-wrap items-center gap-2">
-						<h3 className="m-0 truncate font-medium text-base text-black">
-							{assignment.team.name}
-						</h3>
-						{scored ? (
-							<Link
-								aria-label={`Edit score for ${assignment.team.name}`}
-								className="rounded-full bg-[#d8f6ee] px-2 py-0.5 font-medium text-[#02644f] text-[11px] transition hover:bg-[#c6f0e5]"
-								href={scoreHref}
-							>
-								Scored
-							</Link>
-						) : null}
+		<Card className="flex min-h-[138px] flex-col gap-3 rounded-2xl border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+			<CardContent className="flex flex-1 flex-col gap-3">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+					<div className="min-w-0">
+						<div className="flex flex-wrap items-center gap-2">
+							<h3 className="m-0 truncate font-medium text-base text-black">
+								{assignment.team.name}
+							</h3>
+							{scored ? (
+								<Link
+									aria-label={`Edit score for ${assignment.team.name}`}
+									className="rounded-full bg-[#d8f6ee] px-2 py-0.5 font-medium text-[#02644f] text-[11px] transition hover:bg-[#c6f0e5]"
+									href={scoreHref}
+								>
+									Scored
+								</Link>
+							) : null}
+						</div>
+						<p className="mt-1 mb-0 text-[#767676] text-[11px]">
+							Team ID: {getTeamCode(assignment)}
+						</p>
 					</div>
-					<p className="mt-1 mb-0 text-[#767676] text-[11px]">
-						Team ID: {getTeamCode(assignment)}
-					</p>
+					<div className="shrink-0 text-left text-[#767676] text-xs sm:text-right">
+						<p className="m-0">
+							{formatTime(assignment.timeSlot)}
+							{assignment.timeSlot ? " • " : ""}
+							{assignment.room.round.name}
+						</p>
+						<p className="m-0">{roomLabel}</p>
+					</div>
 				</div>
-				<div className="shrink-0 text-left text-[#767676] text-xs sm:text-right">
-					<p className="m-0">
-						{formatTime(assignment.timeSlot)}
-						{assignment.timeSlot ? " • " : ""}
-						{assignment.room.round.name}
-					</p>
-					<p className="m-0">{roomLabel}</p>
-				</div>
-			</div>
 
-			{scored ? (
-				<div className="flex flex-col gap-3">
-					{sidepots.length > 0 ? (
-						<div className="flex flex-wrap gap-2">
-							{sidepots.map((criterion) => {
-								const value = getCriteriaScore(assignment, criterion.id);
-								if (value === undefined) return null;
+				{scored ? (
+					<div className="flex flex-col gap-3">
+						{sidepots.length > 0 ? (
+							<div className="flex flex-wrap gap-2">
+								{sidepots.map((criterion) => {
+									const value = getCriteriaScore(assignment, criterion.id);
+									if (value === undefined) return null;
+									return (
+										<span
+											className="inline-flex items-center gap-2 rounded-full bg-[#f7f5ff] px-3 py-1 text-[#1a1a1a] text-[11px]"
+											key={criterion.id}
+										>
+											{criterion.name}
+											<span className="rounded-full bg-[#7054fd] px-2 py-0.5 font-medium text-[10px] text-white">
+												{value}/{criterion.maxScore}
+											</span>
+										</span>
+									);
+								})}
+							</div>
+						) : null}
+
+						<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+							{mainCriteria.map((criterion) => {
+								const value = getCriteriaScore(assignment, criterion.id) ?? 0;
 								return (
-									<span
-										className="inline-flex items-center gap-2 rounded-full bg-[#f7f5ff] px-3 py-1 text-[#1a1a1a] text-[11px]"
+									<div
+										className={`rounded-xl border px-2 py-2 text-center ${getScoreTone(value, criterion.maxScore)}`}
 										key={criterion.id}
 									>
-										{criterion.name}
-										<span className="rounded-full bg-[#7054fd] px-2 py-0.5 font-medium text-[10px] text-white">
-											{value}/{criterion.maxScore}
+										<strong className="block font-semibold text-base leading-5">
+											{value}
+										</strong>
+										<span className="block truncate text-[#292929] text-[9px] uppercase leading-3">
+											{criterion.name}
 										</span>
-									</span>
+									</div>
 								);
 							})}
-						</div>
-					) : null}
-
-					<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
-						{mainCriteria.map((criterion) => {
-							const value = getCriteriaScore(assignment, criterion.id) ?? 0;
-							return (
-								<div
-									className={`rounded-xl border px-2 py-2 text-center ${getScoreTone(value, criterion.maxScore)}`}
-									key={criterion.id}
-								>
-									<strong className="block font-semibold text-base leading-5">
-										{value}
-									</strong>
-									<span className="block truncate text-[#292929] text-[9px] uppercase leading-3">
-										{criterion.name}
-									</span>
-								</div>
-							);
-						})}
-						<div className="rounded-xl border border-[#d6d6d6] bg-[#fafafa] px-2 py-2 text-center">
-							<strong className="block font-semibold text-base leading-5">
-								{total.max ? `${total.total}/${total.max}` : total.total}
-							</strong>
-							<span className="block text-[#434343] text-[9px] uppercase leading-3">
-								Total
-							</span>
+							<div className="rounded-xl border border-[#d6d6d6] bg-[#fafafa] px-2 py-2 text-center">
+								<strong className="block font-semibold text-base leading-5">
+									{total.max ? `${total.total}/${total.max}` : total.total}
+								</strong>
+								<span className="block text-[#434343] text-[9px] uppercase leading-3">
+									Total
+								</span>
+							</div>
 						</div>
 					</div>
-				</div>
-			) : null}
+				) : null}
 
-			{scored ? null : (
-				<div className="mt-auto flex justify-end">
-					{canScore ? (
-						<Button render={<Link href={scoreHref} />} size="sm">
-							Score team
-							<ArrowRightLine data-icon="inline-end" />
-						</Button>
-					) : (
-						<Button disabled size="sm" type="button" variant="secondary">
-							Score team
-							<ArrowRightLine data-icon="inline-end" />
-						</Button>
-					)}
-				</div>
-			)}
-		</article>
+				{scored ? null : (
+					<div className="mt-auto flex justify-end">
+						{canScore ? (
+							<Button render={<Link href={scoreHref} />} size="sm">
+								Score team
+								<ArrowRightLine data-icon="inline-end" />
+							</Button>
+						) : (
+							<Button disabled size="sm" type="button" variant="secondary">
+								Score team
+								<ArrowRightLine data-icon="inline-end" />
+							</Button>
+						)}
+					</div>
+				)}
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -677,50 +673,56 @@ function ScoreStatusChip({
 }) {
 	if (!criterion) {
 		return (
-			<span
-				className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-base leading-6 ${
+			<Badge
+				className={cn(
+					"h-auto rounded-full px-3 py-1 text-base leading-6",
 					active
-						? "bg-[#292929] text-white"
+						? "bg-foreground text-background hover:bg-foreground/90"
 						: sidepotComplete
-							? "bg-[#f7f5ff] text-[#4a28f6]"
-							: "border border-[#e6e6e6] bg-white text-[#a5a5a5]"
-				}`}
+							? "border-transparent bg-[#f7f5ff] text-[#4a28f6] hover:bg-[#f7f5ff]"
+							: "text-[#a5a5a5]"
+				)}
+				variant={active || sidepotComplete ? "default" : "outline"}
 			>
 				Side pots
 				<span className="flex items-center gap-1">
 					<span className="size-1.5 rounded-full bg-current" />
 					<span className="size-1.5 rounded-full bg-current opacity-70" />
 				</span>
-			</span>
+			</Badge>
 		);
 	}
 
 	if (active) {
 		return (
-			<span className="inline-flex items-center rounded-full bg-[#292929] px-3 py-1 text-base text-white leading-6">
+			<Badge className="h-auto rounded-full bg-foreground px-3 py-1 text-background text-base leading-6 hover:bg-foreground/90">
 				{criterion.name}
-			</span>
+			</Badge>
 		);
 	}
 
 	if (score === undefined) {
 		return (
-			<span className="inline-flex items-center rounded-full border border-[#e6e6e6] bg-white px-3 py-1 text-[#a5a5a5] text-base leading-6">
+			<Badge
+				className="h-auto rounded-full px-3 py-1 text-[#a5a5a5] text-base leading-6"
+				variant="outline"
+			>
 				{criterion.name}
-			</span>
+			</Badge>
 		);
 	}
 
 	return (
-		<span
-			className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-base leading-6 ${getScoreTone(
-				score,
-				criterion.maxScore
-			)}`}
+		<Badge
+			className={cn(
+				"h-auto rounded-full px-3 py-1 text-base leading-6",
+				getScoreTone(score, criterion.maxScore)
+			)}
+			variant="outline"
 		>
 			{criterion.name}
 			<span>{score}</span>
-		</span>
+		</Badge>
 	);
 }
 
@@ -1034,25 +1036,28 @@ function SidepotBadge({
 }) {
 	const scored = score !== undefined;
 	return (
-		<span
-			className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] ${
+		<Badge
+			className={cn(
+				"h-auto gap-1.5 rounded-full px-2 py-1 text-[11px]",
 				scored
 					? getScoreTone(score, criterion.maxScore)
-					: "border-[#a5a5a5] bg-[#fcfcfc] text-[#292929]"
-			}`}
+					: "border-[#a5a5a5] bg-background text-foreground"
+			)}
+			variant="outline"
 		>
 			<span className="size-1.5 rounded-full bg-current" />
 			<span className="font-medium">{criterion.name}</span>
-			<span
-				className={`rounded-full px-2 py-px font-semibold text-[10px] ${
+			<Badge
+				className={cn(
+					"h-auto rounded-full px-2 py-px font-semibold text-[10px]",
 					scored
 						? getScoreFillClass(score, criterion.maxScore)
-						: "bg-[#a5a5a5] text-white"
-				}`}
+						: "bg-[#a5a5a5] text-white hover:bg-[#a5a5a5]"
+				)}
 			>
 				{scored ? `${score}/${criterion.maxScore}` : `/${criterion.maxScore}`}
-			</span>
-		</span>
+			</Badge>
+		</Badge>
 	);
 }
 
@@ -1692,18 +1697,20 @@ export function JudgeSchedulePage() {
 				title="Judging Schedule"
 			/>
 
-			<section className="flex items-center justify-between rounded-2xl border border-[#d6d6d6] bg-white px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-				<div>
-					<p className="m-0 text-[#575757] text-xs">Current time</p>
-					<p className="m-0 font-medium text-[22px] leading-7">
-						{formatTime(currentTime)}
-					</p>
-				</div>
-				<div className="text-right">
-					<p className="m-0 text-[#575757] text-xs">Room assignment</p>
-					<p className="m-0 font-medium text-base">{data.roomLabelSummary}</p>
-				</div>
-			</section>
+			<Card className="rounded-2xl border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+				<CardContent className="flex items-center justify-between px-4 py-3">
+					<div>
+						<p className="m-0 text-muted-foreground text-xs">Current time</p>
+						<p className="m-0 font-medium text-[22px] leading-7">
+							{formatTime(currentTime)}
+						</p>
+					</div>
+					<div className="text-right">
+						<p className="m-0 text-muted-foreground text-xs">Room assignment</p>
+						<p className="m-0 font-medium text-base">{data.roomLabelSummary}</p>
+					</div>
+				</CardContent>
+			</Card>
 
 			{data.isLoading ? (
 				<LoadingCard label="Loading schedule…" />
@@ -1782,61 +1789,6 @@ function getRubricBands(maxScore: number, includeZero = false) {
 	});
 }
 
-function RubricCriterionRow({
-	criterion,
-	expanded,
-	onToggle
-}: {
-	criterion: Criterion;
-	expanded: boolean;
-	onToggle: () => void;
-}) {
-	return (
-		<article className="overflow-hidden rounded-2xl border border-[#d6d6d6] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-			<button
-				aria-expanded={expanded}
-				className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left"
-				onClick={onToggle}
-				type="button"
-			>
-				<div>
-					<h3 className="m-0 font-medium text-base">{criterion.name}</h3>
-					<p className="mt-1 mb-0 text-[#575757] text-sm">
-						{criterion.isSidepot ? "Sidepot" : "Main criteria"} ·{" "}
-						{criterion.maxScore} points
-					</p>
-				</div>
-				<DownLine
-					className={`size-5 shrink-0 transition ${expanded ? "rotate-180" : ""}`}
-				/>
-			</button>
-
-			{expanded ? (
-				<div className="border-[#ededed] border-t px-4 pb-4">
-					<div className="grid gap-3 pt-4 md:grid-cols-5">
-						{getRubricBands(criterion.maxScore).map((band) => (
-							<div
-								className="rounded-xl bg-[#f7f5ff] p-3 text-sm"
-								key={`${criterion.id}-${band.label}`}
-							>
-								<p className="m-0 font-medium text-[#2911a7]">{band.label}</p>
-								<p className="mt-1 mb-0 font-semibold text-[#292929]">
-									{band.range} pts
-								</p>
-								<p className="mt-2 mb-0 text-[#575757] text-xs leading-4">
-									Use this band when the project demonstrates{" "}
-									{band.label.toLowerCase()} evidence for{" "}
-									{criterion.name.toLowerCase()}.
-								</p>
-							</div>
-						))}
-					</div>
-				</div>
-			) : null}
-		</article>
-	);
-}
-
 export function JudgeRubricPage() {
 	const criteriaQuery = api.criteria.getAll.useQuery();
 	const criteria = useMemo(
@@ -1846,13 +1798,6 @@ export function JudgeRubricPage() {
 				.sort((a, b) => Number(a.isSidepot) - Number(b.isSidepot)),
 		[criteriaQuery.data]
 	);
-	const [expandedId, setExpandedId] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (!expandedId && criteria[0]) {
-			setExpandedId(criteria[0].id);
-		}
-	}, [criteria, expandedId]);
 
 	if (criteriaQuery.error) {
 		return (
@@ -1869,27 +1814,59 @@ export function JudgeRubricPage() {
 				title="Judging Rubric"
 			/>
 
-			<section className="rounded-2xl border border-[#d6d6d6] bg-[#fcfcfc] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:p-8">
-				<p className="mt-0 mb-4 text-[#575757]">
+			<section className="rounded-2xl border border-border bg-background p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:p-8">
+				<p className="mt-0 mb-4 text-muted-foreground">
 					Click on any category to view the detailed scoring criteria.
 				</p>
 				{criteriaQuery.isLoading ? (
 					<LoadingCard label="Loading rubric…" />
 				) : criteria.length > 0 ? (
-					<div className="flex flex-col gap-4">
+					<Accordion
+						className="gap-4"
+						defaultValue={criteria[0] ? [criteria[0].id] : []}
+					>
 						{criteria.map((criterion) => (
-							<RubricCriterionRow
-								criterion={criterion}
-								expanded={expandedId === criterion.id}
+							<AccordionItem
+								className="overflow-hidden rounded-2xl border border-border not-last:border-b bg-card shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
 								key={criterion.id}
-								onToggle={() =>
-									setExpandedId((current) =>
-										current === criterion.id ? null : criterion.id
-									)
-								}
-							/>
+								value={criterion.id}
+							>
+								<AccordionTrigger className="w-full items-center gap-4 px-4 py-4 hover:no-underline [&_svg]:size-5">
+									<div className="text-left">
+										<h3 className="m-0 font-medium text-base">
+											{criterion.name}
+										</h3>
+										<p className="mt-1 mb-0 text-muted-foreground text-sm">
+											{criterion.isSidepot ? "Sidepot" : "Main criteria"} ·{" "}
+											{criterion.maxScore} points
+										</p>
+									</div>
+								</AccordionTrigger>
+								<AccordionContent className="border-border border-t px-4 pb-4">
+									<div className="grid gap-3 pt-4 md:grid-cols-5">
+										{getRubricBands(criterion.maxScore).map((band) => (
+											<div
+												className="rounded-xl bg-accent p-3 text-sm"
+												key={`${criterion.id}-${band.label}`}
+											>
+												<p className="m-0 font-medium text-primary">
+													{band.label}
+												</p>
+												<p className="mt-1 mb-0 font-semibold text-foreground">
+													{band.range} pts
+												</p>
+												<p className="mt-2 mb-0 text-muted-foreground text-xs leading-4">
+													Use this band when the project demonstrates{" "}
+													{band.label.toLowerCase()} evidence for{" "}
+													{criterion.name.toLowerCase()}.
+												</p>
+											</div>
+										))}
+									</div>
+								</AccordionContent>
+							</AccordionItem>
 						))}
-					</div>
+					</Accordion>
 				) : (
 					<div className="rounded-2xl border border-[#d6d6d6] border-dashed p-8 text-center text-[#575757]">
 						No judging criteria have been published yet.

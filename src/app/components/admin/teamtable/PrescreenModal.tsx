@@ -1,19 +1,31 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/app/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@/app/components/ui/dialog";
+import { Field, FieldLabel } from "@/app/components/ui/field";
+import { Textarea } from "@/app/components/ui/textarea";
 import { api } from "@/trpc/react";
 
 interface PrescreenModalProps {
 	teamId: string;
 	teamName: string;
+	open: boolean;
 	onClose: () => void;
 }
 
 export default function PrescreenModal({
 	teamId,
 	teamName,
+	open,
 	onClose
 }: PrescreenModalProps) {
 	const utils = api.useUtils();
@@ -46,62 +58,53 @@ export default function PrescreenModal({
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-			<div className="w-4/5 max-w-2xl rounded-md bg-white p-6">
-				<div className="mb-6 flex items-start justify-between">
-					<h2 className="font-bold text-2xl text-dark-pink">
+		<Dialog
+			onOpenChange={(nextOpen) => {
+				if (!nextOpen) onClose();
+			}}
+			open={open}
+		>
+			<DialogContent className="sm:max-w-2xl" showCloseButton>
+				<DialogHeader>
+					<DialogTitle>
 						Prescreening for Team:{" "}
-						<span className="text-medium-pink">{teamName}</span>
-					</h2>
-					<button onClick={onClose} type="button">
-						<Image
-							alt="Close"
-							height={20}
-							src="/svgs/judges/exit_icon.svg"
-							width={20}
-						/>
-					</button>
-				</div>
+						<span className="text-primary">{teamName}</span>
+					</DialogTitle>
+					<DialogDescription>
+						Please pass or fail the team, and give a brief justification based
+						on rubric criteria.
+					</DialogDescription>
+				</DialogHeader>
 
-				<p className="mb-4 text-dark-grey">
-					Please pass or fail the team, and give a brief justification based on
-					rubric criteria.
-				</p>
+				<Field>
+					<FieldLabel htmlFor="prescreen-comments">Comments*</FieldLabel>
+					<Textarea
+						id="prescreen-comments"
+						onChange={(e) => setComments(e.target.value)}
+						placeholder="Describe why the team passed/failed..."
+						rows={4}
+						value={comments}
+					/>
+				</Field>
 
-				<label
-					className="mb-2 block font-medium text-grey-purple text-sm"
-					htmlFor="prescreen-comments"
-				>
-					Comments*
-				</label>
-				<textarea
-					className="mb-6 w-full rounded-2xl border-2 border-light-grey p-3 outline-none transition-colors focus:border-medium-pink"
-					id="prescreen-comments"
-					onChange={(e) => setComments(e.target.value)}
-					placeholder="Describe why the team passed/failed..."
-					rows={4}
-					value={comments}
-				/>
-
-				<div className="flex gap-4">
-					<button
-						className="rounded-full bg-dark-pink px-8 py-2 font-bold text-white shadow-lg transition-all hover:bg-medium-pink disabled:bg-ehhh-grey"
+				<DialogFooter>
+					<Button
 						disabled={!canSubmit}
 						onClick={() => void handleSubmit("passed")}
 						type="button"
 					>
 						{setPrescreen.isPending ? "Saving..." : "Pass team"}
-					</button>
-					<button
-						className="rounded-full border-2 border-dark-pink bg-white px-8 py-2 font-bold text-dark-pink transition-all hover:bg-pastel-pink disabled:border-ehhh-grey disabled:text-ehhh-grey"
+					</Button>
+					<Button
 						disabled={!canSubmit}
 						onClick={() => void handleSubmit("failed")}
 						type="button"
+						variant="outline"
 					>
 						Fail team
-					</button>
-				</div>
-			</div>
-		</div>
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

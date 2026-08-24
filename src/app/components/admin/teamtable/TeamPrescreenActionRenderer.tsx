@@ -1,6 +1,7 @@
 "use client";
 
 import type { ICellRendererParams } from "ag-grid-community";
+import { Button } from "@/app/components/ui/button";
 import {
 	isTeamPrescreenPending,
 	type TeamTableContext
@@ -18,12 +19,12 @@ export function TeamPrescreenActionRenderer({
 	if (!data || !isTeamPrescreenPending(data.prescreenStatus)) return null;
 
 	return (
-		<button
-			className="rounded-full bg-medium-pink px-4 py-1 font-bold text-sm text-white shadow-sm"
+		<Button
 			onClick={() => context.onOpenPrescreen({ id: data.id, name: data.name })}
+			size="sm"
 			type="button"
 		>
 			Prescreen
-		</button>
+		</Button>
 	);
 }
