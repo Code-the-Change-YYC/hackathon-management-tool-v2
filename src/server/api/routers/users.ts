@@ -12,11 +12,7 @@
 import { TRPCError } from "@trpc/server";
 import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import {
-	createTRPCRouter,
-	protectedProcedure,
-	publicProcedure
-} from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { DIETARY_RESTRICTIONS, PROGRAMS, user } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
 
@@ -80,10 +76,9 @@ export const usersRouter = createTRPCRouter({
 				.returning();
 			return updated;
 		}),
-	completeRegistrationByEmail: publicProcedure
+	completeRegistration: protectedProcedure
 		.input(
 			z.object({
-				email: z.string().email(),
 				school: z.string().optional(),
 				program: z.enum(PROGRAMS).optional(),
 				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
@@ -100,13 +95,13 @@ export const usersRouter = createTRPCRouter({
 					completedRegistration: true,
 					role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
 				})
-				.where(eq(user.email, input.email))
+				.where(eq(user.id, ctx.session.user.id))
 				.returning();
 
 			if (!updated) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
-					message: "User not found for registration update"
+					message: "Authenticated user not found"
 				});
 			}
 

@@ -1,3 +1,4 @@
+import { eventsRouter } from "@/server/api/routers/events";
 import { hackathonSettingsRouter } from "@/server/api/routers/hackathon-settings";
 import { judgingAssignmentsRouter } from "@/server/api/routers/judging-assignments";
 import { judgingRoomsRouter } from "@/server/api/routers/judging-rooms";
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
 	scores: scoresRouter,
 	users: usersRouter,
 	teams: teamsRouter,
+	events: eventsRouter,
 	meals: mealsRouter,
 	criteria: criteriaRouter
 });

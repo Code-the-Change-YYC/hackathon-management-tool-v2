@@ -4,7 +4,7 @@ import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 
 export default async function CreateMealPage() {
-	await requireRole([Role.JUDGE, Role.ADMIN]);
+	await requireRole([Role.ADMIN]);
 
 	return (
 		<main className="flex min-h-screen flex-col bg-pale-grey font-sans text-dark-grey">

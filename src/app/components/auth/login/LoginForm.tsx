@@ -1,51 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-import { authClient } from "@/server/better-auth/client";
+import { Button } from "@/app/components/ui/button";
+import { Separator } from "@/app/components/ui/separator";
+import {
+	enabledSocialProviders,
+	type SocialProviderId
+} from "../social-providers";
+import { useLoginMutations } from "../useAuthMutations";
 
 export default function LoginForm() {
-	const router = useRouter();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const [error, setError] = useState("");
-	const [loading, setLoading] = useState(false);
+	const { emailSignIn, error, isPending, socialSignIn } = useLoginMutations();
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setError("");
-		setLoading(true);
+	const handleSubmit = () => {
+		socialSignIn.reset();
+		emailSignIn.mutate({ email, password });
+	};
 
-		try {
-			const result = await authClient.signIn.email({
-				email,
-				password
-			});
-
-			if (result.error) {
-				setError(result.error.message || "Failed to sign in");
-				return;
-			}
-
-			router.push("/");
-		} catch (_err) {
-			setError("An unexpected error occurred");
-		} finally {
-			setLoading(false);
-		}
+	const handleSocialSignIn = (provider: SocialProviderId) => {
+		emailSignIn.reset();
+		socialSignIn.mutate({ provider });
 	};
 
 	return (
-		<form className="space-y-4" onSubmit={handleSubmit}>
-			<div className="space-y-1">
+		<form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+			<div className="flex flex-col gap-1">
 				<label className="font-medium text-sm" htmlFor="email">
 					Email
 				</label>
 				<input
 					className="h-10 w-full rounded-full border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
-					disabled={loading}
+					disabled={isPending}
 					id="email"
 					onChange={(e) => setEmail(e.target.value)}
 					placeholder="Email"
@@ -55,13 +43,13 @@ export default function LoginForm() {
 				/>
 			</div>
 
-			<div className="space-y-1">
+			<div className="flex flex-col gap-1">
 				<label className="font-medium text-sm" htmlFor="password">
 					Password
 				</label>
 				<input
 					className="h-10 w-full rounded-full border border-ehhh-grey bg-pale-grey px-4 text-sm outline-none transition focus:border-awesomer-purple"
-					disabled={loading}
+					disabled={isPending}
 					id="password"
 					onChange={(e) => setPassword(e.target.value)}
 					placeholder="Password"
@@ -89,17 +77,37 @@ export default function LoginForm() {
 
 			{error && (
 				<p className="rounded-md bg-pastel-pink px-3 py-2 text-sm text-strawberry-red">
-					{error}
+					{error.message}
 				</p>
 			)}
 
 			<button
 				className="h-10 w-full cursor-pointer rounded-full bg-awesomer-purple font-semibold text-pale-grey text-sm transition hover:bg-awesome-purple disabled:cursor-not-allowed disabled:opacity-70"
-				disabled={loading}
+				disabled={isPending}
 				type="submit"
 			>
-				{loading ? "Signing in..." : "Sign in"}
+				{emailSignIn.isPending ? "Signing in..." : "Sign in"}
 			</button>
+
+			<div aria-hidden="true" className="flex items-center gap-3">
+				<Separator className="flex-1" />
+				<span className="text-dark-grey/60 text-xs">OR</span>
+				<Separator className="flex-1" />
+			</div>
+
+			{enabledSocialProviders.map(({ icon: Icon, id, label }) => (
+				<Button
+					className="w-full rounded-full"
+					disabled={isPending}
+					key={id}
+					onClick={() => handleSocialSignIn(id)}
+					type="button"
+					variant="outline"
+				>
+					<Icon aria-hidden="true" data-icon="inline-start" />
+					{socialSignIn.isPending ? "Redirecting…" : `Continue with ${label}`}
+				</Button>
+			))}
 
 			<p className="pt-2 text-center text-dark-grey/75 text-sm">
 				Don&apos;t have an account?{" "}

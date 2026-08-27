@@ -2,6 +2,11 @@ import type { StaticImageData } from "next/image";
 import Image from "next/image";
 import type { ReactNode } from "react";
 
+const ACCENT_SRC = {
+	accent_green: "/svgs/landingPage/accent_green.svg",
+	accent_purple: "/svgs/landingPage/accent_purple.svg",
+	accent_pink: "/svgs/landingPage/accent_pink.svg"
+} as const;
 export interface InfoSectionProps {
 	title?: string;
 	titlePrefixColor?: string;
@@ -10,10 +15,10 @@ export interface InfoSectionProps {
 	bodyTextColor?: string;
 	paragraphs?: string[];
 	bodyContent?: ReactNode;
-	imageSrc: string | StaticImageData;
-	imageAlt: string;
+	imageSrc?: string | StaticImageData;
+	imageAlt?: string;
 	bgColor: string;
-	accentSrc?: string;
+	accentSrc?: keyof typeof ACCENT_SRC;
 	accentPosition?: "before" | "after";
 	reverse?: boolean;
 }
@@ -35,15 +40,17 @@ export default function InfoSection({
 }: InfoSectionProps) {
 	return (
 		<SectionWrapper bgColor={bgColor} reverse={reverse}>
-			<div className="relative flex size-48 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md sm:h-64 sm:w-64 md:h-96 md:w-96 md:rounded-[30px]">
-				<Image
-					alt={imageAlt}
-					className="h-36 w-40 object-contain sm:h-48 sm:w-52 md:h-72 md:w-80"
-					height={298}
-					src={imageSrc}
-					width={326}
-				/>
-			</div>
+			{imageSrc && (
+				<div className="relative flex size-48 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md sm:size-64 md:size-72 md:rounded-[30px] xl:size-96">
+					<Image
+						alt={imageAlt ?? ""}
+						className="object-contain"
+						height={298}
+						src={imageSrc}
+						width={326}
+					/>
+				</div>
+			)}
 
 			<div className="flex w-full max-w-lg flex-col gap-4 md:gap-6">
 				{titleHighlight && (
@@ -53,7 +60,7 @@ export default function InfoSection({
 								alt=""
 								className="-left-6 -translate-y-1/2 sm:-left-10 absolute top-1/2"
 								height={20}
-								src={accentSrc}
+								src={ACCENT_SRC[accentSrc]}
 								width={16}
 							/>
 						)}
@@ -70,7 +77,7 @@ export default function InfoSection({
 								alt=""
 								className="shrink-0"
 								height={20}
-								src={accentSrc}
+								src={ACCENT_SRC[accentSrc]}
 								width={16}
 							/>
 						)}
@@ -81,7 +88,7 @@ export default function InfoSection({
 					? bodyContent
 					: paragraphs?.map((para) => (
 							<p
-								className={`${bodyTextColor} font-medium text-base leading-6 sm:text-xl sm:leading-7 md:text-2xl md:leading-8`}
+								className={`${bodyTextColor} relative font-medium text-base leading-6 sm:text-xl sm:leading-7 md:text-2xl md:leading-8`}
 								key={para}
 							>
 								{para}

@@ -27,6 +27,36 @@ export enum OrganizationRole {
 	OWNER = "owner"
 }
 
+export enum EventType {
+	FOOD = "food",
+	ACTIVITY = "activity",
+	PROJECT = "project",
+	CEREMONY = "ceremony"
+}
+
+export enum EventStatus {
+	DRAFT = "draft",
+	ACTIVE = "active"
+}
+
+export enum EventTicketStatus {
+	ACTIVE = "active",
+	ALREADY_CHECKED_IN = "already_checked_in"
+}
+
+export const EVENT_TICKET_TOKEN_PATTERN = /^evt1_[A-Za-z0-9_-]{43}$/;
+
+export const EVENT_TYPES = [
+	EventType.FOOD,
+	EventType.ACTIVITY,
+	EventType.PROJECT,
+	EventType.CEREMONY
+] as const;
+
+export const EVENT_STATUSES = [EventStatus.DRAFT, EventStatus.ACTIVE] as const;
+
+export const QR_EVENT_TYPES = [EventType.FOOD, EventType.ACTIVITY] as const;
+
 export const MEMBER_ROLES = {
 	OWNER: "owner",
 	MEMBER: "member",

@@ -36,6 +36,13 @@ export const PROGRAMS = [
 	"other"
 ] as const;
 
+export const SCHOOLS = [
+	"University of Calgary",
+	"Mount Royal University",
+	"SAIT",
+	"Other"
+] as const;
+
 export const DIETARY_RESTRICTIONS = [
 	"halal",
 	"vegetarian",

@@ -4,13 +4,6 @@ import type { PastHackathonWinner } from "./contentfulTypes";
 
 export type MingCuteIcon = ElementType<IconProps>;
 
-export type Judge = {
-	id: string;
-	name: string;
-	company: string;
-	image: string;
-};
-
 export type EventInfoItem = {
 	id: string;
 	icon: MingCuteIcon;
@@ -62,12 +55,6 @@ export type CriteriaItemProps = {
 export type EventDetailProps = {
 	icon: MingCuteIcon;
 	label: string;
-};
-
-export type JudgeItemProps = {
-	name: string;
-	company: string;
-	image: string;
 };
 
 export type WinnerCardProps = {

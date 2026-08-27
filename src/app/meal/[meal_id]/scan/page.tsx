@@ -8,7 +8,7 @@ export default async function MealScanPage({
 }: {
 	params: Promise<{ meal_id: string }>;
 }) {
-	await requireRole([Role.JUDGE, Role.ADMIN]);
+	await requireRole([Role.ADMIN]);
 	const { meal_id } = await params;
 	const meal = await api.meals.getMeal({ id: meal_id });
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { api } from "@/trpc/react";
+import { EventStatus } from "@/types/types";
 
 export default function MealsList() {
 	const getAllMeals = api.meals.getAllMeals.useQuery();
@@ -15,17 +16,24 @@ export default function MealsList() {
 				{getAllMeals.data?.map((m) => (
 					<li className="rounded-md border border-medium-grey p-4" key={m.id}>
 						<h3 className="font-semibold">{m.title}</h3>
+						<p className="text-sm capitalize">{m.status}</p>
 						<p className="text-sm">
 							{new Date(m.startTime).toLocaleString()} -{" "}
 							{new Date(m.endTime).toLocaleString()}
 						</p>
 						<div className="flex">
-							<Link
-								className="ml-auto rounded-lg bg-awesomer-purple px-4 py-2 font-semibold transition hover:bg-awesome-purple"
-								href={`/meal/${m.id}/scan`}
-							>
-								<span className="text-white">Scan</span>
-							</Link>
+							{m.status === EventStatus.ACTIVE ? (
+								<Link
+									className="ml-auto rounded-lg bg-awesomer-purple px-4 py-2 font-semibold transition hover:bg-awesome-purple"
+									href={`/meal/${m.id}/scan`}
+								>
+									<span className="text-white">Scan</span>
+								</Link>
+							) : (
+								<span className="ml-auto text-medium-grey text-sm">
+									Activate this meal before scanning
+								</span>
+							)}
 						</div>
 					</li>
 				))}

@@ -1,13 +1,17 @@
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
+import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
 import { DietaryRestriction } from "./components/DietaryRestriction";
 import { MealScheduleSection } from "./components/MealScheduleSection";
 import { MealTicket } from "./components/MealTicket";
 
 export default async function MealInfoPage() {
-	const session = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
+	const session = await requireRole([Role.PARTICIPANT]);
 	const displayName = session.user.name?.trim() || "Participant";
-	const emailAddress = session.user.email;
+	const nextMeal = await api.meals.getNextMeal();
+	const ticket = nextMeal
+		? await api.events.rotateParticipantEventTicket({ eventId: nextMeal.id })
+		: null;
 
 	return (
 		<main className="min-h-screen bg-background px-4 py-6 text-dark-grey md:px-8 lg:px-6">
@@ -22,11 +26,7 @@ export default async function MealInfoPage() {
 						</p>
 					</header>
 
-					<MealTicket
-						displayName={displayName}
-						emailAddress={emailAddress}
-						userId={session.user.id}
-					/>
+					<MealTicket displayName={displayName} ticket={ticket} />
 				</div>
 
 				<DietaryRestriction

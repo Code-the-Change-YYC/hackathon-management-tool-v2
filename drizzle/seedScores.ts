@@ -28,10 +28,31 @@ async function main() {
 
 		// Insert criteria
 		const criteriaList = [
-			{ name: "Innovation", maxScore: 10 },
-			{ name: "Technical Complexity", maxScore: 10 },
-			{ name: "Design", maxScore: 10 },
-			{ name: "Presentation", maxScore: 10 }
+			{
+				name: "Innovation",
+				description:
+					"Is the idea original or a fresh take on existing solutions?",
+				displayOrder: 1,
+				maxScore: 10
+			},
+			{
+				name: "Technical Complexity",
+				description: "Is the solution technically sound and well-built?",
+				displayOrder: 2,
+				maxScore: 10
+			},
+			{
+				name: "Design",
+				description: "Is the solution intuitive, accessible and user-friendly?",
+				displayOrder: 3,
+				maxScore: 10
+			},
+			{
+				name: "Presentation",
+				description: "How clearly does the team communicate its solution?",
+				displayOrder: 4,
+				maxScore: 10
+			}
 		];
 
 		const createdCriteria = [];
@@ -40,6 +61,8 @@ async function main() {
 			await db.insert(criteria).values({
 				id,
 				name: c.name,
+				description: c.description,
+				displayOrder: c.displayOrder,
 				maxScore: c.maxScore,
 				isSidepot: false
 			});
