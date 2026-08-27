@@ -1,8 +1,5 @@
 "use client";
 
-// Banner shown on My Team when the user isn't on a team yet, prompting them
-// to register or join one.
-
 import Image from "next/image";
 import { ArrowRightIcon } from "@/app/components/layout/icons";
 import { Button } from "@/app/components/ui/button";

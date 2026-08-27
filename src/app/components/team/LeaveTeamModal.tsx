@@ -1,7 +1,5 @@
 "use client";
 
-// Confirmation modal for leaving the team.
-
 import { DangerButton, Modal, ModalTitle, SecondaryButton } from "./Modal";
 
 export default function LeaveTeamModal({

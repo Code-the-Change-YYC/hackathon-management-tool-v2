@@ -1,5 +1,3 @@
-// Page shell wrapping content with the sidebar nav and footer.
-
 import AppFooter from "./AppFooter";
 import Sidebar from "./Sidebar";
 
