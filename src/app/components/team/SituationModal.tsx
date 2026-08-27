@@ -29,7 +29,7 @@ export default function SituationModal({
 	onClose: () => void;
 	onContinue: (situation: Situation) => void;
 }) {
-	const [selected, setSelected] = useState<Situation | null>(null);
+	const [selected, setSelected] = useState<Situation | "">("");
 
 	return (
 		<Modal onClose={onClose} open={open}>
@@ -40,7 +40,7 @@ export default function SituationModal({
 			<RadioGroup
 				className="gap-3"
 				onValueChange={(value) => setSelected(value as Situation)}
-				value={selected ?? undefined}
+				value={selected}
 			>
 				{OPTIONS.map((option) => {
 					const active = selected === option.value;

@@ -1,21 +1,12 @@
 "use client";
 
-/**
- * Modal version of the team-registration form, shown on `/participant/my-team`
- * when a logged-in participant selects "I have a team already, but it is not
- * registered yet" in the situation modal. This replaces the old full-page
- * `/team/register` flow so registration stays inline with the new design.
- *
- * TEAM_NAME_PATTERN mirrors the backend's `teamNameSchema` regex in
- * `src/server/api/routers/teams.ts` so the submit button disables before a
- * doomed mutation is attempted.
- */
+// Inline team-registration modal for the "I have a team but it's not
+// registered yet" path on /participant/my-team.
 
 import { useEffect, useState } from "react";
 import { Input } from "@/app/components/ui/input";
 import { Modal, ModalTitle, PrimaryButton, SecondaryButton } from "./Modal";
-
-const TEAM_NAME_PATTERN = /^[a-zA-Z0-9 _-]+$/;
+import { isValidTeamName, TEAM_NAME_MAX } from "./teamName";
 
 export default function RegisterTeamModal({
 	open,
@@ -39,7 +30,7 @@ export default function RegisterTeamModal({
 	}, [open]);
 
 	const trimmed = name.trim();
-	const isValid = TEAM_NAME_PATTERN.test(trimmed);
+	const isValid = isValidTeamName(name);
 
 	return (
 		<Modal onClose={onClose} open={open}>
@@ -55,7 +46,7 @@ export default function RegisterTeamModal({
 				<Input
 					aria-label="Team name"
 					className="h-auto rounded-xl px-4 py-3 font-medium text-[16px]"
-					maxLength={50}
+					maxLength={TEAM_NAME_MAX}
 					onChange={(e) => setName(e.target.value)}
 					placeholder="Team Name"
 					value={name}
