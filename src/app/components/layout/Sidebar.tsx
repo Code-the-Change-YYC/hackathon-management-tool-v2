@@ -1,5 +1,7 @@
 "use client";
 
+// App navigation: a fixed sidebar on desktop, a slide-in drawer on mobile.
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";

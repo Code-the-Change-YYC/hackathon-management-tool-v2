@@ -1,52 +1,20 @@
 /**
- * Teams router for managing hackathon teams (backed by the organization table).
+ * Teams router (backed by the organization table). Team names are validated
+ * against teamNameSchema, mirrored client-side in teamName.ts.
  *
- * Team names only allow letters, numbers, spaces, hyphens, and underscores
- * to avoid emoji/special character issues from last year.
+ * Team codes and one-team-per-user are both race-prone under concurrent
+ * requests, so both lean on DB constraints instead of check-then-act:
+ * `create`/`getMyTeam` retry code generation on a unique-constraint
+ * conflict, and `ensureNotInTeam` is backstopped by a unique index on
+ * member.userId (isDuplicateMembershipError recognizes that race via the
+ * Postgres error code/constraint name and turns it into a friendly error).
+ * `join`/`acceptInvite` take a per-team Postgres advisory lock before
+ * counting members against MAX_TEAM_SIZE, so concurrent joins to the same
+ * team can't both slip past the cap.
  *
- * Each team gets a unique 6-char alphanumeric code (TEAM_CODE_LENGTH /
- * TEAM_CODE_ALPHABET) on creation, matching the 6-box code entry in the
- * design. `create` retries on a unique-constraint conflict (up to
- * MAX_TEAM_CODE_ATTEMPTS) instead of checking for an existing code first,
- * since a check-then-insert isn't atomic under concurrent requests.
- * `getMyTeam` similarly backfills a code for teams created before codes
- * existed (e.g. seeded teams), conditioned on teamCode still being null so
- * a concurrent backfill can't be overwritten.
- *
- * Users can only be on one team at a time, enforced by ensureNotInTeam()
- * (shared across create, join, and acceptInvite) and backstopped by a
- * unique index on member.userId. `isUniqueViolation`/
- * `isDuplicateMembershipError` inspect the Postgres error code (23505) and
- * constraint name to distinguish that race from unrelated conflicts (e.g.
- * a team-code collision), so callers can turn it into a friendly error
- * instead of retrying or surfacing a raw 500.
- *
- * MAX_TEAM_SIZE (surfaced to the My Team UI to gate the invite button) is
- * enforced on both the `join` and `acceptInvite` paths: each holds a
- * Postgres advisory lock keyed by the team id for the rest of its
- * transaction, so concurrent joins/accepts for the same team are
- * serialized before counting members. The lock only serializes writes to
- * *that* team - if the same user concurrently joins a *different* team,
- * the member.userId unique index (not the lock) is what catches it.
- *
- * Owners are the only ones who can send invitations. If an owner tries to
- * leave, they must pass confirmDelete: true which deletes the entire team
- * and its pending invitations. Regular members can leave freely, and if
- * they're the last member the team gets cleaned up automatically.
- *
- * Team updates are allowed for app-level admins (any team) or team owners
- * (their own team only).
- *
- * getRankings returns each team's total score, descending, for the
- * leaderboard; the `as unknown as TeamRanking[]` cast works around the raw
- * SQL result not being recognized as TeamRanking[] by ScoreTable.tsx.
- *
- * Metadata keys used here:
- * - organization.metadata.devpostLink
- * - hackathon_settings.metadata.devpostSubmissionCloseAt (ISO timestamp)
- *
- * All multi-row writes use transactions for atomicity.
- * MEMBER_ROLES lives in types.ts as the single source of truth for roles.
+ * Only owners can invite or update team details (besides app admins).
+ * Leaving requires confirmDelete for owners (deletes the team); a team left
+ * with zero members is cleaned up automatically.
  */
 
 import crypto from "node:crypto";

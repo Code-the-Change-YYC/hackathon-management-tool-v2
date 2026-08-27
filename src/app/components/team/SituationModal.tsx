@@ -1,5 +1,8 @@
 "use client";
 
+// First step of the My Team flow: asks which situation applies (registered,
+// unregistered, or no team) to route to the right next modal.
+
 import { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Modal, ModalTitle, PrimaryButton, SecondaryButton } from "./Modal";

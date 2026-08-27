@@ -1,5 +1,7 @@
 "use client";
 
+// Modal for renaming the team (owner-only, gated by the caller).
+
 import { useEffect, useState } from "react";
 import { Input } from "@/app/components/ui/input";
 import { Modal, ModalTitle, PrimaryButton, SecondaryButton } from "./Modal";

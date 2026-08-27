@@ -1,5 +1,7 @@
 "use client";
 
+// Modal with a 6-box code entry (paste-friendly) for joining a team by code.
+
 import {
 	type ClipboardEvent,
 	type KeyboardEvent,
