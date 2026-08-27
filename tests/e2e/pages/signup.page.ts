@@ -1,5 +1,5 @@
 import type { Page } from "playwright/test";
-import type { createSignupData } from "../helpers/signup-data";
+import type { createSignupData } from "../../utils/signup-data";
 
 const SIGNUP_PAGE = "/signup";
 const SUBMIT_BUTTON_NAME = "Complete registration";
