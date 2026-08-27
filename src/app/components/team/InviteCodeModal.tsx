@@ -1,5 +1,7 @@
 "use client";
 
+// Modal showing the team's invite code as copyable letter cells.
+
 import Image from "next/image";
 import { useState } from "react";
 import { Modal, ModalTitle, PrimaryButton } from "./Modal";

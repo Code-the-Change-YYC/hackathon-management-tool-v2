@@ -1,3 +1,5 @@
+// App-wide footer with copyright and social links.
+
 const socials = [
 	{
 		label: "Facebook",
