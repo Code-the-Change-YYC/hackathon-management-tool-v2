@@ -1,13 +1,5 @@
-/**
- * "My Team" table: team header (name, member count, edit-name button),
- * one row per member, and a trailing invite row.
- *
- * Per the Figma interaction spec, only the invite row's colors change
- * between states; its label text stays the same. When the team is full
- * (memberCount >= maxMembers) the row is disabled and dimmed to grey; when
- * the user is alone on the team (memberCount <= 1) it turns orange to
- * prompt inviting a teammate.
- */
+// My Team table: header (name, member count, edit), member rows, and an
+// invite row that dims when the team is full and turns orange when solo.
 
 import {
 	EditIcon,

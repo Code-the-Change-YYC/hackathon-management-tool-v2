@@ -1,11 +1,7 @@
 "use client";
 
-/**
- * Shown after a team is created via the inline register modal. Reveals the
- * generated Team ID (formatted hyphenated, e.g. `A-B-C-1-2-3`) that the owner
- * must share so teammates can join. Replaces the old `/team/register/success`
- * page for the logged-in flow.
- */
+// Success modal after team creation: reveals the hyphenated Team ID for the
+// owner to share so teammates can join.
 
 import Image from "next/image";
 import { Modal, ModalTitle, PrimaryButton } from "./Modal";
