@@ -1,27 +1,21 @@
 "use client";
 
-/**
- * Top-level "My Team" view rendered on `/participant/my-team`.
- *
- * Loads the current user's team via `api.teams.getMyTeam` and renders
- * either the team table (with modals for invite, join, leave, and edit
- * name) or a "no team" banner that walks the user through the situation
- * modal. For the "no-team" situation, users are pointed at the community
- * Discord to find teammates instead of a modal flow.
- */
+// "My Team" view (/participant/my-team): shows the team table or, when the
+// user has no team, a banner that opens the situation modal (register / join /
+// find teammates on Discord). Data and mutations live in useMyTeam.
 
 import { useState } from "react";
-import { api } from "@/trpc/react";
 import EditTeamNameModal from "./EditTeamNameModal";
 import InviteCodeModal from "./InviteCodeModal";
 import JoinCodeModal from "./JoinCodeModal";
 import JoinedSuccessModal from "./JoinedSuccessModal";
 import LeaveTeamModal from "./LeaveTeamModal";
-import MyTeamTable, { type TeamMember } from "./MyTeamTable";
+import MyTeamTable from "./MyTeamTable";
 import NoTeamBanner from "./NoTeamBanner";
 import RegisteredSuccessModal from "./RegisteredSuccessModal";
 import RegisterTeamModal from "./RegisterTeamModal";
 import SituationModal, { type Situation } from "./SituationModal";
+import { useMyTeam } from "./useMyTeam";
 
 type ModalKind =
 	| null
@@ -34,104 +28,33 @@ type ModalKind =
 	| "register"
 	| "registered";
 
-type ViewTeam = {
-	name: string;
-	teamCode: string;
-	maxMembers: number;
-	isOwner: boolean;
-	members: TeamMember[];
-};
+const DISCORD_URL = "https://discord.gg/codethechangeyyc";
+
+function joinErrorMessage(
+	error: { data?: { code?: string } | null; message: string } | null
+) {
+	if (!error) return null;
+	return error.data?.code === "NOT_FOUND"
+		? "No team was found. Please check the code and try again."
+		: error.message;
+}
 
 export default function MyTeamView() {
-	const utils = api.useUtils();
-	const {
-		data: team,
-		isLoading,
-		isError,
-		refetch
-	} = api.teams.getMyTeam.useQuery();
-
+	const { query, viewTeam, join, create, leave, update } = useMyTeam();
 	const [modal, setModal] = useState<ModalKind>(null);
-	const [joinError, setJoinError] = useState<string | null>(null);
-	const [editError, setEditError] = useState<string | null>(null);
-	const [leaveError, setLeaveError] = useState<string | null>(null);
-	const [joinedTeamName, setJoinedTeamName] = useState("");
-	const [registerError, setRegisterError] = useState<string | null>(null);
-	const [registeredName, setRegisteredName] = useState("");
-	const [registeredCode, setRegisteredCode] = useState("");
 
-	const joinMutation = api.teams.join.useMutation({
-		onSuccess: async (joined) => {
-			setJoinError(null);
-			setJoinedTeamName(joined.name);
-			setModal("joined");
-			await utils.teams.getMyTeam.invalidate();
-		},
-		onError: (error) => {
-			setJoinError(
-				error.data?.code === "NOT_FOUND"
-					? "No team was found. Please check the code and try again."
-					: error.message
-			);
-		}
-	});
-
-	const leaveMutation = api.teams.leave.useMutation({
-		onSuccess: async () => {
-			setLeaveError(null);
-			setModal(null);
-			await utils.teams.getMyTeam.invalidate();
-		},
-		onError: (error) => setLeaveError(error.message)
-	});
-
-	const createMutation = api.teams.create.useMutation({
-		onSuccess: async (created) => {
-			setRegisterError(null);
-			setRegisteredName(created?.name ?? "");
-			setRegisteredCode(created?.teamCode ?? "");
-			setModal("registered");
-			await utils.teams.getMyTeam.invalidate();
-		},
-		onError: (error) => setRegisterError(error.message)
-	});
-
-	const updateMutation = api.teams.update.useMutation({
-		onSuccess: async () => {
-			setEditError(null);
-			setModal(null);
-			await utils.teams.getMyTeam.invalidate();
-		},
-		onError: (error) => setEditError(error.message)
-	});
-
-	const viewTeam: ViewTeam | null = team
-		? {
-				name: team.name,
-				teamCode: team.teamCode ?? "------",
-				maxMembers: team.maxMembers,
-				isOwner: team.myRole === "owner",
-				members: team.members.map((m) => ({
-					id: m.id,
-					name: m.name,
-					email: m.email,
-					isYou: m.isYou
-				}))
-			}
-		: null;
+	function open(next: ModalKind) {
+		join.reset();
+		create.reset();
+		leave.reset();
+		update.reset();
+		setModal(next);
+	}
 
 	function handleSituation(situation: Situation) {
-		if (situation === "registered") {
-			setJoinError(null);
-			setModal("join");
-			return;
-		}
-		if (situation === "unregistered") {
-			setRegisterError(null);
-			setModal("register");
-			return;
-		}
-		window.open("https://discord.gg/codethechangeyyc", "_blank");
+		if (situation === "registered") return open("join");
+		if (situation === "unregistered") return open("register");
+		window.open(DISCORD_URL, "_blank");
 		setModal(null);
 	}
 
@@ -146,16 +69,16 @@ export default function MyTeamView() {
 				</p>
 			</div>
 
-			{isLoading ? (
+			{query.isLoading ? (
 				<div className="h-40 w-full animate-pulse rounded-[12px] bg-grey-100" />
-			) : isError ? (
+			) : query.isError ? (
 				<div className="flex flex-col items-start gap-3 rounded-[12px] border border-red-700/30 bg-red-50 p-6">
 					<p className="font-medium text-[16px] text-red-900">
 						We couldn't load your team. Please try again.
 					</p>
 					<button
 						className="rounded-full bg-red-700 px-4 py-2 font-medium text-[14px] text-white transition hover:bg-red-900"
-						onClick={() => refetch()}
+						onClick={() => query.refetch()}
 						type="button"
 					>
 						Retry
@@ -166,19 +89,13 @@ export default function MyTeamView() {
 					canEditName={viewTeam.isOwner}
 					maxMembers={viewTeam.maxMembers}
 					members={viewTeam.members}
-					onEditName={() => {
-						setEditError(null);
-						setModal("edit");
-					}}
-					onInvite={() => setModal("invite")}
-					onLeave={() => {
-						setLeaveError(null);
-						setModal("leave");
-					}}
+					onEditName={() => open("edit")}
+					onInvite={() => open("invite")}
+					onLeave={() => open("leave")}
 					teamName={viewTeam.name}
 				/>
 			) : (
-				<NoTeamBanner onAction={() => setModal("situation")} />
+				<NoTeamBanner onAction={() => open("situation")} />
 			)}
 
 			<SituationModal
@@ -187,17 +104,19 @@ export default function MyTeamView() {
 				open={modal === "situation"}
 			/>
 			<RegisterTeamModal
-				error={registerError}
-				loading={createMutation.isPending}
+				error={create.error?.message ?? null}
+				loading={create.isPending}
 				onClose={() => setModal(null)}
-				onSubmit={(name) => createMutation.mutate({ name })}
+				onSubmit={(name) =>
+					create.mutate({ name }, { onSuccess: () => setModal("registered") })
+				}
 				open={modal === "register"}
 			/>
 			<RegisteredSuccessModal
 				onFinish={() => setModal(null)}
 				open={modal === "registered"}
-				teamCode={registeredCode}
-				teamName={registeredName}
+				teamCode={create.data?.teamCode ?? ""}
+				teamName={create.data?.name ?? ""}
 			/>
 			{viewTeam && (
 				<InviteCodeModal
@@ -207,23 +126,33 @@ export default function MyTeamView() {
 				/>
 			)}
 			<JoinCodeModal
-				error={joinError}
-				loading={joinMutation.isPending}
+				error={joinErrorMessage(join.error)}
+				loading={join.isPending}
 				onClose={() => setModal(null)}
-				onSubmit={(code) => joinMutation.mutate({ teamCode: code })}
+				onSubmit={(code) =>
+					join.mutate(
+						{ teamCode: code },
+						{ onSuccess: () => setModal("joined") }
+					)
+				}
 				open={modal === "join"}
 			/>
 			<JoinedSuccessModal
 				onFinish={() => setModal(null)}
 				open={modal === "joined"}
-				teamName={joinedTeamName || viewTeam?.name || ""}
+				teamName={join.data?.name ?? viewTeam?.name ?? ""}
 			/>
 			{viewTeam && (
 				<LeaveTeamModal
-					error={leaveError}
-					loading={leaveMutation.isPending}
+					error={leave.error?.message ?? null}
+					loading={leave.isPending}
 					onCancel={() => setModal(null)}
-					onConfirm={() => leaveMutation.mutate({ confirmDelete: true })}
+					onConfirm={() =>
+						leave.mutate(
+							{ confirmDelete: true },
+							{ onSuccess: () => setModal(null) }
+						)
+					}
 					open={modal === "leave"}
 					teamName={viewTeam.name}
 				/>
@@ -231,14 +160,15 @@ export default function MyTeamView() {
 			{viewTeam && (
 				<EditTeamNameModal
 					currentName={viewTeam.name}
-					error={editError}
-					loading={updateMutation.isPending}
+					error={update.error?.message ?? null}
+					loading={update.isPending}
 					onClose={() => setModal(null)}
-					onSave={(name) => {
-						if (team) {
-							updateMutation.mutate({ id: team.id, name });
-						}
-					}}
+					onSave={(name) =>
+						update.mutate(
+							{ id: viewTeam.id, name },
+							{ onSuccess: () => setModal(null) }
+						)
+					}
 					open={modal === "edit"}
 				/>
 			)}
