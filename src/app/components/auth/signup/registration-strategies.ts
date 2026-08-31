@@ -1,15 +1,13 @@
 import type { User } from "better-auth";
 
-import type {
-	RegistrationDetails,
-	useSignupMutations
-} from "../useAuthMutations";
+import type { SignupEventDetails } from "@/lib/validation/signup";
+import type { useSignupMutations } from "../useAuthMutations";
 
 type SignupMutations = ReturnType<typeof useSignupMutations>;
 
 export type RegistrationStrategy = {
 	submit: (
-		details: RegistrationDetails,
+		details: SignupEventDetails,
 		name: string,
 		onSuccess: () => void
 	) => void;
@@ -22,7 +20,7 @@ export class EmailRegistrationStrategy implements RegistrationStrategy {
 		private readonly password: string
 	) {}
 
-	submit(details: RegistrationDetails, name: string, onSuccess: () => void) {
+	submit(details: SignupEventDetails, name: string, onSuccess: () => void) {
 		this.mutation.mutate(
 			{
 				details,
@@ -41,7 +39,7 @@ export class SocialRegistrationStrategy implements RegistrationStrategy {
 		private readonly userName?: User["name"]
 	) {}
 
-	submit(details: RegistrationDetails, name: string, onSuccess: () => void) {
+	submit(details: SignupEventDetails, name: string, onSuccess: () => void) {
 		this.mutation.mutate(
 			{
 				details,
