@@ -250,11 +250,9 @@ export default function SignupEventDetailsForm({ user }: { user?: User }) {
 			{error && <FieldError>{error.message}</FieldError>}
 
 			<div className="flex justify-between gap-3">
-				<Link href={"/signup/identity"}>
-					<Button disabled={isSubmitting} type="button" variant="outline">
-						Back
-					</Button>
-				</Link>
+				<Button disabled={isSubmitting} type="button" variant="outline">
+					<Link href={"/signup/identity"}>Back</Link>
+				</Button>
 				<Button disabled={isSubmitting} type="submit">
 					{isSubmitting ? "Saving…" : "Complete registration"}
 				</Button>

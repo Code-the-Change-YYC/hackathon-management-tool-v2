@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, type SubmitEventHandler, useState } from "react";
+import { type SubmitEventHandler, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
 import {

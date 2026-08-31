@@ -126,9 +126,9 @@ export default function SignupIdentityForm({ user }: { user?: User }) {
 			</FieldGroup>
 
 			<div className="flex justify-between gap-3">
-				<Link href="/signup">
-					<Button variant="outline">Back</Button>
-				</Link>
+				<Button variant="outline">
+					<Link href="/signup">Back</Link>
+				</Button>
 				<Button type="submit">Continue to event details</Button>
 			</div>
 		</form>
