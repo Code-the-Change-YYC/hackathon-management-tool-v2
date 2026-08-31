@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { type FormEvent, type SubmitEventHandler, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
 import {
@@ -15,7 +15,8 @@ export default function LoginForm() {
 	const [password, setPassword] = useState("");
 	const { emailSignIn, error, isPending, socialSignIn } = useLoginMutations();
 
-	const handleSubmit = () => {
+	const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
+		event.preventDefault();
 		socialSignIn.reset();
 		emailSignIn.mutate({ email, password });
 	};

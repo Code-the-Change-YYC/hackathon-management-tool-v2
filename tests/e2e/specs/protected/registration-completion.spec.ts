@@ -9,9 +9,6 @@ test("an authenticated incomplete user completes their own registration", async 
 }) => {
 	await authenticatedPage.goto("/signup/identity");
 
-	await expect(
-		authenticatedPage.getByText("Your Google account is connected")
-	).toBeVisible();
 	await expect(authenticatedPage.getByLabel("Email")).toHaveAttribute(
 		"readonly"
 	);

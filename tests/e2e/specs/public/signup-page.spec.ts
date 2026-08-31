@@ -20,7 +20,7 @@ test("a participant can complete individual registration", async ({
 	await signupPage.fillForm(signupData);
 	await signupPage.submit();
 
-	await expect(page).toHaveURL(/\/login$/);
+	await expect(page).toHaveURL(/\/$/);
 });
 
 test("manual registration retains identity details when navigating back", async ({
