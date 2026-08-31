@@ -1,5 +1,5 @@
 import { Role } from "@/types/types";
-import { expect, test } from "../../fixtures/meal.fixture";
+import { expect, test } from "../../fixtures/event.fixture";
 
 const tomorrow = new Date();
 tomorrow.setDate(tomorrow.getDate() + 1);
