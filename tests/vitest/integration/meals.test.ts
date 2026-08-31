@@ -7,7 +7,7 @@ import {
 	onTestFinished
 } from "vitest";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
-import { MealFixtureTracker } from "../../utils/meals";
+import { EventFixtureTracker } from "../../utils/events";
 import {
 	createAuthenticatedCaller,
 	createUnauthenticatedCaller
@@ -16,7 +16,7 @@ import {
 const hour = 60 * 60 * 1000;
 
 describe("meals.getAllMeals", () => {
-	let mealFixtures: MealFixtureTracker;
+	let mealFixtures: EventFixtureTracker;
 
 	beforeAll(() => {
 		assertE2EDatabaseSafety();
@@ -35,7 +35,7 @@ describe("meals.getAllMeals", () => {
 	});
 
 	it("returns the tracked meals in chronological order", async () => {
-		mealFixtures = new MealFixtureTracker();
+		mealFixtures = new EventFixtureTracker();
 		const startTime = Date.now() + 24 * hour;
 		const laterMeal = await mealFixtures.create({
 			endTime: new Date(startTime + 3 * hour),

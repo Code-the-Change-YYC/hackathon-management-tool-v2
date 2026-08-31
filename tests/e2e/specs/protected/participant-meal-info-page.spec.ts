@@ -1,5 +1,5 @@
-import { Role } from "@/types/types";
-import { expect, test } from "../../fixtures/meal.fixture";
+import { EventStatus, Role } from "@/types/types";
+import { expect, test } from "../../fixtures/event.fixture";
 
 const tomorrow = new Date();
 tomorrow.setDate(tomorrow.getDate() + 1);
@@ -25,11 +25,13 @@ test("participant sees their name and scheduled meals", async ({
 	const breakfast = await createMeal({
 		startTime: tomorrowAt(9),
 		endTime: tomorrowAt(10),
+		status: EventStatus.ACTIVE,
 		title: "Participant breakfast"
 	});
 	const lunch = await createMeal({
 		startTime: tomorrowAt(12),
 		endTime: tomorrowAt(13),
+		status: EventStatus.ACTIVE,
 		title: "Participant lunch"
 	});
 
