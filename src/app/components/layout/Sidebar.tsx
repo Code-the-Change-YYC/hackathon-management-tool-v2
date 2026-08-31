@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { DISCORD_URL } from "@/lib/constants";
 import {
 	BellIcon,
 	CloseIcon,
@@ -52,7 +53,7 @@ const SECTIONS: NavSection[] = [
 		items: [
 			{
 				label: "Discord Join Link",
-				href: "https://discord.gg/codethechangeyyc",
+				href: DISCORD_URL,
 				icon: <LinkIcon />,
 				external: true
 			},

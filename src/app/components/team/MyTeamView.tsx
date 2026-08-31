@@ -5,6 +5,7 @@
 // find teammates on Discord). Data and mutations live in useMyTeam.
 
 import { useState } from "react";
+import { DISCORD_URL } from "@/lib/constants";
 import EditTeamNameModal from "./EditTeamNameModal";
 import InviteCodeModal from "./InviteCodeModal";
 import JoinCodeModal from "./JoinCodeModal";
@@ -27,8 +28,6 @@ type ModalKind =
 	| "edit"
 	| "register"
 	| "registered";
-
-const DISCORD_URL = "https://discord.gg/codethechangeyyc";
 
 function joinErrorMessage(
 	error: { data?: { code?: string } | null; message: string } | null

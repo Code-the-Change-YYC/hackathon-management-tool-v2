@@ -1,5 +1,3 @@
-"use client";
-
 // Banner shown on My Team when the user isn't on a team yet, prompting them
 // to register or join one.
 

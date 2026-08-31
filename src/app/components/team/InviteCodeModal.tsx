@@ -4,6 +4,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { tryCatch } from "@/lib/utils";
 import { Modal, ModalTitle, PrimaryButton } from "./Modal";
 
 export default function InviteCodeModal({
@@ -22,13 +23,13 @@ export default function InviteCodeModal({
 	}));
 
 	async function copy() {
-		try {
-			await navigator.clipboard.writeText(code);
-			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
-		} catch {
+		const { error } = await tryCatch(navigator.clipboard.writeText(code));
+		if (error) {
 			setCopied(false);
+			return;
 		}
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
 	}
 
 	return (
