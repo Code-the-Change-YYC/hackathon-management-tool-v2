@@ -1,5 +1,5 @@
+import { createSignupData } from "../../../utils/signup-data";
 import { expect, test } from "../../fixtures/auth.fixture";
-import { createSignupData } from "../../helpers/signup-data";
 import { SignupPage } from "../../pages/signup.page";
 
 test("a participant can complete individual registration", async ({

@@ -22,6 +22,9 @@
 		"prepare": "lefthook install",
 		"preview": "next build && next start",
 		"start": "next start",
+		"test": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"test:run": "vitest run",
 		"test:e2e": "playwright test",
 		"test:e2e:ui": "playwright test --ui",
 		"typecheck": "tsc --noEmit"
@@ -62,16 +65,21 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.5",
 		"@tailwindcss/postcss": "^4.2.1",
+		"@testing-library/jest-dom": "^7.0.1",
+		"@testing-library/react": "^16.3.2",
 		"@types/node": "^20.14.10",
 		"@types/react": "^19.2.18",
 		"@types/react-dom": "^19.2.4",
+		"@vitest/coverage-v8": "^4.1.10",
 		"dotenv": "^17.4.2",
 		"drizzle-kit": "^0.30.5",
+		"jsdom": "^30.0.1",
 		"lefthook": "^2.0.16",
 		"playwright": "^1.62.1",
 		"postcss": "^8.5.6",
 		"tailwindcss": "^4.2.1",
-		"typescript": "^7.0.2"
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.10"
 	},
 	"ct3aMetadata": {
 		"initVersion": "7.40.0"
