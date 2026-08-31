@@ -8,7 +8,7 @@ import type { DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
 import type { SocialProviderId } from "./social-providers";
 
-type RegistrationDetails = {
+export type RegistrationDetails = {
 	school: string;
 	program?: (typeof PROGRAMS)[number];
 	dietaryRestrictions: DietaryRestriction[];
