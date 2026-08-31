@@ -1,11 +1,8 @@
 "use client";
 
 import type { User } from "better-auth";
-import { useStateMachine } from "little-state-machine";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import {
@@ -26,92 +23,19 @@ import {
 } from "@/app/components/ui/select";
 import {
 	DIETARY_RESTRICTIONS,
-	type DietaryRestriction,
 	PROGRAMS,
 	SCHOOLS
-} from "@/server/db/auth-schema";
-import { useSignupMutations } from "../useAuthMutations";
-import { createRegistrationStrategies } from "./registration-strategies";
-import {
-	getFullName,
-	type MealOption,
-	type ProgramValue,
-	resetSignupWizard,
-	updateSignupWizard
-} from "./wizard";
-
-type EventDetailsFormValues = {
-	school: string;
-	program: ProgramValue;
-	dietaryRestrictions: DietaryRestriction[];
-	wantsFood: MealOption;
-};
+} from "@/lib/validation/signup";
+import { useSignupEventDetailsForm } from "./useSignupEventDetailsForm";
 
 export default function SignupEventDetailsForm({ user }: { user?: User }) {
-	const router = useRouter();
-	const { actions, state } = useStateMachine({
-		actions: { resetSignupWizard, updateSignupWizard }
-	});
-	const { emailSignUp, error, socialRegistrationCompletion } =
-		useSignupMutations();
-	const isSubmitting =
-		emailSignUp.isPending || socialRegistrationCompletion.isPending;
-	const form = useForm<EventDetailsFormValues>({
-		defaultValues: state.signupWizard
-	});
-
-	const registrationStrategies = createRegistrationStrategies({
-		email: state.signupWizard.email,
-		emailSignUp,
-		password: state.signupWizard.password,
-		socialRegistrationCompletion,
-		userName: user?.name
-	});
-	const onSubmit = (values: EventDetailsFormValues) => {
-		if (values.wantsFood === "") {
-			form.setError("wantsFood", {
-				message: "Select whether you want provided food"
-			});
-			return;
-		}
-
-		const details = {
-			dietaryRestrictions: values.dietaryRestrictions,
-			program: values.program || undefined,
-			school: values.school,
-			wantsFood: values.wantsFood
-		};
-		const name = getFullName(
-			state.signupWizard.firstName,
-			state.signupWizard.lastName
-		);
-		const strategy =
-			state.signupWizard.method === "email"
-				? registrationStrategies.email
-				: registrationStrategies.social;
-		const onSuccess = () => {
-			actions.resetSignupWizard();
-			router.push("/");
-		};
-		strategy.submit(details, name, onSuccess);
-	};
-
-	const handleDietaryRestrictionChange = (
-		restriction: DietaryRestriction,
-		checked: boolean
-	) => {
-		const current = form.getValues("dietaryRestrictions");
-		form.setValue(
-			"dietaryRestrictions",
-			checked
-				? [...new Set([...current, restriction])]
-				: current.filter((value) => value !== restriction),
-			{ shouldDirty: true }
-		);
-	};
-	useEffect(() => {
-		if (!user && !state.signupWizard.email) router.push("/signup/identity");
-	}, [state, router.push, user]);
+	const {
+		error,
+		form,
+		handleDietaryRestrictionChange,
+		isSubmitting,
+		onSubmit
+	} = useSignupEventDetailsForm({ user });
 
 	return (
 		<form

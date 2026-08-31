@@ -1,7 +1,7 @@
 "use client";
 
 import { createStore } from "little-state-machine";
-import type { DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
+import type { DietaryRestriction, PROGRAMS } from "@/lib/validation/signup";
 import type { SocialProviderId } from "../social-providers";
 
 type SignupMethod = "email" | SocialProviderId | null;

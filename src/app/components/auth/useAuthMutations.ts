@@ -2,18 +2,10 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-
+import type { SignupEventDetailsInput } from "@/lib/validation/signup";
 import { authClient } from "@/server/better-auth/client";
-import type { DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
 import type { SocialProviderId } from "./social-providers";
-
-export type RegistrationDetails = {
-	school: string;
-	program?: (typeof PROGRAMS)[number];
-	dietaryRestrictions: DietaryRestriction[];
-	wantsFood: "yes" | "no";
-};
 
 type SocialSignInOptions = {
 	errorCallbackURL: string;
@@ -79,7 +71,7 @@ export function useSignupMutations() {
 			name,
 			password
 		}: {
-			details: RegistrationDetails;
+			details: SignupEventDetailsInput;
 			email: string;
 			name: string;
 			password: string;
@@ -98,7 +90,7 @@ export function useSignupMutations() {
 			details,
 			name
 		}: {
-			details: RegistrationDetails;
+			details: SignupEventDetailsInput;
 			name?: string;
 		}) => {
 			if (name) {
