@@ -1,32 +1,25 @@
 /**
- * Teams router for managing hackathon teams (backed by the organization table).
+ * Teams router (backed by the organization table). Team names are validated
+ * against teamNameSchema, mirrored client-side in teamName.ts.
  *
- * Team names only allow letters, numbers, spaces, hyphens, and underscores
- * to avoid emoji/special character issues from last year.
+ * Team codes and one-team-per-user are both race-prone under concurrent
+ * requests, so both lean on DB constraints instead of check-then-act:
+ * `create`/`getMyTeam` retry code generation on a unique-constraint
+ * conflict, and `ensureNotInTeam` is backstopped by a unique index on
+ * member.userId (isDuplicateMembershipError recognizes that race via the
+ * Postgres error code/constraint name and turns it into a friendly error).
+ * `join`/`acceptInvite` take a per-team Postgres advisory lock before
+ * counting members against MAX_TEAM_SIZE, so concurrent joins to the same
+ * team can't both slip past the cap.
  *
- * Each team gets a unique 4-char hex code on creation. Users can only be on
- * one team at a time, enforced by ensureNotInTeam() which is shared across
- * create, join, and acceptInvite.
- *
- * Owners are the only ones who can send invitations. If an owner tries to
- * leave, they must pass confirmDelete: true which deletes the entire team
- * and its pending invitations. Regular members can leave freely, and if
- * they're the last member the team gets cleaned up automatically.
- *
- * Team updates are allowed for app-level admins (any team) or team owners
- * (their own team only).
- *
- * Metadata keys used here:
- * - organization.metadata.devpostLink
- * - hackathon_settings.metadata.devpostSubmissionCloseAt (ISO timestamp)
- *
- * All multi-row writes use transactions for atomicity.
- * MEMBER_ROLES lives in types.ts as the single source of truth for roles.
+ * Only owners can invite or update team details (besides app admins).
+ * Leaving requires confirmDelete for owners (deletes the team); a team left
+ * with zero members is cleaned up automatically.
  */
 
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
@@ -52,12 +45,51 @@ const teamNameSchema = z
 	.min(1, "Team name is required")
 	.max(50, "Team name must be 50 characters or less")
 	.regex(
-		/^[a-zA-Z0-9\s\-_]+$/,
+		/^[a-zA-Z0-9 _-]+$/,
 		"Team name can only contain letters, numbers, spaces, hyphens, and underscores"
 	);
 
+const MAX_TEAM_SIZE = 5;
+
+const TEAM_CODE_LENGTH = 6;
+const TEAM_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+const MAX_TEAM_CODE_ATTEMPTS = 5;
+
 function generateTeamCode(): string {
-	return crypto.randomBytes(2).toString("hex").toUpperCase();
+	const bytes = crypto.randomBytes(TEAM_CODE_LENGTH);
+	let code = "";
+	for (const byte of bytes) {
+		code += TEAM_CODE_ALPHABET[byte % TEAM_CODE_ALPHABET.length];
+	}
+	return code;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+	return (
+		typeof error === "object" &&
+		error !== null &&
+		"code" in error &&
+		(error as { code?: unknown }).code === "23505"
+	);
+}
+
+function isDuplicateMembershipError(error: unknown): boolean {
+	return (
+		isUniqueViolation(error) &&
+		typeof error === "object" &&
+		error !== null &&
+		"constraint_name" in error &&
+		(error as { constraint_name?: unknown }).constraint_name ===
+			"member_userId_idx"
+	);
+}
+
+function alreadyInTeamError(): TRPCError {
+	return new TRPCError({
+		code: "BAD_REQUEST",
+		message: "You are already a member of a team"
+	});
 }
 
 function parseMetadata<T extends Record<string, unknown>>(
@@ -175,6 +207,87 @@ export const teamsRouter = createTRPCRouter({
 		return teams;
 	}),
 
+	getMyTeam: protectedProcedure.query(async ({ ctx }) => {
+		const userId = ctx.session.user.id;
+
+		const membership = await ctx.db.query.member.findFirst({
+			where: eq(member.userId, userId)
+		});
+		if (!membership) {
+			return null;
+		}
+
+		const team = await ctx.db.query.organization.findFirst({
+			where: eq(organization.id, membership.organizationId)
+		});
+		if (!team) {
+			return null;
+		}
+
+		const members = await ctx.db.query.member.findMany({
+			where: eq(member.organizationId, membership.organizationId),
+			with: { user: true }
+		});
+
+		const sorted = [...members].sort((a, b) => {
+			const aOwner = a.role === MEMBER_ROLES.OWNER;
+			const bOwner = b.role === MEMBER_ROLES.OWNER;
+			if (aOwner !== bOwner) {
+				return aOwner ? -1 : 1;
+			}
+			return a.createdAt.getTime() - b.createdAt.getTime();
+		});
+
+		let teamCode = team.teamCode;
+		if (!teamCode) {
+			for (let attempt = 0; attempt < MAX_TEAM_CODE_ATTEMPTS; attempt++) {
+				try {
+					const [updated] = await ctx.db
+						.update(organization)
+						.set({ teamCode: generateTeamCode() })
+						.where(
+							and(eq(organization.id, team.id), isNull(organization.teamCode))
+						)
+						.returning({ teamCode: organization.teamCode });
+
+					if (updated) {
+						teamCode = updated.teamCode;
+					} else {
+						const refreshed = await ctx.db.query.organization.findFirst({
+							where: eq(organization.id, team.id)
+						});
+						teamCode = refreshed?.teamCode ?? null;
+					}
+					break;
+				} catch (error) {
+					if (
+						isUniqueViolation(error) &&
+						attempt < MAX_TEAM_CODE_ATTEMPTS - 1
+					) {
+						continue;
+					}
+					throw error;
+				}
+			}
+		}
+
+		return {
+			id: team.id,
+			name: team.name,
+			teamCode,
+			maxMembers: MAX_TEAM_SIZE,
+			myRole: membership.role,
+			members: sorted.map((m) => ({
+				id: m.id,
+				userId: m.userId,
+				name: m.user.name,
+				email: m.user.email,
+				role: m.role,
+				isYou: m.userId === userId
+			}))
+		};
+	}),
+
 	create: protectedProcedure
 		.input(
 			z.object({
@@ -185,37 +298,55 @@ export const teamsRouter = createTRPCRouter({
 			const userId = ctx.session.user.id;
 			await ensureNotInTeam(ctx.db, userId);
 
-			const teamId = crypto.randomUUID();
-			const teamCode = generateTeamCode();
 			const slug = input.name
 				.toLowerCase()
 				.replace(/\s+/g, "-")
 				.replace(/[^a-z0-9-]/g, "");
 
-			const team = await ctx.db.transaction(async (tx) => {
-				const [newTeam] = await tx
-					.insert(organization)
-					.values({
-						id: teamId,
-						name: input.name,
-						slug: `${slug}-${crypto.randomBytes(2).toString("hex")}`,
-						createdAt: new Date(),
-						teamCode
-					})
-					.returning();
+			for (let attempt = 0; attempt < MAX_TEAM_CODE_ATTEMPTS; attempt++) {
+				const teamId = crypto.randomUUID();
+				const teamCode = generateTeamCode();
+				try {
+					return await ctx.db.transaction(async (tx) => {
+						const [newTeam] = await tx
+							.insert(organization)
+							.values({
+								id: teamId,
+								name: input.name,
+								slug: `${slug}-${crypto.randomBytes(2).toString("hex")}`,
+								createdAt: new Date(),
+								teamCode
+							})
+							.returning();
 
-				await tx.insert(member).values({
-					id: crypto.randomUUID(),
-					organizationId: teamId,
-					userId,
-					role: MEMBER_ROLES.OWNER,
-					createdAt: new Date()
-				});
+						await tx.insert(member).values({
+							id: crypto.randomUUID(),
+							organizationId: teamId,
+							userId,
+							role: MEMBER_ROLES.OWNER,
+							createdAt: new Date()
+						});
 
-				return newTeam;
+						return newTeam;
+					});
+				} catch (error) {
+					if (isDuplicateMembershipError(error)) {
+						throw alreadyInTeamError();
+					}
+					if (
+						isUniqueViolation(error) &&
+						attempt < MAX_TEAM_CODE_ATTEMPTS - 1
+					) {
+						continue;
+					}
+					throw error;
+				}
+			}
+
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: "Could not generate a unique team code"
 			});
-
-			return team;
 		}),
 
 	join: protectedProcedure
@@ -223,7 +354,10 @@ export const teamsRouter = createTRPCRouter({
 			z.object({
 				teamCode: z
 					.string()
-					.length(4, "Team code must be exactly 4 characters")
+					.length(
+						TEAM_CODE_LENGTH,
+						`Team code must be exactly ${TEAM_CODE_LENGTH} characters`
+					)
 					.toUpperCase()
 			})
 		)
@@ -241,15 +375,40 @@ export const teamsRouter = createTRPCRouter({
 				});
 			}
 
-			await ctx.db.insert(member).values({
-				id: crypto.randomUUID(),
-				organizationId: team.id,
-				userId,
-				role: MEMBER_ROLES.MEMBER,
-				createdAt: new Date()
-			});
+			try {
+				return await ctx.db.transaction(async (tx) => {
+					await tx.execute(
+						sql`select pg_advisory_xact_lock(hashtext(${team.id}))`
+					);
 
-			return team;
+					const [row] = await tx
+						.select({ count: sql<number>`count(*)::int` })
+						.from(member)
+						.where(eq(member.organizationId, team.id));
+					const memberCount = row?.count ?? 0;
+					if (memberCount >= MAX_TEAM_SIZE) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: `This team is full (${MAX_TEAM_SIZE} members maximum)`
+						});
+					}
+
+					await tx.insert(member).values({
+						id: crypto.randomUUID(),
+						organizationId: team.id,
+						userId,
+						role: MEMBER_ROLES.MEMBER,
+						createdAt: new Date()
+					});
+
+					return team;
+				});
+			} catch (error) {
+				if (isDuplicateMembershipError(error)) {
+					throw alreadyInTeamError();
+				}
+				throw error;
+			}
 		}),
 
 	invite: protectedProcedure
@@ -359,20 +518,42 @@ export const teamsRouter = createTRPCRouter({
 				});
 			}
 
-			await ctx.db.transaction(async (tx) => {
-				await tx.insert(member).values({
-					id: crypto.randomUUID(),
-					organizationId: inv.organizationId,
-					userId,
-					role: MEMBER_ROLES.MEMBER,
-					createdAt: new Date()
-				});
+			try {
+				await ctx.db.transaction(async (tx) => {
+					await tx.execute(
+						sql`select pg_advisory_xact_lock(hashtext(${inv.organizationId}))`
+					);
 
-				await tx
-					.update(invitation)
-					.set({ status: "accepted" })
-					.where(eq(invitation.id, inv.id));
-			});
+					const [row] = await tx
+						.select({ count: sql<number>`count(*)::int` })
+						.from(member)
+						.where(eq(member.organizationId, inv.organizationId));
+					if ((row?.count ?? 0) >= MAX_TEAM_SIZE) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: `This team is full (${MAX_TEAM_SIZE} members maximum)`
+						});
+					}
+
+					await tx.insert(member).values({
+						id: crypto.randomUUID(),
+						organizationId: inv.organizationId,
+						userId,
+						role: MEMBER_ROLES.MEMBER,
+						createdAt: new Date()
+					});
+
+					await tx
+						.update(invitation)
+						.set({ status: "accepted" })
+						.where(eq(invitation.id, inv.id));
+				});
+			} catch (error) {
+				if (isDuplicateMembershipError(error)) {
+					throw alreadyInTeamError();
+				}
+				throw error;
+			}
 
 			return { success: true };
 		}),
@@ -456,7 +637,6 @@ export const teamsRouter = createTRPCRouter({
 				.returning();
 			return updated;
 		}),
-	// New feature: Querying descending for score
 	getRankings: protectedProcedure.query(async ({ ctx }) => {
 		const result = await ctx.db.execute(
 			sql<TeamRanking>`
@@ -474,6 +654,6 @@ export const teamsRouter = createTRPCRouter({
         `
 		);
 
-		return result as unknown as TeamRanking[]; // Fixes the CI/CD error in ScoreTable.tsx where the type of data was not being recognized as TeamRanking[]
+		return result as unknown as TeamRanking[];
 	})
 });
