@@ -2,11 +2,9 @@
 
 import { useStateMachine } from "little-state-machine";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 import { Button } from "@/app/components/ui/button";
 import { FieldError } from "@/app/components/ui/field";
-import { authClient } from "@/server/better-auth/client";
 import {
 	ENABLED_SOCIAL_PROVIDERS,
 	type SocialProviderId
@@ -19,15 +17,7 @@ export default function SignupForm() {
 	const { actions } = useStateMachine({
 		actions: { resetSignupWizard, updateSignupWizard }
 	});
-	const { data: session, isPending: isSessionPending } =
-		authClient.useSession();
 	const { error, socialSignIn } = useSignupMutations();
-
-	useEffect(() => {
-		if (!isSessionPending && session?.user.completedRegistration) {
-			router.replace("/");
-		}
-	}, [isSessionPending, router, session?.user.completedRegistration]);
 
 	const startEmailRegistration = () => {
 		socialSignIn.reset();
@@ -39,14 +29,6 @@ export default function SignupForm() {
 		actions.updateSignupWizard({ method: provider, password: "" });
 		socialSignIn.mutate({ provider });
 	};
-
-	if (isSessionPending || session?.user.completedRegistration) {
-		return (
-			<p className="py-8 text-center text-muted-foreground">
-				Loading registration…
-			</p>
-		);
-	}
 
 	return (
 		<div className="flex flex-col gap-6">
