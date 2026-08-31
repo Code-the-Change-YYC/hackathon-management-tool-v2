@@ -25,11 +25,12 @@ type IdentityFormValues = {
 
 export default function SignupIdentityForm({ user }: { user?: User }) {
 	const router = useRouter();
-	const isSocialRegistration = !!user?.email;
 	const hasPrefilledSocialDetails = useRef(false);
 	const { actions, state } = useStateMachine({
 		actions: { resetSignupWizard, updateSignupWizard }
 	});
+	const isSocialRegistration =
+		!!user?.email && state.signupWizard.method !== "email";
 	const form = useForm<IdentityFormValues>({
 		defaultValues: state.signupWizard
 	});
@@ -38,7 +39,7 @@ export default function SignupIdentityForm({ user }: { user?: User }) {
 		router.push("/signup/event-details");
 	};
 	useEffect(() => {
-		if (!user || hasPrefilledSocialDetails.current) return;
+		if (!isSocialRegistration || hasPrefilledSocialDetails.current) return;
 		hasPrefilledSocialDetails.current = true;
 		const name = getNameParts(user.name);
 		const formState = {
@@ -48,7 +49,7 @@ export default function SignupIdentityForm({ user }: { user?: User }) {
 		};
 		actions.updateSignupWizard(formState);
 		form.reset(formState);
-	}, [actions, form, user]);
+	}, [actions, form, user, isSocialRegistration]);
 	return (
 		<form
 			className="flex flex-col gap-6"

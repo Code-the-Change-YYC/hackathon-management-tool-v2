@@ -4,6 +4,7 @@ import type { User } from "better-auth";
 import { useStateMachine } from "little-state-machine";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
@@ -108,6 +109,9 @@ export default function SignupEventDetailsForm({ user }: { user?: User }) {
 			{ shouldDirty: true }
 		);
 	};
+	useEffect(() => {
+		if (!user && !state.signupWizard.email) router.push("/signup/identity");
+	}, [state, router.push, user]);
 
 	return (
 		<form
