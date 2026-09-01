@@ -1,4 +1,5 @@
-import { and, eq, sql } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
@@ -163,11 +164,89 @@ export const scoresRouter = createTRPCRouter({
 				z.object({
 					assignmentId: z.string().uuid(),
 					criteriaId: z.string().uuid(),
-					score: z.number().int().min(0).max(10)
+					score: z.number().int().min(0)
 				})
 			)
 		)
 		.mutation(async ({ ctx, input }) => {
+			if (input.length === 0) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "At least one score is required."
+				});
+			}
+
+			const assignmentIds = [
+				...new Set(input.map((item) => item.assignmentId))
+			];
+			if (assignmentIds.length !== 1) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "All scores must belong to the same assignment."
+				});
+			}
+
+			const assignmentId = assignmentIds[0];
+			if (!assignmentId) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Assignment is required."
+				});
+			}
+
+			const assignment = await ctx.db.query.judgingAssignments.findFirst({
+				where: eq(judgingAssignments.id, assignmentId),
+				with: {
+					room: {
+						with: {
+							staff: true
+						}
+					}
+				}
+			});
+
+			if (!assignment) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Assignment not found."
+				});
+			}
+
+			const isAdmin = ctx.session.user.role === "admin";
+			const isAssignedJudge = assignment.room.staff.some(
+				(member) => member.staffId === ctx.session.user.id
+			);
+			if (!(isAdmin || isAssignedJudge)) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "You are not assigned to score this team."
+				});
+			}
+
+			const criteriaIds = [...new Set(input.map((item) => item.criteriaId))];
+			const criteriaRows = await ctx.db.query.criteria.findMany({
+				where: inArray(criteria.id, criteriaIds)
+			});
+			const maxScoreByCriteriaId = new Map(
+				criteriaRows.map((row) => [row.id, row.maxScore])
+			);
+
+			for (const item of input) {
+				const maxScore = maxScoreByCriteriaId.get(item.criteriaId);
+				if (maxScore === undefined) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "One or more criteria were not found."
+					});
+				}
+				if (item.score > maxScore) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: `Score cannot exceed ${maxScore} for this criterion.`
+					});
+				}
+			}
+
 			const results = await ctx.db
 				.insert(scores)
 				.values(

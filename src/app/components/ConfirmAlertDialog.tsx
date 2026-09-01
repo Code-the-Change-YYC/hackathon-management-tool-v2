@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -27,18 +27,18 @@ export function useConfirmDialog() {
 	const [state, setState] = useState<ConfirmState | null>(null);
 	const resolveRef = useRef<((value: boolean) => void) | null>(null);
 
-	const close = useCallback((result: boolean) => {
+	const close = (result: boolean) => {
 		resolveRef.current?.(result);
 		resolveRef.current = null;
 		setState(null);
-	}, []);
+	};
 
-	const confirm = useCallback((options: ConfirmOptions) => {
+	const confirm = (options: ConfirmOptions) => {
 		return new Promise<boolean>((resolve) => {
 			resolveRef.current = resolve;
 			setState({ ...options, open: true });
 		});
-	}, []);
+	};
 
 	const dialog = (
 		<AlertDialog

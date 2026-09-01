@@ -19,6 +19,7 @@ export function formatDateTime(value: Date | string | number) {
 
 export function toDateTimeLocalValue(value: Date | string | number) {
 	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "";
 	const localDate = new Date(
 		date.getTime() - date.getTimezoneOffset() * 60_000
 	);

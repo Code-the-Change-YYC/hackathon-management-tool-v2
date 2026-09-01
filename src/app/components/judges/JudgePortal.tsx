@@ -21,6 +21,7 @@ import {
 	useMemo,
 	useState
 } from "react";
+import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
 import { MobileNavSheet } from "@/app/components/MobileNavSheet";
 import {
 	Accordion,
@@ -193,12 +194,15 @@ export function JudgeShell({
 	);
 }
 
+const judgeTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 function formatTime(value?: Date | null) {
 	if (!value) return "Unscheduled";
 	return new Intl.DateTimeFormat("en-US", {
 		hour: "numeric",
 		hour12: true,
-		minute: "2-digit"
+		minute: "2-digit",
+		timeZone: judgeTimeZone
 	}).format(value);
 }
 
@@ -207,7 +211,8 @@ function formatDate(value?: Date | null) {
 	return new Intl.DateTimeFormat("en-US", {
 		day: "numeric",
 		month: "long",
-		weekday: "long"
+		weekday: "long",
+		timeZone: judgeTimeZone
 	}).format(value);
 }
 
@@ -652,7 +657,7 @@ function getScoreOptions(
 	includeZero: boolean,
 	currentScore?: number
 ) {
-	const maxScore = Math.min(criterion.maxScore, 10);
+	const maxScore = criterion.maxScore;
 	const start = includeZero || currentScore === 0 ? 0 : 1;
 	return Array.from(
 		{ length: Math.max(0, maxScore - start + 1) },
@@ -1273,6 +1278,7 @@ function ScorePageMessage({
 export function JudgeScorePage({ assignmentId }: { assignmentId: string }) {
 	const { userId } = useJudgeUser();
 	const router = useRouter();
+	const { confirm, dialog } = useConfirmDialog();
 	const data = useJudgePortalData();
 	const utils = api.useUtils();
 	const assignment = data.assignments.find((item) => item.id === assignmentId);
@@ -1390,6 +1396,7 @@ export function JudgeScorePage({ assignmentId }: { assignmentId: string }) {
 
 	return (
 		<div className="min-h-screen bg-[#fcfcfc]">
+			{dialog}
 			<ScoreTopBar
 				activeStep={activeStep}
 				assignment={assignment}
@@ -1429,8 +1436,20 @@ export function JudgeScorePage({ assignmentId }: { assignmentId: string }) {
 					onNext={() =>
 						setActiveStep((current) => Math.min(current + 1, totalSteps - 1))
 					}
-					onPrevious={() => {
+					onPrevious={async () => {
 						if (activeStep === 0) {
+							if (
+								draftDirty &&
+								!(await confirm({
+									title: "Leave scoring?",
+									description:
+										"You have unsaved score changes that will be lost.",
+									confirmLabel: "Leave",
+									destructive: true
+								}))
+							) {
+								return;
+							}
 							router.push("/judge");
 						} else {
 							setActiveStep((current) => Math.max(0, current - 1));
@@ -1490,6 +1509,8 @@ export function JudgeDashboardPage() {
 				(assignment) => assignment.room.round.id === dashboardRoundId
 			)
 		: data.assignments;
+	const dashboardRoundName =
+		roundStats.find((round) => round.id === dashboardRoundId)?.name ?? "";
 
 	if (data.error) {
 		return (
@@ -1534,7 +1555,9 @@ export function JudgeDashboardPage() {
 					) : null}
 
 					<section className="flex flex-col gap-4">
-						<h2 className="m-0 font-medium text-[22px] leading-7">Teams</h2>
+						<h2 className="m-0 font-medium text-[22px] leading-7">
+							{dashboardRoundName ? `Teams · ${dashboardRoundName}` : "Teams"}
+						</h2>
 						{dashboardAssignments.length > 0 ? (
 							<div className="grid gap-4 xl:grid-cols-2">
 								{dashboardAssignments.map((assignment) => (
@@ -1771,14 +1794,15 @@ function getRubricBands(maxScore: number, includeZero = false) {
 	];
 	const minScore = includeZero ? 0 : 1;
 	const scoreCount = Math.max(1, maxScore - minScore + 1);
+	const activeBands = bands.slice(0, Math.min(bands.length, scoreCount));
 
-	return bands.map((label, index) => {
+	return activeBands.map((label, index) => {
 		const start = Math.min(
 			maxScore,
-			minScore + Math.ceil((index * scoreCount) / bands.length)
+			minScore + Math.ceil((index * scoreCount) / activeBands.length)
 		);
 		const rawEnd =
-			minScore + Math.ceil(((index + 1) * scoreCount) / bands.length) - 1;
+			minScore + Math.ceil(((index + 1) * scoreCount) / activeBands.length) - 1;
 		const end = Math.min(maxScore, Math.max(start, rawEnd));
 		return {
 			label,

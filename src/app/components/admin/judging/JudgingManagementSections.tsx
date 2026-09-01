@@ -392,7 +392,6 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 
 	const toLayoutRoom = (room: LayoutRoomInput): LayoutRoomInput => ({
 		id: room.id,
-		name: room.name,
 		roomLink: links[room.id] ?? room.roomLink ?? "",
 		staffIds: staff[room.id] ?? room.staffIds ?? [],
 		teamIds: room.teamIds ?? [],
@@ -479,7 +478,6 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 								...rooms,
 								{
 									id: crypto.randomUUID(),
-									name: `Room ${rooms.length + 1}`,
 									roomLink: "",
 									staffIds: [],
 									teamIds: [],

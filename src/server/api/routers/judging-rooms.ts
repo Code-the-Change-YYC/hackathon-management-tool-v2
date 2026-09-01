@@ -14,7 +14,6 @@ import {
 
 const RoomSchema = z.object({
 	id: z.string().uuid(),
-	name: z.string().min(1).optional(),
 	roomLink: z.string().optional().nullable(),
 	staffIds: z.array(z.string()).default([]),
 	teamIds: z.array(z.string()).default([]),
@@ -78,7 +77,7 @@ export function withRoomDisplayName<T extends { id: string }>(
 	};
 }
 
-async function assertRoundHasNoScores(db: DbClient, roundId: string) {
+export async function assertRoundHasNoScores(db: DbClient, roundId: string) {
 	const scoredAssignments = await db
 		.select({ id: scores.id })
 		.from(scores)
