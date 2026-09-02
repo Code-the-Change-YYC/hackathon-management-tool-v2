@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { type SubmitEventHandler, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
 import {
-	enabledSocialProviders,
+	ENABLED_SOCIAL_PROVIDERS,
 	type SocialProviderId
 } from "../social-providers";
 import { useLoginMutations } from "../useAuthMutations";
@@ -15,7 +15,8 @@ export default function LoginForm() {
 	const [password, setPassword] = useState("");
 	const { emailSignIn, error, isPending, socialSignIn } = useLoginMutations();
 
-	const handleSubmit = () => {
+	const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
+		event.preventDefault();
 		socialSignIn.reset();
 		emailSignIn.mutate({ email, password });
 	};
@@ -95,7 +96,7 @@ export default function LoginForm() {
 				<Separator className="flex-1" />
 			</div>
 
-			{enabledSocialProviders.map(({ icon: Icon, id, label }) => (
+			{ENABLED_SOCIAL_PROVIDERS.map(({ icon: Icon, id, label }) => (
 				<Button
 					className="w-full rounded-full"
 					disabled={isPending}

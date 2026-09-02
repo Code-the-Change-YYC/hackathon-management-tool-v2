@@ -1,10 +1,8 @@
 "use client";
 
-import { useStateMachine } from "little-state-machine";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
-import { Controller, useForm } from "react-hook-form";
-
+import type { User } from "better-auth";
+import Link from "next/link";
+import { Controller } from "react-hook-form";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import {
@@ -23,148 +21,21 @@ import {
 	SelectTrigger,
 	SelectValue
 } from "@/app/components/ui/select";
-import { authClient } from "@/server/better-auth/client";
 import {
 	DIETARY_RESTRICTIONS,
-	type DietaryRestriction,
 	PROGRAMS,
 	SCHOOLS
-} from "@/server/db/auth-schema";
-import { useSignupMutations } from "../useAuthMutations";
-import {
-	getFullName,
-	type MealOption,
-	type ProgramValue,
-	resetSignupWizard,
-	updateSignupWizard
-} from "./wizard";
+} from "@/lib/validation/signup";
+import { useSignupEventDetailsForm } from "./useSignupEventDetailsForm";
 
-type EventDetailsFormValues = {
-	school: string;
-	program: ProgramValue;
-	dietaryRestrictions: DietaryRestriction[];
-	wantsFood: MealOption;
-};
-
-export default function SignupEventDetailsForm() {
-	const router = useRouter();
-	const { actions, state } = useStateMachine({
-		actions: { resetSignupWizard, updateSignupWizard }
-	});
-	const { data: session, isPending: isSessionPending } =
-		authClient.useSession();
-	const { emailSignUp, error, socialRegistrationCompletion } =
-		useSignupMutations();
-	const method = state.signupWizard.method;
-	const isCompletingRegistration = useRef(false);
-	const isSubmitting =
-		emailSignUp.isPending || socialRegistrationCompletion.isPending;
-	const form = useForm<EventDetailsFormValues>({
-		defaultValues: state.signupWizard
-	});
-
-	useEffect(() => {
-		if (isSessionPending) {
-			return;
-		}
-
-		if (session?.user.completedRegistration) {
-			router.replace("/");
-			return;
-		}
-
-		if (!method && !isCompletingRegistration.current) {
-			router.replace(session?.user ? "/signup/identity" : "/signup");
-		}
-	}, [isSessionPending, method, router, session?.user]);
-
-	if (isSessionPending || !method) {
-		return (
-			<p className="py-8 text-center text-muted-foreground">
-				Loading registration…
-			</p>
-		);
-	}
-
-	const onSubmit = (values: EventDetailsFormValues) => {
-		if (values.wantsFood === "") {
-			form.setError("wantsFood", {
-				message: "Select whether you want provided food"
-			});
-			return;
-		}
-
-		const details = {
-			dietaryRestrictions: values.dietaryRestrictions,
-			program: values.program || undefined,
-			school: values.school,
-			wantsFood: values.wantsFood
-		};
-		isCompletingRegistration.current = true;
-
-		if (method === "email") {
-			emailSignUp.mutate(
-				{
-					details,
-					email: state.signupWizard.email,
-					name: getFullName(
-						state.signupWizard.firstName,
-						state.signupWizard.lastName
-					),
-					password: state.signupWizard.password
-				},
-				{
-					onSuccess: () => {
-						actions.resetSignupWizard();
-						router.push("/login");
-					},
-					onError: () => {
-						isCompletingRegistration.current = false;
-					}
-				}
-			);
-			return;
-		}
-
-		const name = getFullName(
-			state.signupWizard.firstName,
-			state.signupWizard.lastName
-		);
-		socialRegistrationCompletion.mutate(
-			{
-				details,
-				name: name === session?.user.name ? undefined : name
-			},
-			{
-				onSuccess: () => {
-					actions.resetSignupWizard();
-					router.push("/");
-				},
-				onError: () => {
-					isCompletingRegistration.current = false;
-				}
-			}
-		);
-	};
-
-	const handleBack = () => {
-		actions.updateSignupWizard(form.getValues());
-		router.push("/signup/identity");
-	};
-
-	const handleDietaryRestrictionChange = (
-		restriction: DietaryRestriction,
-		checked: boolean
-	) => {
-		const current = form.getValues("dietaryRestrictions");
-		form.setValue(
-			"dietaryRestrictions",
-			checked
-				? [...new Set([...current, restriction])]
-				: current.filter((value) => value !== restriction),
-			{ shouldDirty: true }
-		);
-	};
+export default function SignupEventDetailsForm({ user }: { user?: User }) {
+	const {
+		error,
+		form,
+		handleDietaryRestrictionChange,
+		isSubmitting,
+		onSubmit
+	} = useSignupEventDetailsForm({ user });
 
 	return (
 		<form
@@ -303,13 +174,8 @@ export default function SignupEventDetailsForm() {
 			{error && <FieldError>{error.message}</FieldError>}
 
 			<div className="flex justify-between gap-3">
-				<Button
-					disabled={isSubmitting}
-					onClick={handleBack}
-					type="button"
-					variant="outline"
-				>
-					Back
+				<Button disabled={isSubmitting} type="button" variant="outline">
+					<Link href={"/signup/identity"}>Back</Link>
 				</Button>
 				<Button disabled={isSubmitting} type="submit">
 					{isSubmitting ? "Saving…" : "Complete registration"}

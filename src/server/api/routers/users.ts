@@ -1,16 +1,13 @@
 import { TRPCError } from "@trpc/server";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
+import {
+	dietaryRestrictionsSchema,
+	PROGRAMS,
+	signupEventDetailsSchema
+} from "@/lib/validation/signup";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { DIETARY_RESTRICTIONS, PROGRAMS, user } from "@/server/db/auth-schema";
-
-const dietaryRestrictionsSchema = z
-	.array(z.enum(DIETARY_RESTRICTIONS))
-	.max(DIETARY_RESTRICTIONS.length)
-	.refine(
-		(restrictions) => new Set(restrictions).size === restrictions.length,
-		{ message: "Duplicate dietary restrictions are not allowed" }
-	);
+import { user } from "@/server/db/auth-schema";
 
 export const usersRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -65,14 +62,7 @@ export const usersRouter = createTRPCRouter({
 			return updated;
 		}),
 	completeRegistration: protectedProcedure
-		.input(
-			z.object({
-				school: z.string().optional(),
-				program: z.enum(PROGRAMS).optional(),
-				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
-				wantsFood: z.enum(["yes", "no"]).optional()
-			})
-		)
+		.input(signupEventDetailsSchema)
 		.mutation(async ({ ctx, input }) => {
 			const [updated] = await ctx.db
 				.update(user)

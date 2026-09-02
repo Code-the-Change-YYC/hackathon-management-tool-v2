@@ -11,30 +11,14 @@ import {
 	text,
 	timestamp
 } from "drizzle-orm/pg-core";
+import { DIETARY_RESTRICTIONS, PROGRAMS } from "@/lib/validation/signup";
 
-export const PROGRAMS = [
-	"computer_science",
-	"software_engineering",
-	"electrical_engineering",
-	"other"
-] as const;
-
-export const SCHOOLS = [
-	"University of Calgary",
-	"Mount Royal University",
-	"SAIT",
-	"Other"
-] as const;
-
-export const DIETARY_RESTRICTIONS = [
-	"halal",
-	"vegetarian",
-	"vegan",
-	"gluten_free",
-	"other"
-] as const;
-
-export type DietaryRestriction = (typeof DIETARY_RESTRICTIONS)[number];
+export {
+	DIETARY_RESTRICTIONS,
+	type DietaryRestriction,
+	PROGRAMS,
+	SCHOOLS
+} from "@/lib/validation/signup";
 
 const MEMBER_ROLE_VALUES = ["owner", "member", "admin"] as const;
 
