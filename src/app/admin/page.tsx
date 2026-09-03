@@ -13,7 +13,7 @@ export default async function AdminPage() {
 	const session = await requireRole([Role.ADMIN]);
 
 	return (
-		<main className="flex min-h-screen flex-col bg-pale-grey font-sans text-dark-grey">
+		<main className="flex min-h-screen w-full flex-col bg-pale-grey font-sans text-dark-grey">
 			<header className="flex items-center justify-between bg-awesomer-purple px-8 py-4 text-white shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
 				<h1 className="m-0 font-bold text-2xl">Hackathon Admin</h1>
 				<div>
