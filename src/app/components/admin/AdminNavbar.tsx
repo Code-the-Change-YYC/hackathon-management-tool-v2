@@ -172,14 +172,14 @@ export default function AdminNavbar({ user }: { user: User }) {
 			<div className="sticky top-0 z-999 lg:hidden">
 				{/* Bar at the top when in mobile/tablet size */}
 				<div
-					className="flex flex-row justify-between bg-white px-6 py-1"
+					className="sticky flex flex-row justify-between bg-white px-6 py-1"
 					ref={topBarRef}
 				>
 					<MenuLine className="h-11 w-11 p-3" onClick={toggleNavbar} />
 					<NotificationLine className="h-11 w-11 p-3" />
 				</div>
 				{navbarOpen && (
-					<div className="bg-[rgba(0,0,0,0.25)]">
+					<div className="fixed top-13 z-999 h-full w-screen bg-[rgba(0,0,0,0.25)]">
 						<NavbarLinks
 							className="flex lg:hidden"
 							closeCallback={closeNavbar}
