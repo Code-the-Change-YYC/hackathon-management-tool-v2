@@ -23,10 +23,11 @@ async function main() {
 		console.log(`   Email: ${credentials.adminEmail}`);
 		console.log(`   Password: ${credentials.adminPassword}`);
 		console.log("Remember to change this email and password in production.");
+		process.exit(0);
 	} catch (error) {
 		console.error("Seed failed:", error);
-		process.exitCode = 1;
+		process.exit(1);
 	}
 }
 
-void main();
+main();
