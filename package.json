@@ -10,7 +10,6 @@
 		"check:unsafe": "biome check --write --unsafe .",
 		"check:write": "biome check --write .",
 		"db:seed": "bun drizzle/seed.ts",
-		"db:seed:scores": "bun drizzle/seedScores.ts",
 		"db:up": "docker-compose up -d",
 		"db:generate": "drizzle-kit generate",
 		"db:push": "drizzle-kit push",
