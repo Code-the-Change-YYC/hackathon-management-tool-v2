@@ -35,7 +35,6 @@ export default async function Schedule() {
 					now={now}
 					title="Event Schedule"
 				/>
-				{/* <FullSchedule /> */}
 			</div>
 		</main>
 	);
