@@ -42,6 +42,11 @@ export const judgingRooms = createTable("judging_room", {
 		.notNull()
 });
 
+/** Display label when the DB has no persisted room name column. */
+export function judgingRoomDisplayName(index: number) {
+	return `Room ${index + 1}`;
+}
+
 export const judgingRoomStaff = createTable(
 	"judging_room_staff",
 	{
