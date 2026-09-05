@@ -1,4 +1,4 @@
-import { JudgeScorePage } from "../../../components/judges/JudgePortal";
+import { JudgeScorePage } from "../../../components/judges/JudgeScorePage";
 
 export default async function page({
 	params

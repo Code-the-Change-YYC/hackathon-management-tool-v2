@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
-import { JudgeShell } from "../components/judges/JudgePortal";
+import { JudgeShell } from "../components/judges/JudgeShell";
 
 export default async function JudgeLayout({
 	children
