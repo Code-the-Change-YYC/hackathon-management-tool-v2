@@ -26,13 +26,11 @@ import {
 import { formatTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
-import {
-	AssignmentManagement,
-	CriteriaManagement,
-	ResultsManagement,
-	RoomManagement,
-	RoundManagement
-} from "./JudgingManagementSections";
+import { AssignmentManagement } from "./AssignmentManagement";
+import { CriteriaManagement } from "./CriteriaManagement";
+import { ResultsManagement } from "./ResultsManagement";
+import { RoomManagement } from "./RoomManagement";
+import { RoundManagement } from "./RoundManagement";
 
 type Assignment = RouterOutputs["judgingAssignments"]["getByRound"][number];
 type Room = RouterOutputs["judgingRooms"]["getLayoutByRound"]["rooms"][number];
