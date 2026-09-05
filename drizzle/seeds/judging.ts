@@ -104,6 +104,7 @@ export async function seedJudging({ judges, teams }: SeedJudgingInput) {
 
 	for (const round of rounds) {
 		for (const judge of judges) {
+			// Give each judge their own room in every round.
 			const [room] = await db
 				.insert(judgingRooms)
 				.values({ roundId: round.id, roomLink: "https://zoom.us/" })
@@ -126,6 +127,7 @@ export async function seedJudging({ judges, teams }: SeedJudgingInput) {
 					})
 					.returning();
 
+				// Leave Team Six unscored so manual score creation can be tested.
 				if (assignment && team.slug !== "team-6") {
 					await db.insert(scores).values(
 						criteriaList.map((criterion) => ({

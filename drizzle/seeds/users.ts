@@ -93,6 +93,7 @@ export async function seedUsers(): Promise<SeedUsersResult> {
 		});
 	}
 
+	// Include both newly created and existing judges in downstream judging data.
 	const judges = (await db.query.user.findMany({
 		where: eq(user.role, Role.JUDGE)
 	})) as User[];
@@ -104,6 +105,7 @@ export async function seedUsers(): Promise<SeedUsersResult> {
 		role: Role.PARTICIPANT
 	});
 
+	// Complete the sample participant profile for registration-dependent flows.
 	await db
 		.update(user)
 		.set({

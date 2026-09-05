@@ -92,6 +92,7 @@ export async function seedMeals(participantUser: User): Promise<SeededMeal[]> {
 		if (seededMeal) meals.push(seededMeal);
 	}
 
+	// Give the sample participant one attendance record for ticket testing.
 	const firstMeal = meals[0];
 	if (firstMeal) {
 		await db

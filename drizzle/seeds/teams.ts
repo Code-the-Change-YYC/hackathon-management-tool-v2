@@ -53,6 +53,7 @@ export async function seedTeams({
 				continue;
 			}
 
+			// Make the seeded admin the owner of every team.
 			await db.insert(member).values({
 				id: generateId(),
 				organizationId: newTeam.id,
@@ -68,6 +69,7 @@ export async function seedTeams({
 		}
 	}
 
+	// Add the sample participant to the first team for member-facing test data.
 	const participantTeam = teams[0];
 	if (participantTeam) {
 		const existingMembership = await db.query.member.findFirst({
