@@ -1,5 +1,5 @@
 import { JudgeDashboardPage } from "../components/judges/JudgePortal";
 
-export default function JudgePage() {
+export default function page() {
 	return <JudgeDashboardPage />;
 }

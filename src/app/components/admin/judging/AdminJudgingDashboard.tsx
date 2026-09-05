@@ -23,6 +23,7 @@ import {
 	SelectTrigger,
 	SelectValue
 } from "@/app/components/ui/select";
+import { formatTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
 import {
@@ -32,7 +33,6 @@ import {
 	RoomManagement,
 	RoundManagement
 } from "./JudgingManagementSections";
-import { formatTime } from "./judgingFormatters";
 
 type Assignment = RouterOutputs["judgingAssignments"]["getByRound"][number];
 type Room = RouterOutputs["judgingRooms"]["getLayoutByRound"]["rooms"][number];

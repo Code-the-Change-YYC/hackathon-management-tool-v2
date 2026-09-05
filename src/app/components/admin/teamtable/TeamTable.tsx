@@ -7,7 +7,7 @@ import {
 	themeQuartz
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { api } from "@/trpc/react";
 import {
 	createTeamColumnDefs,
@@ -35,9 +35,9 @@ export default function TeamTable() {
 
 	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
 
-	const onOpenPrescreen = useCallback((team: PrescreenTeam) => {
+	const onOpenPrescreen = (team: PrescreenTeam) => {
 		setSelectedTeam(team);
-	}, []);
+	};
 
 	const columnDefs = useMemo<ColDef<Organization>[]>(
 		() => createTeamColumnDefs(),
@@ -54,21 +54,18 @@ export default function TeamTable() {
 		[]
 	);
 
-	const onCellValueChanged = useCallback(
-		(event: CellValueChangedEvent<Organization>) => {
-			if (!event.data || !event.colDef.field) return;
-			if (event.newValue === event.oldValue) return;
-			if (!TEAM_EDITABLE_FIELDS.has(event.colDef.field)) return;
+	const onCellValueChanged = (event: CellValueChangedEvent<Organization>) => {
+		if (!event.data || !event.colDef.field) return;
+		if (event.newValue === event.oldValue) return;
+		if (!TEAM_EDITABLE_FIELDS.has(event.colDef.field)) return;
 
-			const updates = {
-				id: event.data.id,
-				[event.colDef.field]: event.newValue
-			};
+		const updates = {
+			id: event.data.id,
+			[event.colDef.field]: event.newValue
+		};
 
-			updateTeam.mutate(updates);
-		},
-		[updateTeam]
-	);
+		updateTeam.mutate(updates);
+	};
 
 	return (
 		<>

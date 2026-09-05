@@ -1,3 +1,4 @@
+import { tryCatch } from "@/lib/utils";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
@@ -5,15 +6,9 @@ import { Role } from "@/types/types";
 export default async function ParticipantJudgingPage() {
 	const session = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
 
-	let judgingAssignment: Awaited<
-		ReturnType<typeof api.judgingAssignments.getMineForActiveRound>
-	> | null = null;
-
-	try {
-		judgingAssignment = await api.judgingAssignments.getMineForActiveRound();
-	} catch {
-		judgingAssignment = null;
-	}
+	const { data: judgingAssignment } = await tryCatch(
+		api.judgingAssignments.getMineForActiveRound()
+	);
 
 	return (
 		<main className="flex min-h-screen flex-col bg-pale-grey font-sans text-dark-grey">
