@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AdminSidebar } from "@/app/components/admin/AdminSidebar";
-import { RegisteredUsersView } from "@/app/components/admin/participants";
+import { RegisteredUsersView } from "@/app/components/admin/participants/RegisteredUsersView";
 import type { Participant } from "@/app/components/admin/participants/types";
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { Role } from "@/types/types";
