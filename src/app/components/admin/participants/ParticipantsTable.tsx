@@ -97,7 +97,7 @@ export function ParticipantsTable({
 								</Badge>
 							</TableCell>
 							<TableCell className="text-muted-foreground">
-								{participant.teamId}
+								{participant.teamId ?? "n/a"}
 							</TableCell>
 							<TableCell>{participant.teamName ?? "n/a"}</TableCell>
 							<TableCell className="pr-4 text-right">

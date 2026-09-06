@@ -11,7 +11,7 @@ export type Participant = {
 	lastName: string;
 	email: string;
 	role: Role;
-	teamId: string;
+	teamId: string | null;
 	teamName: string | null;
 	institution: string;
 	major: string | null;
