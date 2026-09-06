@@ -118,8 +118,8 @@
 	--secondary-foreground: var(--color-dark-grey);
 	--muted: var(--color-light-grey);
 	--muted-foreground: var(--color-grey-purple);
-	--accent: var(--color-lilac-purple);
-	--accent-foreground: var(--color-awesomer-purple);
+	--accent: color-mix(in oklab, var(--color-lilac-purple) 50%, transparent);
+	--accent-foreground: var(--color-dark-grey);
 	--destructive: var(--color-strawberry-red);
 
 	/* Lines & focus */
@@ -139,8 +139,12 @@
 	--sidebar-foreground: var(--color-dark-grey);
 	--sidebar-primary: var(--color-awesomer-purple);
 	--sidebar-primary-foreground: #ffffff;
-	--sidebar-accent: var(--color-lilac-purple);
-	--sidebar-accent-foreground: var(--color-awesomer-purple);
+	--sidebar-accent: color-mix(
+		in oklab,
+		var(--color-lilac-purple) 50%,
+		transparent
+	);
+	--sidebar-accent-foreground: var(--color-dark-grey);
 	--sidebar-border: var(--color-dashboard-grey);
 	--sidebar-ring: var(--color-awesome-purple);
 }
