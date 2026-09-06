@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { SidebarTrigger } from "@/app/components/ui/sidebar";
+import PageHeader from "../../PageHeader";
 import { EditParticipantDialog } from "./EditParticipantDialog";
 import { InviteUserDialog } from "./InviteUserDialog";
 import { ParticipantsTable } from "./ParticipantsTable";
@@ -210,12 +211,10 @@ export function RegisteredUsersView({
 			</header>
 
 			<div className="flex flex-1 flex-col gap-5 p-4 md:p-8">
-				<div className="flex flex-col gap-1">
-					<h1 className="font-semibold text-2xl md:text-3xl">
-						Registered Users
-					</h1>
-					<p className="text-muted-foreground text-sm">View all participants</p>
-				</div>
+				<PageHeader
+					description="View all participants"
+					title="Registered Users"
+				/>
 
 				<ParticipantsToolbar
 					filters={filters}
