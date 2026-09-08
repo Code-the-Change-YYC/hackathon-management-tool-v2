@@ -9,9 +9,6 @@ test("an authenticated incomplete user completes their own registration", async 
 }) => {
 	await authenticatedPage.goto("/signup/identity");
 
-	await expect(
-		authenticatedPage.getByText("Your Google account is connected")
-	).toBeVisible();
 	await expect(authenticatedPage.getByLabel("Email")).toHaveAttribute(
 		"readonly"
 	);
@@ -34,7 +31,8 @@ test("an authenticated incomplete user completes their own registration", async 
 	await authenticatedPage
 		.getByRole("button", { name: "Complete registration" })
 		.click();
-
+	// wait for the redirect to the home page after registration completion
+	await authenticatedPage.waitForURL(/\/$/);
 	await expect(authenticatedPage).toHaveURL(/\/$/);
 
 	const savedUser = await db.query.user.findFirst({

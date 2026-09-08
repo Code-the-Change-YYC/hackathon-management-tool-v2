@@ -2,18 +2,10 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-
+import type { SignupEventDetailsInput } from "@/lib/validation/signup";
 import { authClient } from "@/server/better-auth/client";
-import type { DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
 import type { SocialProviderId } from "./social-providers";
-
-type RegistrationDetails = {
-	school: string;
-	program?: (typeof PROGRAMS)[number];
-	dietaryRestrictions: DietaryRestriction[];
-	wantsFood: "yes" | "no";
-};
 
 type SocialSignInOptions = {
 	errorCallbackURL: string;
@@ -28,7 +20,7 @@ function useSocialSignIn({
 		mutationFn: async ({ provider }: { provider: SocialProviderId }) => {
 			const result = await authClient.signIn.social({
 				provider,
-				callbackURL: "/",
+				callbackURL: "/signup/event-details",
 				newUserCallbackURL,
 				errorCallbackURL
 			});
@@ -49,10 +41,17 @@ export function useLoginMutations() {
 			const result = await authClient.signIn.email(credentials);
 
 			if (result.error) {
+				if (result.error.code === "INVALID_EMAIL_OR_PASSWORD") {
+					throw new Error("Incorrect email or password");
+				}
+
 				throw new Error(result.error.message || "Failed to sign in");
 			}
+
+			return result.data?.user;
 		},
-		onSuccess: () => router.push("/")
+		onSuccess: (user) =>
+			router.push(user?.completedRegistration ? "/" : "/signup/event-details")
 	});
 	const socialSignIn = useSocialSignIn({
 		errorCallbackURL: "/login",
@@ -76,7 +75,7 @@ export function useSignupMutations() {
 			name,
 			password
 		}: {
-			details: RegistrationDetails;
+			details: SignupEventDetailsInput;
 			email: string;
 			name: string;
 			password: string;
@@ -95,7 +94,7 @@ export function useSignupMutations() {
 			details,
 			name
 		}: {
-			details: RegistrationDetails;
+			details: SignupEventDetailsInput;
 			name?: string;
 		}) => {
 			if (name) {
