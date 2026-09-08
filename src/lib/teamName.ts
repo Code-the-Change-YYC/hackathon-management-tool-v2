@@ -1,6 +1,3 @@
-// Client-side team-name rule, mirroring teamNameSchema in
-// src/server/api/routers/teams.ts. Server validation stays authoritative.
-
 export const TEAM_NAME_PATTERN = /^[a-zA-Z0-9 _-]+$/;
 export const TEAM_NAME_MAX = 50;
 

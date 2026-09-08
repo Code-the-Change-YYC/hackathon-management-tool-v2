@@ -1,8 +1,5 @@
 "use client";
 
-// Data layer for the My Team view: the getMyTeam query, the team mutations
-// (each revalidating the query on success), and the shaped ViewTeam it renders.
-
 import { api } from "@/trpc/react";
 import type { TeamMember } from "./MyTeamTable";
 

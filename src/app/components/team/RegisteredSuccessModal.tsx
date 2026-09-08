@@ -1,8 +1,5 @@
 "use client";
 
-// Success modal after team creation: reveals the hyphenated Team ID for the
-// owner to share so teammates can join.
-
 import Image from "next/image";
 import { Modal, ModalTitle, PrimaryButton } from "./Modal";
 

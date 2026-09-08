@@ -1,9 +1,5 @@
 "use client";
 
-// "My Team" view (/participant/my-team): shows the team table or, when the
-// user has no team, a banner that opens the situation modal (register / join /
-// find teammates on Discord). Data and mutations live in useMyTeam.
-
 import { useState } from "react";
 import { DISCORD_URL } from "@/lib/constants";
 import EditTeamNameModal from "./EditTeamNameModal";

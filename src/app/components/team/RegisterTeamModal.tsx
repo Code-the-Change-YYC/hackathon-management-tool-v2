@@ -1,8 +1,5 @@
 "use client";
 
-// Inline team-registration modal for the "I have a team but it's not
-// registered yet" path on /participant/my-team.
-
 import { useEffect, useState } from "react";
 import { Input } from "@/app/components/ui/input";
 import { isValidTeamName, TEAM_NAME_MAX } from "@/lib/teamName";

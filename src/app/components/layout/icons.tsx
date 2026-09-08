@@ -1,14 +1,3 @@
-/**
- * Icon components used by the layout/team UI.
- *
- * Most icons below use the exact geometry exported from the Figma design
- * (path data lifted directly from the exported renders, with a viewBox per
- * icon) and render with fill="currentColor" so they recolor with text
- * color. PlusIcon uses the exact two-stroke geometry from the Figma invite
- * row. ArrowRightIcon and MenuIcon aren't part of the team renders, so they
- * are simple line approximations built from the shared `stroke` props.
- */
-
 import type { SVGProps } from "react";
 
 type IconProps = SVGProps<SVGSVGElement>;

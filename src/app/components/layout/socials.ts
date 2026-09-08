@@ -1,5 +1,3 @@
-// Social links and their icons for the app footer.
-
 import {
 	FacebookFill,
 	GithubFill,

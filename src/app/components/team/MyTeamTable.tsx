@@ -1,6 +1,3 @@
-// My Team table: header (name, member count, edit), member rows, and an
-// invite row that dims when the team is full and turns orange when solo.
-
 import {
 	EditIcon,
 	LeaveIcon,

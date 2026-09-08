@@ -1,8 +1,5 @@
 "use client";
 
-// Shared modal shell and buttons (Modal, ModalTitle, Primary/Secondary/DangerButton)
-// used across the team modals.
-
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import type { ComponentProps } from "react";
 import { CloseIcon } from "@/app/components/layout/icons";

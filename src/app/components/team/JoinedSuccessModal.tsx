@@ -1,7 +1,5 @@
 "use client";
 
-// Success modal shown after joining a team via invite code.
-
 import Image from "next/image";
 import { Modal, ModalTitle, PrimaryButton } from "./Modal";
 
