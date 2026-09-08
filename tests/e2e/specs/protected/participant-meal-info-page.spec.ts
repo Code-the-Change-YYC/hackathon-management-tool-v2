@@ -1,26 +1,17 @@
 import { eq } from "drizzle-orm";
-import type { Page } from "playwright/test";
+
 import { db } from "@/server/db";
 import { event } from "@/server/db/event-schema";
 import { EventStatus, EventType, Role } from "@/types/types";
+import {
+	dateFormatter,
+	description,
+	minute,
+	mealInfoPath as path,
+	schedule,
+	timeFormatter
+} from "../../../utils/participant-meal-info-page";
 import { expect, test } from "../../fixtures/meal-info.fixture";
-
-const path = "/participant/meal-info";
-const minute = 60_000;
-const description = "Show your meal ticket during this window to check in";
-const timeFormatter = new Intl.DateTimeFormat("en-US", {
-	hour: "numeric",
-	minute: "2-digit"
-});
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-	weekday: "long",
-	month: "long",
-	day: "numeric"
-});
-const schedule = (page: Page) =>
-	page.locator("section").filter({
-		has: page.getByRole("heading", { name: "Meal Schedule", exact: true })
-	});
 
 test.use({
 	authUserOptions: { name: "Participant User", role: Role.PARTICIPANT }

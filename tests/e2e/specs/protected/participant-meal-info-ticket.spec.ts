@@ -1,104 +1,22 @@
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { createTRPCClient, httpLink } from "@trpc/client";
 import { and, eq } from "drizzle-orm";
-import type { Page } from "playwright/test";
+
 import superjson from "superjson";
 import type { AppRouter } from "@/server/api/root";
 import { db } from "@/server/db";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
-import {
-	EVENT_TICKET_TOKEN_PATTERN,
-	EventStatus,
-	EventType,
-	Role
-} from "@/types/types";
+import { EventStatus, EventType, Role } from "@/types/types";
 import { createTestUser, getTestUserCookies } from "../../../utils/auth";
+import { minute } from "../../../utils/participant-meal-info-page";
+import {
+	browserTime,
+	expectStoredTicket,
+	qrCode,
+	readTicketToken,
+	ticketSection
+} from "../../../utils/participant-meal-info-ticket";
 import { assertE2EDatabaseSafety, assertLocalE2EOrigin } from "../../db";
 import { expect, test } from "../../fixtures/meal-info.fixture";
-
-// Resolve the scanner's existing decoder through its dependency chain rather than
-// relying on pnpm hoisting or downloading a WASM binary from a CDN.
-const require = createRequire(import.meta.url);
-const scannerRequire = createRequire(
-	require.resolve("@yudiel/react-qr-scanner")
-);
-const detectorRequire = createRequire(
-	scannerRequire.resolve("barcode-detector")
-);
-const decoder = detectorRequire("zxing-wasm/reader") as {
-	setZXingModuleOverrides: (options: { wasmBinary: Uint8Array }) => void;
-	readBarcodes: (
-		image: Uint8Array,
-		options: { formats: string[]; tryHarder: boolean }
-	) => Promise<{ isValid: boolean; text: string }[]>;
-};
-decoder.setZXingModuleOverrides({
-	wasmBinary: readFileSync(
-		detectorRequire.resolve("zxing-wasm/reader/zxing_reader.wasm")
-	)
-});
-
-const minute = 60_000;
-const ticketSection = (page: Page) =>
-	page.locator("section").filter({
-		has: page.getByRole("heading", { name: "Your Meal Ticket", exact: true })
-	});
-const qrCode = (page: Page) =>
-	ticketSection(page).getByRole("img", {
-		name: "Meal ticket QR code",
-		exact: true
-	});
-
-async function readTicketToken(page: Page) {
-	const qr = qrCode(page);
-	await expect(qr).toBeVisible();
-	await expect(qr.locator("svg")).toBeVisible();
-	let token = "";
-	await expect(async () => {
-		const results = await decoder.readBarcodes(await qr.screenshot(), {
-			formats: ["QRCode"],
-			tryHarder: true
-		});
-		const valid = results.filter((result) => result.isValid);
-		expect(valid).toHaveLength(1);
-		token = valid[0]?.text ?? "";
-		expect(token).toMatch(EVENT_TICKET_TOKEN_PATTERN);
-	}).toPass({ timeout: 10_000 });
-	return token;
-}
-
-async function expectStoredTicket(
-	token: string,
-	userId: string,
-	meal: {
-		id: string;
-		endTime: Date;
-	}
-) {
-	const tickets = await db.query.eventTicket.findMany({
-		where: and(eq(eventTicket.userId, userId), eq(eventTicket.eventId, meal.id))
-	});
-	expect(tickets).toHaveLength(1);
-	expect(tickets[0]).toMatchObject({
-		userId,
-		eventId: meal.id,
-		tokenHash: createHash("sha256").update(token).digest("hex"),
-		expiresAt: meal.endTime
-	});
-}
-
-// Match the browser's formatter, including its timezone, rather than the worker's.
-const browserTime = (page: Page, date: Date) =>
-	page.evaluate(
-		(value) =>
-			new Intl.DateTimeFormat("en-US", {
-				hour: "numeric",
-				minute: "2-digit"
-			}).format(new Date(value)),
-		date.toISOString()
-	);
 
 test.use({
 	authUserOptions: { name: "Meal Ticket Participant", role: Role.PARTICIPANT }
