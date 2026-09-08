@@ -21,6 +21,7 @@ import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
+import { tryCatch } from "@/lib/utils";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
 import {
@@ -56,6 +57,8 @@ const TEAM_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 const MAX_TEAM_CODE_ATTEMPTS = 5;
 
+const PG_UNIQUE_VIOLATION = "23505";
+
 function generateTeamCode(): string {
 	const bytes = crypto.randomBytes(TEAM_CODE_LENGTH);
 	let code = "";
@@ -70,7 +73,7 @@ function isUniqueViolation(error: unknown): boolean {
 		typeof error === "object" &&
 		error !== null &&
 		"code" in error &&
-		(error as { code?: unknown }).code === "23505"
+		(error as { code?: unknown }).code === PG_UNIQUE_VIOLATION
 	);
 }
 
@@ -241,25 +244,16 @@ export const teamsRouter = createTRPCRouter({
 		let teamCode = team.teamCode;
 		if (!teamCode) {
 			for (let attempt = 0; attempt < MAX_TEAM_CODE_ATTEMPTS; attempt++) {
-				try {
-					const [updated] = await ctx.db
+				const { data: rows, error } = await tryCatch(
+					ctx.db
 						.update(organization)
 						.set({ teamCode: generateTeamCode() })
 						.where(
 							and(eq(organization.id, team.id), isNull(organization.teamCode))
 						)
-						.returning({ teamCode: organization.teamCode });
-
-					if (updated) {
-						teamCode = updated.teamCode;
-					} else {
-						const refreshed = await ctx.db.query.organization.findFirst({
-							where: eq(organization.id, team.id)
-						});
-						teamCode = refreshed?.teamCode ?? null;
-					}
-					break;
-				} catch (error) {
+						.returning({ teamCode: organization.teamCode })
+				);
+				if (error) {
 					if (
 						isUniqueViolation(error) &&
 						attempt < MAX_TEAM_CODE_ATTEMPTS - 1
@@ -268,6 +262,17 @@ export const teamsRouter = createTRPCRouter({
 					}
 					throw error;
 				}
+
+				const updated = rows[0];
+				if (updated) {
+					teamCode = updated.teamCode;
+				} else {
+					const refreshed = await ctx.db.query.organization.findFirst({
+						where: eq(organization.id, team.id)
+					});
+					teamCode = refreshed?.teamCode ?? null;
+				}
+				break;
 			}
 		}
 
@@ -306,9 +311,9 @@ export const teamsRouter = createTRPCRouter({
 			for (let attempt = 0; attempt < MAX_TEAM_CODE_ATTEMPTS; attempt++) {
 				const teamId = crypto.randomUUID();
 				const teamCode = generateTeamCode();
-				try {
-					return await ctx.db.transaction(async (tx) => {
-						const [newTeam] = await tx
+				const { data: newTeam, error } = await tryCatch(
+					ctx.db.transaction(async (tx) => {
+						const [created] = await tx
 							.insert(organization)
 							.values({
 								id: teamId,
@@ -327,20 +332,19 @@ export const teamsRouter = createTRPCRouter({
 							createdAt: new Date()
 						});
 
-						return newTeam;
-					});
-				} catch (error) {
-					if (isDuplicateMembershipError(error)) {
-						throw alreadyInTeamError();
-					}
-					if (
-						isUniqueViolation(error) &&
-						attempt < MAX_TEAM_CODE_ATTEMPTS - 1
-					) {
-						continue;
-					}
-					throw error;
+						return created;
+					})
+				);
+				if (!error) {
+					return newTeam;
 				}
+				if (isDuplicateMembershipError(error)) {
+					throw alreadyInTeamError();
+				}
+				if (isUniqueViolation(error) && attempt < MAX_TEAM_CODE_ATTEMPTS - 1) {
+					continue;
+				}
+				throw error;
 			}
 
 			throw new TRPCError({
@@ -375,8 +379,8 @@ export const teamsRouter = createTRPCRouter({
 				});
 			}
 
-			try {
-				return await ctx.db.transaction(async (tx) => {
+			const { data, error } = await tryCatch(
+				ctx.db.transaction(async (tx) => {
 					await tx.execute(
 						sql`select pg_advisory_xact_lock(hashtext(${team.id}))`
 					);
@@ -402,13 +406,15 @@ export const teamsRouter = createTRPCRouter({
 					});
 
 					return team;
-				});
-			} catch (error) {
+				})
+			);
+			if (error) {
 				if (isDuplicateMembershipError(error)) {
 					throw alreadyInTeamError();
 				}
 				throw error;
 			}
+			return data;
 		}),
 
 	invite: protectedProcedure
@@ -518,8 +524,8 @@ export const teamsRouter = createTRPCRouter({
 				});
 			}
 
-			try {
-				await ctx.db.transaction(async (tx) => {
+			const { error } = await tryCatch(
+				ctx.db.transaction(async (tx) => {
 					await tx.execute(
 						sql`select pg_advisory_xact_lock(hashtext(${inv.organizationId}))`
 					);
@@ -547,8 +553,9 @@ export const teamsRouter = createTRPCRouter({
 						.update(invitation)
 						.set({ status: "accepted" })
 						.where(eq(invitation.id, inv.id));
-				});
-			} catch (error) {
+				})
+			);
+			if (error) {
 				if (isDuplicateMembershipError(error)) {
 					throw alreadyInTeamError();
 				}

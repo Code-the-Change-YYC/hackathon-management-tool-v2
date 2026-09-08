@@ -5,8 +5,8 @@
 
 import { useEffect, useState } from "react";
 import { Input } from "@/app/components/ui/input";
+import { isValidTeamName, TEAM_NAME_MAX } from "@/lib/teamName";
 import { Modal, ModalTitle, PrimaryButton, SecondaryButton } from "./Modal";
-import { isValidTeamName, TEAM_NAME_MAX } from "./teamName";
 
 export default function RegisterTeamModal({
 	open,

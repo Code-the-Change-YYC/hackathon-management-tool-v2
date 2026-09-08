@@ -14,7 +14,7 @@ export type Social = {
 	Icon: ComponentType<{ className?: string }>;
 };
 
-export const socials: Social[] = [
+export const SOCIALS = [
 	{
 		label: "Facebook",
 		href: "https://www.facebook.com/codethechangeyyc",
@@ -35,4 +35,4 @@ export const socials: Social[] = [
 		href: "https://github.com/Code-the-Change-YYC",
 		Icon: GithubFill
 	}
-];
+] as const satisfies readonly Social[];

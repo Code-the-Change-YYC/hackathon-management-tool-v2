@@ -193,7 +193,7 @@ export default function Sidebar({ userName }: { userName?: string }) {
 
 	return (
 		<>
-			<aside className="sticky top-0 hidden h-screen w-60 shrink-0 bg-[#fafafa] py-4 pr-2 pl-4 lg:block">
+			<aside className="sticky top-0 hidden h-screen w-60 shrink-0 bg-grey-50 py-4 pr-2 pl-4 lg:block">
 				<NavContent
 					onNavigate={close}
 					pathname={pathname}
@@ -201,7 +201,7 @@ export default function Sidebar({ userName }: { userName?: string }) {
 				/>
 			</aside>
 
-			<header className="sticky top-0 z-30 flex items-center justify-between border-grey-300 border-b bg-[#fafafa] px-4 py-3 lg:hidden">
+			<header className="sticky top-0 z-30 flex items-center justify-between border-grey-300 border-b bg-grey-50 px-4 py-3 lg:hidden">
 				<button
 					aria-label="Open menu"
 					className="grid size-9 place-items-center rounded-lg text-grey-800 transition hover:bg-purple-50"
@@ -240,7 +240,7 @@ export default function Sidebar({ userName }: { userName?: string }) {
 						onClick={close}
 						type="button"
 					/>
-					<div className="absolute top-0 left-0 h-full w-[260px] max-w-[80%] bg-[#fafafa] p-4 shadow-elevation-200">
+					<div className="absolute top-0 left-0 h-full w-[260px] max-w-[80%] bg-grey-50 p-4 shadow-elevation-200">
 						<button
 							aria-label="Close menu"
 							className="mb-2 ml-auto grid size-9 place-items-center rounded-lg text-grey-800 transition hover:bg-purple-50"

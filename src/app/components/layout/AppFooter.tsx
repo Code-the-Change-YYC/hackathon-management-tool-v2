@@ -1,6 +1,4 @@
-// App-wide footer with copyright and social links.
-
-import { socials } from "./socials";
+import { SOCIALS } from "./socials";
 
 export default function AppFooter() {
 	return (
@@ -10,7 +8,7 @@ export default function AppFooter() {
 					Copyright &copy; Code The Change YYC
 				</p>
 				<div className="flex items-center gap-4">
-					{socials.map(({ label, href, Icon }) => (
+					{SOCIALS.map(({ label, href, Icon }) => (
 						<a
 							className="text-grey-600 transition hover:text-purple-500"
 							href={href}
