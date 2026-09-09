@@ -53,6 +53,16 @@
 	--color-medium-grey: #d9d9d9;
 	--color-ehhh-grey: #c5c5c5;
 	--color-dark-grey: #333333;
+	--color-auth-surface: #fcfcfc;
+	--color-auth-text: #292929;
+	--color-auth-muted: #575757;
+	--color-auth-placeholder: #767676;
+	--color-auth-border: #a5a5a5;
+	--color-auth-divider: #d6d6d6;
+	--color-auth-primary: #7054fd;
+	--color-auth-focus: #4a28f6;
+	--color-auth-link: #2911a7;
+	--color-auth-success: #02644f;
 
 	--background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
 	--background-image-gradient-conic: conic-gradient(

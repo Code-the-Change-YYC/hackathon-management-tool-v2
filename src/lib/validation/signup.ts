@@ -24,6 +24,24 @@ export const DIETARY_RESTRICTIONS = [
 
 export type DietaryRestriction = (typeof DIETARY_RESTRICTIONS)[number];
 
+export const signupCredentialsSchema = z.object({
+	email: z
+		.string()
+		.min(1, "Email is required")
+		.regex(/^\S+@\S+\.\S+$/, "Enter a valid email address"),
+	password: z
+		.string()
+		.min(8, "Use at least 8 characters")
+		.regex(/[0-9]/, "Include at least one number")
+		.regex(/[^A-Za-z0-9]/, "Include at least one special character")
+});
+
+export const signupPersonalDetailsSchema = z.object({
+	firstName: z.string().min(1, "First name is required"),
+	lastName: z.string().min(1, "Last name is required"),
+	school: z.string().min(1, "Select your institution")
+});
+
 export const dietaryRestrictionsSchema = z
 	.array(z.enum(DIETARY_RESTRICTIONS))
 	.max(DIETARY_RESTRICTIONS.length)

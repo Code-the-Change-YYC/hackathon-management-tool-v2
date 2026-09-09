@@ -10,28 +10,41 @@ import {
 	FieldLabel
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from "@/app/components/ui/select";
+import { SCHOOLS } from "@/lib/validation/signup";
 import { useSignupIdentityForm } from "./useSignupIdentityForm";
 
 export default function SignupIdentityForm({ user }: { user?: User }) {
-	const { form, isSocialRegistration, onSubmit } = useSignupIdentityForm({
-		user
-	});
+	const { form, onSubmit } = useSignupIdentityForm({ user });
 	return (
 		<form
 			className="flex flex-col gap-6"
 			onSubmit={form.handleSubmit(onSubmit)}
 		>
-			<div className="flex flex-col gap-1">
-				<p className="font-medium text-muted-foreground text-sm">Step 2 of 3</p>
-				<h3 className="font-semibold text-xl">Your details</h3>
-			</div>
+			<h1 className="font-semibold text-[28px] leading-9">
+				Fill out your personal profile
+			</h1>
 
-			<FieldGroup>
-				<div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+			<FieldGroup className="gap-2">
+				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 					<Field data-invalid={Boolean(form.formState.errors.firstName)}>
-						<FieldLabel htmlFor="firstName">First name</FieldLabel>
+						<FieldLabel
+							className="pl-4 font-normal text-auth-text text-sm"
+							htmlFor="firstName"
+						>
+							First name*
+						</FieldLabel>
 						<Input
 							aria-invalid={Boolean(form.formState.errors.firstName)}
+							autoComplete="given-name"
+							className="h-12 rounded-xl border-auth-border bg-transparent px-4 text-base focus-visible:border-auth-focus focus-visible:ring-auth-focus/30"
 							disabled={form.formState.isSubmitting}
 							id="firstName"
 							{...form.register("firstName")}
@@ -40,9 +53,16 @@ export default function SignupIdentityForm({ user }: { user?: User }) {
 					</Field>
 
 					<Field data-invalid={Boolean(form.formState.errors.lastName)}>
-						<FieldLabel htmlFor="lastName">Last name</FieldLabel>
+						<FieldLabel
+							className="pl-4 font-normal text-auth-text text-sm"
+							htmlFor="lastName"
+						>
+							Last name*
+						</FieldLabel>
 						<Input
 							aria-invalid={Boolean(form.formState.errors.lastName)}
+							autoComplete="family-name"
+							className="h-12 rounded-xl border-auth-border bg-transparent px-4 text-base focus-visible:border-auth-focus focus-visible:ring-auth-focus/30"
 							disabled={form.formState.isSubmitting}
 							id="lastName"
 							{...form.register("lastName")}
@@ -51,39 +71,59 @@ export default function SignupIdentityForm({ user }: { user?: User }) {
 					</Field>
 				</div>
 
-				<Field data-invalid={Boolean(form.formState.errors.email)}>
-					<FieldLabel htmlFor="email">Email</FieldLabel>
-					<Input
-						aria-invalid={Boolean(form.formState.errors.email)}
-						disabled={isSocialRegistration || form.formState.isSubmitting}
-						id="email"
-						readOnly={isSocialRegistration}
-						type="email"
-						{...form.register("email")}
-					/>
-					<FieldError errors={[form.formState.errors.email]} />
+				<Field data-invalid={Boolean(form.formState.errors.school)}>
+					<FieldLabel
+						className="pl-4 font-normal text-auth-text text-sm"
+						htmlFor="school"
+					>
+						Which institution are you attending?*
+					</FieldLabel>
+					<Select
+						disabled={form.formState.isSubmitting}
+						onValueChange={(value) =>
+							form.setValue("school", value ?? "", {
+								shouldDirty: true,
+								shouldValidate: true
+							})
+						}
+						value={form.watch("school")}
+					>
+						<SelectTrigger
+							aria-invalid={Boolean(form.formState.errors.school)}
+							className="h-12 w-full rounded-xl border-2 border-auth-focus bg-transparent px-4 text-base focus-visible:ring-auth-focus/30"
+							id="school"
+						>
+							<SelectValue placeholder="Select an institution" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								{SCHOOLS.map((school) => (
+									<SelectItem key={school} value={school}>
+										{school}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+					<FieldError errors={[form.formState.errors.school]} />
 				</Field>
-
-				{!isSocialRegistration && (
-					<Field data-invalid={Boolean(form.formState.errors.password)}>
-						<FieldLabel htmlFor="password">Password</FieldLabel>
-						<Input
-							aria-invalid={Boolean(form.formState.errors.password)}
-							disabled={form.formState.isSubmitting}
-							id="password"
-							type="password"
-							{...form.register("password")}
-						/>
-						<FieldError errors={[form.formState.errors.password]} />
-					</Field>
-				)}
 			</FieldGroup>
 
-			<div className="flex justify-between gap-3">
-				<Button variant="outline">
+			<div className="flex flex-col gap-4">
+				<Button
+					className="h-auto min-h-11 w-full rounded-xl bg-auth-primary px-4 py-2 text-base text-white hover:bg-auth-focus disabled:bg-auth-primary/50"
+					disabled={!form.formState.isValid || form.formState.isSubmitting}
+					type="submit"
+				>
+					Continue
+				</Button>
+				<Button
+					className="h-auto min-h-11 rounded-xl border-auth-border bg-transparent px-4 py-2 text-auth-text hover:bg-muted"
+					type="button"
+					variant="outline"
+				>
 					<Link href="/signup">Back</Link>
 				</Button>
-				<Button type="submit">Continue to event details</Button>
 			</div>
 		</form>
 	);

@@ -11,7 +11,7 @@ import {
 	type SignupEventDetailsInput,
 	signupEventDetailsSchema
 } from "@/lib/validation/signup";
-import { useSignupMutations } from "../useAuthMutations";
+import { useAuthMutations } from "../useAuthMutations";
 import { createRegistrationStrategies } from "./registration-strategies";
 import { getFullName, resetSignupWizard, updateSignupWizard } from "./wizard";
 
@@ -20,8 +20,9 @@ export function useSignupEventDetailsForm({ user }: { user?: User }) {
 	const { actions, state } = useStateMachine({
 		actions: { resetSignupWizard, updateSignupWizard }
 	});
-	const { emailSignUp, error, socialRegistrationCompletion } =
-		useSignupMutations();
+	const { emailSignUp, error, socialRegistrationCompletion } = useAuthMutations(
+		{ variant: "signup" }
+	);
 	const isSubmitting =
 		emailSignUp.isPending || socialRegistrationCompletion.isPending;
 	const form = useForm<SignupEventDetailsInput, undefined, SignupEventDetails>({
@@ -32,8 +33,7 @@ export function useSignupEventDetailsForm({ user }: { user?: User }) {
 		email: state.signupWizard.email,
 		emailSignUp,
 		password: state.signupWizard.password,
-		socialRegistrationCompletion,
-		userName: user?.name
+		socialRegistrationCompletion
 	});
 
 	const onSubmit = (values: SignupEventDetails) => {
