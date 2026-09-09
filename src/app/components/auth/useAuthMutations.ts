@@ -102,6 +102,7 @@ export function useAuthMutations({ variant }: { variant: "login" | "signup" }) {
 		socialSignIn,
 		isPending:
 			emailSignIn.isPending ||
+			emailSignUp.isPending ||
 			socialSignIn.isPending ||
 			socialRegistrationCompletion.isPending,
 		error:

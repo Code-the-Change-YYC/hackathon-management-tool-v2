@@ -99,7 +99,8 @@ function AuthLayout({
 			? actions.updateSignupWizard({ method: provider, password: "" })
 			: emailSignIn.reset();
 
-	const isPending = socialSignIn.isPending;
+	const isSocialPending = socialSignIn.isPending;
+	const isPending = emailSignIn.isPending || isSocialPending;
 	const disabled = form.formState.isSubmitting || isPending;
 	const onProvider = (provider: SocialProviderId) => {
 		onSocialProvider(provider);
@@ -112,7 +113,7 @@ function AuthLayout({
 			</h1>
 			<SocialButtons
 				disabled={disabled}
-				isPending={isPending}
+				isPending={isSocialPending}
 				onProvider={onProvider}
 			/>
 			<AuthDivider />
