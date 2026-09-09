@@ -1003,7 +1003,7 @@ export default function StyleGuidePage() {
 
 								<div className="flex flex-col gap-3">
 									<h3 className="font-medium text-sm">Table</h3>
-									<div className="rounded-lg border border-border">
+									<div>
 										<Table>
 											<TableHeader>
 												<TableRow>
