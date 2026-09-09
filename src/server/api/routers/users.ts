@@ -1,5 +1,16 @@
+/**
+ * tRPC router for user management.
+ *
+ * `completeRegistrationByEmail` upgrades `role` to PARTICIPANT when it
+ * isn't already a real app role: better-auth's `signUpEmail` sets a
+ * generic default role ("user") that isn't one of this app's roles, so
+ * left as-is, new self-service signups would get redirected out of every
+ * role-gated page (e.g. `/participant`, `/team`). The SQL `case` guards
+ * against downgrading an existing admin/judge.
+ */
+
 import { TRPCError } from "@trpc/server";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	dietaryRestrictionsSchema,
@@ -8,6 +19,7 @@ import {
 } from "@/lib/validation/signup";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
+import { Role } from "@/types/types";
 
 export const usersRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -70,7 +82,8 @@ export const usersRouter = createTRPCRouter({
 					school: input.school?.trim() ? input.school.trim() : null,
 					program: input.program ?? null,
 					dietaryRestrictions: input.dietaryRestrictions ?? [],
-					completedRegistration: true
+					completedRegistration: true,
+					role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
 				})
 				.where(eq(user.id, ctx.session.user.id))
 				.returning();

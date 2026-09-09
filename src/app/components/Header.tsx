@@ -37,7 +37,7 @@ export default function Header({ hasTeam }: HeaderProps) {
 				{isSignedIn && !hasTeam && (
 					<Link
 						className="transition-colors hover:text-awesome-purple!"
-						href="/teams"
+						href="/participant/my-team"
 					>
 						Join a Team
 					</Link>
