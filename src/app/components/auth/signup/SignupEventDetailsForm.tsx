@@ -1,10 +1,10 @@
 "use client";
 
+import { AddLine, CloseLine } from "@mingcute/react";
 import type { User } from "better-auth";
 import Link from "next/link";
 import { Controller } from "react-hook-form";
 import { Button } from "@/app/components/ui/button";
-import { Checkbox } from "@/app/components/ui/checkbox";
 import {
 	Field,
 	FieldError,
@@ -23,10 +23,18 @@ import {
 } from "@/app/components/ui/select";
 import {
 	DIETARY_RESTRICTIONS,
-	PROGRAMS,
-	SCHOOLS
+	type DietaryRestriction
 } from "@/lib/validation/signup";
 import { useSignupEventDetailsForm } from "./useSignupEventDetailsForm";
+
+const restrictionLabel = (restriction: DietaryRestriction) => {
+	switch (restriction) {
+		case "gluten_free":
+			return "Gluten-free";
+		default:
+			return restriction.charAt(0).toUpperCase() + restriction.slice(1);
+	}
+};
 
 export default function SignupEventDetailsForm({ user }: { user?: User }) {
 	const {
@@ -36,89 +44,27 @@ export default function SignupEventDetailsForm({ user }: { user?: User }) {
 		isSubmitting,
 		onSubmit
 	} = useSignupEventDetailsForm({ user });
-
+	const selectedRestrictions = form.watch("dietaryRestrictions");
 	return (
 		<form
 			className="flex flex-col gap-6"
 			onSubmit={form.handleSubmit(onSubmit)}
 		>
-			<div className="flex flex-col gap-1">
-				<p className="font-medium text-muted-foreground text-sm">Step 3 of 3</p>
-				<h3 className="font-semibold text-xl">Event details</h3>
-			</div>
+			<h1 className="font-semibold text-[28px] leading-9">
+				Fill out your food preferences
+			</h1>
 
-			<FieldGroup>
-				<Controller
-					control={form.control}
-					name="school"
-					render={({ field }) => (
-						<Field>
-							<FieldLabel htmlFor="school">
-								Which institution do you go to?
-							</FieldLabel>
-							<Select
-								disabled={isSubmitting}
-								onValueChange={(value) => field.onChange(value ?? "")}
-								value={field.value}
-							>
-								<SelectTrigger className="w-full" id="school">
-									<SelectValue placeholder="Select institution" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectGroup>
-										{SCHOOLS.map((school) => (
-											<SelectItem key={school} value={school}>
-												{school}
-											</SelectItem>
-										))}
-									</SelectGroup>
-								</SelectContent>
-							</Select>
-						</Field>
-					)}
-				/>
-
-				<Controller
-					control={form.control}
-					name="program"
-					render={({ field }) => (
-						<Field>
-							<FieldLabel htmlFor="program">
-								Which program are you in?
-							</FieldLabel>
-							<Select
-								disabled={isSubmitting}
-								onValueChange={(value) => field.onChange(value ?? "")}
-								value={field.value}
-							>
-								<SelectTrigger className="w-full" id="program">
-									<SelectValue placeholder="Select program" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectGroup>
-										{PROGRAMS.map((program) => (
-											<SelectItem
-												className="capitalize"
-												key={program}
-												value={program}
-											>
-												{program.split("_").join(" ")}
-											</SelectItem>
-										))}
-									</SelectGroup>
-								</SelectContent>
-							</Select>
-						</Field>
-					)}
-				/>
-
+			<FieldGroup className="gap-2">
 				<Controller
 					control={form.control}
 					name="wantsFood"
-					render={({ field }) => (
-						<Field data-invalid={Boolean(form.formState.errors.wantsFood)}>
-							<FieldLabel htmlFor="food">
-								Do you want provided food at the hackathon?
+					render={({ field, fieldState }) => (
+						<Field data-invalid={fieldState.invalid}>
+							<FieldLabel
+								className="pl-4 font-normal text-auth-text text-sm"
+								htmlFor="food"
+							>
+								Do you want to be provided free meals at the hackathon?*
 							</FieldLabel>
 							<Select
 								disabled={isSubmitting}
@@ -126,11 +72,11 @@ export default function SignupEventDetailsForm({ user }: { user?: User }) {
 								value={field.value}
 							>
 								<SelectTrigger
-									aria-invalid={Boolean(form.formState.errors.wantsFood)}
-									className="w-full"
+									aria-invalid={fieldState.invalid}
+									className="h-12 w-full rounded-xl border-auth-border bg-transparent px-4 text-base focus-visible:border-auth-focus focus-visible:ring-auth-focus/30"
 									id="food"
 								>
-									<SelectValue placeholder="Select an option" />
+									<SelectValue placeholder="Please select an option" />
 								</SelectTrigger>
 								<SelectContent>
 									<SelectGroup>
@@ -139,46 +85,80 @@ export default function SignupEventDetailsForm({ user }: { user?: User }) {
 									</SelectGroup>
 								</SelectContent>
 							</Select>
-							<FieldError errors={[form.formState.errors.wantsFood]} />
+							<FieldError errors={[fieldState.error]} />
 						</Field>
 					)}
-					rules={{ required: "Select whether you want provided food" }}
 				/>
 
 				<FieldSet>
-					<FieldLegend variant="label">Dietary restrictions</FieldLegend>
-					{DIETARY_RESTRICTIONS.map((restriction) => {
-						const id = `dietary-${restriction}`;
-
-						return (
-							<Field key={restriction} orientation="horizontal">
-								<Checkbox
-									checked={form
-										.watch("dietaryRestrictions")
-										.includes(restriction)}
-									disabled={isSubmitting}
-									id={id}
-									onCheckedChange={(checked) =>
-										handleDietaryRestrictionChange(restriction, checked)
+					<FieldLegend>Your dietary restrictions:</FieldLegend>
+					<div className="flex flex-col gap-2">
+						<div className="flex flex-wrap gap-2">
+							{selectedRestrictions.map((restriction) => (
+								<Button
+									aria-pressed="true"
+									className="h-auto rounded-lg bg-auth-primary/10 px-4 py-1.5 text-auth-link hover:bg-auth-primary/20"
+									key={restriction}
+									onClick={() =>
+										handleDietaryRestrictionChange(restriction, false)
 									}
-								/>
-								<FieldLabel htmlFor={id}>
-									{restriction.replace("_", " ")}
-								</FieldLabel>
-							</Field>
-						);
-					})}
+									type="button"
+									variant="ghost"
+								>
+									{restrictionLabel(restriction)}
+									<CloseLine aria-hidden="true" data-icon="inline-end" />
+								</Button>
+							))}
+						</div>
+					</div>
+
+					<div className="flex flex-col gap-2">
+						<p className="font-medium text-auth-text text-sm">
+							Add a restriction:
+						</p>
+						<div className="flex flex-wrap gap-2">
+							{DIETARY_RESTRICTIONS.filter(
+								(restriction) => !selectedRestrictions.includes(restriction)
+							).map((restriction) => (
+								<Button
+									aria-pressed="false"
+									className="h-auto rounded-lg border-auth-divider px-4 py-1.5 text-auth-text hover:bg-muted"
+									key={restriction}
+									onClick={() =>
+										handleDietaryRestrictionChange(restriction, true)
+									}
+									type="button"
+									variant="outline"
+								>
+									{restrictionLabel(restriction)}
+									<AddLine aria-hidden="true" data-icon="inline-end" />
+								</Button>
+							))}
+						</div>
+					</div>
 				</FieldSet>
 			</FieldGroup>
 
-			{error && <FieldError>{error.message}</FieldError>}
+			{error && (
+				<p className="text-destructive text-sm" role="alert">
+					{error.message}
+				</p>
+			)}
 
-			<div className="flex justify-between gap-3">
-				<Button disabled={isSubmitting} type="button" variant="outline">
-					<Link href={"/signup/identity"}>Back</Link>
+			<div className="flex flex-col gap-4">
+				<Button
+					className="h-auto min-h-11 w-full rounded-xl bg-auth-primary px-4 py-2 text-base text-white hover:bg-auth-focus disabled:bg-auth-primary/50"
+					disabled={isSubmitting}
+					type="submit"
+				>
+					{isSubmitting ? "Saving…" : "Continue"}
 				</Button>
-				<Button disabled={isSubmitting} type="submit">
-					{isSubmitting ? "Saving…" : "Complete registration"}
+				<Button
+					className="h-auto min-h-11 rounded-xl border-auth-border bg-transparent px-4 py-2 text-auth-text hover:bg-muted"
+					type="button"
+					variant="outline"
+				>
+					<Link href="/signup/identity">Back</Link>
 				</Button>
 			</div>
 		</form>

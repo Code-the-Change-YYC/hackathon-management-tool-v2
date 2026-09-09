@@ -9,19 +9,15 @@ import type { SocialProviderId } from "./social-providers";
 
 type SocialSignInOptions = {
 	errorCallbackURL: string;
-	newUserCallbackURL: string;
 };
 
-function useSocialSignIn({
-	errorCallbackURL,
-	newUserCallbackURL
-}: SocialSignInOptions) {
+function useSocialSignIn({ errorCallbackURL }: SocialSignInOptions) {
 	return useMutation({
 		mutationFn: async ({ provider }: { provider: SocialProviderId }) => {
 			const result = await authClient.signIn.social({
 				provider,
-				callbackURL: "/signup/event-details",
-				newUserCallbackURL,
+				callbackURL: "/signup/identity",
+				newUserCallbackURL: "/signup/identity",
 				errorCallbackURL
 			});
 
@@ -33,8 +29,7 @@ function useSocialSignIn({
 		}
 	});
 }
-
-export function useLoginMutations() {
+export function useAuthMutations({ variant }: { variant: "login" | "signup" }) {
 	const router = useRouter();
 	const emailSignIn = useMutation({
 		mutationFn: async (credentials: { email: string; password: string }) => {
@@ -51,23 +46,15 @@ export function useLoginMutations() {
 			return result.data?.user;
 		},
 		onSuccess: (user) =>
-			router.push(user?.completedRegistration ? "/" : "/signup/event-details")
+			router.push(user?.completedRegistration ? "/" : "/signup/identity")
 	});
+	const errorCallbackURL = `/${variant}`;
 	const socialSignIn = useSocialSignIn({
-		errorCallbackURL: "/login",
-		newUserCallbackURL: "/signup/identity"
+		errorCallbackURL
 	});
 
-	return {
-		emailSignIn,
-		socialSignIn,
-		isPending: emailSignIn.isPending || socialSignIn.isPending,
-		error: emailSignIn.error ?? socialSignIn.error
-	};
-}
-
-export function useSignupMutations() {
 	const completeRegistration = api.users.completeRegistration.useMutation();
+
 	const emailSignUp = useMutation({
 		mutationFn: async ({
 			details,
@@ -108,21 +95,17 @@ export function useSignupMutations() {
 			await completeRegistration.mutateAsync(details);
 		}
 	});
-	const socialSignIn = useSocialSignIn({
-		errorCallbackURL: "/signup",
-		newUserCallbackURL: "/signup/identity"
-	});
-
 	return {
+		emailSignIn,
 		emailSignUp,
 		socialRegistrationCompletion,
 		socialSignIn,
 		isPending:
-			emailSignUp.isPending ||
-			socialRegistrationCompletion.isPending ||
-			socialSignIn.isPending,
+			emailSignIn.isPending ||
+			socialSignIn.isPending ||
+			socialRegistrationCompletion.isPending,
 		error:
-			emailSignUp.error ??
+			emailSignIn.error ??
 			socialRegistrationCompletion.error ??
 			socialSignIn.error
 	};

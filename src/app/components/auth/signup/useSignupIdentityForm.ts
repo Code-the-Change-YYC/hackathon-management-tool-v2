@@ -7,25 +7,25 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { createSignupIdentitySchema } from "@/lib/validation/signup";
-import { getNameParts, resetSignupWizard, updateSignupWizard } from "./wizard";
+import { signupPersonalDetailsSchema } from "@/lib/validation/signup";
+import { getNameParts, updateSignupWizard } from "./wizard";
 
-type IdentityFormValues = z.input<
-	ReturnType<typeof createSignupIdentitySchema>
->;
+type IdentityFormValues = z.input<typeof signupPersonalDetailsSchema>;
 
 export function useSignupIdentityForm({ user }: { user?: User }) {
 	const router = useRouter();
 	const hasPrefilledSocialDetails = useRef(false);
 	const { actions, state } = useStateMachine({
-		actions: { resetSignupWizard, updateSignupWizard }
+		actions: { updateSignupWizard }
 	});
-	const isSocialRegistration =
-		Boolean(user?.email) && state.signupWizard.method !== "email";
-	const schema = createSignupIdentitySchema(!isSocialRegistration);
 	const form = useForm<IdentityFormValues>({
-		defaultValues: state.signupWizard,
-		resolver: zodResolver(schema)
+		defaultValues: {
+			firstName: state.signupWizard.firstName,
+			lastName: state.signupWizard.lastName,
+			school: state.signupWizard.school
+		},
+		mode: "onChange",
+		resolver: zodResolver(signupPersonalDetailsSchema)
 	});
 
 	const onSubmit = (values: IdentityFormValues) => {
@@ -34,18 +34,19 @@ export function useSignupIdentityForm({ user }: { user?: User }) {
 	};
 
 	useEffect(() => {
-		if (!isSocialRegistration || hasPrefilledSocialDetails.current || !user)
-			return;
+		if (!user || hasPrefilledSocialDetails.current) return;
 		hasPrefilledSocialDetails.current = true;
 		const name = getNameParts(user.name);
 		const formState = {
 			...name,
-			email: user.email,
-			password: ""
+			school: state.signupWizard.school
 		};
-		actions.updateSignupWizard(formState);
+		actions.updateSignupWizard({ email: user.email, ...formState });
 		form.reset(formState);
-	}, [actions, form, user, isSocialRegistration]);
+	}, [actions, form, state.signupWizard.school, user]);
+	useEffect(() => {
+		if (!user && !state.signupWizard.email) router.push("/signup");
+	}, [state, router.push, user]);
 
-	return { form, isSocialRegistration, onSubmit };
+	return { form, onSubmit };
 }

@@ -1,9 +1,9 @@
 import type { User } from "better-auth";
 
 import type { SignupEventDetails } from "@/lib/validation/signup";
-import type { useSignupMutations } from "../useAuthMutations";
+import type { useAuthMutations } from "../useAuthMutations";
 
-type SignupMutations = ReturnType<typeof useSignupMutations>;
+type AuthMutations = ReturnType<typeof useAuthMutations>;
 
 export type RegistrationStrategy = {
 	submit: (
@@ -15,7 +15,7 @@ export type RegistrationStrategy = {
 
 export class EmailRegistrationStrategy implements RegistrationStrategy {
 	constructor(
-		private readonly mutation: SignupMutations["emailSignUp"],
+		private readonly mutation: AuthMutations["emailSignUp"],
 		private readonly email: string,
 		private readonly password: string
 	) {}
@@ -35,7 +35,7 @@ export class EmailRegistrationStrategy implements RegistrationStrategy {
 
 export class SocialRegistrationStrategy implements RegistrationStrategy {
 	constructor(
-		private readonly mutation: SignupMutations["socialRegistrationCompletion"],
+		private readonly mutation: AuthMutations["socialRegistrationCompletion"],
 		private readonly userName?: User["name"]
 	) {}
 
@@ -58,9 +58,9 @@ export function createRegistrationStrategies({
 	userName
 }: {
 	email: User["email"];
-	emailSignUp: SignupMutations["emailSignUp"];
+	emailSignUp: AuthMutations["emailSignUp"];
 	password: string;
-	socialRegistrationCompletion: SignupMutations["socialRegistrationCompletion"];
+	socialRegistrationCompletion: AuthMutations["socialRegistrationCompletion"];
 	userName?: User["name"];
 }) {
 	return {
