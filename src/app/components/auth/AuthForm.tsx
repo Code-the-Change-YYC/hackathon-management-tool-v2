@@ -272,7 +272,7 @@ export default function AuthForm({ variant }: { variant: AuthVariants }) {
 				disabled={!form.formState.isValid || form.formState.isSubmitting}
 				type="submit"
 			>
-				{variant === "signup" ? "Sign Up" : "Log In"}
+				{variant === "signup" ? "Sign Up" : "Sign in"}
 			</Button>
 			<ToggleAuth variant={variant} />
 		</AuthLayout>

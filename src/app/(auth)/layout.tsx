@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import signupBackground from "@/background/signup-background.png";
 import { getSession } from "@/server/better-auth/server";
 
 export default async function layout({
@@ -19,7 +18,7 @@ export default async function layout({
 				fill
 				priority
 				sizes="100vw"
-				src={signupBackground.src}
+				src={"/background/signup-background.png"}
 			/>
 			<section className="relative flex min-h-screen w-full justify-start">
 				<div className="flex min-h-screen w-full flex-col gap-6 overflow-y-auto bg-auth-surface px-6 py-8 sm:px-12 lg:w-160 lg:shrink-0 lg:rounded-tr-2xl lg:rounded-br-2xl lg:px-24 lg:py-12">
