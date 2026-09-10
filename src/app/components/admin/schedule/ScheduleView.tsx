@@ -3,15 +3,22 @@ import type { ScheduleItemData } from "@/app/components/ScheduleItem";
 import { ScheduleSection } from "@/app/components/ScheduleSection";
 import { Button } from "@/app/components/ui/button";
 import { SidebarTrigger } from "@/app/components/ui/sidebar";
+import { api } from "@/trpc/server";
 import PageHeader from "../../PageHeader";
 
-export default function ScheduleView({
-	items,
-	now
-}: {
-	items: ScheduleItemData[];
-	now: Date;
-}) {
+export default async function ScheduleView() {
+	const events = await api.events.getAllEvents();
+	const now = new Date();
+
+	const scheduleItems: ScheduleItemData[] = events.map((event) => ({
+		id: event.id,
+		title: event.title,
+		startTime: event.startTime,
+		endTime: event.endTime,
+		eventType: event.type,
+		description: event.description
+	}));
+
 	return (
 		<div className="flex min-h-svh flex-1 flex-col overflow-y-auto bg-white">
 			<header className="flex items-center justify-between gap-2 border-b px-4 py-3 md:hidden">
@@ -28,7 +35,7 @@ export default function ScheduleView({
 				<ScheduleSection
 					emptyDescription="Check back soon for event times."
 					emptyTitle="No Events have been scheduled yet."
-					items={items}
+					items={scheduleItems}
 					now={now}
 					title="Event Schedule"
 				/>
