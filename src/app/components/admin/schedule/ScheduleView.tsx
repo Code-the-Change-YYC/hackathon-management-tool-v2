@@ -3,6 +3,7 @@ import type { ScheduleItemData } from "@/app/components/ScheduleItem";
 import { ScheduleSection } from "@/app/components/ScheduleSection";
 import { Button } from "@/app/components/ui/button";
 import { SidebarTrigger } from "@/app/components/ui/sidebar";
+import PageHeader from "../../PageHeader";
 
 export default function ScheduleView({
 	items,
@@ -20,12 +21,10 @@ export default function ScheduleView({
 				</Button>
 			</header>
 			<div className="flex flex-col gap-6 p-6">
-				<div className="flex flex-col">
-					<h1 className="font-semibold text-[32px] leading-10">Schedule</h1>
-					<p className="font-regular text-[16px] text-grey600 leading-6">
-						View all hackathon events and activities
-					</p>
-				</div>
+				<PageHeader
+					description="View all hackathon events and activities"
+					title="Schedule"
+				/>
 				<ScheduleSection
 					emptyDescription="Check back soon for event times."
 					emptyTitle="No Events have been scheduled yet."
