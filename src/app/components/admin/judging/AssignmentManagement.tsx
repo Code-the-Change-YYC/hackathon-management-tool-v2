@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
+import {
+	ConfirmAlertDialog,
+	useConfirmDialog
+} from "@/app/components/ConfirmAlertDialog";
 import { Button } from "@/app/components/ui/button";
 import { Field, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
@@ -22,9 +25,10 @@ import {
 	TableRow
 } from "@/app/components/ui/table";
 import { formatDateTime, toDateTimeLocalValue } from "@/lib/datetime";
-import { api } from "@/trpc/react";
-
-import { ManagementSection, type SlotMinutes } from "./judgingShared";
+import type { SlotMinutes } from "@/lib/judging";
+import { tryCatch } from "@/lib/utils";
+import { api, type RouterOutputs } from "@/trpc/react";
+import { ManagementSection } from "./judgingShared";
 
 export function AssignmentManagement({
 	roundId,
@@ -33,7 +37,7 @@ export function AssignmentManagement({
 	roundId: string;
 	slotMinutes: SlotMinutes;
 }) {
-	const { confirm, dialog } = useConfirmDialog();
+	const { confirm, dialogProps } = useConfirmDialog();
 	const utils = api.useUtils();
 	const assignmentsQuery = api.judgingAssignments.getByRound.useQuery(
 		{ roundId },
@@ -72,7 +76,14 @@ export function AssignmentManagement({
 	const deleteAssignment = api.judgingAssignments.delete.useMutation();
 
 	const submit = async () => {
-		if (!teamId || !roomId || !timeSlot) return;
+		if (
+			!teamId ||
+			!roomId ||
+			!timeSlot ||
+			createAssignment.isPending ||
+			updateAssignment.isPending
+		)
+			return;
 		setMessage("");
 		const selectedRound = roundsQuery.data?.find(
 			(round) => round.id === roundId
@@ -120,32 +131,50 @@ export function AssignmentManagement({
 			setMessage("That room already has an assignment in this time slot.");
 			return;
 		}
-		try {
-			if (editingId) {
-				await updateAssignment.mutateAsync({
-					id: editingId,
-					roomId,
-					teamId,
-					timeSlot: parsedTimeSlot
-				});
-				setMessage("Assignment updated.");
-			} else {
-				await createAssignment.mutateAsync({
-					roomId,
-					teamId,
-					timeSlot: parsedTimeSlot
-				});
-				setMessage("Assignment created.");
-			}
-			resetForm();
-			await invalidate();
-		} catch (error) {
+		const values = { roomId, teamId, timeSlot: parsedTimeSlot };
+		const { error } = await tryCatch(
+			(editingId
+				? updateAssignment.mutateAsync({ id: editingId, ...values })
+				: createAssignment.mutateAsync(values)
+			).then(async () => {
+				resetForm();
+				await invalidate();
+			})
+		);
+		if (error) {
 			setMessage(
 				error instanceof Error
 					? error.message
 					: "Assignment could not be saved."
 			);
+			return;
 		}
+		setMessage(editingId ? "Assignment updated." : "Assignment created.");
+	};
+	const removeAssignment = async (
+		assignment: RouterOutputs["judgingAssignments"]["getByRound"][number]
+	) => {
+		if (deleteAssignment.isPending || assignment.scores.length > 0) return;
+		if (
+			!(await confirm({
+				title: `Delete the assignment for ${assignment.team.name}?`,
+				description: "This action cannot be undone.",
+				confirmLabel: "Delete",
+				destructive: true
+			}))
+		)
+			return;
+		setMessage("");
+		const { error } = await tryCatch(
+			deleteAssignment.mutateAsync({ id: assignment.id }).then(invalidate)
+		);
+		if (error) {
+			setMessage(
+				error instanceof Error ? error.message : "Assignment deletion failed."
+			);
+			return;
+		}
+		setMessage("Assignment deleted.");
 	};
 
 	const roomNames = new Map(
@@ -295,32 +324,7 @@ export function AssignmentManagement({
 											</Button>
 											<Button
 												disabled={isScored || deleteAssignment.isPending}
-												onClick={async () => {
-													if (
-														!(await confirm({
-															title: `Delete the assignment for ${assignment.team.name}?`,
-															description: "This action cannot be undone.",
-															confirmLabel: "Delete",
-															destructive: true
-														}))
-													) {
-														return;
-													}
-													setMessage("");
-													try {
-														await deleteAssignment.mutateAsync({
-															id: assignment.id
-														});
-														await invalidate();
-														setMessage("Assignment deleted.");
-													} catch (error) {
-														setMessage(
-															error instanceof Error
-																? error.message
-																: "Assignment deletion failed."
-														);
-													}
-												}}
+												onClick={() => void removeAssignment(assignment)}
 												size="sm"
 												title={
 													isScored
@@ -353,7 +357,7 @@ export function AssignmentManagement({
 			>
 				{message}
 			</p>
-			{dialog}
+			<ConfirmAlertDialog {...dialogProps} />
 		</ManagementSection>
 	);
 }

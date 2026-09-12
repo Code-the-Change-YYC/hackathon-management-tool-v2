@@ -4,19 +4,22 @@ import { ArrowLeftLine, ArrowRightLine } from "@mingcute/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
+import {
+	ConfirmAlertDialog,
+	useConfirmDialog
+} from "@/app/components/ConfirmAlertDialog";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
+import { getRubricBands } from "@/lib/judging";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
-import { LoadingCard } from "./judgeSharedUi";
+import { LoadingCard } from "./LoadingCard";
 import {
 	type Criterion,
 	formatTime,
 	getBandDescription,
 	getCriterionDescription,
 	getDraftScore,
-	getRubricBands,
 	getScoreFillClass,
 	getScoreOptions,
 	getScoreTextColor,
@@ -641,7 +644,7 @@ function ScorePageMessage({
 export function JudgeScorePage({ assignmentId }: { assignmentId: string }) {
 	const { userId } = useJudgeUser();
 	const router = useRouter();
-	const { confirm, dialog } = useConfirmDialog();
+	const { confirm, dialogProps } = useConfirmDialog();
 	const data = useJudgePortalData();
 	const utils = api.useUtils();
 	const assignment = data.assignments.find((item) => item.id === assignmentId);
@@ -759,7 +762,7 @@ export function JudgeScorePage({ assignmentId }: { assignmentId: string }) {
 
 	return (
 		<div className="min-h-screen bg-[#fcfcfc]">
-			{dialog}
+			<ConfirmAlertDialog {...dialogProps} />
 			<ScoreTopBar
 				activeStep={activeStep}
 				assignment={assignment}

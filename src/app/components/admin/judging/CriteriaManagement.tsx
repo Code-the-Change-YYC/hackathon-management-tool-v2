@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
+import {
+	ConfirmAlertDialog,
+	useConfirmDialog
+} from "@/app/components/ConfirmAlertDialog";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Field, FieldLabel } from "@/app/components/ui/field";
@@ -14,6 +17,7 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
+import { tryCatch } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
 
 type Criterion = RouterOutputs["criteria"]["getAll"][number];
@@ -21,7 +25,7 @@ type Criterion = RouterOutputs["criteria"]["getAll"][number];
 import { ManagementSection } from "./judgingShared";
 
 export function CriteriaManagement() {
-	const { confirm, dialog } = useConfirmDialog();
+	const { confirm, dialogProps } = useConfirmDialog();
 	const utils = api.useUtils();
 	const criteriaQuery = api.criteria.getAll.useQuery();
 	const [editingId, setEditingId] = useState<string | null>(null);
@@ -41,34 +45,29 @@ export function CriteriaManagement() {
 		setIsSidepot(false);
 	};
 	const submit = async () => {
-		if (!name.trim()) return;
+		if (!name.trim() || createCriterion.isPending || updateCriterion.isPending)
+			return;
 		setMessage("");
-		try {
-			if (editingId) {
-				await updateCriterion.mutateAsync({
-					id: editingId,
-					isSidepot,
-					maxScore,
-					name: name.trim()
-				});
-				setMessage("Criterion updated.");
-			} else {
-				await createCriterion.mutateAsync({
-					isSidepot,
-					maxScore,
-					name: name.trim()
-				});
-				setMessage("Criterion created.");
-			}
-			resetForm();
-			await utils.criteria.getAll.invalidate();
-		} catch (error) {
+		const values = { isSidepot, maxScore, name: name.trim() };
+		const { error } = await tryCatch(
+			(editingId
+				? updateCriterion.mutateAsync({ id: editingId, ...values })
+				: createCriterion.mutateAsync(values)
+			).then(async () => {
+				resetForm();
+				await utils.criteria.getAll.invalidate();
+			})
+		);
+		if (error) {
 			setMessage(
 				error instanceof Error ? error.message : "Criterion could not be saved."
 			);
+			return;
 		}
+		setMessage(editingId ? "Criterion updated." : "Criterion created.");
 	};
 	const removeCriterion = async (criterion: Criterion) => {
+		if (deleteCriterion.isPending) return;
 		if (
 			!(await confirm({
 				title: `Delete "${criterion.name}"?`,
@@ -76,23 +75,25 @@ export function CriteriaManagement() {
 				confirmLabel: "Delete",
 				destructive: true
 			}))
-		) {
+		)
 			return;
-		}
 		setMessage("");
-		try {
-			await deleteCriterion.mutateAsync({ id: criterion.id });
-			await Promise.all([
-				utils.criteria.getAll.invalidate(),
-				utils.teams.getRankings.invalidate()
-			]);
-			resetForm();
-			setMessage("Criterion deleted.");
-		} catch (error) {
+		const { error } = await tryCatch(
+			deleteCriterion.mutateAsync({ id: criterion.id }).then(async () => {
+				await Promise.all([
+					utils.criteria.getAll.invalidate(),
+					utils.teams.getRankings.invalidate()
+				]);
+				resetForm();
+			})
+		);
+		if (error) {
 			setMessage(
 				error instanceof Error ? error.message : "Criterion deletion failed."
 			);
+			return;
 		}
+		setMessage("Criterion deleted.");
 	};
 
 	return (
@@ -212,7 +213,7 @@ export function CriteriaManagement() {
 			>
 				{message}
 			</p>
-			{dialog}
+			<ConfirmAlertDialog {...dialogProps} />
 		</ManagementSection>
 	);
 }

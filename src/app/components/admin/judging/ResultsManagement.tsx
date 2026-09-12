@@ -21,10 +21,12 @@ export function ResultsManagement() {
 			id="results-management"
 			title="Results"
 		>
-			<Table className="min-w-[520px]">
+			<Table className="w-full">
 				<TableHeader>
 					<TableRow>
-						<TableHead className="w-24 px-3 py-3">Rank</TableHead>
+						<TableHead className="w-16 px-2 py-3 sm:w-24 sm:px-3">
+							Rank
+						</TableHead>
 						<TableHead className="px-3 py-3">Team</TableHead>
 						<TableHead className="px-3 py-3 text-right">Total score</TableHead>
 					</TableRow>
@@ -35,7 +37,7 @@ export function ResultsManagement() {
 							<TableCell className="px-3 py-4 font-semibold text-primary">
 								{index + 1}
 							</TableCell>
-							<TableCell className="px-3 py-4 font-medium">
+							<TableCell className="whitespace-normal break-words px-2 py-4 font-medium sm:px-3">
 								{team.name}
 							</TableCell>
 							<TableCell className="px-3 py-4 text-right">

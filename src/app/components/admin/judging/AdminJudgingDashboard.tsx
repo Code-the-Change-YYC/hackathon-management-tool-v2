@@ -10,7 +10,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { AdminNavbar } from "@/app/components/admin/AdminNavbar";
-import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
+import {
+	ConfirmAlertDialog,
+	useConfirmDialog
+} from "@/app/components/ConfirmAlertDialog";
 import { MobileNavSheet } from "@/app/components/MobileNavSheet";
 import { Button } from "@/app/components/ui/button";
 import { Field, FieldLabel } from "@/app/components/ui/field";
@@ -24,6 +27,7 @@ import {
 	SelectValue
 } from "@/app/components/ui/select";
 import { formatTime } from "@/lib/datetime";
+import { SLOT_MINUTES_OPTIONS, type SlotMinutes } from "@/lib/judging";
 import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { AssignmentManagement } from "./AssignmentManagement";
@@ -35,19 +39,8 @@ import { RoundManagement } from "./RoundManagement";
 type Assignment = RouterOutputs["judgingAssignments"]["getByRound"][number];
 type Room = RouterOutputs["judgingRooms"]["getLayoutByRound"]["rooms"][number];
 type Team = RouterOutputs["teams"]["getAll"][number];
-type SlotMinutes = 15 | 30 | 60;
 
-const scheduleGridClass =
-	"grid min-w-[max(100%,calc(var(--time-column)+var(--room-count)*var(--room-column)))] [--room-column:120px] [--time-column:82px] [grid-template-columns:minmax(var(--time-column),0.8fr)_repeat(var(--room-count),minmax(var(--room-column),1fr))] lg:[--room-column:160px] lg:[--time-column:128px]";
-const scheduleHeaderClass =
-	"flex min-h-10 items-center justify-center border-dashboard-grey border-r border-b bg-primary p-2 text-center font-medium text-primary-foreground text-sm leading-5 lg:min-h-12 lg:text-base lg:leading-6";
-const timeCellClass =
-	"min-h-[68px] border-dashboard-grey border-r border-b bg-background px-2 py-2 font-medium text-foreground text-sm leading-5 lg:min-h-[88px] lg:px-1 lg:text-base lg:leading-6";
-const roomCellClass =
-	"flex min-h-[68px] flex-col justify-center gap-1 border-dashboard-grey border-r border-b bg-light-grey px-1 py-1 lg:min-h-[88px]";
-const teamPillClass =
-	"truncate rounded-lg border border-awesome-purple bg-lilac-purple px-2 py-1.5 text-center font-semibold text-primary text-sm leading-5 lg:px-2 lg:py-2 lg:text-base";
-const slotsPerPage = 48;
+const SLOTS_PER_PAGE = 48;
 
 function buildTimeSlots(
 	startTime: Date,
@@ -178,10 +171,10 @@ function ScheduleGrid({
 		[roundEnd, roundStart, slotMinutes]
 	);
 	const [slotPage, setSlotPage] = useState(0);
-	const pageCount = Math.max(1, Math.ceil(slots.length / slotsPerPage));
+	const pageCount = Math.max(1, Math.ceil(slots.length / SLOTS_PER_PAGE));
 	const safeSlotPage = Math.min(slotPage, pageCount - 1);
-	const pageStart = safeSlotPage * slotsPerPage;
-	const visibleSlots = slots.slice(pageStart, pageStart + slotsPerPage);
+	const pageStart = safeSlotPage * SLOTS_PER_PAGE;
+	const visibleSlots = slots.slice(pageStart, pageStart + SLOTS_PER_PAGE);
 
 	if (isLoading) {
 		return (
@@ -211,17 +204,18 @@ function ScheduleGrid({
 		);
 	}
 
-	const scheduleStyle = {
+	const scheduleStyle: CSSProperties & { "--room-count": number } = {
 		"--room-count": rooms.length
-	} as CSSProperties;
+	};
 
 	return (
 		<div className="flex flex-col gap-3">
-			{slots.length > slotsPerPage ? (
+			{slots.length > SLOTS_PER_PAGE ? (
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<p className="m-0 text-muted-foreground text-sm">
 						Showing slots {pageStart + 1}-
-						{Math.min(pageStart + slotsPerPage, slots.length)} of {slots.length}
+						{Math.min(pageStart + SLOTS_PER_PAGE, slots.length)} of{" "}
+						{slots.length}
 					</p>
 					<div className="flex gap-2">
 						<Button
@@ -251,16 +245,22 @@ function ScheduleGrid({
 			) : null}
 
 			<div className="overflow-x-auto rounded-2xl">
-				<div className={scheduleGridClass} style={scheduleStyle}>
+				<div
+					className="grid min-w-[max(100%,calc(var(--time-column)+var(--room-count)*var(--room-column)))] [--room-column:120px] [--time-column:82px] [grid-template-columns:minmax(var(--time-column),0.8fr)_repeat(var(--room-count),minmax(var(--room-column),1fr))] lg:[--room-column:160px] lg:[--time-column:128px]"
+					style={scheduleStyle}
+				>
 					<div
-						className={cn(scheduleHeaderClass, "justify-start rounded-tl-2xl")}
+						className={cn(
+							"flex min-h-10 items-center justify-center border-dashboard-grey border-r border-b bg-primary p-2 text-center font-medium text-primary-foreground text-sm leading-5 lg:min-h-12 lg:text-base lg:leading-6",
+							"justify-start rounded-tl-2xl"
+						)}
 					>
 						Times
 					</div>
 					{rooms.map((room, roomIndex) => (
 						<div
 							className={cn(
-								scheduleHeaderClass,
+								"flex min-h-10 items-center justify-center border-dashboard-grey border-r border-b bg-primary p-2 text-center font-medium text-primary-foreground text-sm leading-5 lg:min-h-12 lg:text-base lg:leading-6",
 								roomIndex === rooms.length - 1 && "rounded-tr-2xl"
 							)}
 							key={room.id}
@@ -276,7 +276,7 @@ function ScheduleGrid({
 							<div className="contents" key={slot.toISOString()}>
 								<div
 									className={cn(
-										timeCellClass,
+										"min-h-[68px] border-dashboard-grey border-r border-b bg-background px-2 py-2 font-medium text-foreground text-sm leading-5 lg:min-h-[88px] lg:px-1 lg:text-base lg:leading-6",
 										(pageStart + slotIndex) % 2 === 0 && "bg-dashboard-grey",
 										isLastVisibleSlot && "rounded-bl-2xl"
 									)}
@@ -303,7 +303,7 @@ function ScheduleGrid({
 									return (
 										<div
 											className={cn(
-												roomCellClass,
+												"flex min-h-[68px] flex-col justify-center gap-1 border-dashboard-grey border-r border-b bg-light-grey px-1 py-1 lg:min-h-[88px]",
 												isLastVisibleSlot &&
 													roomIndex === rooms.length - 1 &&
 													"rounded-br-2xl"
@@ -312,7 +312,7 @@ function ScheduleGrid({
 										>
 											{cellAssignments.map((assignment) => (
 												<div
-													className={teamPillClass}
+													className="truncate rounded-lg border border-awesome-purple bg-lilac-purple px-2 py-1.5 text-center font-semibold text-primary text-sm leading-5 lg:px-2 lg:py-2 lg:text-base"
 													key={assignment.id}
 													title={assignment.team.name}
 												>
@@ -337,7 +337,7 @@ export default function AdminJudgingDashboard({
 	userName: string;
 }) {
 	const utils = api.useUtils();
-	const { confirm, dialog } = useConfirmDialog();
+	const { confirm, dialogProps } = useConfirmDialog();
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [selectedRoundId, setSelectedRoundId] = useState("");
 	const [selectedRoomId, setSelectedRoomId] = useState("all");
@@ -396,22 +396,16 @@ export default function AdminJudgingDashboard({
 		}
 	}, [rooms, selectedRoomId]);
 
-	const visibleRooms = useMemo(
-		() =>
-			selectedRoomId === "all"
-				? rooms
-				: rooms.filter((room) => room.id === selectedRoomId),
-		[rooms, selectedRoomId]
-	);
-	const visibleAssignments = useMemo(
-		() =>
-			selectedRoomId === "all"
-				? assignments
-				: assignments.filter(
-						(assignment) => assignment.room.id === selectedRoomId
-					),
-		[assignments, selectedRoomId]
-	);
+	const visibleRooms =
+		selectedRoomId === "all"
+			? rooms
+			: rooms.filter((room) => room.id === selectedRoomId);
+	const visibleAssignments =
+		selectedRoomId === "all"
+			? assignments
+			: assignments.filter(
+					(assignment) => assignment.room.id === selectedRoomId
+				);
 	const unscheduledCount = assignments.filter(
 		(assignment) => !assignment.timeSlot
 	).length;
@@ -510,7 +504,7 @@ export default function AdminJudgingDashboard({
 
 	return (
 		<div className="min-h-screen bg-background text-foreground">
-			{dialog}
+			<ConfirmAlertDialog {...dialogProps} />
 			<aside className="fixed inset-y-0 left-0 hidden w-[209px] border-border border-r bg-sidebar py-4 pr-4 pl-4 lg:block">
 				<AdminNavbar userName={userName} />
 			</aside>
@@ -663,8 +657,11 @@ export default function AdminJudgingDashboard({
 						<FieldLabel>Slot duration</FieldLabel>
 						<Select
 							onValueChange={(value) => {
-								if (!value) return;
-								setSlotMinutes(Number.parseInt(value, 10) as SlotMinutes);
+								const duration = SLOT_MINUTES_OPTIONS.find(
+									(option) => String(option) === value
+								);
+								if (!duration) return;
+								setSlotMinutes(duration);
 								setAssignmentMessage("");
 							}}
 							value={String(slotMinutes)}
@@ -674,9 +671,11 @@ export default function AdminJudgingDashboard({
 							</SelectTrigger>
 							<SelectContent>
 								<SelectGroup>
-									<SelectItem value="15">15 minutes</SelectItem>
-									<SelectItem value="30">30 minutes</SelectItem>
-									<SelectItem value="60">60 minutes</SelectItem>
+									{SLOT_MINUTES_OPTIONS.map((minutes) => (
+										<SelectItem key={minutes} value={String(minutes)}>
+											{minutes} minutes
+										</SelectItem>
+									))}
 								</SelectGroup>
 							</SelectContent>
 						</Select>

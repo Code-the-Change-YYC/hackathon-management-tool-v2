@@ -13,7 +13,6 @@ import type { RouterInputs } from "@/trpc/react";
 export type LayoutInput =
 	RouterInputs["judgingRooms"]["saveLayoutByRound"]["layout"];
 export type LayoutRoomInput = NonNullable<LayoutInput["rooms"]>[number];
-export type SlotMinutes = 15 | 30 | 60;
 
 export function byNameThenId<T extends { id: string; name: string }>(
 	a: T,

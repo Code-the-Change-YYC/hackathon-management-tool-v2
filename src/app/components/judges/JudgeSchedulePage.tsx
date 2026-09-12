@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { ErrorCard, LoadingCard, PageHeader } from "./judgeSharedUi";
+import { useCurrentTime } from "@/hooks/use-current-time";
+import { ErrorCard } from "./ErrorCard";
+import { LoadingCard } from "./LoadingCard";
+import { PageHeader } from "./PageHeader";
 import {
 	type Criterion,
 	formatDate,
@@ -17,20 +20,6 @@ import {
 	sortAssignments,
 	useJudgePortalData
 } from "./useJudgePortalData";
-
-function useCurrentTime() {
-	const [currentTime, setCurrentTime] = useState(() => new Date());
-
-	useEffect(() => {
-		const interval = window.setInterval(
-			() => setCurrentTime(new Date()),
-			30_000
-		);
-		return () => window.clearInterval(interval);
-	}, []);
-
-	return currentTime;
-}
 
 function inferDuration(
 	assignment: JudgeAssignment,

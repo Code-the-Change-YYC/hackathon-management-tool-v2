@@ -1,33 +1,24 @@
-"use client";
-
-import { useMemo } from "react";
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger
 } from "@/app/components/ui/accordion";
-import { api } from "@/trpc/react";
-import { ErrorCard, LoadingCard, PageHeader } from "./judgeSharedUi";
-import { getRubricBands } from "./useJudgePortalData";
+import { getRubricBands } from "@/lib/judging";
+import { tryCatch } from "@/lib/utils";
+import { api } from "@/trpc/server";
+import { ErrorCard } from "./ErrorCard";
+import { PageHeader } from "./PageHeader";
 
-export function JudgeRubricPage() {
-	const criteriaQuery = api.criteria.getAll.useQuery();
-	const criteria = useMemo(
-		() =>
-			(criteriaQuery.data ?? [])
-				.slice()
-				.sort((a, b) => Number(a.isSidepot) - Number(b.isSidepot)),
-		[criteriaQuery.data]
-	);
-
-	if (criteriaQuery.error) {
+export async function JudgeRubricPage() {
+	const { data, error } = await tryCatch(api.criteria.getAll());
+	if (error)
 		return (
-			<ErrorCard
-				message={`Rubric could not be loaded: ${criteriaQuery.error.message}`}
-			/>
+			<ErrorCard message={`Rubric could not be loaded: ${error.message}`} />
 		);
-	}
+	const criteria = data
+		.slice()
+		.sort((a, b) => Number(a.isSidepot) - Number(b.isSidepot));
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -40,9 +31,7 @@ export function JudgeRubricPage() {
 				<p className="mt-0 mb-4 text-muted-foreground">
 					Click on any category to view the detailed scoring criteria.
 				</p>
-				{criteriaQuery.isLoading ? (
-					<LoadingCard label="Loading rubric…" />
-				) : criteria.length > 0 ? (
+				{criteria.length > 0 ? (
 					<Accordion
 						className="gap-4"
 						defaultValue={criteria[0] ? [criteria[0].id] : []}

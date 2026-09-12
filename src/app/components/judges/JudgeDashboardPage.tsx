@@ -2,15 +2,14 @@
 
 import { ArrowRightLine } from "@mingcute/react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
-import {
-	ErrorCard,
-	JoinMeetingButton,
-	LoadingCard,
-	PageHeader
-} from "./judgeSharedUi";
+import { useCurrentTime } from "@/hooks/use-current-time";
+import { ErrorCard } from "./ErrorCard";
+import { JoinMeetingButton } from "./JoinMeetingButton";
+import { LoadingCard } from "./LoadingCard";
+import { PageHeader } from "./PageHeader";
 import {
 	type Criterion,
 	formatTime,
@@ -38,7 +37,7 @@ function RoundStatsCard({
 }) {
 	return (
 		<div className="flex flex-col gap-2">
-			<h2 className="m-0 font-medium text-[20px] leading-6">{name}</h2>
+			<h2 className="m-0 font-medium text-xl leading-6">{name}</h2>
 			<Card className="rounded-2xl border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
 				<CardContent className="grid min-h-[96px] grid-cols-3 px-4 py-3">
 					<StatNumber label="Assigned" value={assigned} />
@@ -61,17 +60,17 @@ function StatNumber({
 }) {
 	const color =
 		tone === "green"
-			? "text-[#038b6f]"
+			? "text-judging-success"
 			: tone === "red"
-				? "text-[#fe3b20]"
-				: "text-[#000000]";
+				? "text-judging-pending"
+				: "text-foreground";
 
 	return (
 		<div className="flex min-w-0 flex-col items-center justify-center gap-0 text-center">
-			<strong className={`font-semibold text-[44px] leading-[52px] ${color}`}>
+			<strong className={`font-semibold text-5xl leading-[52px] ${color}`}>
 				{value}
 			</strong>
-			<span className="font-medium text-[#1a1a1a] text-xs uppercase leading-4">
+			<span className="font-medium text-foreground text-xs uppercase leading-4">
 				{label}
 			</span>
 		</div>
@@ -104,24 +103,24 @@ function JudgeTeamCard({
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0">
 						<div className="flex flex-wrap items-center gap-2">
-							<h3 className="m-0 truncate font-medium text-base text-black">
+							<h3 className="m-0 truncate font-medium text-base text-foreground">
 								{assignment.team.name}
 							</h3>
 							{scored ? (
 								<Link
 									aria-label={`Edit score for ${assignment.team.name}`}
-									className="rounded-full bg-[#d8f6ee] px-2 py-0.5 font-medium text-[#02644f] text-[11px] transition hover:bg-[#c6f0e5]"
+									className="rounded-full bg-judging-success-muted px-2 py-0.5 font-medium text-judging-success-foreground text-xs transition hover:bg-judging-success-hover"
 									href={scoreHref}
 								>
 									Scored
 								</Link>
 							) : null}
 						</div>
-						<p className="mt-1 mb-0 text-[#767676] text-[11px]">
+						<p className="mt-1 mb-0 text-muted-foreground text-xs">
 							Team ID: {getTeamCode(assignment)}
 						</p>
 					</div>
-					<div className="shrink-0 text-left text-[#767676] text-xs sm:text-right">
+					<div className="shrink-0 text-left text-muted-foreground text-xs sm:text-right">
 						<p className="m-0">
 							{formatTime(assignment.timeSlot)}
 							{assignment.timeSlot ? " • " : ""}
@@ -140,11 +139,11 @@ function JudgeTeamCard({
 									if (value === undefined) return null;
 									return (
 										<span
-											className="inline-flex items-center gap-2 rounded-full bg-[#f7f5ff] px-3 py-1 text-[#1a1a1a] text-[11px]"
+											className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-foreground text-xs"
 											key={criterion.id}
 										>
 											{criterion.name}
-											<span className="rounded-full bg-[#7054fd] px-2 py-0.5 font-medium text-[10px] text-white">
+											<span className="rounded-full bg-primary px-2 py-0.5 font-medium text-primary-foreground text-xs">
 												{value}/{criterion.maxScore}
 											</span>
 										</span>
@@ -164,17 +163,17 @@ function JudgeTeamCard({
 										<strong className="block font-semibold text-base leading-5">
 											{value}
 										</strong>
-										<span className="block truncate text-[#292929] text-[9px] uppercase leading-3">
+										<span className="block truncate text-foreground text-xs uppercase leading-3">
 											{criterion.name}
 										</span>
 									</div>
 								);
 							})}
-							<div className="rounded-xl border border-[#d6d6d6] bg-[#fafafa] px-2 py-2 text-center">
+							<div className="rounded-xl border border-border bg-muted px-2 py-2 text-center">
 								<strong className="block font-semibold text-base leading-5">
 									{total.max ? `${total.total}/${total.max}` : total.total}
 								</strong>
-								<span className="block text-[#434343] text-[9px] uppercase leading-3">
+								<span className="block text-muted-foreground text-xs uppercase leading-3">
 									Total
 								</span>
 							</div>
@@ -200,20 +199,6 @@ function JudgeTeamCard({
 			</CardContent>
 		</Card>
 	);
-}
-
-function useCurrentTime() {
-	const [currentTime, setCurrentTime] = useState(() => new Date());
-
-	useEffect(() => {
-		const interval = window.setInterval(
-			() => setCurrentTime(new Date()),
-			30_000
-		);
-		return () => window.clearInterval(interval);
-	}, []);
-
-	return currentTime;
 }
 
 export function JudgeDashboardPage() {
@@ -280,7 +265,7 @@ export function JudgeDashboardPage() {
 				description="Manage and score your assigned teams."
 				title={
 					<>
-						Hi, <span className="text-[#f70c55]">{userName}</span>!
+						Hi, <span className="text-destructive">{userName}</span>!
 					</>
 				}
 			>
@@ -309,7 +294,7 @@ export function JudgeDashboardPage() {
 					) : null}
 
 					<section className="flex flex-col gap-4">
-						<h2 className="m-0 font-medium text-[22px] leading-7">
+						<h2 className="m-0 font-medium text-2xl leading-7">
 							{dashboardRoundName ? `Teams · ${dashboardRoundName}` : "Teams"}
 						</h2>
 						{dashboardAssignments.length > 0 ? (
@@ -329,7 +314,7 @@ export function JudgeDashboardPage() {
 								))}
 							</div>
 						) : (
-							<div className="rounded-2xl border border-[#d6d6d6] border-dashed p-8 text-center text-[#575757]">
+							<div className="rounded-2xl border border-border border-dashed p-8 text-center text-muted-foreground">
 								No teams have been assigned to you yet.
 							</div>
 						)}

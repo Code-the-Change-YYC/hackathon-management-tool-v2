@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -27,6 +27,14 @@ export function useConfirmDialog() {
 	const [state, setState] = useState<ConfirmState | null>(null);
 	const resolveRef = useRef<((value: boolean) => void) | null>(null);
 
+	useEffect(
+		() => () => {
+			resolveRef.current?.(false);
+			resolveRef.current = null;
+		},
+		[]
+	);
+
 	const close = (result: boolean) => {
 		resolveRef.current?.(result);
 		resolveRef.current = null;
@@ -34,16 +42,27 @@ export function useConfirmDialog() {
 	};
 
 	const confirm = (options: ConfirmOptions) => {
+		if (resolveRef.current) return Promise.resolve(false);
 		return new Promise<boolean>((resolve) => {
 			resolveRef.current = resolve;
 			setState({ ...options, open: true });
 		});
 	};
 
-	const dialog = (
+	return { confirm, dialogProps: { state, onClose: close } };
+}
+
+export function ConfirmAlertDialog({
+	state,
+	onClose
+}: {
+	state: ConfirmState | null;
+	onClose: (confirmed: boolean) => void;
+}) {
+	return (
 		<AlertDialog
 			onOpenChange={(open) => {
-				if (!open) close(false);
+				if (!open) onClose(false);
 			}}
 			open={Boolean(state?.open)}
 		>
@@ -55,7 +74,7 @@ export function useConfirmDialog() {
 				<AlertDialogFooter>
 					<AlertDialogCancel>Cancel</AlertDialogCancel>
 					<AlertDialogAction
-						onClick={() => close(true)}
+						onClick={() => onClose(true)}
 						variant={state?.destructive ? "destructive" : "default"}
 					>
 						{state?.confirmLabel ?? "Continue"}
@@ -64,6 +83,4 @@ export function useConfirmDialog() {
 			</AlertDialogContent>
 		</AlertDialog>
 	);
-
-	return { confirm, dialog };
 }

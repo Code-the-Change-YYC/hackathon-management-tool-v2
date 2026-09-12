@@ -1,10 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
+import { useForm } from "react-hook-form";
+import {
+	ConfirmAlertDialog,
+	useConfirmDialog
+} from "@/app/components/ConfirmAlertDialog";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
-import { Field, FieldLabel } from "@/app/components/ui/field";
+import {
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel
+} from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
 import {
 	Table,
@@ -26,22 +35,26 @@ export function RoundManagement({
 	onSelectRound: (roundId: string) => void;
 	selectedRoundId: string;
 }) {
-	const { confirm, dialog } = useConfirmDialog();
+	const { confirm, dialogProps } = useConfirmDialog();
 	const utils = api.useUtils();
 	const roundsQuery = api.judgingRounds.getAll.useQuery();
 	const settingsQuery = api.hackathonSettings.get.useQuery();
 	const allAssignmentsQuery = api.judgingAssignments.getAll.useQuery();
 	const [editingId, setEditingId] = useState<string | null>(null);
-	const [name, setName] = useState("");
-	const [startTime, setStartTime] = useState("");
-	const [endTime, setEndTime] = useState("");
+	const {
+		register,
+		handleSubmit,
+		reset,
+		getValues,
+		formState: { errors }
+	} = useForm({
+		defaultValues: { name: "", startTime: "", endTime: "" }
+	});
 	const [message, setMessage] = useState("");
 
 	const resetForm = () => {
 		setEditingId(null);
-		setName("");
-		setStartTime("");
-		setEndTime("");
+		reset({ name: "", startTime: "", endTime: "" });
 	};
 
 	const invalidate = async () => {
@@ -88,7 +101,8 @@ export function RoundManagement({
 		}
 	});
 
-	const submit = () => {
+	const submit = handleSubmit(({ name, startTime, endTime }) => {
+		if (createRound.isPending || updateRound.isPending) return;
 		setMessage("");
 		if (!name.trim() || !startTime || !endTime) return;
 		const values = {
@@ -101,7 +115,7 @@ export function RoundManagement({
 		} else {
 			createRound.mutate(values);
 		}
-	};
+	});
 	const scoredRoundIds = useMemo(() => {
 		const ids = new Set<string>();
 		for (const assignment of allAssignmentsQuery.data ?? []) {
@@ -118,55 +132,79 @@ export function RoundManagement({
 			id="round-management"
 			title="Judging rounds"
 		>
-			<div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-				<Field className="min-w-0 flex-1 gap-2">
-					<FieldLabel>Round name</FieldLabel>
-					<Input
-						className="h-12"
-						onChange={(event) => setName(event.target.value)}
-						placeholder="Preliminary round"
-						value={name}
-					/>
-				</Field>
-				<Field className="min-w-0 flex-1 gap-2">
-					<FieldLabel>Starts</FieldLabel>
-					<Input
-						className="h-12"
-						onChange={(event) => setStartTime(event.target.value)}
-						type="datetime-local"
-						value={startTime}
-					/>
-				</Field>
-				<Field className="min-w-0 flex-1 gap-2">
-					<FieldLabel>Ends</FieldLabel>
-					<Input
-						className="h-12"
-						onChange={(event) => setEndTime(event.target.value)}
-						type="datetime-local"
-						value={endTime}
-					/>
-				</Field>
-				<div className="flex gap-2">
-					<Button
-						disabled={
-							!name.trim() ||
-							!startTime ||
-							!endTime ||
-							createRound.isPending ||
-							updateRound.isPending
-						}
-						onClick={submit}
-						type="button"
+			<form onSubmit={submit}>
+				<FieldGroup className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+					<Field
+						className="min-w-0 flex-1 gap-2"
+						data-invalid={Boolean(errors.name)}
 					>
-						{editingId ? "Save round" : "Add round"}
-					</Button>
-					{editingId ? (
-						<Button onClick={resetForm} type="button" variant="outline">
-							Cancel
+						<FieldLabel htmlFor="round-name">Round name</FieldLabel>
+						<Input
+							aria-invalid={Boolean(errors.name)}
+							className="h-12"
+							id="round-name"
+							{...register("name", {
+								required: "This field is required.",
+								validate: (value) =>
+									Boolean(value.trim()) || "Round name is required."
+							})}
+							placeholder="Preliminary round"
+						/>
+						<FieldError errors={[errors.name]} />
+					</Field>
+					<Field
+						className="min-w-0 flex-1 gap-2"
+						data-invalid={Boolean(errors.startTime)}
+					>
+						<FieldLabel htmlFor="round-startTime">Starts</FieldLabel>
+						<Input
+							aria-invalid={Boolean(errors.startTime)}
+							className="h-12"
+							id="round-startTime"
+							{...register("startTime", {
+								required: "This field is required.",
+								validate: (value) =>
+									!Number.isNaN(new Date(value).getTime()) ||
+									"Choose a valid start time."
+							})}
+							type="datetime-local"
+						/>
+						<FieldError errors={[errors.startTime]} />
+					</Field>
+					<Field
+						className="min-w-0 flex-1 gap-2"
+						data-invalid={Boolean(errors.endTime)}
+					>
+						<FieldLabel htmlFor="round-endTime">Ends</FieldLabel>
+						<Input
+							aria-invalid={Boolean(errors.endTime)}
+							className="h-12"
+							id="round-endTime"
+							{...register("endTime", {
+								required: "This field is required.",
+								validate: (value) =>
+									new Date(value) > new Date(getValues("startTime")) ||
+									"End time must be after start time."
+							})}
+							type="datetime-local"
+						/>
+						<FieldError errors={[errors.endTime]} />
+					</Field>
+					<div className="flex gap-2">
+						<Button
+							disabled={createRound.isPending || updateRound.isPending}
+							type="submit"
+						>
+							{editingId ? "Save round" : "Add round"}
 						</Button>
-					) : null}
-				</div>
-			</div>
+						{editingId ? (
+							<Button onClick={resetForm} type="button" variant="outline">
+								Cancel
+							</Button>
+						) : null}
+					</div>
+				</FieldGroup>
+			</form>
 
 			<div className="mt-6">
 				<Table className="min-w-[760px]">
@@ -222,9 +260,11 @@ export function RoundManagement({
 												disabled={hasScores}
 												onClick={() => {
 													setEditingId(round.id);
-													setName(round.name);
-													setStartTime(toDateTimeLocalValue(round.startTime));
-													setEndTime(toDateTimeLocalValue(round.endTime));
+													reset({
+														name: round.name,
+														startTime: toDateTimeLocalValue(round.startTime),
+														endTime: toDateTimeLocalValue(round.endTime)
+													});
 													setMessage("");
 												}}
 												size="sm"
@@ -285,7 +325,7 @@ export function RoundManagement({
 			>
 				{message}
 			</p>
-			{dialog}
+			<ConfirmAlertDialog {...dialogProps} />
 		</ManagementSection>
 	);
 }

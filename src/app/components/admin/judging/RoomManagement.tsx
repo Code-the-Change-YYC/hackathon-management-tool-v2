@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
+import {
+	ConfirmAlertDialog,
+	useConfirmDialog
+} from "@/app/components/ConfirmAlertDialog";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Checkbox } from "@/app/components/ui/checkbox";
@@ -12,6 +15,7 @@ import {
 	FieldSet
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import { tryCatch } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
 import {
@@ -21,7 +25,7 @@ import {
 } from "./judgingShared";
 
 export function RoomManagement({ roundId }: { roundId: string }) {
-	const { confirm, dialog } = useConfirmDialog();
+	const { confirm, dialogProps } = useConfirmDialog();
 	const utils = api.useUtils();
 	const layoutQuery = api.judgingRooms.getLayoutByRound.useQuery(
 		{ roundId },
@@ -85,7 +89,7 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 		roomId?: string;
 		successMessage: string;
 	}) => {
-		if (!roundId) return;
+		if (!roundId || saveLayout.isPending || busyRoomId) return;
 		if (hasScoredAssignments) {
 			setMessage(
 				"This round has scored assignments, so room changes are disabled."
@@ -107,20 +111,22 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 
 		setBusyRoomId(roomId ?? "layout");
 		setMessage("");
-		try {
-			await saveLayout.mutateAsync({
-				layout: { rooms: nextRooms.map(toLayoutRoom) },
-				roundId
-			});
-			await invalidate();
-			setMessage(successMessage);
-		} catch (error) {
+		const { error } = await tryCatch(
+			saveLayout
+				.mutateAsync({
+					layout: { rooms: nextRooms.map(toLayoutRoom) },
+					roundId
+				})
+				.then(invalidate)
+		);
+		setBusyRoomId(null);
+		if (error) {
 			setMessage(
 				error instanceof Error ? error.message : "Room layout update failed."
 			);
-		} finally {
-			setBusyRoomId(null);
+			return;
 		}
+		setMessage(successMessage);
 	};
 
 	const saveRoom = async (roomId: string) => {
@@ -128,6 +134,27 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 			nextRooms: rooms,
 			roomId,
 			successMessage: "Room details saved."
+		});
+	};
+
+	const removeRoom = async (room: (typeof rooms)[number]) => {
+		if (saveLayout.isPending || busyRoomId || hasScoredAssignments) return;
+
+		if (
+			!(await confirm({
+				title: `Delete ${room.name}?`,
+				description:
+					"Its unscored assignments will also be removed from the saved layout.",
+				confirmLabel: "Delete",
+				destructive: true
+			}))
+		) {
+			return;
+		}
+		await persistRooms({
+			nextRooms: rooms.filter((candidate) => candidate.id !== room.id),
+			roomId: room.id,
+			successMessage: "Room deleted."
 		});
 	};
 
@@ -190,26 +217,7 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 								</div>
 								<Button
 									disabled={saveLayout.isPending || hasScoredAssignments}
-									onClick={async () => {
-										if (
-											!(await confirm({
-												title: `Delete ${room.name}?`,
-												description:
-													"Its unscored assignments will also be removed from the saved layout.",
-												confirmLabel: "Delete",
-												destructive: true
-											}))
-										) {
-											return;
-										}
-										await persistRooms({
-											nextRooms: rooms.filter(
-												(candidate) => candidate.id !== room.id
-											),
-											roomId: room.id,
-											successMessage: "Room deleted."
-										});
-									}}
+									onClick={() => void removeRoom(room)}
 									size="sm"
 									title={
 										hasScoredAssignments
@@ -310,7 +318,7 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 			>
 				{message}
 			</p>
-			{dialog}
+			<ConfirmAlertDialog {...dialogProps} />
 		</ManagementSection>
 	);
 }
