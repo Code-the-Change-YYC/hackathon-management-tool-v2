@@ -1,12 +1,10 @@
+import Link from "next/link";
 import TeamTable from "@/app/components/admin/teamtable/TeamTable";
 import UserTable from "@/app/components/admin/usertable";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 import CriteriaTable from "../components/admin/criteriaTable/CriteriaTable";
 import HackathonSettingsPanel from "../components/admin/hackathonSettings/HackathonSettingsPanel";
-import JudgingAssignmentsTable from "../components/admin/judgingAssignmentsTable/JudgingAssignmentsTable";
-import JudgingRoomsManager from "../components/admin/judgingRooms/JudgingRoomsManager";
-import JudgingRoundsTable from "../components/admin/judgingRounds/JudgingRoundsTable";
 import ScoreTable from "../components/admin/scoreTable/ScoreTable";
 
 export default async function AdminPage() {
@@ -29,20 +27,24 @@ export default async function AdminPage() {
 						Welcome back, Admin!
 					</h2>
 					<p>Manage your hackathon settings, users, and rounds here.</p>
+					<p>
+						Judging rounds, rooms, and scheduling live in the{" "}
+						<Link href="/admin/judge">judging workspace</Link>.
+					</p>
 				</div>
 			</div>
 			<div>
-				<div>
+				<div id="settings">
 					<h2 className="mt-8 font-semibold text-grey-purple text-xl">
 						Hackathon Settings
 					</h2>
 					<HackathonSettingsPanel />
 				</div>
-				<div>
+				<div id="users">
 					<h2 className="mt-8 font-semibold text-grey-purple text-xl">Users</h2>
 					<UserTable />
 				</div>
-				<div>
+				<div id="teams">
 					<h2 className="mt-8 font-semibold text-grey-purple text-xl">Teams</h2>
 					<TeamTable />
 				</div>
@@ -51,24 +53,6 @@ export default async function AdminPage() {
 						Criteria
 					</h2>
 					<CriteriaTable />
-				</div>
-				<div>
-					<h2 className="mt-8 font-semibold text-grey-purple text-xl">
-						Judging Rounds
-					</h2>
-					<JudgingRoundsTable />
-				</div>
-				<div>
-					<h2 className="mt-8 font-semibold text-grey-purple text-xl">
-						Judging Assignments
-					</h2>
-					<JudgingAssignmentsTable />
-				</div>
-				<div>
-					<h2 className="mt-8 font-semibold text-grey-purple text-xl">
-						Judging Rooms
-					</h2>
-					<JudgingRoomsManager />
 				</div>
 				<div>
 					<h2 className="mt-8 font-semibold text-grey-purple text-xl">
