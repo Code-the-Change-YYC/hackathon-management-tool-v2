@@ -1,16 +1,25 @@
-import { TRPCError } from "@trpc/server";
-import { desc, eq } from "drizzle-orm";
-import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { DIETARY_RESTRICTIONS, PROGRAMS, user } from "@/server/db/auth-schema";
+/**
+ * tRPC router for user management.
+ *
+ * `completeRegistrationByEmail` upgrades `role` to PARTICIPANT when it
+ * isn't already a real app role: better-auth's `signUpEmail` sets a
+ * generic default role ("user") that isn't one of this app's roles, so
+ * left as-is, new self-service signups would get redirected out of every
+ * role-gated page (e.g. `/participant`, `/team`). The SQL `case` guards
+ * against downgrading an existing admin/judge.
+ */
 
-const dietaryRestrictionsSchema = z
-	.array(z.enum(DIETARY_RESTRICTIONS))
-	.max(DIETARY_RESTRICTIONS.length)
-	.refine(
-		(restrictions) => new Set(restrictions).size === restrictions.length,
-		{ message: "Duplicate dietary restrictions are not allowed" }
-	);
+import { TRPCError } from "@trpc/server";
+import { desc, eq, sql } from "drizzle-orm";
+import { z } from "zod";
+import {
+	dietaryRestrictionsSchema,
+	PROGRAMS,
+	signupEventDetailsSchema
+} from "@/lib/validation/signup";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { user } from "@/server/db/auth-schema";
+import { Role } from "@/types/types";
 
 export const usersRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -65,14 +74,7 @@ export const usersRouter = createTRPCRouter({
 			return updated;
 		}),
 	completeRegistration: protectedProcedure
-		.input(
-			z.object({
-				school: z.string().optional(),
-				program: z.enum(PROGRAMS).optional(),
-				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
-				wantsFood: z.enum(["yes", "no"]).optional()
-			})
-		)
+		.input(signupEventDetailsSchema)
 		.mutation(async ({ ctx, input }) => {
 			const [updated] = await ctx.db
 				.update(user)
@@ -80,7 +82,8 @@ export const usersRouter = createTRPCRouter({
 					school: input.school?.trim() ? input.school.trim() : null,
 					program: input.program ?? null,
 					dietaryRestrictions: input.dietaryRestrictions ?? [],
-					completedRegistration: true
+					completedRegistration: true,
+					role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
 				})
 				.where(eq(user.id, ctx.session.user.id))
 				.returning();

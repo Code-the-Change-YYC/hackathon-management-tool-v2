@@ -9,17 +9,18 @@ test("an authenticated incomplete user completes their own registration", async 
 }) => {
 	await authenticatedPage.goto("/signup/identity");
 
-	await expect(
-		authenticatedPage.getByText("Your Google account is connected")
-	).toBeVisible();
-	await expect(authenticatedPage.getByLabel("Email")).toHaveAttribute(
-		"readonly"
-	);
+	await expect(authenticatedPage.getByLabel("Email")).toHaveCount(0);
 	await expect(authenticatedPage.getByLabel("Password")).toHaveCount(0);
 	await authenticatedPage.getByLabel("First name").fill("Updated");
 	await authenticatedPage.getByLabel("Last name").fill("Participant");
 	await authenticatedPage
-		.getByRole("button", { name: "Continue to event details" })
+		.getByLabel("Which institution are you attending?*")
+		.click();
+	await authenticatedPage
+		.getByRole("option", { name: "SAIT", exact: true })
+		.click();
+	await authenticatedPage
+		.getByRole("button", { name: "Continue", exact: true })
 		.click();
 
 	const selectOption = async (label: string, option: string) => {
@@ -28,13 +29,15 @@ test("an authenticated incomplete user completes their own registration", async 
 			.getByRole("option", { name: option, exact: true })
 			.click();
 	};
-	await selectOption("Which institution do you go to?", "SAIT");
-	await selectOption("Which program are you in?", "computer science");
-	await selectOption("Do you want provided food at the hackathon?", "Yes");
+	await selectOption(
+		"Do you want to be provided free meals at the hackathon?*",
+		"Yes"
+	);
 	await authenticatedPage
-		.getByRole("button", { name: "Complete registration" })
+		.getByRole("button", { name: "Continue", exact: true })
 		.click();
-
+	// wait for the redirect to the home page after registration completion
+	await authenticatedPage.waitForURL(/\/$/);
 	await expect(authenticatedPage).toHaveURL(/\/$/);
 
 	const savedUser = await db.query.user.findFirst({
@@ -43,7 +46,7 @@ test("an authenticated incomplete user completes their own registration", async 
 	expect(savedUser).toMatchObject({
 		completedRegistration: true,
 		school: "SAIT",
-		program: "computer_science",
+		program: null,
 		name: "Updated Participant"
 	});
 });
