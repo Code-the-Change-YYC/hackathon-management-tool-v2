@@ -40,7 +40,7 @@ export default async function ParticipantLayout({
 				},
 				{
 					title: "Resources and Help",
-					href: "participant/resources",
+					href: "/participant/resources",
 					icon: "question"
 				}
 			]
