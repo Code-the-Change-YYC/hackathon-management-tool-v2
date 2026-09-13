@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { AdminSidebar } from "@/app/components/admin/AdminSidebar";
 import { RegisteredUsersView } from "@/app/components/admin/participants/RegisteredUsersView";
 import type { Participant } from "@/app/components/admin/participants/types";
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { Role } from "@/types/types";
+import { AppSidebar, type NavGroup } from "@/app/components/layout/AppSidebar";
+import { AppSidebarTriggerHeader } from "@/app/components/layout/AppSidebar";
 
 export const metadata: Metadata = {
 	title: "Registered Users"
@@ -194,11 +195,37 @@ const MOCK_PARTICIPANTS: Participant[] = [
 	}
 ];
 
+const ADMIN_NAV_GROUPS: NavGroup[] = [
+	{
+		groupLabel: "Event Management",
+		items: [
+			{ title: "Schedule", href: "/admin/schedule", icon: "calendar" },
+			{
+				title: "Registered Users",
+				href: "/admin/participants",
+				icon: "user"
+			},
+			{ title: "Teams", href: "/admin/teams", icon: "group" },
+			{ title: "Meals", href: "/admin/meals", icon: "hamburger" },
+			{
+				title: "Judging Information",
+				href: "/admin/judging",
+				icon: "task"
+			}
+		]
+	},
+	{
+		groupLabel: "App Management",
+		items: [{ title: "Admin Controls", href: "/admin", icon: "settings" }]
+	}
+];
+
 export default function AdminParticipantsPage() {
 	return (
 		<SidebarProvider>
-			<AdminSidebar userName="Victoria" />
+			<AppSidebar navGroups={ADMIN_NAV_GROUPS} userName="Admin User" />
 			<SidebarInset>
+				<AppSidebarTriggerHeader />
 				<RegisteredUsersView participants={MOCK_PARTICIPANTS} />
 			</SidebarInset>
 		</SidebarProvider>
