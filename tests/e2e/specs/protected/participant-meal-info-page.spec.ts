@@ -35,7 +35,7 @@ test("participant sees their name and scheduled meals", async ({
 		title: "Participant lunch"
 	});
 
-	await authenticatedPage.goto("/participant/meal-info");
+	await authenticatedPage.goto("/participant/meals");
 	await expect(authenticatedPage.getByText(authUser.name)).toBeVisible();
 
 	const scheduleItems = authenticatedPage.locator("ol h4");
