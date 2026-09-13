@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { RegisteredUsersView } from "@/app/components/admin/participants/RegisteredUsersView";
 import type { Participant } from "@/app/components/admin/participants/types";
+import {
+	AppSidebar,
+	AppSidebarTriggerHeader,
+	type NavGroup
+} from "@/app/components/layout/AppSidebar";
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { Role } from "@/types/types";
-import { AppSidebar, type NavGroup } from "@/app/components/layout/AppSidebar";
-import { AppSidebarTriggerHeader } from "@/app/components/layout/AppSidebar";
 
 export const metadata: Metadata = {
 	title: "Registered Users"

@@ -1,11 +1,11 @@
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
+import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
+import { Role } from "@/types/types";
+import type { NavGroup } from "../components/layout/AppSidebar";
 import {
 	AppSidebar,
 	AppSidebarTriggerHeader
 } from "../components/layout/AppSidebar";
-import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
-import type { NavGroup } from "../components/layout/AppSidebar";
-import { Role } from "@/types/types";
 
 export default async function ParticipantLayout({
 	children
