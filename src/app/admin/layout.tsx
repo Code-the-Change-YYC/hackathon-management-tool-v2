@@ -35,7 +35,9 @@ export default async function AdminLayout({
 		},
 		{
 			groupLabel: "App Management",
-			items: [{ title: "Admin Controls", href: "/admin", icon: "settings" }]
+			items: [
+				{ title: "Admin Controls", href: "/admin/controls", icon: "settings" }
+			]
 		}
 	];
 
