@@ -1,6 +1,6 @@
 "use client";
 
-import { CloseFill, NotificationLine } from "@mingcute/react";
+import { CloseFill } from "@mingcute/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -14,8 +14,6 @@ import {
 	AlertDialogTitle
 } from "@/app/components/ui/alert-dialog";
 import { Badge } from "@/app/components/ui/badge";
-import { Button } from "@/app/components/ui/button";
-import { SidebarTrigger } from "@/app/components/ui/sidebar";
 import PageHeader from "../../PageHeader";
 import { EditParticipantDialog } from "./EditParticipantDialog";
 import { InviteUserDialog } from "./InviteUserDialog";
@@ -203,13 +201,6 @@ export function RegisteredUsersView({
 
 	return (
 		<div className="flex min-h-svh flex-col">
-			<header className="flex items-center justify-between gap-2 border-b px-4 py-3 md:hidden">
-				<SidebarTrigger />
-				<Button aria-label="Notifications" size="icon-sm" variant="ghost">
-					<NotificationLine />
-				</Button>
-			</header>
-
 			<div className="flex flex-1 flex-col gap-5 p-4 md:p-8">
 				<PageHeader
 					description="View all participants"
