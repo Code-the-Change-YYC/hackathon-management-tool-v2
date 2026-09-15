@@ -21,7 +21,7 @@ export default async function JudgingCriteria() {
 					</div>
 
 					<div className="min-w-0 flex-1 font-medium text-base text-dark-grey leading-6 sm:text-lg sm:leading-7">
-						<h3>{criterion.name}</h3>
+						<h3 className="font-bold text-lg sm:text-2xl">{criterion.name}</h3>
 						{criterion.description && <p>{criterion.description}</p>}
 					</div>
 				</li>
