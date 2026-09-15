@@ -1,8 +1,5 @@
-import { NotificationLine } from "@mingcute/react";
 import type { ScheduleItemData } from "@/app/components/ScheduleItem";
 import { ScheduleSection } from "@/app/components/ScheduleSection";
-import { Button } from "@/app/components/ui/button";
-import { SidebarTrigger } from "@/app/components/ui/sidebar";
 import { api } from "@/trpc/server";
 import PageHeader from "../../PageHeader";
 
@@ -21,12 +18,6 @@ export default async function ScheduleView() {
 
 	return (
 		<div className="flex min-h-svh flex-1 flex-col overflow-y-auto bg-white">
-			<header className="flex items-center justify-between gap-2 border-b px-4 py-3 md:hidden">
-				<SidebarTrigger />
-				<Button aria-label="Notifications" size="icon-sm" variant="ghost">
-					<NotificationLine />
-				</Button>
-			</header>
 			<div className="flex flex-col gap-6 p-6">
 				<PageHeader
 					description="View all hackathon events and activities"
