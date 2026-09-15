@@ -6,6 +6,7 @@ import {
 	it,
 	onTestFinished
 } from "vitest";
+import { Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
 import { EventFixtureTracker } from "../../utils/events";
 import {
@@ -47,7 +48,9 @@ describe("meals.getAllMeals", () => {
 			startTime: new Date(startTime),
 			title: "Earlier meal"
 		});
-		const { caller, cleanup } = await createAuthenticatedCaller();
+		const { caller, cleanup } = await createAuthenticatedCaller({
+			role: Role.ADMIN
+		});
 		onTestFinished(cleanup);
 
 		const meals = await caller.meals.getAllMeals();
