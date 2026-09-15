@@ -1,19 +1,18 @@
-import * as React from "react";
+import { useEffect, useState } from "react";
 
-const MOBILE_BREAKPOINT = 768;
+// Keep this aligned with Tailwind's default md breakpoint.
+const DESKTOP_MEDIA_QUERY = "(min-width: 48rem)";
 
 export function useIsMobile() {
-	const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
-		undefined
-	);
+	const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
 
-	React.useEffect(() => {
-		const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+	useEffect(() => {
+		const mql = window.matchMedia(DESKTOP_MEDIA_QUERY);
 		const onChange = () => {
-			setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+			setIsMobile(!mql.matches);
 		};
 		mql.addEventListener("change", onChange);
-		setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+		onChange();
 		return () => mql.removeEventListener("change", onChange);
 	}, []);
 
