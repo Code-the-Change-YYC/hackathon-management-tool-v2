@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { AdminSidebar } from "@/app/components/admin/AdminSidebar";
 import { RegisteredUsersView } from "@/app/components/admin/participants/RegisteredUsersView";
 import type { Participant } from "@/app/components/admin/participants/types";
-import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { Role } from "@/types/types";
 
 export const metadata: Metadata = {
@@ -195,12 +193,5 @@ const MOCK_PARTICIPANTS: Participant[] = [
 ];
 
 export default function AdminParticipantsPage() {
-	return (
-		<SidebarProvider>
-			<AdminSidebar userName="Victoria" />
-			<SidebarInset>
-				<RegisteredUsersView participants={MOCK_PARTICIPANTS} />
-			</SidebarInset>
-		</SidebarProvider>
-	);
+	return <RegisteredUsersView participants={MOCK_PARTICIPANTS} />;
 }

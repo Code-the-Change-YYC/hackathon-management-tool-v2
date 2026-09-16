@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PageHeader from "@/app/components/PageHeader";
 import { DISCORD_URL } from "@/lib/constants";
 import EditTeamNameModal from "./EditTeamNameModal";
 import InviteCodeModal from "./InviteCodeModal";
@@ -55,14 +56,7 @@ export default function MyTeamView() {
 
 	return (
 		<div className="flex flex-col gap-6 p-6">
-			<div>
-				<h1 className="font-semibold text-[32px] text-grey-800 leading-10">
-					My Team
-				</h1>
-				<p className="font-medium text-[14px] text-grey-600 leading-5">
-					Your team name and members
-				</p>
-			</div>
+			<PageHeader description="Your team name and members" title="My Team" />
 
 			{query.isLoading ? (
 				<div className="h-40 w-full animate-pulse rounded-[12px] bg-grey-100" />
