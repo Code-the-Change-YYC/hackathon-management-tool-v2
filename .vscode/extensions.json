@@ -1,0 +1,8 @@
+{
+	"recommendations": ["biomejs.biome", "ms-playwright.playwright"],
+	"unwantedRecommendations": [
+		"esbenp.prettier-vscode",
+		"dbaeumer.vscode-eslint",
+		"rvest.vs-code-prettier-eslint"
+	]
+}

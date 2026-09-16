@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CloseLine } from "@mingcute/react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { api, type RouterOutputs } from "@/trpc/react";
@@ -85,12 +85,15 @@ export default function ModalPopup({
 					<h1 className="pb-4 font-bold text-6xl text-dark-pink">
 						Scoring <span className="text-medium-pink">{teamName}</span>
 					</h1>
-					<button onClick={onClose} type="button">
-						<Image
-							alt="Exit popup icon"
-							height={20}
-							src="/svgs/judges/exit_icon.svg"
-							width={20}
+					<button
+						aria-label="Close scoring modal"
+						onClick={onClose}
+						type="button"
+					>
+						<CloseLine
+							aria-hidden="true"
+							className="text-dark-grey"
+							size={24}
 						/>
 					</button>
 				</div>

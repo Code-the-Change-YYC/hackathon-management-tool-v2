@@ -28,7 +28,7 @@ export const EDITABLE_FIELDS = new Set([
 	"name",
 	"email",
 	"role",
-	"allergies",
+	"dietaryRestrictions",
 	"school",
 	"program",
 	"completedRegistration",
@@ -75,7 +75,6 @@ export const createUserColumnDefs = (): ColDef<User>[] => [
 		cellEditorParams: { values: ["", ...PROGRAMS] },
 		valueParser: (params) => parseEnumValue(params)
 	},
-	{ field: "allergies", editable: true, minWidth: 160 },
 	{
 		field: "completedRegistration",
 		editable: true,

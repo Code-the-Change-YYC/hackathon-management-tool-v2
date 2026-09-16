@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
@@ -9,13 +9,18 @@ import { criteria } from "@/server/db/scores-schema";
 
 export const criteriaRouter = createTRPCRouter({
 	getAll: publicProcedure.query(async ({ ctx }) => {
-		return await ctx.db.query.criteria.findMany();
+		return await ctx.db
+			.select()
+			.from(criteria)
+			.orderBy(asc(criteria.displayOrder), asc(criteria.name));
 	}),
 
 	create: adminProcedure
 		.input(
 			z.object({
 				name: z.string().min(1),
+				description: z.string().default(""),
+				displayOrder: z.number().int().default(0),
 				maxScore: z.number().int().default(10),
 				isSidepot: z.boolean().default(false)
 			})
@@ -29,6 +34,8 @@ export const criteriaRouter = createTRPCRouter({
 			z.object({
 				id: z.string().uuid(),
 				name: z.string().min(1).optional(),
+				description: z.string().optional(),
+				displayOrder: z.number().int().optional(),
 				maxScore: z.number().optional(),
 				isSidepot: z.boolean().optional()
 			})

@@ -1,3 +1,4 @@
+import { Edit2Line } from "@mingcute/react";
 import type { ICellRendererParams } from "ag-grid-community";
 import {
 	AllCommunityModule,
@@ -5,7 +6,6 @@ import {
 	themeQuartz
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import Image from "next/image";
 import { useMemo } from "react";
 import type { RouterOutputs } from "@/trpc/react";
 import {
@@ -108,12 +108,7 @@ function ActionCellRenderer({ data, context }: ActionRendererParams) {
 		>
 			<div className="flex flex-row gap-2">
 				Edit
-				<Image
-					alt="Edit icon"
-					height={16}
-					src="/svgs/judges/edit_icon.svg"
-					width={16}
-				/>
+				<Edit2Line aria-hidden="true" className="text-medium-pink" size={16} />
 			</div>
 		</button>
 	);

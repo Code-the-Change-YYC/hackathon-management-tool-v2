@@ -1,0 +1,121 @@
+import type { StaticImageData } from "next/image";
+import Image from "next/image";
+import type { ReactNode } from "react";
+
+const ACCENT_SRC = {
+	accent_green: "/svgs/landingPage/accent_green.svg",
+	accent_purple: "/svgs/landingPage/accent_purple.svg",
+	accent_pink: "/svgs/landingPage/accent_pink.svg"
+} as const;
+export interface InfoSectionProps {
+	title?: string;
+	titlePrefixColor?: string;
+	titleColor?: string;
+	titleHighlight: string;
+	bodyTextColor?: string;
+	paragraphs?: string[];
+	bodyContent?: ReactNode;
+	imageSrc?: string | StaticImageData;
+	imageAlt?: string;
+	bgColor: string;
+	accentSrc?: keyof typeof ACCENT_SRC;
+	accentPosition?: "before" | "after";
+	reverse?: boolean;
+}
+
+export default function InfoSection({
+	title,
+	titlePrefixColor = "text-white",
+	titleColor = "text-white",
+	titleHighlight,
+	bodyTextColor = "text-white/80",
+	paragraphs,
+	bodyContent,
+	imageSrc,
+	imageAlt,
+	bgColor,
+	accentSrc,
+	accentPosition = "before",
+	reverse = false
+}: InfoSectionProps) {
+	return (
+		<SectionWrapper bgColor={bgColor} reverse={reverse}>
+			{imageSrc && (
+				<div className="relative flex size-48 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md sm:size-64 md:size-72 md:rounded-[30px] xl:size-96">
+					<Image
+						alt={imageAlt ?? ""}
+						className="object-contain"
+						height={298}
+						src={imageSrc}
+						width={326}
+					/>
+				</div>
+			)}
+
+			<div className="flex w-full max-w-lg flex-col gap-4 md:gap-6">
+				{titleHighlight && (
+					<div className="relative inline-flex items-center gap-2">
+						{accentSrc && accentPosition === "before" && (
+							<Image
+								alt=""
+								className="-left-6 -translate-y-1/2 sm:-left-10 absolute top-1/2"
+								height={20}
+								src={ACCENT_SRC[accentSrc]}
+								width={16}
+							/>
+						)}
+						<h2 className="pr-2 font-semibold text-2xl sm:text-3xl md:text-5xl">
+							{title && (
+								<span className={`${titlePrefixColor} not-italic`}>
+									{title}{" "}
+								</span>
+							)}
+							<span className={`${titleColor} italic`}>{titleHighlight}</span>
+						</h2>
+						{accentSrc && accentPosition === "after" && (
+							<Image
+								alt=""
+								className="shrink-0"
+								height={20}
+								src={ACCENT_SRC[accentSrc]}
+								width={16}
+							/>
+						)}
+					</div>
+				)}
+
+				{bodyContent
+					? bodyContent
+					: paragraphs?.map((para) => (
+							<p
+								className={`${bodyTextColor} relative font-medium text-base leading-6 sm:text-xl sm:leading-7 md:text-2xl md:leading-8`}
+								key={para}
+							>
+								{para}
+							</p>
+						))}
+			</div>
+		</SectionWrapper>
+	);
+}
+export function SectionWrapper({
+	children,
+	bgColor,
+	reverse = false
+}: {
+	children: ReactNode;
+	bgColor: string;
+	reverse?: boolean;
+}) {
+	return (
+		<section
+			className={`w-full ${bgColor} px-6 py-12 sm:px-12 md:px-20 lg:px-40 lg:py-32`}
+		>
+			<div
+				className={`mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 md:gap-18 ${reverse ? "md:flex-row-reverse" : "md:flex-row"}`}
+			>
+				{children}
+			</div>
+		</section>
+	);
+}

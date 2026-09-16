@@ -1,22 +1,41 @@
+/**
+ * Drizzle schema for better-auth's core tables (user, session, account,
+ * verification) plus the organization/member/invitation tables used to
+ * model teams.
+ *
+ * `member_userId_idx` is a unique index, not just a lookup index: a user
+ * can only belong to one team at a time (also enforced in app code by
+ * `ensureNotInTeam()`). Making it unique turns that into a real DB
+ * guarantee, so concurrent join/create requests for the same user can't
+ * both succeed and leave them on multiple teams. Since this project pushes
+ * schema changes with `drizzle-kit push` rather than generated migrations,
+ * `drizzle/dedupe-members.ts` (run automatically by `pnpm db:push`) removes
+ * any pre-existing duplicate `member.userId` rows before this index is
+ * applied.
+ */
+
 import {
 	type InferInsertModel,
 	type InferSelectModel,
-	relations
+	relations,
+	sql
 } from "drizzle-orm";
 import {
 	boolean,
 	index,
 	pgTableCreator,
 	text,
-	timestamp
+	timestamp,
+	uniqueIndex
 } from "drizzle-orm/pg-core";
+import { DIETARY_RESTRICTIONS, PROGRAMS } from "@/lib/validation/signup";
 
-export const PROGRAMS = [
-	"computer_science",
-	"software_engineering",
-	"electrical_engineering",
-	"other"
-] as const;
+export {
+	DIETARY_RESTRICTIONS,
+	type DietaryRestriction,
+	PROGRAMS,
+	SCHOOLS
+} from "@/lib/validation/signup";
 
 const MEMBER_ROLE_VALUES = ["owner", "member", "admin"] as const;
 export const PRESCREEN_STATUS_VALUES = ["pending", "passed", "failed"] as const;
@@ -38,7 +57,12 @@ export const user = createTable("user", {
 	banned: boolean("banned").default(false),
 	banReason: text("ban_reason"),
 	banExpires: timestamp("ban_expires"),
-	allergies: text("allergies"),
+	dietaryRestrictions: text("dietary_restriction", {
+		enum: DIETARY_RESTRICTIONS
+	})
+		.array()
+		.default(sql`ARRAY[]::text[]`)
+		.notNull(),
 	school: text("school"),
 	program: text("program", { enum: PROGRAMS }),
 	completedRegistration: boolean("completed_registration")
@@ -142,7 +166,7 @@ export const member = createTable(
 	},
 	(table) => [
 		index("member_organizationId_idx").on(table.organizationId),
-		index("member_userId_idx").on(table.userId)
+		uniqueIndex("member_userId_idx").on(table.userId)
 	]
 );
 

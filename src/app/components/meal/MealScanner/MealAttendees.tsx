@@ -3,7 +3,9 @@
 import { api } from "@/trpc/react";
 
 export default function MealAttendees({ mealId }: { mealId: string }) {
-	const getMealAttendees = api.meals.getMealAttendees.useQuery({ id: mealId });
+	const getMealAttendees = api.events.getEventAttendees.useQuery({
+		eventId: mealId
+	});
 
 	if (!getMealAttendees.data || getMealAttendees.data.length === 0) {
 		return <div className="text-medium-grey text-sm">No attendees yet.</div>;

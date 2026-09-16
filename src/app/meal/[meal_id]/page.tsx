@@ -6,7 +6,7 @@ export default async function MealPage({
 }: {
 	params: Promise<{ meal_name: string }>;
 }) {
-	await requireRole([Role.JUDGE, Role.ADMIN]);
+	await requireRole([Role.ADMIN]);
 	const { meal_name } = await params;
 
 	return (

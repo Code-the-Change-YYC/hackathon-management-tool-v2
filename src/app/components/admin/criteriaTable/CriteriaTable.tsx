@@ -8,17 +8,12 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useMemo, useRef, useState } from "react";
-import { api } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import { TABLE_THEME_PARAMS } from "@/types/teamTableConstants";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-type Criteria = {
-	id: string;
-	name: string;
-	maxScore: number;
-	isSidepot: boolean;
-};
+type Criteria = RouterOutputs["criteria"]["getAll"][number];
 
 export default function CriteriaTable() {
 	const { data, isLoading } = api.criteria.getAll.useQuery();
@@ -28,6 +23,8 @@ export default function CriteriaTable() {
 	const [deleteTarget, setDeleteTarget] = useState<Criteria | null>(null);
 	const [hasScores, setHasScores] = useState(false);
 	const [newName, setNewName] = useState("");
+	const [newDescription, setNewDescription] = useState("");
+	const [newDisplayOrder, setNewDisplayOrder] = useState(0);
 	const [newMaxScore, setNewMaxScore] = useState(10);
 	const [newIsSidepot, setNewIsSidepot] = useState(false);
 	const [addError, setAddError] = useState("");
@@ -41,6 +38,8 @@ export default function CriteriaTable() {
 		onSuccess: async () => {
 			await utils.criteria.getAll.invalidate();
 			setNewName("");
+			setNewDescription("");
+			setNewDisplayOrder(0);
 			setNewMaxScore(10);
 			setNewIsSidepot(false);
 			setShowAddForm(false);
@@ -68,6 +67,18 @@ export default function CriteriaTable() {
 				field: "name",
 				editable: true,
 				flex: 2
+			},
+			{
+				headerName: "Description",
+				field: "description",
+				editable: true,
+				flex: 4
+			},
+			{
+				headerName: "Display Order",
+				field: "displayOrder",
+				editable: true,
+				width: 130
 			},
 			{
 				headerName: "Max Score",
@@ -124,6 +135,8 @@ export default function CriteriaTable() {
 		if (!newName.trim()) return;
 		create.mutate({
 			name: newName,
+			description: newDescription.trim(),
+			displayOrder: newDisplayOrder,
 			maxScore: newMaxScore,
 			isSidepot: newIsSidepot
 		});
@@ -167,6 +180,18 @@ export default function CriteriaTable() {
 						value={newName}
 					/>
 					<input
+						onChange={(e) => setNewDescription(e.target.value)}
+						placeholder="Description"
+						value={newDescription}
+					/>
+					<input
+						aria-label="Display order"
+						onChange={(e) => setNewDisplayOrder(Number(e.target.value))}
+						style={{ width: 100 }}
+						type="number"
+						value={newDisplayOrder}
+					/>
+					<input
 						max={100}
 						min={1}
 						onChange={(e) => setNewMaxScore(Number(e.target.value))}
@@ -207,7 +232,12 @@ export default function CriteriaTable() {
 					onCellValueChanged={(e) => {
 						if (!e.data || !e.colDef.field) return;
 						if (e.newValue === e.oldValue) return;
-						if (e.colDef.field === "name" || e.colDef.field === "maxScore") {
+						if (
+							e.colDef.field === "name" ||
+							e.colDef.field === "description" ||
+							e.colDef.field === "displayOrder" ||
+							e.colDef.field === "maxScore"
+						) {
 							update.mutate({ id: e.data.id, [e.colDef.field]: e.newValue });
 						}
 					}}

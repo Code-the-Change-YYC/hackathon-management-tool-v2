@@ -1,12 +1,25 @@
+/**
+ * tRPC router for user management.
+ *
+ * `completeRegistrationByEmail` upgrades `role` to PARTICIPANT when it
+ * isn't already a real app role: better-auth's `signUpEmail` sets a
+ * generic default role ("user") that isn't one of this app's roles, so
+ * left as-is, new self-service signups would get redirected out of every
+ * role-gated page (e.g. `/participant`, `/team`). The SQL `case` guards
+ * against downgrading an existing admin/judge.
+ */
+
 import { TRPCError } from "@trpc/server";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
-	createTRPCRouter,
-	protectedProcedure,
-	publicProcedure
-} from "@/server/api/trpc";
-import { PROGRAMS, user } from "@/server/db/auth-schema";
+	dietaryRestrictionsSchema,
+	PROGRAMS,
+	signupEventDetailsSchema
+} from "@/lib/validation/signup";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { user } from "@/server/db/auth-schema";
+import { Role } from "@/types/types";
 
 export const usersRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -15,6 +28,28 @@ export const usersRouter = createTRPCRouter({
 		});
 		return users;
 	}),
+	updateUserDietaryRestrictions: protectedProcedure
+		.input(
+			z.object({
+				dietaryRestrictions: dietaryRestrictionsSchema
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const [updated] = await ctx.db
+				.update(user)
+				.set({ dietaryRestrictions: input.dietaryRestrictions })
+				.where(eq(user.id, ctx.session.user.id))
+				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
+			return updated;
+		}),
 	update: protectedProcedure
 		.input(
 			z.object({
@@ -22,7 +57,7 @@ export const usersRouter = createTRPCRouter({
 				name: z.string().min(1).optional(),
 				email: z.string().email().optional(),
 				role: z.string().optional().nullable(),
-				allergies: z.string().optional().nullable(),
+				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
 				school: z.string().optional().nullable(),
 				program: z.enum(PROGRAMS).optional().nullable(),
 				completedRegistration: z.boolean().optional(),
@@ -38,32 +73,25 @@ export const usersRouter = createTRPCRouter({
 				.returning();
 			return updated;
 		}),
-	completeRegistrationByEmail: publicProcedure
-		.input(
-			z.object({
-				email: z.string().email(),
-				school: z.string().optional(),
-				program: z.enum(PROGRAMS).optional(),
-				allergies: z.string().optional(),
-				wantsFood: z.enum(["yes", "no"]).optional()
-			})
-		)
+	completeRegistration: protectedProcedure
+		.input(signupEventDetailsSchema)
 		.mutation(async ({ ctx, input }) => {
 			const [updated] = await ctx.db
 				.update(user)
 				.set({
 					school: input.school?.trim() ? input.school.trim() : null,
 					program: input.program ?? null,
-					allergies: input.allergies?.trim() ? input.allergies.trim() : null,
-					completedRegistration: true
+					dietaryRestrictions: input.dietaryRestrictions ?? [],
+					completedRegistration: true,
+					role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
 				})
-				.where(eq(user.email, input.email))
+				.where(eq(user.id, ctx.session.user.id))
 				.returning();
 
 			if (!updated) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
-					message: "User not found for registration update"
+					message: "Authenticated user not found"
 				});
 			}
 
