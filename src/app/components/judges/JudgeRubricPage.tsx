@@ -1,3 +1,4 @@
+import PageHeader from "@/app/components/PageHeader";
 import {
 	Accordion,
 	AccordionContent,
@@ -8,7 +9,6 @@ import { getRubricBands } from "@/lib/judging";
 import { tryCatch } from "@/lib/utils";
 import { api } from "@/trpc/server";
 import { ErrorCard } from "./ErrorCard";
-import { PageHeader } from "./PageHeader";
 
 export async function JudgeRubricPage() {
 	const { data, error } = await tryCatch(api.criteria.getAll());

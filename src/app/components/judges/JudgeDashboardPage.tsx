@@ -3,13 +3,13 @@
 import { ArrowRightLine } from "@mingcute/react";
 import Link from "next/link";
 import { useMemo } from "react";
+import PageHeader from "@/app/components/PageHeader";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { ErrorCard } from "./ErrorCard";
 import { JoinMeetingButton } from "./JoinMeetingButton";
 import { LoadingCard } from "./LoadingCard";
-import { PageHeader } from "./PageHeader";
 import {
 	type Criterion,
 	formatTime,
@@ -261,19 +261,20 @@ export function JudgeDashboardPage() {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<PageHeader
-				description="Manage and score your assigned teams."
-				title={
-					<>
-						Hi, <span className="text-destructive">{userName}</span>!
-					</>
-				}
-			>
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+				<PageHeader
+					description="Manage and score your assigned teams."
+					title={
+						<>
+							Hi, <span className="text-strawberry-red">{userName}!</span>
+						</>
+					}
+				/>
 				<div className="flex flex-col items-start gap-1 sm:items-end">
 					<p className="m-0 font-medium text-base">{data.roomSummary}</p>
 					<JoinMeetingButton href={data.firstMeetingLink} />
 				</div>
-			</PageHeader>
+			</div>
 
 			{data.isLoading ? (
 				<LoadingCard />
