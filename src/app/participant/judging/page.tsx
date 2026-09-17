@@ -35,7 +35,7 @@ export default async function ParticipantJudgingPage() {
 									: "a time to be announced"}
 								.
 							</p>
-							<p>Room: {judgingAssignment.room.id.slice(0, 8)}</p>
+							<p>Room: {judgingAssignment.room.name}</p>
 							{judgingAssignment.room.roomLink ? (
 								<p>
 									Link:{" "}

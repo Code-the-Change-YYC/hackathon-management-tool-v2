@@ -1,10 +1,12 @@
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
-import { type organization, user } from "@/server/db/auth-schema";
+import type { db as dbType } from "@/server/db";
+import { organization, user } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
+	judgingRoomDisplayName,
 	judgingRoomStaff,
 	judgingRooms,
 	scores
@@ -12,7 +14,6 @@ import {
 
 const RoomSchema = z.object({
 	id: z.string().uuid(),
-	name: z.string().min(1),
 	roomLink: z.string().optional().nullable(),
 	staffIds: z.array(z.string()).default([]),
 	teamIds: z.array(z.string()).default([]),
@@ -26,90 +27,185 @@ const LayoutSchema = z.object({
 });
 
 type JudgingRoom = typeof judgingRooms.$inferSelect;
+type DbClient =
+	| typeof dbType
+	| Parameters<Parameters<typeof dbType.transaction>[0]>[0];
 
 function hasPassedPrescreen(team: typeof organization.$inferSelect) {
 	return team.prescreenStatus === "passed";
 }
 
+/** Build Room 1..N labels per round (ordered by createdAt). */
+export async function getRoomDisplayNames(
+	db: DbClient,
+	roomIds: string[]
+): Promise<Map<string, string>> {
+	const uniqueIds = [...new Set(roomIds)];
+	if (uniqueIds.length === 0) return new Map();
+
+	const rooms = await db.query.judgingRooms.findMany({
+		where: inArray(judgingRooms.id, uniqueIds),
+		orderBy: (rows, { asc: orderAsc }) => [
+			orderAsc(rows.createdAt),
+			orderAsc(rows.id)
+		]
+	});
+
+	const byRound = new Map<string, JudgingRoom[]>();
+	for (const room of rooms) {
+		const list = byRound.get(room.roundId) ?? [];
+		list.push(room);
+		byRound.set(room.roundId, list);
+	}
+
+	const names = new Map<string, string>();
+	for (const list of byRound.values()) {
+		list.forEach((room, index) => {
+			names.set(room.id, judgingRoomDisplayName(index));
+		});
+	}
+	return names;
+}
+
+export function withRoomDisplayName<T extends { id: string }>(
+	room: T,
+	names: Map<string, string>
+) {
+	return {
+		...room,
+		name: names.get(room.id) ?? "Room"
+	};
+}
+
+export async function assertRoundHasNoScores(db: DbClient, roundId: string) {
+	const scoredAssignments = await db
+		.select({ id: scores.id })
+		.from(scores)
+		.innerJoin(
+			judgingAssignments,
+			eq(scores.assignmentId, judgingAssignments.id)
+		)
+		.innerJoin(judgingRooms, eq(judgingAssignments.roomId, judgingRooms.id))
+		.where(eq(judgingRooms.roundId, roundId))
+		.limit(1);
+	if (scoredAssignments.length > 0) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message:
+				"Cannot replace this schedule because at least one assignment has scores."
+		});
+	}
+}
+
+async function assertTeamsAreSchedulable(db: DbClient, teamIds: string[]) {
+	const uniqueTeamIds = [...new Set(teamIds)];
+	if (uniqueTeamIds.length === 0) return;
+
+	const teams = await db.query.organization.findMany({
+		where: inArray(organization.id, uniqueTeamIds)
+	});
+	if (teams.length !== uniqueTeamIds.length) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "One or more teams in the layout were not found."
+		});
+	}
+
+	const ineligible = teams.filter((team) => !hasPassedPrescreen(team));
+	if (ineligible.length > 0) {
+		throw new TRPCError({
+			code: "CONFLICT",
+			message: "Only prescreen-passed teams can be assigned to judging rooms."
+		});
+	}
+}
+
 export const judgingRoomsRouter = createTRPCRouter({
-	// Get room layout for a round
 	getLayoutByRound: adminProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			const rooms = await ctx.db.query.judgingRooms.findMany({
 				where: eq(judgingRooms.roundId, input.roundId),
-				with: {
-					assignments: true
-				}
+				with: { assignments: true },
+				orderBy: (rows, { asc: orderAsc }) => [
+					orderAsc(rows.createdAt),
+					orderAsc(rows.id)
+				]
 			});
 
+			const staffByRoom = await Promise.all(
+				rooms.map(async (room) => {
+					const staffRows = await ctx.db.query.judgingRoomStaff.findMany({
+						where: eq(judgingRoomStaff.roomId, room.id)
+					});
+					return staffRows.map((row) => row.staffId);
+				})
+			);
+
 			return {
-				rooms: await Promise.all(
-					rooms.map(async (room) => {
-						const staffRows = await ctx.db.query.judgingRoomStaff.findMany({
-							where: eq(judgingRoomStaff.roomId, room.id)
-						});
-						return {
-							id: room.id,
-							name: `Room ${room.id.slice(0, 8)}`,
-							roomLink: room.roomLink,
-							staffIds: staffRows.map((s) => s.staffId),
-							teamIds: room.assignments.map((a) => a.teamId),
-							teamTimeSlots: Object.fromEntries(
-								room.assignments.map((a) => [
-									a.teamId,
-									a.timeSlot ? a.timeSlot.toISOString() : null
-								])
-							)
-						};
-					})
-				)
+				rooms: rooms.map((room, index) => ({
+					id: room.id,
+					name: judgingRoomDisplayName(index),
+					roomLink: room.roomLink,
+					staffIds: staffByRoom[index] ?? [],
+					teamIds: room.assignments.map((a) => a.teamId),
+					teamTimeSlots: Object.fromEntries(
+						room.assignments.map((a) => [
+							a.teamId,
+							a.timeSlot ? a.timeSlot.toISOString() : null
+						])
+					)
+				}))
 			};
 		}),
 
-	// Save room layout for a round
 	saveLayoutByRound: adminProcedure
 		.input(z.object({ roundId: z.string().uuid(), layout: LayoutSchema }))
 		.mutation(async ({ ctx, input }) => {
-			// Replace round room layout in DB tables:
-			// deleting rooms cascades existing staff + assignments for that round.
-			await ctx.db
-				.delete(judgingRooms)
-				.where(eq(judgingRooms.roundId, input.roundId));
+			const teamIds = input.layout.rooms.flatMap((room) => room.teamIds);
 
-			for (const room of input.layout.rooms) {
-				const [createdRoom] = await ctx.db
-					.insert(judgingRooms)
-					.values({
-						roundId: input.roundId,
-						roomLink: room.roomLink ?? ""
-					})
-					.returning();
+			await ctx.db.transaction(async (tx) => {
+				await assertRoundHasNoScores(tx, input.roundId);
+				await assertTeamsAreSchedulable(tx, teamIds);
 
-				if (!createdRoom) continue;
+				await tx
+					.delete(judgingRooms)
+					.where(eq(judgingRooms.roundId, input.roundId));
 
-				if (room.staffIds.length > 0) {
-					await ctx.db.insert(judgingRoomStaff).values(
-						room.staffIds.map((staffId) => ({
-							roomId: createdRoom.id,
-							staffId
-						}))
-					);
+				for (const room of input.layout.rooms) {
+					const [createdRoom] = await tx
+						.insert(judgingRooms)
+						.values({
+							roundId: input.roundId,
+							roomLink: room.roomLink ?? ""
+						})
+						.returning();
+
+					if (!createdRoom) continue;
+
+					if (room.staffIds.length > 0) {
+						await tx.insert(judgingRoomStaff).values(
+							room.staffIds.map((staffId) => ({
+								roomId: createdRoom.id,
+								staffId
+							}))
+						);
+					}
+
+					if (room.teamIds.length > 0) {
+						await tx.insert(judgingAssignments).values(
+							room.teamIds.map((teamId) => ({
+								roomId: createdRoom.id,
+								teamId,
+								timeSlot: (() => {
+									const iso = room.teamTimeSlots?.[teamId];
+									return iso ? new Date(iso) : undefined;
+								})()
+							}))
+						);
+					}
 				}
-
-				if (room.teamIds.length > 0) {
-					await ctx.db.insert(judgingAssignments).values(
-						room.teamIds.map((teamId) => ({
-							roomId: createdRoom.id,
-							teamId,
-							timeSlot: (() => {
-								const iso = room.teamTimeSlots?.[teamId];
-								return iso ? new Date(iso) : undefined;
-							})()
-						}))
-					);
-				}
-			}
+			});
 
 			const rooms = await ctx.db.query.judgingRooms.findMany({
 				where: eq(judgingRooms.roundId, input.roundId)
@@ -122,13 +218,14 @@ export const judgingRoomsRouter = createTRPCRouter({
 			z.object({
 				roundId: z.string().uuid(),
 				roomCount: z.number().int().min(1),
+				judgesPerRoom: z.number().int().min(1).default(1),
 				slotDurationMinutes: z.number().int().min(1),
 				totalJudgingMinutes: z.number().int().min(1)
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const round = await ctx.db.query.judgingRounds.findFirst({
-				where: (rounds, { eq }) => eq(rounds.id, input.roundId)
+				where: (rounds, { eq: equals }) => equals(rounds.id, input.roundId)
 			});
 			if (!round) {
 				throw new TRPCError({
@@ -139,23 +236,18 @@ export const judgingRoomsRouter = createTRPCRouter({
 
 			const judges = await ctx.db.query.user.findMany({
 				where: eq(user.role, "judge"),
-				orderBy: (users, { asc }) => [asc(users.name)]
+				orderBy: (users, { asc: orderAsc }) => [orderAsc(users.name)]
 			});
-			if (judges.length === 0) {
+			const judgesNeeded = input.roomCount * input.judgesPerRoom;
+			if (judges.length < judgesNeeded) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "No judges found. Assign judge roles before scheduling."
-				});
-			}
-			if (input.roomCount > judges.length) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Room count cannot be greater than the number of judges."
+					message: `Need ${judgesNeeded} judges (${input.judgesPerRoom} per room × ${input.roomCount} rooms), but only ${judges.length} are available.`
 				});
 			}
 
 			const teams = await ctx.db.query.organization.findMany({
-				orderBy: (teams, { asc }) => [asc(teams.name)]
+				orderBy: (orgs, { asc: orderAsc }) => [orderAsc(orgs.name)]
 			});
 			const eligibleTeams = teams.filter(hasPassedPrescreen);
 			if (eligibleTeams.length === 0) {
@@ -192,38 +284,13 @@ export const judgingRoomsRouter = createTRPCRouter({
 				});
 			}
 
-			const scoredAssignments = await ctx.db
-				.select({ id: scores.id })
-				.from(scores)
-				.innerJoin(
-					judgingAssignments,
-					eq(scores.assignmentId, judgingAssignments.id)
-				)
-				.innerJoin(judgingRooms, eq(judgingAssignments.roomId, judgingRooms.id))
-				.where(eq(judgingRooms.roundId, input.roundId))
-				.limit(1);
-			if (scoredAssignments.length > 0) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message:
-						"Cannot regenerate this schedule because at least one assignment has scores."
-				});
-			}
-
-			const baseJudgesPerRoom = Math.floor(judges.length / input.roomCount);
-			const extraJudgeRooms = judges.length % input.roomCount;
-			let judgeIndex = 0;
-			const roomJudgeGroups = Array.from(
-				{ length: input.roomCount },
-				(_, i) => {
-					const judgeCount = baseJudgesPerRoom + (i < extraJudgeRooms ? 1 : 0);
-					const group = judges.slice(judgeIndex, judgeIndex + judgeCount);
-					judgeIndex += judgeCount;
-					return group;
-				}
-			);
-
 			await ctx.db.transaction(async (tx) => {
+				await assertRoundHasNoScores(tx, input.roundId);
+				await assertTeamsAreSchedulable(
+					tx,
+					eligibleTeams.map((team) => team.id)
+				);
+
 				await tx
 					.delete(judgingRooms)
 					.where(eq(judgingRooms.roundId, input.roundId));
@@ -242,9 +309,11 @@ export const judgingRoomsRouter = createTRPCRouter({
 
 				for (let i = 0; i < createdRooms.length; i++) {
 					const room = createdRooms[i];
-					const roomJudges = roomJudgeGroups[i] ?? [];
-					if (!room || roomJudges.length === 0) continue;
-
+					if (!room) continue;
+					const roomJudges = judges.slice(
+						i * input.judgesPerRoom,
+						(i + 1) * input.judgesPerRoom
+					);
 					await tx.insert(judgingRoomStaff).values(
 						roomJudges.map((judge) => ({
 							roomId: room.id,
@@ -282,24 +351,5 @@ export const judgingRoomsRouter = createTRPCRouter({
 				assignmentsCreated: eligibleTeams.length,
 				message: `Generated ${eligibleTeams.length} assignments across ${input.roomCount} rooms.`
 			};
-		}),
-
-	// Optional helper: apply current room layout to judgingAssignments by creating any missing (judge, team) pairs.
-	// This does NOT delete existing assignments (to avoid wiping scores via cascade).
-	applyLayoutToAssignments: adminProcedure
-		.input(z.object({ roundId: z.string().uuid() }))
-		.mutation(async ({ ctx, input }) => {
-			const roomCount = await ctx.db.query.judgingRooms.findMany({
-				where: eq(judgingRooms.roundId, input.roundId),
-				columns: { id: true }
-			});
-			if (roomCount.length === 0) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "No rooms found for this round."
-				});
-			}
-			// Layout is already persisted directly to assignments in saveLayoutByRound.
-			return { created: 0 };
 		})
 });

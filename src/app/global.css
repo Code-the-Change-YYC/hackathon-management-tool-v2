@@ -5,6 +5,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+	/* Judging status colors from the existing judge dashboard. */
+	--color-judging-success: #038b6f;
+	--color-judging-success-foreground: #02644f;
+	--color-judging-success-muted: #d8f6ee;
+	--color-judging-success-hover: #c6f0e5;
+	--color-judging-pending: #fe3b20;
+
 	--radius-20: 20px;
 
 	/* Figma "Prototypes" design system palette */

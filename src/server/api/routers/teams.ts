@@ -251,6 +251,7 @@ export const teamsRouter = createTRPCRouter({
 				.returning();
 			return updated;
 		}),
+
 	getMyTeam: protectedProcedure.query(async ({ ctx }) => {
 		const userId = ctx.session.user.id;
 
