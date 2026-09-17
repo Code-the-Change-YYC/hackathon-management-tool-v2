@@ -22,7 +22,7 @@ export function MobileNavSheet({
 	return (
 		<Sheet onOpenChange={onOpenChange} open={open}>
 			<SheetContent
-				className="w-[280px] gap-0 bg-sidebar p-0 sm:max-w-[280px]"
+				className="w-70 gap-0 bg-sidebar p-0 sm:max-w-70"
 				showCloseButton
 				side="left"
 			>

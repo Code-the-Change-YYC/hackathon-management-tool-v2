@@ -267,7 +267,7 @@ export function AssignmentManagement({
 			</div>
 
 			<div className="mt-6">
-				<Table className="min-w-[720px]">
+				<Table className="min-w-180">
 					<TableHeader>
 						<TableRow>
 							<TableHead className="px-3 py-3">Team</TableHead>

@@ -154,7 +154,7 @@ export function CriteriaManagement() {
 			</div>
 
 			<div className="mt-6">
-				<Table className="min-w-[620px]">
+				<Table className="min-w-155">
 					<TableHeader>
 						<TableRow>
 							<TableHead className="px-3 py-3">Name</TableHead>

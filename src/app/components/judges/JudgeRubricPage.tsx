@@ -79,7 +79,7 @@ export async function JudgeRubricPage() {
 						))}
 					</Accordion>
 				) : (
-					<div className="rounded-2xl border border-[#d6d6d6] border-dashed p-8 text-center text-[#575757]">
+					<div className="rounded-2xl border border-grey-300 border-dashed p-8 text-center text-grey-600">
 						No judging criteria have been published yet.
 					</div>
 				)}

@@ -207,7 +207,7 @@ export function RoundManagement({
 			</form>
 
 			<div className="mt-6">
-				<Table className="min-w-[760px]">
+				<Table className="min-w-190">
 					<TableHeader>
 						<TableRow>
 							<TableHead className="px-3 py-3">Round</TableHead>

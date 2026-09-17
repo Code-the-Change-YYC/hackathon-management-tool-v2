@@ -37,7 +37,7 @@ export function ResultsManagement() {
 							<TableCell className="px-3 py-4 font-semibold text-primary">
 								{index + 1}
 							</TableCell>
-							<TableCell className="whitespace-normal break-words px-2 py-4 font-medium sm:px-3">
+							<TableCell className="wrap-break-word whitespace-normal px-2 py-4 font-medium sm:px-3">
 								{team.name}
 							</TableCell>
 							<TableCell className="px-3 py-4 text-right">

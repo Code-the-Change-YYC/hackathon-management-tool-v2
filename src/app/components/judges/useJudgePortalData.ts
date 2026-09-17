@@ -121,7 +121,7 @@ export function getScoreTone(value: number, max: number) {
 		return "border-[#ffe5b2] bg-[#fff8e8] text-[#9f630b]";
 	}
 	if (percent >= 0.3) {
-		return "border-[#ffd2c9] bg-[#fff1ee] text-[#b71801]";
+		return "border-[#ffd2c9] bg-[#fff1ee] text-orange-800";
 	}
 	return "border-[#f6c8d6] bg-[#fff0f4] text-[#a70a38]";
 }
@@ -219,19 +219,19 @@ export function getDraftScore(
 
 export function getScoreTextColor(value: number, max: number) {
 	const percent = max > 0 ? value / max : 0;
-	if (percent >= 0.75) return "text-[#02644f]";
+	if (percent >= 0.75) return "text-judging-success-foreground";
 	if (percent >= 0.5) return "text-[#317d15]";
 	if (percent >= 0.3) return "text-[#9f630b]";
-	if (percent >= 0.15) return "text-[#b71801]";
+	if (percent >= 0.15) return "text-orange-800";
 	return "text-[#a70a38]";
 }
 
 export function getScoreFillClass(value: number, max: number) {
 	const percent = max > 0 ? value / max : 0;
-	if (percent >= 0.75) return "bg-[#02644f] text-white";
+	if (percent >= 0.75) return "bg-judging-success-foreground text-white";
 	if (percent >= 0.5) return "bg-[#317d15] text-white";
 	if (percent >= 0.3) return "bg-[#9f630b] text-white";
-	if (percent >= 0.15) return "bg-[#b71801] text-white";
+	if (percent >= 0.15) return "bg-orange-800 text-white";
 	return "bg-[#a70a38] text-white";
 }
 

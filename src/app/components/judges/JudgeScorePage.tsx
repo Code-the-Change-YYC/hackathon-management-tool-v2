@@ -50,8 +50,8 @@ function ScoreStatusChip({
 					active
 						? "bg-foreground text-background hover:bg-foreground/90"
 						: sidepotComplete
-							? "border-transparent bg-[#f7f5ff] text-[#4a28f6] hover:bg-[#f7f5ff]"
-							: "text-[#a5a5a5]"
+							? "border-transparent bg-purple-50 text-auth-focus hover:bg-purple-50"
+							: "text-grey-400"
 				)}
 				variant={active || sidepotComplete ? "default" : "outline"}
 			>
@@ -75,7 +75,7 @@ function ScoreStatusChip({
 	if (score === undefined) {
 		return (
 			<Badge
-				className="h-auto rounded-full px-3 py-1 text-[#a5a5a5] text-base leading-6"
+				className="h-auto rounded-full px-3 py-1 text-base text-grey-400 leading-6"
 				variant="outline"
 			>
 				{criterion.name}
@@ -114,9 +114,9 @@ function ScoreTotal({
 		<div className="flex flex-col items-end text-center font-medium">
 			<p className="m-0 text-[0px] text-black leading-none">
 				<span className="text-[22px] leading-7">{total}</span>
-				<span className="text-[#a5a5a5] text-sm leading-5">/{max}</span>
+				<span className="text-grey-400 text-sm leading-5">/{max}</span>
 			</p>
-			<p className="m-0 text-[#434343] text-[9px] uppercase leading-[14px]">
+			<p className="m-0 text-[#434343] text-[9px] uppercase leading-3.5">
 				Total
 			</p>
 		</div>
@@ -144,24 +144,24 @@ function ScoreTopBar({
 		sidepotCriteria.every((criterion) => hasDraftScore(scores, criterion.id));
 
 	return (
-		<header className="border-[#d6d6d6] border-b bg-[#fafafa] px-6 py-4 sm:px-8">
+		<header className="border-grey-300 border-b bg-[#fafafa] px-6 py-4 sm:px-8">
 			<nav className="mb-3 flex items-center gap-1 text-xs leading-4">
 				<Link
-					className="text-[#a5a5a5] transition hover:text-[#575757]"
+					className="text-grey-400 transition hover:text-grey-600"
 					href="/judge"
 				>
 					Dashboard
 				</Link>
-				<span className="text-[#a5a5a5]">/</span>
+				<span className="text-grey-400">/</span>
 				<span className="font-medium text-[#ec1245]">Score</span>
 			</nav>
 			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 				<div className="flex min-w-0 flex-1 flex-col gap-4 lg:flex-row lg:items-center">
-					<div className="min-w-[172px]">
+					<div className="min-w-43">
 						<h1 className="m-0 truncate font-semibold text-base text-black leading-6">
 							{assignment.team.name}
 						</h1>
-						<div className="mt-0 flex flex-wrap items-center gap-1 text-[#767676] text-[11px] leading-4">
+						<div className="mt-0 flex flex-wrap items-center gap-1 text-[11px] text-auth-placeholder leading-4">
 							<span>Team ID: {getTeamCode(assignment)}</span>
 							<span aria-hidden="true">•</span>
 							<span>{formatTime(assignment.timeSlot)}</span>
@@ -212,13 +212,13 @@ function ScoreButtonGroup({
 				return (
 					<button
 						aria-pressed={selected}
-						className={`flex h-14 w-[62px] items-center justify-center rounded-lg border font-medium text-base transition ${
+						className={`flex h-14 w-15.5 items-center justify-center rounded-lg border font-medium text-base transition ${
 							selected
 								? `border-transparent ${getScoreFillClass(
 										option,
 										criterion.maxScore
 									)}`
-								: "border-[#e6e6e6] bg-white text-[#575757] hover:border-[#7054fd] hover:bg-[#f7f5ff]"
+								: "border-grey-200 bg-white text-grey-600 hover:border-purple-500 hover:bg-purple-50"
 						}`}
 						key={option}
 						onClick={() => onChange(option)}
@@ -247,7 +247,7 @@ function RubricBandCard({
 			className={`rounded-lg border p-3 ${
 				selected
 					? getScoreTone(toneValue, criterion.maxScore)
-					: "border-[#e6e6e6] bg-white"
+					: "border-grey-200 bg-white"
 			}`}
 		>
 			<div className="mb-2 flex items-center gap-2">
@@ -259,11 +259,11 @@ function RubricBandCard({
 				>
 					{band.range}
 				</p>
-				<p className="m-0 font-medium text-[#292929] text-xs uppercase leading-4">
+				<p className="m-0 font-medium text-grey-800 text-xs uppercase leading-4">
 					{band.label}
 				</p>
 			</div>
-			<p className="m-0 text-[#292929] text-[13px] leading-[18px]">
+			<p className="m-0 text-[13px] text-grey-800 leading-4.5">
 				{getBandDescription(criterion, band.label)}
 			</p>
 		</article>
@@ -323,7 +323,7 @@ function StepActions({
 
 			{isLastStep ? (
 				<Button
-					className="sm:min-w-[318px]"
+					className="sm:min-w-79.5"
 					disabled={!canSubmit || isPending}
 					onClick={onSubmit}
 					type="button"
@@ -361,7 +361,7 @@ function MainCriterionStep({
 					<h2 className="m-0 font-semibold text-[#1a1a1a] text-[28px] leading-9">
 						{criterion.name}
 					</h2>
-					<p className="m-0 text-[#292929] text-base leading-6">
+					<p className="m-0 text-base text-grey-800 leading-6">
 						{getCriterionDescription(criterion)}
 					</p>
 				</div>
@@ -412,7 +412,7 @@ function SidepotBadge({
 				"h-auto gap-1.5 rounded-full px-2 py-1 text-[11px]",
 				scored
 					? getScoreTone(score, criterion.maxScore)
-					: "border-[#a5a5a5] bg-background text-foreground"
+					: "border-grey-400 bg-background text-foreground"
 			)}
 			variant="outline"
 		>
@@ -423,7 +423,7 @@ function SidepotBadge({
 					"h-auto rounded-full px-2 py-px font-semibold text-[10px]",
 					scored
 						? getScoreFillClass(score, criterion.maxScore)
-						: "bg-[#a5a5a5] text-white hover:bg-[#a5a5a5]"
+						: "bg-grey-400 text-white hover:bg-grey-400"
 				)}
 			>
 				{scored ? `${score}/${criterion.maxScore}` : `/${criterion.maxScore}`}
@@ -444,13 +444,13 @@ function ScoreTile({
 			<p
 				className={`m-0 font-medium text-base leading-6 ${
 					score === undefined
-						? "text-[#a5a5a5]"
+						? "text-grey-400"
 						: getScoreTextColor(score, criterion.maxScore)
 				}`}
 			>
 				{score ?? "–"}
 			</p>
-			<p className="m-0 truncate text-[#292929] text-[9px] uppercase leading-[14px]">
+			<p className="m-0 truncate text-[9px] text-grey-800 uppercase leading-3.5">
 				{criterion.name}
 			</p>
 		</div>
@@ -483,7 +483,7 @@ function ScoreSummaryCard({
 						/>
 					))}
 				</div>
-				<div className="flex flex-1 flex-col gap-3 border-[#e6e6e6] border-t pt-3 lg:flex-row lg:items-center lg:border-t-0 lg:border-l lg:pt-0 lg:pl-4">
+				<div className="flex flex-1 flex-col gap-3 border-grey-200 border-t pt-3 lg:flex-row lg:items-center lg:border-t-0 lg:border-l lg:pt-0 lg:pl-4">
 					<div className="flex flex-1 flex-wrap justify-between gap-2">
 						{mainCriteria.map((criterion) => (
 							<ScoreTile
@@ -493,7 +493,7 @@ function ScoreSummaryCard({
 							/>
 						))}
 					</div>
-					<div className="border-[#e6e6e6] border-t pt-2 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-4">
+					<div className="border-grey-200 border-t pt-2 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-4">
 						<ScoreTotal criteria={criteria} scores={scores} />
 					</div>
 				</div>
@@ -512,39 +512,39 @@ function SidepotCriterionCard({
 	score?: number;
 }) {
 	return (
-		<article className="overflow-hidden rounded-xl border border-[#d6d6d6] bg-white">
-			<header className="flex items-center justify-between border-[#f5f5f5] border-b bg-[#fcfcfc] px-5 py-4">
+		<article className="overflow-hidden rounded-xl border border-grey-300 bg-white">
+			<header className="flex items-center justify-between border-grey-100 border-b bg-grey-50 px-5 py-4">
 				<div className="flex items-center gap-2.5">
 					<span className="size-2.5 rounded-full bg-[#ec1245]" />
 					<div>
 						<h3 className="m-0 font-medium text-[#1a1a1a] text-base leading-6">
 							{criterion.name}
 						</h3>
-						<p className="m-0 text-[#a5a5a5] text-xs leading-4">Sidepot</p>
+						<p className="m-0 text-grey-400 text-xs leading-4">Sidepot</p>
 					</div>
 				</div>
 				<div className="text-right font-medium">
 					{score === undefined ? (
-						<p className="m-0 text-[#767676] text-[11px] leading-[14px]">
+						<p className="m-0 text-[11px] text-auth-placeholder leading-3.5">
 							Not yet scored
 						</p>
 					) : (
 						<>
 							<p className="m-0 text-[0px] text-black leading-none">
 								<span className="text-[22px] leading-7">{score}</span>
-								<span className="text-[#a5a5a5] text-sm leading-5">
+								<span className="text-grey-400 text-sm leading-5">
 									/{criterion.maxScore}
 								</span>
 							</p>
-							<p className="m-0 text-[#434343] text-[9px] leading-[14px]">
+							<p className="m-0 text-[#434343] text-[9px] leading-3.5">
 								Scored
 							</p>
 						</>
 					)}
 				</div>
 			</header>
-			<div className="border-[#f5f5f5] border-b px-5 py-3">
-				<p className="m-0 text-[#292929] text-xs leading-4 sm:text-sm sm:leading-5">
+			<div className="border-grey-100 border-b px-5 py-3">
+				<p className="m-0 text-grey-800 text-xs leading-4 sm:text-sm sm:leading-5">
 					{getCriterionDescription(criterion)}
 				</p>
 			</div>
@@ -584,7 +584,7 @@ function SidepotsStep({
 				<h2 className="m-0 font-semibold text-[#1a1a1a] text-[28px] leading-9">
 					Side pots
 				</h2>
-				<p className="m-0 text-[#292929] text-base leading-6">
+				<p className="m-0 text-base text-grey-800 leading-6">
 					Please grade the side pots according to their own rubric.
 				</p>
 			</div>
@@ -601,7 +601,7 @@ function SidepotsStep({
 					))}
 				</div>
 			) : (
-				<div className="rounded-2xl border border-[#d6d6d6] border-dashed bg-white p-8 text-center text-[#575757]">
+				<div className="rounded-2xl border border-grey-300 border-dashed bg-white p-8 text-center text-grey-600">
 					No sidepot criteria have been published for this event.
 				</div>
 			)}
@@ -625,13 +625,13 @@ function ScorePageMessage({
 }) {
 	return (
 		<div className="flex min-h-[calc(100vh-57px)] items-center justify-center px-6 py-12 lg:min-h-screen">
-			<div className="max-w-md rounded-2xl border border-[#d6d6d6] bg-white p-6 text-center shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+			<div className="max-w-md rounded-2xl border border-grey-300 bg-white p-6 text-center shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
 				<h1 className="m-0 font-semibold text-[28px] leading-9">{title}</h1>
-				<p className="mt-3 mb-0 text-[#575757] text-base leading-6">
+				<p className="mt-3 mb-0 text-base text-grey-600 leading-6">
 					{description}
 				</p>
 				<Link
-					className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-[#7054fd] px-4 font-medium text-white transition hover:bg-[#6044ed]"
+					className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-purple-500 px-4 font-medium text-white transition hover:bg-[#6044ed]"
 					href="/judge"
 				>
 					Back to dashboard
@@ -761,7 +761,7 @@ export function JudgeScorePage({ assignmentId }: { assignmentId: string }) {
 	}
 
 	return (
-		<div className="min-h-screen bg-[#fcfcfc]">
+		<div className="min-h-screen bg-grey-50">
 			<ConfirmAlertDialog {...dialogProps} />
 			<ScoreTopBar
 				activeStep={activeStep}
@@ -771,7 +771,7 @@ export function JudgeScorePage({ assignmentId }: { assignmentId: string }) {
 				scores={draftScores}
 				sidepotCriteria={sidepotCriteria}
 			/>
-			<div className="mx-auto flex w-full max-w-[1071px] flex-col gap-6 px-4 py-6 sm:px-8 lg:px-6">
+			<div className="mx-auto flex w-full max-w-267.75 flex-col gap-6 px-4 py-6 sm:px-8 lg:px-6">
 				{activeCriterion ? (
 					<MainCriterionStep
 						criterion={activeCriterion}

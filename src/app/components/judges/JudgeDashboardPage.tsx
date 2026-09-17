@@ -39,7 +39,7 @@ function RoundStatsCard({
 		<div className="flex flex-col gap-2">
 			<h2 className="m-0 font-medium text-xl leading-6">{name}</h2>
 			<Card className="rounded-2xl border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-				<CardContent className="grid min-h-[96px] grid-cols-3 px-4 py-3">
+				<CardContent className="grid min-h-24 grid-cols-3 px-4 py-3">
 					<StatNumber label="Assigned" value={assigned} />
 					<StatNumber label="Scored" tone="green" value={scored} />
 					<StatNumber label="Remaining" tone="red" value={remaining} />
@@ -67,7 +67,7 @@ function StatNumber({
 
 	return (
 		<div className="flex min-w-0 flex-col items-center justify-center gap-0 text-center">
-			<strong className={`font-semibold text-5xl leading-[52px] ${color}`}>
+			<strong className={`font-semibold text-5xl leading-13 ${color}`}>
 				{value}
 			</strong>
 			<span className="font-medium text-foreground text-xs uppercase leading-4">
@@ -98,7 +98,7 @@ function JudgeTeamCard({
 	const total = getAssignmentTotal(assignment, criteria);
 
 	return (
-		<Card className="flex min-h-[138px] flex-col gap-3 rounded-2xl border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+		<Card className="flex min-h-34.5 flex-col gap-3 rounded-2xl border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
 			<CardContent className="flex flex-1 flex-col gap-3">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0">

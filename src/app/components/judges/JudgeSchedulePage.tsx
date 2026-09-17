@@ -62,29 +62,29 @@ function ScheduleEventCard({
 
 	return (
 		<Link
-			className="group w-full rounded-2xl border border-[#d6d6d6] bg-white p-4 text-left shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition hover:border-[#7054fd] hover:bg-[#f7f5ff]"
+			className="group w-full rounded-2xl border border-grey-300 bg-white p-4 text-left shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition hover:border-purple-500 hover:bg-purple-50"
 			href={scoreHref}
 		>
 			<div className="flex gap-4">
-				<div className="hidden w-[68px] shrink-0 flex-col items-end border-[#d6d6d6] border-r pr-4 text-right sm:flex">
+				<div className="hidden w-17 shrink-0 flex-col items-end border-grey-300 border-r pr-4 text-right sm:flex">
 					<span
 						className={`rounded-full px-2 py-0.5 font-medium text-[11px] ${
 							scored
-								? "bg-[#d8f6ee] text-[#02644f]"
-								: "bg-[#eae6ff] text-[#2911a7]"
+								? "bg-judging-success-muted text-judging-success-foreground"
+								: "bg-purple-100 text-purple-800"
 						}`}
 					>
 						{scored ? "Scored" : "Open"}
 					</span>
-					<span className="mt-2 text-[#767676] text-[11px]">
+					<span className="mt-2 text-[11px] text-auth-placeholder">
 						{formatTime(assignment.timeSlot)}
 					</span>
 				</div>
 				<div className="min-w-0 flex-1">
-					<h3 className="m-0 truncate font-medium text-[#292929] text-lg">
+					<h3 className="m-0 truncate font-medium text-grey-800 text-lg">
 						{assignment.team.name}
 					</h3>
-					<div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[#575757] text-xs">
+					<div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-grey-600 text-xs">
 						<span>Team ID: {getTeamCode(assignment)}</span>
 						<span>{formatDuration(duration)}</span>
 						<span>{roomLabel}</span>
@@ -92,7 +92,7 @@ function ScheduleEventCard({
 				</div>
 				{scored ? (
 					<div className="hidden shrink-0 text-right md:block">
-						<span className="rounded-full bg-[#d8f6ee] px-3 py-1 font-medium text-[#02644f] text-xs">
+						<span className="rounded-full bg-judging-success-muted px-3 py-1 font-medium text-judging-success-foreground text-xs">
 							Scored
 						</span>
 						<p className="mt-2 mb-0 font-medium text-[22px] leading-7">
@@ -165,15 +165,15 @@ export function JudgeSchedulePage() {
 							<h2 className="m-0 font-medium text-base">
 								{formatDate(group[0]?.timeSlot)}
 							</h2>
-							<div className="relative rounded-2xl bg-[#fcfcfc] pl-0 sm:pl-6">
-								<div className="absolute top-3 bottom-3 left-3 hidden w-1 rounded-full bg-[#7054fd] sm:block" />
+							<div className="relative rounded-2xl bg-grey-50 pl-0 sm:pl-6">
+								<div className="absolute top-3 bottom-3 left-3 hidden w-1 rounded-full bg-purple-500 sm:block" />
 								<div className="flex flex-col gap-4">
 									{group.map((assignment) => (
 										<div
 											className="grid gap-2 sm:grid-cols-[64px_1fr] sm:gap-4"
 											key={assignment.id}
 										>
-											<div className="font-medium text-[#575757] text-sm sm:pt-2 sm:text-right">
+											<div className="font-medium text-grey-600 text-sm sm:pt-2 sm:text-right">
 												{formatTime(assignment.timeSlot)}
 											</div>
 											<ScheduleEventCard
@@ -197,7 +197,7 @@ export function JudgeSchedulePage() {
 					))}
 				</div>
 			) : (
-				<div className="rounded-2xl border border-[#d6d6d6] border-dashed p-8 text-center text-[#575757]">
+				<div className="rounded-2xl border border-grey-300 border-dashed p-8 text-center text-grey-600">
 					No scheduled judging assignments yet.
 				</div>
 			)}
