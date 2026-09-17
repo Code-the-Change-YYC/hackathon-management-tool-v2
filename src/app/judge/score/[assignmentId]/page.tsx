@@ -7,5 +7,9 @@ export default async function page({
 }) {
 	const { assignmentId } = await params;
 
-	return <JudgeScorePage assignmentId={assignmentId} key={assignmentId} />;
+	return (
+		<main className="flex flex-col">
+			<JudgeScorePage assignmentId={assignmentId} key={assignmentId} />
+		</main>
+	);
 }
