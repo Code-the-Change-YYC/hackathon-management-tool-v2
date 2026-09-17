@@ -1,20 +1,13 @@
 "use client";
 
-import {
-	ArrowLeftLine,
-	ArrowRightLine,
-	More1Line,
-	NotificationLine
-} from "@mingcute/react";
+import { ArrowLeftLine, ArrowRightLine } from "@mingcute/react";
 import Image from "next/image";
 import Link from "next/link";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
-import { AdminNavbar } from "@/app/components/admin/AdminNavbar";
 import {
 	ConfirmAlertDialog,
 	useConfirmDialog
 } from "@/app/components/ConfirmAlertDialog";
-import { MobileNavSheet } from "@/app/components/MobileNavSheet";
 import { Button } from "@/app/components/ui/button";
 import { Field, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
@@ -30,6 +23,7 @@ import { formatTime } from "@/lib/datetime";
 import { SLOT_MINUTES_OPTIONS, type SlotMinutes } from "@/lib/judging";
 import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
+import PageHeader from "../../PageHeader";
 import { AssignmentManagement } from "./AssignmentManagement";
 import { CriteriaManagement } from "./CriteriaManagement";
 import { ResultsManagement } from "./ResultsManagement";
@@ -331,14 +325,9 @@ function ScheduleGrid({
 	);
 }
 
-export default function AdminJudgingDashboard({
-	userName
-}: {
-	userName: string;
-}) {
+export default function AdminJudgingDashboard() {
 	const utils = api.useUtils();
 	const { confirm, dialogProps } = useConfirmDialog();
-	const [menuOpen, setMenuOpen] = useState(false);
 	const [selectedRoundId, setSelectedRoundId] = useState("");
 	const [selectedRoomId, setSelectedRoomId] = useState("all");
 	const [roomCount, setRoomCount] = useState(1);
@@ -505,47 +494,12 @@ export default function AdminJudgingDashboard({
 	return (
 		<div className="min-h-screen bg-background text-foreground">
 			<ConfirmAlertDialog {...dialogProps} />
-			<aside className="fixed inset-y-0 left-0 hidden w-52.25 border-border border-r bg-sidebar py-4 pr-4 pl-4 lg:block">
-				<AdminNavbar userName={userName} />
-			</aside>
 
-			<header className="flex h-14 items-center justify-between bg-background px-6 py-1 lg:hidden">
-				<Button
-					aria-expanded={menuOpen}
-					aria-label="Open admin navigation"
-					onClick={() => setMenuOpen(true)}
-					size="icon-lg"
-					type="button"
-					variant="ghost"
-				>
-					<More1Line />
-				</Button>
-				<span aria-hidden="true" className="p-2">
-					<NotificationLine className="size-6" />
-				</span>
-			</header>
-
-			<div className="lg:hidden">
-				<MobileNavSheet
-					onOpenChange={setMenuOpen}
-					open={menuOpen}
-					title="Admin navigation"
-				>
-					<AdminNavbar
-						onNavigate={() => setMenuOpen(false)}
-						userName={userName}
-					/>
-				</MobileNavSheet>
-			</div>
-
-			<main className="flex flex-col gap-6 p-6 lg:ml-52.25">
-				<header>
-					<h1 className="m-0 font-semibold text-[32px] leading-10">Judging</h1>
-					<p className="m-0 text-base text-muted-foreground leading-6">
-						Create a round, generate rooms and team slots, then review the
-						schedule.
-					</p>
-				</header>
+			<main className="flex flex-col gap-6 p-6">
+				<PageHeader
+					description="Create a round, generate rooms and team slots, then review the schedule."
+					title="Judging"
+				/>
 
 				<section className="relative flex min-h-74.75 flex-col overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground sm:block sm:min-h-37">
 					<div className="relative z-10 max-w-100">
