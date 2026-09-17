@@ -1,4 +1,5 @@
-export default function AdminJudgingPage() {
-	// TODO: Implement admin judging information page
-	return <div>Judging Information Page</div>;
+import AdminJudgingDashboard from "@/app/components/admin/judging/AdminJudgingDashboard";
+
+export default async function AdminJudgingPage() {
+	return <AdminJudgingDashboard />;
 }

@@ -38,6 +38,7 @@ export {
 } from "@/lib/validation/signup";
 
 const MEMBER_ROLE_VALUES = ["owner", "member", "admin"] as const;
+export const PRESCREEN_STATUS_VALUES = ["pending", "passed", "failed"] as const;
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
@@ -137,7 +138,17 @@ export const organization = createTable("organization", {
 	logo: text("logo"),
 	createdAt: timestamp("created_at").notNull(),
 	metadata: text("metadata"),
-	teamCode: text("team_code").unique()
+	teamCode: text("team_code").unique(),
+	prescreenStatus: text("prescreen_status", {
+		enum: PRESCREEN_STATUS_VALUES
+	})
+		.default("pending")
+		.notNull(),
+	prescreenComments: text("prescreen_comments"),
+	prescreenedBy: text("prescreened_by").references(() => user.id, {
+		onDelete: "set null"
+	}),
+	prescreenedAt: timestamp("prescreened_at")
 });
 
 export const member = createTable(
