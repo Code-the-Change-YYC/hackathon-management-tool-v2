@@ -52,7 +52,7 @@ export default function InfoSection({
 				</div>
 			)}
 
-			<div className="flex w-full max-w-lg flex-col gap-4 md:gap-6">
+			<div className="flex w-full max-w-lg flex-col gap-4 md:gap-6 lg:max-w-none">
 				{titleHighlight && (
 					<div className="relative inline-flex items-center gap-2">
 						{accentSrc && accentPosition === "before" && (
