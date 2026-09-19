@@ -32,7 +32,7 @@ async function registerTeam(page: Page, name: string) {
 	await page.getByRole("button", { name: "Continue" }).click();
 
 	await expect(page.getByText("Register your team")).toBeVisible();
-	await page.getByLabel("Team name").fill(name);
+	await page.getByLabel("Team name", { exact: true }).fill(name);
 	await page.getByRole("button", { name: "Register" }).click();
 	await expect(page.getByText(`${name} is registered!`)).toBeVisible();
 	await page.getByRole("button", { name: "Finish" }).click();
@@ -54,11 +54,11 @@ test("register flow walks situation, register and success modals", async ({
 	await page.getByRole("button", { name: "Continue" }).click();
 
 	await expect(page.getByText("Register your team")).toBeVisible();
-	await page.getByLabel("Team name").fill(name);
+	await page.getByLabel("Team name", { exact: true }).fill(name);
 	await page.getByRole("button", { name: "Register" }).click();
 
 	await expect(page.getByText(`${name} is registered!`)).toBeVisible();
-	await expect(page.getByText("Your Team ID")).toBeVisible();
+	await expect(page.getByText("Your Team ID", { exact: true })).toBeVisible();
 
 	await page.getByRole("button", { name: "Finish" }).click();
 	await expect(page.getByText(name)).toBeVisible();
@@ -83,8 +83,9 @@ test("owner can open invite, edit name and leave modals", async ({
 	const renamed = `${name} Renamed`;
 	createdTeamNames.add(renamed);
 	await page.getByRole("button", { name: "Edit team name" }).click();
-	await expect(page.getByLabel("Team name")).toBeVisible();
-	await page.getByLabel("Team name").fill(renamed);
+	const nameField = page.getByLabel("Team name", { exact: true });
+	await expect(nameField).toBeVisible();
+	await nameField.fill(renamed);
 	await page.getByRole("button", { name: "Save" }).click();
 	await expect(page.getByText(renamed)).toBeVisible();
 
