@@ -91,7 +91,7 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 	}
 
 	function saveChanges() {
-		// TODO: persist through the users router.
+		// TODO: persist through the teams router.
 		toast.success("Changes saved!");
 		onOpenChange(false);
 	}

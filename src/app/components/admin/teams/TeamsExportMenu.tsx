@@ -15,7 +15,6 @@ type TeamsExportMenuProps = {
 	onDownloadCsv: () => void;
 };
 
-// TODO: Merge this and ParticipantsExportMenu? They are the same
 export function TeamsExportMenu({
 	onCopyEmails,
 	onDownloadCsv
