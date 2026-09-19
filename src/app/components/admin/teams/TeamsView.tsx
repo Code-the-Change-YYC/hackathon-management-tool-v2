@@ -64,7 +64,7 @@ function matchesFilters(team: Team, filters: FilterOption[]) {
 		return false;
 	}
 
-	if (filters.includes("lt-two") && team.memberCount > 2) {
+	if (filters.includes("lt-two") && team.memberCount >= 2) {
 		return false;
 	}
 
