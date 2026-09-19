@@ -1,5 +1,7 @@
-import { renderHook } from "@testing-library/react";
+import { render, renderHook, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { JudgeRoundStats } from "@/app/components/judges/JudgeRoundStats";
+import { JudgeTeamCard } from "@/app/components/judges/JudgeTeamCard";
 import {
 	JudgeUserProvider,
 	useJudgeUser
@@ -163,5 +165,83 @@ describe("judge user context", () => {
 		expect(() => renderHook(useJudgeUser)).toThrow(
 			"Judge portal user context is missing."
 		);
+	});
+});
+
+describe("dashboard cards", () => {
+	it("disables future assignments and enables scoring when the slot starts", () => {
+		const team = assignment();
+		const { rerender } = render(
+			<JudgeTeamCard
+				assignment={team}
+				criteria={[main]}
+				currentTime={new Date(now.getTime() - 1)}
+			/>
+		);
+		expect(screen.getByRole("button", { name: "Score Team" })).toBeDisabled();
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
+		rerender(
+			<JudgeTeamCard assignment={team} criteria={[main]} currentTime={now} />
+		);
+		expect(screen.getByRole("link", { name: "Score Team" })).toHaveAttribute(
+			"href",
+			"/judge/score/assignment"
+		);
+	});
+
+	it("keeps unscheduled teams scoreable with separated schedule labels", () => {
+		render(
+			<JudgeTeamCard
+				assignment={assignment({ timeSlot: null })}
+				criteria={[main]}
+				currentTime={now}
+			/>
+		);
+		expect(screen.getByText("Unscheduled · Round 1")).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Score Team" })
+		).toBeInTheDocument();
+	});
+
+	it("allows editing a saved zero before the slot and displays optional scores separately", () => {
+		render(
+			<JudgeTeamCard
+				assignment={assignment({
+					scores: [score("main", 0), score("sidepot", 4)]
+				})}
+				criteria={[main, { ...sidepot, name: "Best AI" }]}
+				currentTime={new Date(now.getTime() - 1)}
+			/>
+		);
+		expect(
+			screen.getByRole("link", { name: "Edit score for Team" })
+		).toHaveAttribute("href", "/judge/score/assignment");
+		expect(screen.getByText("Best AI 4/10")).toBeInTheDocument();
+		const total = screen.getByText("Total").parentElement;
+		expect(total).toHaveTextContent("0/10");
+		expect(screen.queryByRole("button")).not.toBeInTheDocument();
+	});
+
+	it("does not mark incomplete main scores as scored", () => {
+		render(
+			<JudgeTeamCard
+				assignment={assignment({ scores: [score("main", 8)] })}
+				criteria={[main, { ...main, id: "technical", name: "Technical" }]}
+				currentTime={now}
+			/>
+		);
+		expect(screen.queryByText("Scored")).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Score Team" })
+		).toBeInTheDocument();
+	});
+
+	it("derives remaining teams from assigned and scored counts", () => {
+		render(<JudgeRoundStats assigned={4} name="Round 1" scored={1} />);
+		expect(
+			screen.getByRole("heading", { name: "Round 1" })
+		).toBeInTheDocument();
+		const remaining = screen.getByText("Remaining").parentElement;
+		expect(remaining).toHaveTextContent("Remaining3");
 	});
 });
