@@ -98,12 +98,12 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 
 	function handleDecision(passed: boolean) {
 		updateField("passed", passed);
-		saveChanges();
+		setStep("result");
 	}
 
 	return (
 		<>
-			<Dialog onOpenChange={requestClose} open={team !== null}>
+			<Dialog onOpenChange={requestClose} open={!confirmingDiscard}>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle className="text-lg">
@@ -174,7 +174,7 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 							</div>
 
 							<div className="flex flex-col gap-2">
-								<Button onClick={() => requestClose(false)}>Finish</Button>
+								<Button onClick={() => saveChanges()}>Save and Finish</Button>
 							</div>
 						</>
 					)}
