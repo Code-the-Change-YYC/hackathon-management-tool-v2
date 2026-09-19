@@ -20,6 +20,7 @@ import {
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
+import { applyInvitedRole } from "./invitations";
 
 export const usersRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -95,8 +96,14 @@ export const usersRouter = createTRPCRouter({
 				});
 			}
 
+			const invitedRole = await applyInvitedRole(
+				ctx.db,
+				updated.id,
+				updated.email
+			);
+
 			return {
-				user: updated,
+				user: invitedRole ? { ...updated, role: invitedRole } : updated,
 				wantsFood: input.wantsFood,
 				wantsFoodStored: false
 			};
