@@ -1,7 +1,7 @@
 import { ArrowRightLine } from "@mingcute/react";
 import Link from "next/link";
 import { Badge } from "@/app/components/ui/badge";
-import { Button } from "@/app/components/ui/button";
+import { Button, buttonVariants } from "@/app/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -124,12 +124,13 @@ export function JudgeTeamCard({
 				) : (
 					<div className="mt-auto flex justify-end">
 						{canScore ? (
-							<Button
+							<Link
 								aria-label={`Score ${assignment.team.name}`}
-								render={<Link href={scoreHref} />}
+								className={buttonVariants()}
+								href={scoreHref}
 							>
 								Score team <ArrowRightLine data-icon="inline-end" />
-							</Button>
+							</Link>
 						) : (
 							<Button
 								aria-label={`Score ${assignment.team.name}`}
