@@ -3,7 +3,11 @@
 import { useMemo } from "react";
 import { api } from "@/trpc/react";
 import { useJudgeUser } from "./JudgeUserProvider";
-import { getAssignmentRoomName, sortAssignments } from "./judgePortal";
+import {
+	getAssignmentRoomName,
+	sortAssignments,
+	sortCriteria
+} from "./judgePortal";
 
 export function useJudgePortalData() {
 	const { userId } = useJudgeUser();
@@ -20,10 +24,7 @@ export function useJudgePortalData() {
 		[assignmentsQuery.data]
 	);
 	const criteria = useMemo(
-		() =>
-			(criteriaQuery.data ?? [])
-				.slice()
-				.sort((a, b) => Number(a.isSidepot) - Number(b.isSidepot)),
+		() => (criteriaQuery.data ?? []).slice().sort(sortCriteria),
 		[criteriaQuery.data]
 	);
 	const roomLabels = useMemo(() => {

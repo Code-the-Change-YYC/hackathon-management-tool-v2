@@ -4,6 +4,14 @@ export type JudgeAssignment =
 	RouterOutputs["judgingAssignments"]["getByJudge"][number];
 export type Criterion = RouterOutputs["criteria"]["getAll"][number];
 
+export function sortCriteria(a: Criterion, b: Criterion) {
+	return (
+		Number(a.isSidepot) - Number(b.isSidepot) ||
+		a.displayOrder - b.displayOrder ||
+		a.name.localeCompare(b.name)
+	);
+}
+
 const judgeTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export function formatTime(value?: Date | null) {
@@ -139,6 +147,7 @@ export function getScoreFillClass(value: number, max: number) {
 }
 
 export function getCriterionDescription(criterion: Criterion) {
+	if (criterion.description.trim()) return criterion.description;
 	return criterion.isSidepot
 		? `Assess how well this project meets the ${criterion.name} sidepot and whether the execution is clear, meaningful, and complete.`
 		: `Evaluate how strongly this project demonstrates ${criterion.name.toLowerCase()} and how clearly that strength supports the team’s overall solution.`;
