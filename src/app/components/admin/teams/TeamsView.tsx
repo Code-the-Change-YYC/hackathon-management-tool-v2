@@ -162,7 +162,7 @@ export function TeamsView({ teams }: TeamsViewProps) {
 					sort={sort}
 				/>
 
-				<div className="flex h-7 flex-wrap items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2">
 					<span className="text-muted-foreground text-sm">
 						Showing {visibleTeams.length.toLocaleString()} of{" "}
 						{teams.length.toLocaleString()} teams
