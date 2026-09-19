@@ -1,15 +1,8 @@
 "use client";
 
 import { Input } from "@/app/components/ui/input";
-import { isValidTeamName, TEAM_NAME_MAX } from "@/lib/teamName";
-import {
-	ErrorText,
-	Modal,
-	ModalHeader,
-	PrimaryButton,
-	SecondaryButton,
-	useNameField
-} from "./Modal";
+import { isValidTeamName, TEAM_NAME_MAX } from "@/lib/utils";
+import { ActionModal, useNameField } from "./Modal";
 
 export default function RegisterTeamModal({
 	open,
@@ -29,12 +22,21 @@ export default function RegisterTeamModal({
 	const isValid = isValidTeamName(name);
 
 	return (
-		<Modal onClose={onClose} open={open}>
-			<ModalHeader
-				description="Pick a name for your team. You'll get a Team ID to share with your teammates so they can join."
-				title="Register your team"
-			/>
-
+		<ActionModal
+			description="Pick a name for your team. You'll get a Team ID to share with your teammates so they can join."
+			error={error}
+			onClose={onClose}
+			open={open}
+			primary={{
+				label: "Register",
+				loadingLabel: "Registering...",
+				loading,
+				disabled: !isValid,
+				onClick: () => isValid && onSubmit(trimmed)
+			}}
+			secondary={{ label: "Go back", onClick: onClose }}
+			title="Register your team"
+		>
 			<div className="flex flex-col gap-1.5">
 				<Input
 					aria-label="Team name"
@@ -49,21 +51,6 @@ export default function RegisterTeamModal({
 					chars).
 				</p>
 			</div>
-
-			{error && <ErrorText>{error}</ErrorText>}
-
-			<div className="flex flex-col gap-3">
-				<PrimaryButton
-					disabled={!isValid || loading}
-					onClick={() => isValid && onSubmit(trimmed)}
-					type="button"
-				>
-					{loading ? "Registering..." : "Register"}
-				</PrimaryButton>
-				<SecondaryButton onClick={onClose} type="button">
-					Go back
-				</SecondaryButton>
-			</div>
-		</Modal>
+		</ActionModal>
 	);
 }

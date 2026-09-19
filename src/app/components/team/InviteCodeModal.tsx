@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCopy } from "@/hooks/use-copy";
-import { Modal, ModalHeader, PrimaryButton } from "./Modal";
+import { ActionModal } from "./Modal";
 
 export default function InviteCodeModal({
 	open,
@@ -20,12 +20,16 @@ export default function InviteCodeModal({
 	}));
 
 	return (
-		<Modal onClose={onClose} open={open}>
-			<ModalHeader
-				description="Share this code with your teammates so they can join your team!"
-				title="Invite others to join your team!"
-			/>
-
+		<ActionModal
+			description="Share this code with your teammates so they can join your team!"
+			onClose={onClose}
+			open={open}
+			primary={{
+				label: copied ? "Copied!" : "Copy code to clipboard",
+				onClick: () => copy(code)
+			}}
+			title="Invite others to join your team!"
+		>
 			<div className="flex justify-center py-2">
 				<Image
 					alt="Mascot holding a flag"
@@ -45,10 +49,6 @@ export default function InviteCodeModal({
 					</span>
 				))}
 			</div>
-
-			<PrimaryButton onClick={() => copy(code)} type="button">
-				{copied ? "Copied!" : "Copy code to clipboard"}
-			</PrimaryButton>
-		</Modal>
+		</ActionModal>
 	);
 }

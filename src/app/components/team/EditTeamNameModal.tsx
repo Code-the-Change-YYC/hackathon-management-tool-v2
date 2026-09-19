@@ -1,14 +1,7 @@
 "use client";
 
 import { Input } from "@/app/components/ui/input";
-import {
-	ErrorText,
-	Modal,
-	ModalHeader,
-	PrimaryButton,
-	SecondaryButton,
-	useNameField
-} from "./Modal";
+import { ActionModal, useNameField } from "./Modal";
 
 export default function EditTeamNameModal({
 	open,
@@ -29,12 +22,21 @@ export default function EditTeamNameModal({
 	const trimmed = name.trim();
 
 	return (
-		<Modal onClose={onClose} open={open}>
-			<ModalHeader
-				description="Choose a new name for your team."
-				title="Edit team name"
-			/>
-
+		<ActionModal
+			description="Choose a new name for your team."
+			error={error}
+			onClose={onClose}
+			open={open}
+			primary={{
+				label: "Save",
+				loadingLabel: "Saving...",
+				loading,
+				disabled: !trimmed,
+				onClick: () => onSave(trimmed)
+			}}
+			secondary={{ label: "Cancel", onClick: onClose }}
+			title="Edit team name"
+		>
 			<Input
 				aria-label="Team name"
 				className="h-auto rounded-xl px-4 py-3 font-medium text-[16px]"
@@ -42,21 +44,6 @@ export default function EditTeamNameModal({
 				onChange={(e) => setName(e.target.value)}
 				value={name}
 			/>
-
-			{error && <ErrorText>{error}</ErrorText>}
-
-			<div className="flex flex-col gap-3">
-				<PrimaryButton
-					disabled={!trimmed || loading}
-					onClick={() => onSave(trimmed)}
-					type="button"
-				>
-					{loading ? "Saving..." : "Save"}
-				</PrimaryButton>
-				<SecondaryButton onClick={onClose} type="button">
-					Cancel
-				</SecondaryButton>
-			</div>
-		</Modal>
+		</ActionModal>
 	);
 }

@@ -105,6 +105,63 @@ export function ErrorText({
 	);
 }
 
+type ModalAction = {
+	label: string;
+	loadingLabel?: string;
+	onClick: () => void;
+	disabled?: boolean;
+	loading?: boolean;
+};
+
+export function ActionModal({
+	open,
+	onClose,
+	showClose,
+	title,
+	description,
+	error,
+	errorClassName,
+	danger,
+	primary,
+	secondary,
+	children
+}: {
+	open: boolean;
+	onClose: () => void;
+	showClose?: boolean;
+	title: React.ReactNode;
+	description?: React.ReactNode;
+	error?: string | null;
+	errorClassName?: string;
+	danger?: boolean;
+	primary: ModalAction;
+	secondary?: { label: string; onClick: () => void };
+	children?: React.ReactNode;
+}) {
+	const Confirm = danger ? DangerButton : PrimaryButton;
+	return (
+		<Modal onClose={onClose} open={open} showClose={showClose}>
+			<ModalHeader description={description} title={title} />
+			{children}
+			{error && <ErrorText className={errorClassName}>{error}</ErrorText>}
+			<div className="flex flex-col gap-3">
+				<Confirm
+					disabled={primary.disabled || primary.loading}
+					onClick={primary.onClick}
+					type="button"
+				>
+					{primary.loading ? primary.loadingLabel : primary.label}
+				</Confirm>
+				{secondary && (
+					<SecondaryButton onClick={secondary.onClick} type="button">
+						{secondary.label}
+					</SecondaryButton>
+				)}
+			</div>
+		</Modal>
+	);
+}
+
 export function Modal({
 	open,
 	onClose,

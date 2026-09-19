@@ -7,7 +7,7 @@ import {
 	useState
 } from "react";
 import { Input } from "@/app/components/ui/input";
-import { ErrorText, Modal, ModalHeader, PrimaryButton } from "./Modal";
+import { ActionModal } from "./Modal";
 
 const CODE_LENGTH = 6;
 const CELL_IDS = Array.from(
@@ -78,12 +78,21 @@ export default function JoinCodeModal({
 	const complete = code.length === CODE_LENGTH;
 
 	return (
-		<Modal onClose={onClose} open={open}>
-			<ModalHeader
-				description={`Your teammates can share a join code with you to invite members on their "My Team" page.`}
-				title="Enter your team's Invite Code to join"
-			/>
-
+		<ActionModal
+			description={`Your teammates can share a join code with you to invite members on their "My Team" page.`}
+			error={error}
+			errorClassName="text-center"
+			onClose={onClose}
+			open={open}
+			primary={{
+				label: "Continue",
+				loadingLabel: "Checking...",
+				loading,
+				disabled: !complete,
+				onClick: () => onSubmit(code)
+			}}
+			title="Enter your team's Invite Code to join"
+		>
 			<div className="flex flex-col items-center gap-2">
 				<p className="font-medium text-[14px] text-grey-600">
 					Team invite code
@@ -108,16 +117,6 @@ export default function JoinCodeModal({
 					))}
 				</div>
 			</div>
-
-			{error && <ErrorText className="text-center">{error}</ErrorText>}
-
-			<PrimaryButton
-				disabled={!complete || loading}
-				onClick={() => onSubmit(code)}
-				type="button"
-			>
-				{loading ? "Checking..." : "Continue"}
-			</PrimaryButton>
-		</Modal>
+		</ActionModal>
 	);
 }
