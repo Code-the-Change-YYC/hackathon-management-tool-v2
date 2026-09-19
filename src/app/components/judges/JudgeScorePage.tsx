@@ -13,7 +13,7 @@ import { Button } from "@/app/components/ui/button";
 import { getRubricBands } from "@/lib/judging";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
-import { LoadingCard } from "./LoadingCard";
+import { useJudgeUser } from "./JudgeUserProvider";
 import {
 	type Criterion,
 	formatTime,
@@ -26,10 +26,10 @@ import {
 	getScoreTone,
 	getTeamCode,
 	hasDraftScore,
-	type JudgeAssignment,
-	useJudgePortalData,
-	useJudgeUser
-} from "./useJudgePortalData";
+	type JudgeAssignment
+} from "./judgePortal";
+import { LoadingCard } from "./LoadingCard";
+import { useJudgePortalData } from "./useJudgePortalData";
 
 function ScoreStatusChip({
 	active,
