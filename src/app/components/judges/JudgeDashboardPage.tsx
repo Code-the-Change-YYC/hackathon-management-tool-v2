@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { ErrorCard } from "./ErrorCard";
 import { JoinMeetingButton } from "./JoinMeetingButton";
-import { LoadingCard } from "./LoadingCard";
+import { useJudgeUser } from "./JudgeUserProvider";
 import {
 	type Criterion,
 	formatTime,
@@ -19,10 +19,10 @@ import {
 	getScoreTone,
 	getTeamCode,
 	isAssignmentScored,
-	type JudgeAssignment,
-	useJudgePortalData,
-	useJudgeUser
-} from "./useJudgePortalData";
+	type JudgeAssignment
+} from "./judgePortal";
+import { LoadingCard } from "./LoadingCard";
+import { useJudgePortalData } from "./useJudgePortalData";
 
 function RoundStatsCard({
 	assigned,
