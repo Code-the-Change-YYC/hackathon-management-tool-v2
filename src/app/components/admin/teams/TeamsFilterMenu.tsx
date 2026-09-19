@@ -30,7 +30,7 @@ export function TeamsFilterMenu({
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					<Button aria-label="Filter users" size="icon-lg" variant="ghost" />
+					<Button aria-label="Filter teams" size="icon-lg" variant="ghost" />
 				}
 			>
 				<Filter2Line />

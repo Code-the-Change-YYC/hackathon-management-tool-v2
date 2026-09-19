@@ -42,9 +42,9 @@ type TeamsTableProps = {
 function getBooleanElement(bool: boolean | null) {
 	switch (bool) {
 		case true:
-			return <CheckFill size={10} />;
+			return <CheckFill aria-label="Passed" size={10} />;
 		case false:
-			return <CloseFill size={10} />;
+			return <CloseFill aria-label="Failed" size={10} />;
 		default:
 			return <p>N/A</p>;
 	}
@@ -59,7 +59,7 @@ function getRoundTwoElement(
 		case "sp-winner":
 			return <p>SP Winner</p>;
 		case "rejected":
-			return <CloseFill size={10} />;
+			return <CloseFill aria-label="Rejected" size={10} />;
 		default:
 			return <p>N/A</p>;
 	}

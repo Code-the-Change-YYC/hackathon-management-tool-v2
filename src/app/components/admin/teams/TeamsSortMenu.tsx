@@ -12,7 +12,6 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import { SORT_OPTIONS, type SortOption } from "./types";
 
-// TODO: Merge this and ParticipantsSortMenu? They are the same except for the SORT_OPTIONS
 type TeamsSortMenuProps = {
 	sort: SortOption | null;
 	onSortChange: (sort: SortOption) => void;
@@ -23,7 +22,7 @@ export function TeamsSortMenu({ sort, onSortChange }: TeamsSortMenuProps) {
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					<Button aria-label="Sort users" size="icon-lg" variant="ghost" />
+					<Button aria-label="Sort teams" size="icon-lg" variant="ghost" />
 				}
 			>
 				<SortAscendingLine />
