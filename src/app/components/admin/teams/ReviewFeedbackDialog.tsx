@@ -53,6 +53,10 @@ function booleanToRadioValue(value: boolean | null) {
 		return "fail";
 	}
 
+	if (value === null) {
+		return "null";
+	}
+
 	return "";
 }
 
@@ -63,6 +67,10 @@ function radioValueToBoolean(value: string): boolean | null {
 
 	if (value === "fail") {
 		return false;
+	}
+
+	if (value === "null") {
+		return null;
 	}
 
 	return null;
@@ -150,6 +158,10 @@ export function ReviewFeedbackDialog({
 									<RadioGroupItem id="review-prescreen-fail" value="fail" />
 									<Label htmlFor="review-prescreen-fail">Fail</Label>
 								</div>
+								<div className="flex items-center gap-2">
+									<RadioGroupItem id="review-prescreen-null" value="null" />
+									<Label htmlFor="review-prescreen-null">Not Reviewed</Label>
+								</div>
 							</RadioGroup>
 							<FieldLabel htmlFor="review-prescreen-feedback">
 								Prescreen feedback
@@ -186,6 +198,10 @@ export function ReviewFeedbackDialog({
 									<RadioGroupItem id="review-round1-fail" value="fail" />
 									<Label htmlFor="review-round1-fail">Fail</Label>
 								</div>
+								<div className="flex items-center gap-2">
+									<RadioGroupItem id="review-round1-null" value="null" />
+									<Label htmlFor="review-round1-null">Not Reviewed</Label>
+								</div>
 							</RadioGroup>
 						</Field>
 
@@ -199,8 +215,10 @@ export function ReviewFeedbackDialog({
 							<RadioGroup
 								aria-labelledby="review-round2-status-label"
 								id="review-round2-status"
-								onValueChange={(value) => updateField("round2", value)}
-								value={fields.round2}
+								onValueChange={(value) =>
+									updateField("round2", value === "null" ? null : value)
+								}
+								value={fields.round2 === null ? "null" : fields.round2}
 							>
 								<div className="flex items-center gap-2">
 									<RadioGroupItem id="review-round2-winner" value="winner" />
@@ -218,7 +236,11 @@ export function ReviewFeedbackDialog({
 										id="review-round2-rejected"
 										value="rejected"
 									/>
-									<Label htmlFor="review-round2-rejected">None</Label>
+									<Label htmlFor="review-round2-rejected">Reject</Label>
+								</div>
+								<div className="flex items-center gap-2">
+									<RadioGroupItem id="review-round2-null" value="null" />
+									<Label htmlFor="review-round2-null">Not Reviewed</Label>
 								</div>
 							</RadioGroup>
 						</Field>
