@@ -18,7 +18,7 @@ test.use({
 });
 
 // Given I am signed in as a participant
-// When I navigate to /participant/meal-info
+// When I navigate to /participant/meals
 // Then I see Meal Information, Your Meal Ticket, Dietary Restrictions, and Meal Schedule.
 test(
 	"participant can access all meal information sections",
@@ -39,26 +39,49 @@ test(
 	}
 );
 
-for (const role of [Role.ADMIN, Role.JUDGE]) {
-	test.describe(`${role} access`, () => {
-		test.use({ authUserOptions: { role } });
-		// Given I am signed in as an admin or judge (one test per role)
-		// When I navigate to /participant/meal-info
-		// Then I am redirected to / and cannot see the meal information page.
-		test("redirects non-participants to the home page", async ({
-			authenticatedPage: page
-		}) => {
-			await page.goto(path);
-			await expect(page).toHaveURL("/");
+test.describe("admin access", () => {
+	test.use({ authUserOptions: { role: Role.ADMIN } });
+
+	// Given I am signed in as an admin
+	// When I navigate to /participant/meals
+	// Then I can view all meal information sections without being redirected.
+	test("admin can access all meal information sections", async ({
+		authenticatedPage: page
+	}) => {
+		await page.goto(path);
+		await expect(page).toHaveURL(path);
+		for (const name of [
+			"Meal Information",
+			"Your Meal Ticket",
+			"Dietary Restrictions",
+			"Meal Schedule"
+		]) {
 			await expect(
-				page.getByRole("heading", { name: "Meal Information", exact: true })
-			).toHaveCount(0);
-		});
+				page.getByRole("heading", { name, exact: true })
+			).toBeVisible();
+		}
 	});
-}
+});
+
+test.describe("judge access", () => {
+	test.use({ authUserOptions: { role: Role.JUDGE } });
+
+	// Given I am signed in as a judge
+	// When I navigate to /participant/meals
+	// Then I am redirected to / and cannot see the meal information page.
+	test("redirects judges to the home page", async ({
+		authenticatedPage: page
+	}) => {
+		await page.goto(path);
+		await expect(page).toHaveURL("/");
+		await expect(
+			page.getByRole("heading", { name: "Meal Information", exact: true })
+		).toHaveCount(0);
+	});
+});
 
 // Given I am signed out
-// When I navigate to /participant/meal-info
+// When I navigate to /participant/meals
 // Then I am redirected to / and cannot see the meal information page.
 test("redirects signed-out users to the home page", async ({ page }) => {
 	await page.goto(path);

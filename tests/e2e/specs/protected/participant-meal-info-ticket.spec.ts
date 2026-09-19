@@ -7,7 +7,10 @@ import { db } from "@/server/db";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import { EventStatus, EventType, Role } from "@/types/types";
 import { createTestUser, getTestUserCookies } from "../../../utils/auth";
-import { minute } from "../../../utils/participant-meal-info-page";
+import {
+	mealInfoPath,
+	minute
+} from "../../../utils/participant-meal-info-page";
 import {
 	browserTime,
 	expectStoredTicket,
@@ -29,7 +32,7 @@ for (const timing of [
 ]) {
 	// Given I am a participant with no check-in for an active food meal
 	// And the meal is ongoing, starts within 60 minutes, or starts later (one test each)
-	// When I navigate to /participant/meal-info
+	// When I navigate to /participant/meals
 	// Then the ticket shows the meal name, my name, the matching status, and end time
 	// And the accessible QR code decodes to a valid token stored for me and this meal.
 	test(`shows a valid meal ticket when the meal is ${timing.name}`, async ({
@@ -47,7 +50,7 @@ for (const timing of [
 			endTime: new Date(now.getTime() + (timing.startMinutes + 60) * minute)
 		});
 
-		await page.goto("/participant/meal-info");
+		await page.goto(mealInfoPath);
 		const ticket = ticketSection(page);
 		await expect(
 			ticket.getByText(`${meal.title} Ticket For`, { exact: true })
@@ -67,7 +70,7 @@ for (const timing of [
 }
 
 // Given only an ended meal, a draft future meal, and an active non-food event exist
-// When I navigate to /participant/meal-info as a participant
+// When I navigate to /participant/meals as a participant
 // Then I see "There is no upcoming meal ticket available." and "No ticket available"
 // And no QR code is displayed or event ticket created for me.
 test("shows an empty ticket with no QR when no active unended food meal exists", async ({
@@ -100,7 +103,7 @@ test("shows an empty ticket with no QR when no active unended food meal exists",
 		.set({ type: EventType.ACTIVITY })
 		.where(eq(event.id, activity.id));
 
-	await page.goto("/participant/meal-info");
+	await page.goto(mealInfoPath);
 	await expect(ticketSection(page)).toContainText(
 		"There is no upcoming meal ticket available."
 	);
@@ -116,7 +119,7 @@ test("shows an empty ticket with no QR when no active unended food meal exists",
 });
 
 // Given I am a participant already checked in to the active meal
-// When I navigate to /participant/meal-info
+// When I navigate to /participant/meals
 // Then I see "Already checked in" and my check-in time
 // And neither a QR code nor instructions to present one are displayed.
 test("shows an existing check-in timestamp instead of a QR", async ({
@@ -139,7 +142,7 @@ test("shows an existing check-in timestamp instead of a QR", async ({
 		createdAt: checkedInAt
 	});
 
-	await page.goto("/participant/meal-info");
+	await page.goto(mealInfoPath);
 	await expect(
 		ticketSection(page).getByText("Already checked in", { exact: true })
 	).toBeVisible();
@@ -171,7 +174,7 @@ test("reload rotates the QR: the old token is rejected and the current token red
 		startTime: new Date(now - 15 * minute),
 		endTime: new Date(now + 60 * minute)
 	});
-	await page.goto("/participant/meal-info");
+	await page.goto(mealInfoPath);
 	const oldToken = await readTicketToken(page);
 	await expectStoredTicket(oldToken, authUser.id, meal);
 	await page.reload();
