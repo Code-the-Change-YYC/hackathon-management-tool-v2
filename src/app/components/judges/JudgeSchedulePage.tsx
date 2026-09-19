@@ -6,7 +6,6 @@ import PageHeader from "@/app/components/PageHeader";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { ErrorCard } from "./ErrorCard";
-import { LoadingCard } from "./LoadingCard";
 import {
 	type Criterion,
 	formatDate,
@@ -17,9 +16,10 @@ import {
 	getTeamCode,
 	isAssignmentScored,
 	type JudgeAssignment,
-	sortAssignments,
-	useJudgePortalData
-} from "./useJudgePortalData";
+	sortAssignments
+} from "./judgePortal";
+import { LoadingCard } from "./LoadingCard";
+import { useJudgePortalData } from "./useJudgePortalData";
 
 function inferDuration(
 	assignment: JudgeAssignment,
