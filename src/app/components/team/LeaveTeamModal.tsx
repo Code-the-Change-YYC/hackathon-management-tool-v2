@@ -1,6 +1,12 @@
 "use client";
 
-import { DangerButton, Modal, ModalTitle, SecondaryButton } from "./Modal";
+import {
+	DangerButton,
+	ErrorText,
+	Modal,
+	ModalHeader,
+	SecondaryButton
+} from "./Modal";
 
 export default function LeaveTeamModal({
 	open,
@@ -19,14 +25,12 @@ export default function LeaveTeamModal({
 }) {
 	return (
 		<Modal onClose={onCancel} open={open} showClose={false}>
-			<div className="flex flex-col gap-2">
-				<ModalTitle>Are you sure you want to leave {teamName}?</ModalTitle>
-				<p className="text-[16px] text-grey-600 leading-6">
-					This action can't be undone!
-				</p>
-			</div>
+			<ModalHeader
+				description="This action can't be undone!"
+				title={`Are you sure you want to leave ${teamName}?`}
+			/>
 
-			{error && <p className="font-medium text-[14px] text-red-700">{error}</p>}
+			{error && <ErrorText>{error}</ErrorText>}
 
 			<div className="flex flex-col gap-3">
 				<DangerButton disabled={loading} onClick={onConfirm} type="button">

@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import type { ComponentProps } from "react";
+import { type ComponentProps, useEffect, useState } from "react";
 import { CloseIcon } from "@/app/components/layout/icons";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -63,6 +63,45 @@ export function ModalTitle({
 			)}
 			{...props}
 		/>
+	);
+}
+
+export function useNameField(open: boolean, initial: string) {
+	const [name, setName] = useState(initial);
+	useEffect(() => {
+		if (open) setName(initial);
+	}, [open, initial]);
+	return [name, setName] as const;
+}
+
+export function ModalHeader({
+	title,
+	description
+}: {
+	title: React.ReactNode;
+	description?: React.ReactNode;
+}) {
+	return (
+		<div className="flex flex-col gap-2">
+			<ModalTitle>{title}</ModalTitle>
+			{description && (
+				<p className="text-[16px] text-grey-600 leading-6">{description}</p>
+			)}
+		</div>
+	);
+}
+
+export function ErrorText({
+	children,
+	className
+}: {
+	children: React.ReactNode;
+	className?: string;
+}) {
+	return (
+		<p className={cn("font-medium text-[14px] text-red-700", className)}>
+			{children}
+		</p>
 	);
 }
 

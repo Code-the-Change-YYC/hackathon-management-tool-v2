@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Input } from "@/app/components/ui/input";
-import { Modal, ModalTitle, PrimaryButton, SecondaryButton } from "./Modal";
+import {
+	ErrorText,
+	Modal,
+	ModalHeader,
+	PrimaryButton,
+	SecondaryButton,
+	useNameField
+} from "./Modal";
 
 export default function EditTeamNameModal({
 	open,
@@ -19,24 +25,15 @@ export default function EditTeamNameModal({
 	loading?: boolean;
 	error?: string | null;
 }) {
-	const [name, setName] = useState(currentName);
-
-	useEffect(() => {
-		if (open) {
-			setName(currentName);
-		}
-	}, [open, currentName]);
-
+	const [name, setName] = useNameField(open, currentName);
 	const trimmed = name.trim();
 
 	return (
 		<Modal onClose={onClose} open={open}>
-			<div className="flex flex-col gap-2">
-				<ModalTitle>Edit team name</ModalTitle>
-				<p className="text-[16px] text-grey-600 leading-6">
-					Choose a new name for your team.
-				</p>
-			</div>
+			<ModalHeader
+				description="Choose a new name for your team."
+				title="Edit team name"
+			/>
 
 			<Input
 				aria-label="Team name"
@@ -46,7 +43,7 @@ export default function EditTeamNameModal({
 				value={name}
 			/>
 
-			{error && <p className="font-medium text-[14px] text-red-700">{error}</p>}
+			{error && <ErrorText>{error}</ErrorText>}
 
 			<div className="flex flex-col gap-3">
 				<PrimaryButton
