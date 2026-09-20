@@ -1,7 +1,8 @@
 "use client";
-
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -13,7 +14,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle
 } from "@/app/components/ui/alert-dialog";
-import { Button } from "../../ui/button";
+import { Button, buttonVariants } from "../../ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -112,29 +113,32 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 					</DialogHeader>
 
 					{step === "intro" && (
-						<>
-							<div className="flex flex-col gap-2">
-								<p>Complete the prescreening check for team {team.name}!</p>
-							</div>
+						<div className="flex flex-col gap-2">
+							<p>Complete the prescreening check for team {team.name}!</p>
 
-							<div className="flex flex-col gap-2">
-								<Button
-									render={
-										<Link href="/admin/teams/score-by-rubric">
-											Score by Rubric
-										</Link>
-									}
-								/>
-
-								<Button onClick={() => setStep("pass-fail")} variant="ghost">
-									Skip to pass/fail
-								</Button>
-							</div>
-						</>
+							<Image
+								alt="Flag guy"
+								className="mx-auto h-53.25 w-53.25 shrink-0 object-contain"
+								height={249}
+								src="/svgs/flagGuy.svg"
+								width={254}
+							/>
+							<Button
+								nativeButton={false}
+								render={
+									<Link href="/admin/teams/score-by-rubric">
+										Score by Rubric
+									</Link>
+								}
+							/>
+							<Button onClick={() => setStep("pass-fail")} variant="outline">
+								Skip to pass/fail
+							</Button>
+						</div>
 					)}
 
 					{step === "pass-fail" && (
-						<>
+						<div className="flex flex-col gap-2">
 							<p>
 								Please pass or fail the team, and give a brief justification*.
 							</p>
@@ -145,57 +149,59 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 								placeholder="Describe why the team passed or failed…"
 								value={fields.justification}
 							/>
-							<div className="flex flex-col gap-2">
-								<Button
-									disabled={!hasJustification}
-									onClick={() => void handleDecision(true)}
-								>
-									Pass team
-								</Button>
+							<Button
+								disabled={!hasJustification}
+								onClick={() => void handleDecision(true)}
+							>
+								Pass team
+							</Button>
 
-								<Button
-									disabled={!hasJustification}
-									onClick={() => void handleDecision(false)}
-									variant="ghost"
-								>
-									Fail team
-								</Button>
-							</div>
-						</>
+							<Button
+								disabled={!hasJustification}
+								onClick={() => void handleDecision(false)}
+								variant="ghost"
+							>
+								Fail team
+							</Button>
+						</div>
 					)}
 
 					{step === "result" && (
-						// TODO: Add graphic
-						<>
-							<div className="flex flex-col gap-2">
-								<p>
-									You {fields.passed ? "passed" : "failed"} Team: {team.name}.
-								</p>
-							</div>
-
-							<div className="flex flex-col gap-2">
-								<Button onClick={() => saveChanges()}>Save and Finish</Button>
-							</div>
-						</>
+						<div className="flex flex-col gap-2">
+							<p>
+								You {fields.passed ? "passed" : "failed"} Team: {team.name}.
+							</p>
+							<Image
+								alt="Flag guy"
+								className="mx-auto h-53.25 w-53.25 shrink-0 object-contain"
+								height={249}
+								src="/svgs/flagGuy.svg"
+								width={254}
+							/>
+							<Button onClick={() => saveChanges()}>Save and Finish</Button>
+						</div>
 					)}
 
 					{step === "already-screened" && (
-						<>
-							<p>This team has already been prescreened!</p>
-							{/* TODO: Add graphic */}
-							<div className="flex flex-col gap-2">
-								<Button
-									onClick={() => setStep("pass-fail")}
-									variant="destructive"
-								>
-									Edit result
-								</Button>
-
-								<Button onClick={() => requestClose(false)} variant="ghost">
-									Cancel
-								</Button>
-							</div>
-						</>
+						<div className="flex flex-col gap-2">
+							<p>NOTE: This team has already been prescreened!</p>
+							<Image
+								alt="Flag guy"
+								className="mx-auto h-53.25 w-53.25 shrink-0 object-contain"
+								height={249}
+								src="/svgs/flagGuy.svg"
+								width={254}
+							/>
+							<Button
+								onClick={() => setStep("pass-fail")}
+								variant="destructive"
+							>
+								Edit result
+							</Button>
+							<Button onClick={() => requestClose(false)} variant="ghost">
+								Cancel
+							</Button>
+						</div>
 					)}
 				</DialogContent>
 			</Dialog>
