@@ -1,4 +1,4 @@
-// TODO: Pretty sure this is implemented by Essam already, so reuse that
 export default function ScoreByRubricPage() {
-	return <div>score by rubric</div>;
+	// TODO: Connect to judging's score by rubric page.
+	return <div>Score By Rubric Page</div>;
 }
