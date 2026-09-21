@@ -7,9 +7,8 @@ async function main() {
 	console.log("Starting seed...");
 
 	try {
-		const { adminUser, credentials, judges, participantUser } =
-			await seedUsers();
-		const teams = await seedTeams({ adminUser, participantUser });
+		const { credentials, judges, participantUser } = await seedUsers();
+		const teams = await seedTeams({ participantUser });
 		const meals = await seedMeals(participantUser);
 		await seedJudging({ judges, teams });
 
