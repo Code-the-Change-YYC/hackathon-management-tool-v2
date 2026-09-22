@@ -8,7 +8,7 @@ type SendEmailInput = {
 
 export async function sendEmail({ to, subject, html }: SendEmailInput) {
 	if (!env.RESEND_API_KEY) {
-		console.info(`[email] (no RESEND_API_KEY) would send to ${to}: ${subject}`);
+		console.info("[email] delivery disabled (no RESEND_API_KEY)");
 		return;
 	}
 
