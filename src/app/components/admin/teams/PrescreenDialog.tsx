@@ -14,7 +14,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle
 } from "@/app/components/ui/alert-dialog";
-import { Button, buttonVariants } from "../../ui/button";
+import { Button } from "../../ui/button";
 import {
 	Dialog,
 	DialogContent,
