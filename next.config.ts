@@ -18,7 +18,8 @@ const config: NextConfig = {
 				protocol: "https"
 			}
 		]
-	}
+	},
+	reactCompiler: true
 };
 
 export default config;
