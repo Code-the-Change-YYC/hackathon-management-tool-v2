@@ -60,9 +60,9 @@ export default function CriteriaTable({
 		deleteCriteriaMutation.reset();
 	};
 
-	const update = (input: CriteriaUpdate) => {
+	const update = (input: CriteriaUpdate, onError?: () => void) => {
 		resetMutationErrors();
-		updateCriteriaMutation.mutate(input);
+		updateCriteriaMutation.mutate(input, { onError });
 	};
 
 	const handleSubmit = () => {
@@ -106,6 +106,7 @@ export default function CriteriaTable({
 
 	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
 	const columnDefs = createColumnDefs({
+		deletePending: deleteCriteriaMutation.isPending,
 		onUpdate: update,
 		onDelete: handleDelete
 	});
@@ -224,13 +225,14 @@ export default function CriteriaTable({
 					onCellValueChanged={(e) => {
 						if (!e.data || !e.colDef.field) return;
 						if (e.newValue === e.oldValue) return;
+						const field = e.colDef.field;
 						if (
-							e.colDef.field === "name" ||
-							e.colDef.field === "description" ||
-							e.colDef.field === "displayOrder" ||
-							e.colDef.field === "maxScore"
+							field in
+							new Set(["name", "description", "displayOrder", "maxScore"])
 						) {
-							void update({ id: e.data.id, [e.colDef.field]: e.newValue });
+							update({ id: e.data.id, [field]: e.newValue }, () =>
+								e.node.setDataValue(field, e.oldValue)
+							);
 						}
 					}}
 					rowData={initialCriteria}

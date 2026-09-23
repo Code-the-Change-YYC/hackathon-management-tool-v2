@@ -22,6 +22,7 @@ export type CriteriaUpdate = { id: string } & Partial<
 type ColumnCallbacks = {
 	onUpdate: (input: CriteriaUpdate) => void;
 	onDelete: (criterion: Criteria) => void;
+	deletePending: boolean;
 };
 
 export const defaultColDef: ColDef<Criteria> = {
@@ -33,7 +34,8 @@ export const defaultColDef: ColDef<Criteria> = {
 
 export function createColumnDefs({
 	onUpdate,
-	onDelete
+	onDelete,
+	deletePending
 }: ColumnCallbacks): ColDef<Criteria>[] {
 	return [
 		{
@@ -91,6 +93,7 @@ export function createColumnDefs({
 				return createElement(
 					Button,
 					{
+						disabled: deletePending,
 						onClick: () => onDelete(params.data as Criteria),
 						size: "sm",
 						type: "button",
