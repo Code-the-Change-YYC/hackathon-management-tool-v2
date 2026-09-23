@@ -1,20 +1,4 @@
-"use client";
-
-import {
-	Calendar2Line,
-	DiscordLine,
-	GroupLine,
-	HamburgerLine,
-	Home4Line,
-	LinkLine,
-	NotificationLine,
-	QuestionLine,
-	Settings3Line,
-	TaskLine,
-	User3Line
-} from "@mingcute/react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { NotificationLine } from "@mingcute/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -29,37 +13,12 @@ import {
 	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
 	SidebarTrigger
 } from "@/app/components/ui/sidebar";
+import { SidebarNavItem } from "./SidebarNavItem";
+import type { NavGroup } from "./sidebar-nav";
 
-const NAV_ICONS = {
-	home: Home4Line,
-	calendar: Calendar2Line,
-	group: GroupLine,
-	hamburger: HamburgerLine,
-	link: LinkLine,
-	task: TaskLine,
-	question: QuestionLine,
-	discord: DiscordLine,
-	user: User3Line,
-	settings: Settings3Line
-} as const;
-
-export type NavIconKey = keyof typeof NAV_ICONS;
-
-export interface NavGroup {
-	groupLabel: string;
-	items: NavItem[];
-}
-
-export interface NavItem {
-	title: string;
-	href: string;
-	icon: NavIconKey;
-	external?: boolean;
-}
+export type { NavGroup, NavIconKey, NavItem } from "./sidebar-nav";
 
 interface AppSidebarProps {
 	navGroups: NavGroup[];
@@ -72,7 +31,6 @@ export function AppSidebar({
 	userName,
 	avatarUrl
 }: AppSidebarProps) {
-	const pathname = usePathname();
 	const initials = userName.slice(0, 1).toUpperCase();
 
 	return (
@@ -102,11 +60,7 @@ export function AppSidebar({
 						<SidebarGroupContent>
 							<SidebarMenu>
 								{group.items.map((item) => (
-									<AppSidebarItem
-										item={item}
-										key={item.href}
-										pathname={pathname}
-									/>
+									<SidebarNavItem item={item} key={item.href} />
 								))}
 							</SidebarMenu>
 						</SidebarGroupContent>
@@ -114,35 +68,6 @@ export function AppSidebar({
 				))}
 			</SidebarContent>
 		</Sidebar>
-	);
-}
-
-function AppSidebarItem({
-	item,
-	pathname
-}: {
-	item: NavItem;
-	pathname: string;
-}) {
-	const Icon = NAV_ICONS[item.icon];
-
-	return (
-		<SidebarMenuItem>
-			<SidebarMenuButton
-				isActive={pathname === item.href}
-				render={
-					<Link
-						href={item.href}
-						rel={item.external ? "noopener noreferrer" : undefined}
-						target={item.external ? "_blank" : undefined}
-					/>
-				}
-				tooltip={item.title}
-			>
-				<Icon />
-				<span>{item.title}</span>
-			</SidebarMenuButton>
-		</SidebarMenuItem>
 	);
 }
 
