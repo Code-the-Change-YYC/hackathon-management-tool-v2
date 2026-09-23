@@ -12,7 +12,7 @@ const criteriaFieldsSchema = z.object({
 	name: z.string().trim().min(1).optional(),
 	description: z.string().optional(),
 	displayOrder: z.number().int().optional(),
-	maxScore: z.number().int().optional(),
+	maxScore: z.number().int().min(1).max(100).optional(),
 	isSidepot: z.boolean().optional()
 });
 
@@ -20,7 +20,7 @@ const createCriteriaSchema = criteriaFieldsSchema.extend({
 	name: z.string().trim().min(1),
 	description: z.string().default(""),
 	displayOrder: z.number().int().default(0),
-	maxScore: z.number().int().default(10),
+	maxScore: z.number().int().min(1).max(100).default(10),
 	isSidepot: z.boolean().default(false)
 });
 
