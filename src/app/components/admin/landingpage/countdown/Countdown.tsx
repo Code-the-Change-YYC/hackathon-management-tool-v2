@@ -57,6 +57,7 @@ export default function Countdown() {
 						</p>
 						<Image
 							alt=""
+							className="h-auto w-auto"
 							height={16}
 							src="/svgs/landingPage/purple_underline.svg"
 							width={140}
