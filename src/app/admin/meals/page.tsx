@@ -1,4 +1,5 @@
-export default function AdminMealsPage() {
-	// TODO: Implement admin meals page
-	return <div>Meals Page</div>;
+import MealView from "@/app/components/admin/meals/MealView";
+
+export default function AdminSchedulePage() {
+	return <MealView />;
 }
