@@ -18,7 +18,7 @@ const ScanMealTicketsImage = ({
 				className={twMerge(
 					"absolute rotate-[-3.941deg]",
 					layout === "horizontal"
-						? "-top-[80px] right-[40px] h-[313.777px] w-[313.777px]"
+						? "-top-20 right-10 h-[313.777px] w-[313.777px]"
 						: "right-0 bottom-0 h-[161.8805px] w-[161.8805px]"
 				)}
 			>
@@ -34,8 +34,8 @@ const ScanMealTicketsImage = ({
 				className={twMerge(
 					"absolute rotate-[-3.941deg]",
 					layout === "horizontal"
-						? "-top-[80px] right-[275px] h-[313.777px] w-[313.777px]"
-						: "-bottom-[20px] right-[125px] h-[195.2742px] w-[195.2742px]"
+						? "-top-20 right-68.75 h-[313.777px] w-[313.777px]"
+						: "-bottom-5 right-31.25 h-[195.2742px] w-[195.2742px]"
 				)}
 			>
 				<Image
@@ -90,21 +90,21 @@ export default function Banner({
 	return (
 		<div
 			className={twMerge(
-				"relative w-fill justify-between overflow-hidden rounded-[16px] p-[24px]",
+				"relative w-fill justify-between overflow-hidden rounded-4 p-6",
 				colour === "purple" ? "bg-purple500" : "bg-red700",
-				layout === "horizontal" ? "flex-row" : "h-[299px] flex-col",
+				layout === "horizontal" ? "flex-row" : "h-74.75 flex-col",
 				className
 			)}
 		>
-			<div className="z-1 flex max-w-[400px] flex-col gap-[16px]">
-				<div className="flex flex-col gap-[4px]">
-					<h1 className="font-semibold text-[28px] text-white leading-[36px]">
+			<div className="z-1 flex max-w-100 flex-col gap-4">
+				<div className="flex flex-col gap-1">
+					<h1 className="font-semibold text-[28px] text-white leading-9">
 						{title}
 					</h1>
-					<div className="flex flex-row gap-[24px]">
+					<div className="flex flex-row gap-6">
 						{location && (
-							<div className="flex flex-row items-center gap-[8px]">
-								<div className="h-[24px] w-[24px]">
+							<div className="flex flex-row items-center gap-2">
+								<div className="h-6 w-6">
 									<Image
 										alt="pin icon"
 										className="h-full w-full"
@@ -113,15 +113,15 @@ export default function Banner({
 										width={20}
 									/>
 								</div>
-								<p className="whitespace-nowrap font-medium text-[14px] text-white leading-[20px]">
+								<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
 									{location}
 								</p>
 							</div>
 						)}
 						{/* Because sometimes only one of the times is visible */}
 						{(startTime || endTime) && (
-							<div className="flex flex-row items-center gap-[8px]">
-								<div className="h-[24px] w-[24px]">
+							<div className="flex flex-row items-center gap-2">
+								<div className="h-6 w-6">
 									<Image
 										alt="clock icon"
 										className="h-full w-full"
@@ -130,27 +130,26 @@ export default function Banner({
 										width={20}
 									/>
 								</div>
-								<p className="whitespace-nowrap font-medium text-[14px] text-white leading-[20px]">
+								<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
 									{startTimeStr} - {endTimeStr}
 								</p>
 							</div>
 						)}
 					</div>
 				</div>
-				<p className="bg-purple500 font-regular text-[16px] text-white leading-[24px]">
+				<p className="bg-purple500 font-regular text-4 text-white leading-6">
 					{description}
 				</p>
 			</div>
 			{/* TODO: Update href to link to scanner */}
 			<Link
-				className="z-1 flex h-fit w-fit cursor-pointer flex-row gap-[8px] rounded-[12px] bg-purple50 px-[16px] py-[10px]"
+				className="z-1 flex h-fit w-fit cursor-pointer flex-row gap-2 rounded-[12px] bg-purple50 px-4 py-2.5"
 				href="/admin/meals"
-				stpf45
 			>
-				<p className="whitespace-nowrap font-medium text-[16px] text-purple800 leading-[24px]">
+				<p className="whitespace-nowrap font-medium text-4 text-purple800 leading-6">
 					{buttonText}
 				</p>
-				<div className="h-[20px] w-[20px]">
+				<div className="h-5 w-5">
 					<Image
 						alt="button icon"
 						className="h-full w-full"
