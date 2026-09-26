@@ -21,6 +21,8 @@ export default function EventDetails() {
 							alt="Event image"
 							className="h-full w-full object-cover"
 							fill
+							loading="eager"
+							sizes="(min-width: 1024px) 40vw, 100vw"
 							src="/svgs/landingPage/event_room.jpg"
 						/>
 					</Link>

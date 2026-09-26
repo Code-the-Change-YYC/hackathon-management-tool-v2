@@ -1,3 +1,19 @@
+/**
+ * Drizzle schema for better-auth's core tables (user, session, account,
+ * verification) plus the organization/member/invitation tables used to
+ * model teams.
+ *
+ * `member_userId_idx` is a unique index, not just a lookup index: a user
+ * can only belong to one team at a time (also enforced in app code by
+ * `ensureNotInTeam()`). Making it unique turns that into a real DB
+ * guarantee, so concurrent join/create requests for the same user can't
+ * both succeed and leave them on multiple teams. Since this project pushes
+ * schema changes with `drizzle-kit push` rather than generated migrations,
+ * `drizzle/dedupe-members.ts` (run automatically by `pnpm db:push`) removes
+ * any pre-existing duplicate `member.userId` rows before this index is
+ * applied.
+ */
+
 import {
 	type InferInsertModel,
 	type InferSelectModel,
@@ -9,34 +25,20 @@ import {
 	index,
 	pgTableCreator,
 	text,
-	timestamp
+	timestamp,
+	uniqueIndex
 } from "drizzle-orm/pg-core";
+import { DIETARY_RESTRICTIONS, PROGRAMS } from "@/lib/validation/signup";
 
-export const PROGRAMS = [
-	"computer_science",
-	"software_engineering",
-	"electrical_engineering",
-	"other"
-] as const;
-
-export const SCHOOLS = [
-	"University of Calgary",
-	"Mount Royal University",
-	"SAIT",
-	"Other"
-] as const;
-
-export const DIETARY_RESTRICTIONS = [
-	"halal",
-	"vegetarian",
-	"vegan",
-	"gluten_free",
-	"other"
-] as const;
-
-export type DietaryRestriction = (typeof DIETARY_RESTRICTIONS)[number];
+export {
+	DIETARY_RESTRICTIONS,
+	type DietaryRestriction,
+	PROGRAMS,
+	SCHOOLS
+} from "@/lib/validation/signup";
 
 const MEMBER_ROLE_VALUES = ["owner", "member", "admin"] as const;
+export const PRESCREEN_STATUS_VALUES = ["pending", "passed", "failed"] as const;
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
@@ -136,7 +138,17 @@ export const organization = createTable("organization", {
 	logo: text("logo"),
 	createdAt: timestamp("created_at").notNull(),
 	metadata: text("metadata"),
-	teamCode: text("team_code").unique()
+	teamCode: text("team_code").unique(),
+	prescreenStatus: text("prescreen_status", {
+		enum: PRESCREEN_STATUS_VALUES
+	})
+		.default("pending")
+		.notNull(),
+	prescreenComments: text("prescreen_comments"),
+	prescreenedBy: text("prescreened_by").references(() => user.id, {
+		onDelete: "set null"
+	}),
+	prescreenedAt: timestamp("prescreened_at")
 });
 
 export const member = createTable(
@@ -156,7 +168,7 @@ export const member = createTable(
 	},
 	(table) => [
 		index("member_organizationId_idx").on(table.organizationId),
-		index("member_userId_idx").on(table.userId)
+		uniqueIndex("member_userId_idx").on(table.userId)
 	]
 );
 

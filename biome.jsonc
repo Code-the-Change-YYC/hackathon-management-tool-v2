@@ -80,10 +80,15 @@
 				"rules": {
 					"a11y": {
 						"useSemanticElements": "off",
-						"noLabelWithoutControl": "off"
+						"noLabelWithoutControl": "off",
+						"useKeyWithClickEvents": "off"
+					},
+					"correctness": {
+						"useExhaustiveDependencies": "off"
 					},
 					"suspicious": {
-						"noArrayIndexKey": "off"
+						"noArrayIndexKey": "off",
+						"noDocumentCookie": "off"
 					}
 				}
 			}

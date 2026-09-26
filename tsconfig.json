@@ -27,7 +27,7 @@
 		"incremental": true,
 		/* Path Aliases */
 		"paths": {
-			"@/*": ["./src/*"],
+			"@/*": ["./src/*", "./public/*"],
 			"auth.test": ["./auth.test.ts"],
 			"drizzle/*": ["./drizzle/*"]
 		}

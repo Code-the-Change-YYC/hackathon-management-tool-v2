@@ -2,34 +2,22 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-
+import type { SignupEventDetailsInput } from "@/lib/validation/signup";
 import { authClient } from "@/server/better-auth/client";
-import type { DietaryRestriction, PROGRAMS } from "@/server/db/auth-schema";
 import { api } from "@/trpc/react";
 import type { SocialProviderId } from "./social-providers";
 
-type RegistrationDetails = {
-	school: string;
-	program?: (typeof PROGRAMS)[number];
-	dietaryRestrictions: DietaryRestriction[];
-	wantsFood: "yes" | "no";
-};
-
 type SocialSignInOptions = {
 	errorCallbackURL: string;
-	newUserCallbackURL: string;
 };
 
-function useSocialSignIn({
-	errorCallbackURL,
-	newUserCallbackURL
-}: SocialSignInOptions) {
+function useSocialSignIn({ errorCallbackURL }: SocialSignInOptions) {
 	return useMutation({
 		mutationFn: async ({ provider }: { provider: SocialProviderId }) => {
 			const result = await authClient.signIn.social({
 				provider,
-				callbackURL: "/",
-				newUserCallbackURL,
+				callbackURL: "/signup/identity",
+				newUserCallbackURL: "/signup/identity",
 				errorCallbackURL
 			});
 
@@ -41,34 +29,32 @@ function useSocialSignIn({
 		}
 	});
 }
-
-export function useLoginMutations() {
+export function useAuthMutations({ variant }: { variant: "login" | "signup" }) {
 	const router = useRouter();
 	const emailSignIn = useMutation({
 		mutationFn: async (credentials: { email: string; password: string }) => {
 			const result = await authClient.signIn.email(credentials);
 
 			if (result.error) {
+				if (result.error.code === "INVALID_EMAIL_OR_PASSWORD") {
+					throw new Error("Incorrect email or password");
+				}
+
 				throw new Error(result.error.message || "Failed to sign in");
 			}
+
+			return result.data?.user;
 		},
-		onSuccess: () => router.push("/")
+		onSuccess: (user) =>
+			router.push(user?.completedRegistration ? "/" : "/signup/identity")
 	});
+	const errorCallbackURL = `/${variant}`;
 	const socialSignIn = useSocialSignIn({
-		errorCallbackURL: "/login",
-		newUserCallbackURL: "/signup/identity"
+		errorCallbackURL
 	});
 
-	return {
-		emailSignIn,
-		socialSignIn,
-		isPending: emailSignIn.isPending || socialSignIn.isPending,
-		error: emailSignIn.error ?? socialSignIn.error
-	};
-}
-
-export function useSignupMutations() {
 	const completeRegistration = api.users.completeRegistration.useMutation();
+
 	const emailSignUp = useMutation({
 		mutationFn: async ({
 			details,
@@ -76,7 +62,7 @@ export function useSignupMutations() {
 			name,
 			password
 		}: {
-			details: RegistrationDetails;
+			details: SignupEventDetailsInput;
 			email: string;
 			name: string;
 			password: string;
@@ -95,7 +81,7 @@ export function useSignupMutations() {
 			details,
 			name
 		}: {
-			details: RegistrationDetails;
+			details: SignupEventDetailsInput;
 			name?: string;
 		}) => {
 			if (name) {
@@ -109,21 +95,18 @@ export function useSignupMutations() {
 			await completeRegistration.mutateAsync(details);
 		}
 	});
-	const socialSignIn = useSocialSignIn({
-		errorCallbackURL: "/signup",
-		newUserCallbackURL: "/signup/identity"
-	});
-
 	return {
+		emailSignIn,
 		emailSignUp,
 		socialRegistrationCompletion,
 		socialSignIn,
 		isPending:
+			emailSignIn.isPending ||
 			emailSignUp.isPending ||
-			socialRegistrationCompletion.isPending ||
-			socialSignIn.isPending,
+			socialSignIn.isPending ||
+			socialRegistrationCompletion.isPending,
 		error:
-			emailSignUp.error ??
+			emailSignIn.error ??
 			socialRegistrationCompletion.error ??
 			socialSignIn.error
 	};

@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { assertRoundHasNoScores } from "@/server/api/routers/judging-rooms";
 import {
 	createTRPCRouter,
 	protectedProcedure,
@@ -70,6 +71,8 @@ export const judgingRoundsRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
 
+			await assertRoundHasNoScores(ctx.db, id);
+
 			if (data.startTime || data.endTime) {
 				const existingRound = await ctx.db.query.judgingRounds.findFirst({
 					where: eq(judgingRounds.id, id)
@@ -105,6 +108,7 @@ export const judgingRoundsRouter = createTRPCRouter({
 	delete: protectedProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
+			await assertRoundHasNoScores(ctx.db, input.id);
 			await ctx.db.delete(judgingRounds).where(eq(judgingRounds.id, input.id));
 			return { success: true };
 		})

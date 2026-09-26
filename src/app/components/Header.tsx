@@ -37,7 +37,7 @@ export default function Header({ hasTeam }: HeaderProps) {
 				{isSignedIn && !hasTeam && (
 					<Link
 						className="transition-colors hover:text-awesome-purple!"
-						href="/teams"
+						href="/participant/my-team"
 					>
 						Join a Team
 					</Link>
@@ -45,7 +45,13 @@ export default function Header({ hasTeam }: HeaderProps) {
 			</div>
 
 			<div className="-translate-x-1/2 absolute left-1/2">
-				<Image alt="CTC logo" height={70} src="/svgs/CTCLogo.svg" width={70} />
+				<Image
+					alt="CTC logo"
+					className="size-17.5"
+					height={70}
+					src="/svgs/CTCLogo.svg"
+					width={70}
+				/>
 			</div>
 
 			<div className="flex min-w-25 justify-end">

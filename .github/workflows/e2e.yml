@@ -60,7 +60,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Push E2E database schema
-        run: pnpm db:push
+        run: pnpm exec drizzle-kit push
 
       - name: Run Playwright tests
         run: pnpm test:e2e
