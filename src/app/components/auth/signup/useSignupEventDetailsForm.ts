@@ -6,6 +6,7 @@ import { useStateMachine } from "little-state-machine";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { getFullName } from "@/lib/names";
 import {
 	type SignupEventDetails,
 	type SignupEventDetailsInput,
@@ -13,7 +14,7 @@ import {
 } from "@/lib/validation/signup";
 import { useAuthMutations } from "../useAuthMutations";
 import { createRegistrationStrategies } from "./registration-strategies";
-import { getFullName, resetSignupWizard, updateSignupWizard } from "./wizard";
+import { resetSignupWizard, updateSignupWizard } from "./wizard";
 
 export function useSignupEventDetailsForm({ user }: { user?: User }) {
 	const router = useRouter();
