@@ -1,6 +1,11 @@
 import { expect, type Page } from "playwright/test";
 import { DIETARY_RESTRICTION_LABELS } from "@/lib/validation/signup";
 
+// Playwright sees the browser's network request, not the tRPC mutation object,
+// so this pattern identifies the HTTP request generated when dietary restrictions
+// are saved. It accepts both the plain URL and a URL with tRPC query parameters.
+// TODO: Investigate whether this manual knowledge of tRPC's URL format can be
+// avoided or represented more clearly across the E2E test suite.
 export const dietaryMutation =
 	/\/api\/trpc\/users\.updateUserDietaryRestrictions(?:\?|$)/;
 const restrictionLabels = Object.values(DIETARY_RESTRICTION_LABELS);

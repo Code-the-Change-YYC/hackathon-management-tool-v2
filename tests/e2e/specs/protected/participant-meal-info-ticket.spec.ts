@@ -188,6 +188,11 @@ test("reload rotates the QR: the old token is rejected and the current token red
 			admin.user.id,
 			new URL(origin).hostname
 		);
+		// This creates a tRPC client that makes real HTTP requests as the temporary
+		// admin. The procedure calls are typed, but the client still needs to know
+		// where this test server exposes its tRPC API.
+		// TODO: Investigate a clearer, reusable setup for authenticated tRPC calls
+		// made directly from E2E tests.
 		const client = createTRPCClient<AppRouter>({
 			links: [
 				httpLink({
