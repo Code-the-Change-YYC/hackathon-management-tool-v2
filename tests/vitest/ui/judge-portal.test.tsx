@@ -1,6 +1,7 @@
 import { render, renderHook, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { JudgeRoundStats } from "@/app/components/judges/JudgeRoundStats";
+import { JudgeScheduleEvent } from "@/app/components/judges/JudgeScheduleEvent";
 import { JudgeTeamCard } from "@/app/components/judges/JudgeTeamCard";
 import {
 	JudgeUserProvider,
@@ -15,6 +16,10 @@ import {
 	type JudgeAssignment,
 	sortAssignments
 } from "@/app/components/judges/judgePortal";
+import {
+	groupScheduleByDate,
+	inferDuration
+} from "@/app/components/judges/judgeSchedule";
 
 const now = new Date("2026-09-19T10:00:00Z");
 const main: Criterion = {
@@ -26,6 +31,82 @@ const main: Criterion = {
 	isSidepot: false
 };
 const sidepot: Criterion = { ...main, id: "sidepot", isSidepot: true };
+
+describe("judge schedule", () => {
+	it("groups scheduled teams by local date without mutating query data", () => {
+		const first = assignment({
+			id: "first",
+			timeSlot: new Date(2026, 8, 19, 23, 59)
+		});
+		const next = assignment({
+			id: "next",
+			timeSlot: new Date(2026, 8, 20, 0, 1)
+		});
+		const input = [next, assignment({ timeSlot: null }), first];
+		expect(groupScheduleByDate(input)).toEqual([[first], [next]]);
+		expect(input[0]).toBe(next);
+		expect(groupScheduleByDate([])).toEqual([]);
+	});
+
+	it("estimates duration from the next slot in the same room", () => {
+		const team = assignment();
+		const next = assignment({
+			timeSlot: new Date(now.getTime() + 30 * 60_000)
+		});
+		const otherRoom = assignment({
+			room: { ...team.room, id: "other" },
+			timeSlot: new Date(now.getTime() + 5 * 60_000)
+		});
+		expect(inferDuration(team, [otherRoom, next, team])).toBe(30);
+		expect(inferDuration(team, [team])).toBe(20);
+		expect(
+			inferDuration(team, [
+				assignment({ timeSlot: new Date(now.getTime() + 121 * 60_000) })
+			])
+		).toBe(20);
+	});
+
+	it("updates timing status at the start and labels inferred duration", () => {
+		const team = assignment();
+		const { rerender } = render(
+			<JudgeScheduleEvent
+				assignment={team}
+				criteria={[main]}
+				currentTime={new Date(now.getTime() - 60_000)}
+				duration={20}
+			/>
+		);
+		expect(screen.getByText("In 1 min")).toBeInTheDocument();
+		expect(screen.getByText("Estimated 20 min")).toBeInTheDocument();
+		expect(screen.getByText("Round 1")).toBeInTheDocument();
+		expect(screen.getByRole("link")).toHaveAttribute(
+			"href",
+			"/judge/score/assignment"
+		);
+		rerender(
+			<JudgeScheduleEvent
+				assignment={team}
+				criteria={[main]}
+				currentTime={now}
+				duration={20}
+			/>
+		);
+		expect(screen.getByText("Started")).toBeInTheDocument();
+	});
+
+	it("shows scored status and a saved zero total", () => {
+		render(
+			<JudgeScheduleEvent
+				assignment={assignment({ scores: [score("main", 0)] })}
+				criteria={[main]}
+				currentTime={now}
+				duration={20}
+			/>
+		);
+		expect(screen.getByText("Scored")).toBeInTheDocument();
+		expect(screen.getByText("0/10")).toBeInTheDocument();
+	});
+});
 
 function assignment(overrides: Partial<JudgeAssignment> = {}): JudgeAssignment {
 	return {
