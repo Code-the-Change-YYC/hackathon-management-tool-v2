@@ -1,5 +1,5 @@
 import { VideoLine } from "@mingcute/react";
-import { Button } from "@/app/components/ui/button";
+import { Button, buttonVariants } from "@/app/components/ui/button";
 
 export function JoinMeetingButton({ href }: { href: string }) {
 	if (!href) {
@@ -12,13 +12,14 @@ export function JoinMeetingButton({ href }: { href: string }) {
 	}
 
 	return (
-		<Button
-			render={
-				<a href={href} rel="noreferrer" target="_blank">
-					<VideoLine data-icon="inline-start" />
-					Join Zoom Meeting
-				</a>
-			}
-		/>
+		<a
+			className={buttonVariants()}
+			href={href}
+			rel="noreferrer"
+			target="_blank"
+		>
+			<VideoLine data-icon="inline-start" />
+			Join Zoom Meeting
+		</a>
 	);
 }
