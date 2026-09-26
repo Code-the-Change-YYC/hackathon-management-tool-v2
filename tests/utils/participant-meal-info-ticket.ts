@@ -1,10 +1,10 @@
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { and, eq } from "drizzle-orm";
 import { expect, type Page } from "playwright/test";
 import { db } from "@/server/db";
 import { eventTicket } from "@/server/db/event-schema";
+import { hashEventTicketToken } from "@/server/lib/event-tickets";
 import { EVENT_TICKET_TOKEN_PATTERN } from "@/types/types";
 
 // Resolve the scanner's existing decoder through its dependency chain rather than
@@ -72,7 +72,7 @@ export async function expectStoredTicket(
 	expect(tickets[0]).toMatchObject({
 		userId,
 		eventId: meal.id,
-		tokenHash: createHash("sha256").update(token).digest("hex"),
+		tokenHash: hashEventTicketToken(token),
 		expiresAt: meal.endTime
 	});
 }

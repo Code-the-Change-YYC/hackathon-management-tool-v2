@@ -12,13 +12,11 @@ import {
 	CardTitle
 } from "@/app/components/ui/card";
 import {
+	DIETARY_RESTRICTION_LABELS,
 	DIETARY_RESTRICTIONS,
 	type DietaryRestriction as DietaryRestrictionValue
-} from "@/server/db/auth-schema";
-import {
-	DietaryRestrictionDialogue,
-	restrictionLabels
-} from "./DietaryRestrictionDialogue";
+} from "@/lib/validation/signup";
+import { DietaryRestrictionDialogue } from "./DietaryRestrictionDialogue";
 
 type DietaryRestrictionProps = {
 	dietaryRestrictions: string[];
@@ -65,7 +63,7 @@ export function DietaryRestriction({
 						<div className="flex flex-wrap gap-2">
 							{dietaryRestrictions.map((restriction) => (
 								<Badge key={restriction} variant="accent">
-									{restrictionLabels[restriction]}
+									{DIETARY_RESTRICTION_LABELS[restriction]}
 								</Badge>
 							))}
 						</div>

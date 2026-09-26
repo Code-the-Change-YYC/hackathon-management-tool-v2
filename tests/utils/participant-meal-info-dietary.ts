@@ -1,14 +1,9 @@
 import { expect, type Page } from "playwright/test";
+import { DIETARY_RESTRICTION_LABELS } from "@/lib/validation/signup";
 
 export const dietaryMutation =
 	/\/api\/trpc\/users\.updateUserDietaryRestrictions(?:\?|$)/;
-const restrictionLabels = [
-	"Halal",
-	"Vegetarian",
-	"Vegan",
-	"Gluten-free",
-	"Other"
-];
+const restrictionLabels = Object.values(DIETARY_RESTRICTION_LABELS);
 
 export function dietarySection(page: Page) {
 	return page.locator("section").filter({
