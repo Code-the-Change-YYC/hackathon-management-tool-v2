@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
@@ -15,7 +15,7 @@ import {
 	EVENT_TYPES,
 	EventStatus,
 	EventTicketStatus,
-	type EventType,
+	EventType,
 	QR_EVENT_TYPES,
 	Role
 } from "@/types/types";
@@ -343,5 +343,17 @@ export const eventsRouter = createTRPCRouter({
 				.innerJoin(user, eq(eventAttendance.userId, user.id))
 				.where(eq(eventAttendance.eventId, input.eventId))
 				.orderBy(eventAttendance.updatedAt);
-		})
+		}),
+
+	getMealAttendanceCount: adminProcedure.query(async ({ ctx }) => {
+		const [result] = await ctx.db
+			.select({
+				count: count(eventAttendance.id)
+			})
+			.from(eventAttendance)
+			.innerJoin(event, eq(eventAttendance.eventId, event.id))
+			.where(eq(event.type, EventType.FOOD));
+
+		return result?.count ?? 0;
+	})
 });

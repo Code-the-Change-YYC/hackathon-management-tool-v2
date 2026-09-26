@@ -10,14 +10,20 @@
  */
 
 import { TRPCError } from "@trpc/server";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
+	DIETARY_RESTRICTIONS,
+	type DietaryRestriction,
 	dietaryRestrictionsSchema,
 	PROGRAMS,
 	signupEventDetailsSchema
 } from "@/lib/validation/signup";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import {
+	adminProcedure,
+	createTRPCRouter,
+	protectedProcedure
+} from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
 
@@ -100,5 +106,64 @@ export const usersRouter = createTRPCRouter({
 				wantsFood: input.wantsFood,
 				wantsFoodStored: false
 			};
-		})
+		}),
+	getDietaryAnalytics: adminProcedure.query(async ({ ctx }) => {
+		const users = await ctx.db.query.user.findMany({
+			columns: {
+				dietaryRestrictions: true
+			},
+			where: and(
+				eq(user.role, Role.PARTICIPANT),
+				eq(user.completedRegistration, true)
+			)
+		});
+
+		// Calculate totals
+		const counts = Object.fromEntries(
+			DIETARY_RESTRICTIONS.map((restriction) => [restriction, 0])
+		);
+
+		// Calculate overlaps
+		const overlaps: Record<
+			DietaryRestriction,
+			Record<DietaryRestriction, number>
+		> = Object.fromEntries(
+			DIETARY_RESTRICTIONS.map((left) => [
+				left,
+				Object.fromEntries(DIETARY_RESTRICTIONS.map((right) => [right, 0]))
+			])
+		) as Record<DietaryRestriction, Record<DietaryRestriction, number>>;
+		const pairs: [DietaryRestriction, DietaryRestriction][] =
+			DIETARY_RESTRICTIONS.flatMap((left, index) =>
+				DIETARY_RESTRICTIONS.slice(index + 1).map(
+					(right) => [left, right] as [DietaryRestriction, DietaryRestriction]
+				)
+			);
+		// const overlaps: Record<string, Record<string, number>> = {};
+		// for (const [left, right] of pairs) {
+		// 	overlaps[left] = {};
+		// 	overlaps[left][right] = 0;
+		// }
+
+		for (const currentUser of users) {
+			const selected = new Set(currentUser.dietaryRestrictions);
+
+			for (const restriction of DIETARY_RESTRICTIONS) {
+				if (selected.has(restriction)) {
+					counts[restriction] = (counts[restriction] ?? 0) + 1;
+				}
+			}
+
+			for (const [left, right] of pairs) {
+				if (selected.has(left) && selected.has(right)) {
+					overlaps[left][right] = (overlaps[left][right] ?? 0) + 1;
+				}
+			}
+		}
+
+		return {
+			counts,
+			overlaps
+		};
+	})
 });

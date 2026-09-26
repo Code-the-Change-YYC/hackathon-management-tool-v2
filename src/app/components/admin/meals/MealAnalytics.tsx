@@ -1,4 +1,5 @@
 import { twMerge } from "tailwind-merge";
+import { api } from "@/trpc/react";
 
 function RestrictionCard({ name, count }: { name: string; count: number }) {
 	return (
@@ -11,21 +12,26 @@ function RestrictionCard({ name, count }: { name: string; count: number }) {
 	);
 }
 
-export default function MealAnalytics() {
-	const total: number = 0;
-	const counts: Map<string, number> = new Map<string, number>();
-	const overlaps: Map<string, Map<string, number>> = new Map<
-		string,
-		Map<string, number>
-	>();
+export default async function MealAnalytics() {
+	const getMealAttendanceCount =
+		await api.events.getMealAttendanceCount.useQuery();
+	const getDietaryAnalytics = await api.users.getDietaryAnalytics.useQuery();
+
+	if (!getMealAttendanceCount.data || !getDietaryAnalytics.data) {
+		return <div className="text-medium-grey text-sm">No attendees yet.</div>;
+	}
+	const total: number = getMealAttendanceCount.data;
+	const counts: Record<string, number> = getDietaryAnalytics.data.counts;
+	const overlaps: Record<string, Record<string, number>> = getDietaryAnalytics
+		.data.overlaps;
 
 	// Text values for the grid
 	const gridValues: string[][] = [];
 	// Push row of names
-	gridValues.push(["", ...Array.from(counts.keys())]);
+	gridValues.push(["", ...Object.keys(counts)]);
 	// Push row for each restriction
-	for (const [name, overlapCounts] of overlaps.entries()) {
-		gridValues.push([name, ...Array.from(overlapCounts.values()).map(String)]);
+	for (const [name, overlapCounts] of Object.entries(overlaps)) {
+		gridValues.push([name, ...Object.values(overlapCounts).map(String)]);
 	}
 
 	return (
@@ -39,7 +45,7 @@ export default function MealAnalytics() {
 						key={"Meal tickets scanned"}
 						name={"Meal tickets scanned"}
 					/>
-					{Array.from(counts.entries()).map(([name, count]) => {
+					{Object.entries(counts).map(([name, count]) => {
 						return <RestrictionCard count={count} key={name} name={name} />;
 					})}
 				</div>
@@ -48,7 +54,7 @@ export default function MealAnalytics() {
 					className="max-w-175 overflow-auto p-6 first:justify-self-end"
 					style={{
 						display: "grid",
-						gridTemplateColumns: `repeat(${counts.size + 1}, 1fr)`
+						gridTemplateColumns: `repeat(${counts.size ?? 0 + 1}, 1fr)`
 					}}
 				>
 					{gridValues.map((row, firstIndex) => {
