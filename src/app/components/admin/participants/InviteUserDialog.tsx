@@ -20,6 +20,7 @@ import {
 	SelectTrigger,
 	SelectValue
 } from "@/app/components/ui/select";
+import { api } from "@/trpc/react";
 import type { Role } from "@/types/types";
 import { ROLE_OPTIONS } from "./types";
 
@@ -35,6 +36,14 @@ export function InviteUserDialog({
 	const [email, setEmail] = useState("");
 	const [role, setRole] = useState<Role | null>(null);
 
+	const invite = api.invitations.invite.useMutation({
+		onSuccess: () => {
+			toast.success("Invitation sent!");
+			handleOpenChange(false);
+		},
+		onError: (error) => toast.error(error.message)
+	});
+
 	function handleOpenChange(nextOpen: boolean) {
 		if (!nextOpen) {
 			setEmail("");
@@ -44,9 +53,8 @@ export function InviteUserDialog({
 	}
 
 	function handleInvite() {
-		// TODO: actually send an invitation.
-		toast.success("Invitation sent!");
-		handleOpenChange(false);
+		if (!role) return;
+		invite.mutate({ email: email.trim(), role });
 	}
 
 	return (
@@ -90,10 +98,12 @@ export function InviteUserDialog({
 				</FieldGroup>
 				<div className="flex flex-col gap-2">
 					<Button
-						disabled={email.trim().length === 0 || role === null}
+						disabled={
+							email.trim().length === 0 || role === null || invite.isPending
+						}
 						onClick={handleInvite}
 					>
-						Invite user
+						{invite.isPending ? "Inviting..." : "Invite user"}
 					</Button>
 					<DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
 				</div>

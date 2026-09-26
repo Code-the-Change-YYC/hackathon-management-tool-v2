@@ -83,6 +83,23 @@ export const judgingAssignments = createTable("judging_assignment", {
 		.notNull()
 });
 
+export const roleInvitation = createTable(
+	"role_invitation",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		email: text("email").notNull(),
+		role: text("role").notNull(),
+		invitedById: text("invited_by_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+	},
+	(table) => [uniqueIndex("role_invitation_email_uniq").on(table.email)]
+);
+
 // Singleton table for hackathon settings
 export const hackathonSettings = createTable("hackathon_settings", {
 	id: integer("id").primaryKey().default(1), // Enforce singleton by always using ID 1
