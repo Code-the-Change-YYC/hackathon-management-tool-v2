@@ -119,9 +119,9 @@ export const usersRouter = createTRPCRouter({
 		});
 
 		// Calculate totals
-		const counts = Object.fromEntries(
+		const counts: Record<DietaryRestriction, number> = Object.fromEntries(
 			DIETARY_RESTRICTIONS.map((restriction) => [restriction, 0])
-		);
+		) as Record<DietaryRestriction, number>;
 
 		// Calculate overlaps
 		const overlaps: Record<
@@ -139,11 +139,6 @@ export const usersRouter = createTRPCRouter({
 					(right) => [left, right] as [DietaryRestriction, DietaryRestriction]
 				)
 			);
-		// const overlaps: Record<string, Record<string, number>> = {};
-		// for (const [left, right] of pairs) {
-		// 	overlaps[left] = {};
-		// 	overlaps[left][right] = 0;
-		// }
 
 		for (const currentUser of users) {
 			const selected = new Set(currentUser.dietaryRestrictions);
