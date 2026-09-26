@@ -7,8 +7,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
+import { getNameParts } from "@/lib/names";
 import { signupPersonalDetailsSchema } from "@/lib/validation/signup";
-import { getNameParts, updateSignupWizard } from "./wizard";
+import { updateSignupWizard } from "./wizard";
 
 type IdentityFormValues = z.input<typeof signupPersonalDetailsSchema>;
 
