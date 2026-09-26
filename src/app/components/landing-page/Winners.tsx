@@ -1,5 +1,5 @@
 import { getWinners } from "@/app/actions";
-import { SectionWrapper } from "./ui/InfoSection";
+import { SectionWrapper } from "./InfoSection";
 import WinnersCarousel from "./WinnersCarousel";
 
 export default async function Winners() {

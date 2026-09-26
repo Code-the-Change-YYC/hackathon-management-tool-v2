@@ -1,4 +1,4 @@
-import InfoSection from "./ui/InfoSection";
+import InfoSection from "./InfoSection";
 
 export default function Requirements() {
 	return (

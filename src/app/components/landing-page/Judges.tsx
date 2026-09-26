@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { getJudges } from "@/app/actions";
-import JudgeItem from "./ui/JudgeItem";
+import JudgeItem from "./JudgeItem";
 
 export default async function Judges() {
 	const judges = await getJudges();

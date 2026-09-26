@@ -1,6 +1,6 @@
 import { CheckCircleLine } from "@mingcute/react";
 import { getCriteria } from "@/app/actions";
-import InfoSection from "./ui/InfoSection";
+import InfoSection from "./InfoSection";
 
 export default async function JudgingCriteria() {
 	const criteria = await getCriteria();

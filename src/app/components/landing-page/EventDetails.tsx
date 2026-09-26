@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { eventInfoItems } from "./data/eventInfo";
-import EventDetailsItem from "./ui/EventDetailsItem";
+import EventDetailsItem from "./EventDetailsItem";
 
 const EVENT_LOCATION_LINK = "https://share.google/YAkQs91U42vi1x1t4";
 

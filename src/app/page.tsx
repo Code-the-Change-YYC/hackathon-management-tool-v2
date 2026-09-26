@@ -1,16 +1,16 @@
-import Sponsors from "@/app/components/admin/landingpage/Sponsors";
-import Footer from "@/app/components/Footer";
-import Header from "@/app/components/Header";
+import Footer from "@/app/components/landing-page/Footer";
+import Header from "@/app/components/landing-page/Header";
+import Sponsors from "@/app/components/landing-page/Sponsors";
 import { HydrateClient } from "@/trpc/server";
-import AboutChallenge from "./components/admin/landingpage/AboutChallenge";
-import Countdown from "./components/admin/landingpage/countdown/Countdown";
-import EventDetails from "./components/admin/landingpage/EventDetails";
-import HackathonInformationContainer from "./components/admin/landingpage/HackathonInformationContainer";
-import Judges from "./components/admin/landingpage/Judges";
-import JudgingCriteria from "./components/admin/landingpage/JudgingCriteria";
-import Prizes from "./components/admin/landingpage/Prizes";
-import Requirements from "./components/admin/landingpage/Requirements";
-import Winners from "./components/admin/landingpage/Winners";
+import AboutChallenge from "./components/landing-page/AboutChallenge";
+import Countdown from "./components/landing-page/countdown/Countdown";
+import EventDetails from "./components/landing-page/EventDetails";
+import HackathonInformationContainer from "./components/landing-page/HackathonInformationContainer";
+import Judges from "./components/landing-page/Judges";
+import JudgingCriteria from "./components/landing-page/JudgingCriteria";
+import Prizes from "./components/landing-page/Prizes";
+import Requirements from "./components/landing-page/Requirements";
+import Winners from "./components/landing-page/Winners";
 
 export const revalidate = 3600;
 
