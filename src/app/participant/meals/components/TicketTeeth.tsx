@@ -72,7 +72,7 @@ export function TicketTeeth({ position }: TicketTeethProps) {
 		return (
 			<div
 				aria-hidden="true"
-				className={`pointer-events-none absolute inset-x-2 ${verticalPositionClass} z-10 flex h-5 items-center justify-between md:hidden`}
+				className={`pointer-events-none absolute inset-x-2 ${verticalPositionClass} z-10 flex @min-[40rem]/meal-ticket:hidden h-5 items-center justify-between`}
 				ref={edgeRef}
 			>
 				{horizontalTicketTeethIds.map((toothId) => (
@@ -87,8 +87,8 @@ export function TicketTeeth({ position }: TicketTeethProps) {
 
 	const sidePositionClass =
 		position === "left"
-			? "-translate-x-1/2 inset-y-2 left-0 md:flex"
-			: "inset-y-2 right-0 translate-x-1/2 md:flex";
+			? "-translate-x-1/2 inset-y-2 left-0 @min-[40rem]/meal-ticket:flex"
+			: "inset-y-2 right-0 translate-x-1/2 @min-[40rem]/meal-ticket:flex";
 
 	return (
 		<div
