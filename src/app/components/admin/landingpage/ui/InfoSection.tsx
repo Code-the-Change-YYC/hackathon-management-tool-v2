@@ -44,7 +44,7 @@ export default function InfoSection({
 				<div className="relative flex size-48 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md sm:size-64 md:size-72 md:rounded-[30px] xl:size-96">
 					<Image
 						alt={imageAlt ?? ""}
-						className="object-contain"
+						className="h-auto w-auto object-contain"
 						height={298}
 						src={imageSrc}
 						width={326}
@@ -52,13 +52,13 @@ export default function InfoSection({
 				</div>
 			)}
 
-			<div className="flex w-full max-w-lg flex-col gap-4 md:gap-6">
+			<div className="flex w-full max-w-lg flex-col gap-4 md:gap-6 lg:max-w-none">
 				{titleHighlight && (
 					<div className="relative inline-flex items-center gap-2">
 						{accentSrc && accentPosition === "before" && (
 							<Image
 								alt=""
-								className="-left-6 -translate-y-1/2 sm:-left-10 absolute top-1/2"
+								className="-left-6 -translate-y-1/2 sm:-left-10 absolute top-1/2 h-auto w-auto"
 								height={20}
 								src={ACCENT_SRC[accentSrc]}
 								width={16}
@@ -75,7 +75,7 @@ export default function InfoSection({
 						{accentSrc && accentPosition === "after" && (
 							<Image
 								alt=""
-								className="shrink-0"
+								className="h-auto w-auto shrink-0"
 								height={20}
 								src={ACCENT_SRC[accentSrc]}
 								width={16}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
-import { Modal, ModalTitle, PrimaryButton, SecondaryButton } from "./Modal";
+import { ActionModal } from "./Modal";
 
 export type Situation = "registered" | "unregistered" | "no-team";
 
@@ -32,11 +32,17 @@ export default function SituationModal({
 	const [selected, setSelected] = useState<Situation | "">("");
 
 	return (
-		<Modal onClose={onClose} open={open}>
-			<ModalTitle className="max-w-[90%]">
-				Select the statement that describes your situation best:
-			</ModalTitle>
-
+		<ActionModal
+			onClose={onClose}
+			open={open}
+			primary={{
+				label: "Continue",
+				disabled: !selected,
+				onClick: () => selected && onContinue(selected)
+			}}
+			secondary={{ label: "Go back", onClick: onClose }}
+			title="Select the statement that describes your situation best:"
+		>
 			<RadioGroup
 				className="gap-3"
 				onValueChange={(value) => setSelected(value as Situation)}
@@ -66,19 +72,6 @@ export default function SituationModal({
 					);
 				})}
 			</RadioGroup>
-
-			<div className="flex flex-col gap-3">
-				<PrimaryButton
-					disabled={!selected}
-					onClick={() => selected && onContinue(selected)}
-					type="button"
-				>
-					Continue
-				</PrimaryButton>
-				<SecondaryButton onClick={onClose} type="button">
-					Go back
-				</SecondaryButton>
-			</div>
-		</Modal>
+		</ActionModal>
 	);
 }

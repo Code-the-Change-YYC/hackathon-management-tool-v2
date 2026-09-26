@@ -11,7 +11,7 @@ type CreateUserInput = {
 	role?: User["role"];
 };
 
-async function createOrGetUser({
+export async function createOrGetUser({
 	email,
 	password,
 	name,

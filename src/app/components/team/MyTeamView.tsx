@@ -6,14 +6,17 @@ import { DISCORD_URL } from "@/lib/constants";
 import EditTeamNameModal from "./EditTeamNameModal";
 import InviteCodeModal from "./InviteCodeModal";
 import JoinCodeModal from "./JoinCodeModal";
-import JoinedSuccessModal from "./JoinedSuccessModal";
 import LeaveTeamModal from "./LeaveTeamModal";
 import MyTeamTable from "./MyTeamTable";
 import NoTeamBanner from "./NoTeamBanner";
-import RegisteredSuccessModal from "./RegisteredSuccessModal";
 import RegisterTeamModal from "./RegisterTeamModal";
 import SituationModal, { type Situation } from "./SituationModal";
+import SuccessModal from "./SuccessModal";
 import { useMyTeam } from "./useMyTeam";
+
+function formatTeamId(teamCode: string) {
+	return teamCode.toUpperCase().split("").join("-");
+}
 
 type ModalKind =
 	| null
@@ -101,12 +104,28 @@ export default function MyTeamView() {
 				}
 				open={modal === "register"}
 			/>
-			<RegisteredSuccessModal
+			<SuccessModal
+				description={
+					<>
+						Share your Team ID with your teammates. Each member must enter it
+						under
+						<strong> Join Existing Team</strong> to officially join.
+					</>
+				}
+				image="/team/mascot-flag.png"
+				imageAlt="Team registered"
+				imageSize={160}
 				onFinish={() => setModal(null)}
 				open={modal === "registered"}
-				teamCode={create.data?.teamCode ?? ""}
-				teamName={create.data?.name ?? ""}
-			/>
+				title={`${create.data?.name ?? ""} is registered!`}
+			>
+				<div className="flex flex-col items-center gap-1 rounded-xl bg-purple-50 py-4">
+					<p className="font-medium text-[14px] text-grey-600">Your Team ID</p>
+					<p className="font-semibold text-[28px] text-grey-800 leading-9 tracking-[0.1em]">
+						{formatTeamId(create.data?.teamCode ?? "")}
+					</p>
+				</div>
+			</SuccessModal>
 			{viewTeam && (
 				<InviteCodeModal
 					code={viewTeam.teamCode}
@@ -126,10 +145,13 @@ export default function MyTeamView() {
 				}
 				open={modal === "join"}
 			/>
-			<JoinedSuccessModal
+			<SuccessModal
+				description={`Congrats! You've joined your teammates at ${join.data?.name ?? viewTeam?.name ?? ""} as a registered member!`}
+				image="/team/mascot-celebrate.png"
+				imageAlt="Teammates celebrating"
 				onFinish={() => setModal(null)}
 				open={modal === "joined"}
-				teamName={join.data?.name ?? viewTeam?.name ?? ""}
+				title={`You've joined ${join.data?.name ?? viewTeam?.name ?? ""}!`}
 			/>
 			{viewTeam && (
 				<LeaveTeamModal
