@@ -1,13 +1,9 @@
 import type { Page } from "playwright/test";
+import { DIETARY_RESTRICTION_LABELS } from "@/lib/validation/signup";
 import type { createSignupData } from "../../utils/signup-data";
 
 const SIGNUP_PAGE = "/signup";
 const SUBMIT_BUTTON_NAME = "Continue";
-
-const formatRestrictionName = (restriction: string) =>
-	restriction === "gluten_free"
-		? "Gluten-free"
-		: restriction.charAt(0).toUpperCase() + restriction.slice(1);
 
 export class SignupPage {
 	constructor(private readonly page: Page) {}
@@ -42,7 +38,7 @@ export class SignupPage {
 		for (const restriction of data.dietaryRestrictions) {
 			await this.page
 				.getByRole("button", {
-					name: formatRestrictionName(restriction)
+					name: DIETARY_RESTRICTION_LABELS[restriction]
 				})
 				.click();
 		}

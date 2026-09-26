@@ -1,11 +1,6 @@
+import { formatLongDate } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import { ScheduleItem, type ScheduleItemData } from "./ScheduleItem";
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-	weekday: "long",
-	month: "long",
-	day: "numeric"
-});
 
 export type ScheduleGroup = {
 	key: string;
@@ -30,7 +25,7 @@ export function groupScheduleItemsByDate(items: ScheduleItemData[]) {
 
 		groups.push({
 			key,
-			label: dateFormatter.format(item.startTime),
+			label: formatLongDate(item.startTime),
 			items: [item]
 		});
 

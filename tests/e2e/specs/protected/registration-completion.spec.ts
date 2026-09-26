@@ -54,6 +54,11 @@ test("an authenticated incomplete user completes their own registration", async 
 test("registration completion rejects unauthenticated callers", async ({
 	page
 }) => {
+	// This sends the same batched HTTP request that the tRPC browser client would
+	// send, but without a login session, so the test can assert the HTTP 401 response.
+	// That requires spelling out tRPC's URL and request-body format here.
+	// TODO: Investigate a clearer way to make unauthenticated tRPC requests in E2E
+	// tests without manually reproducing transport details.
 	const response = await page.request.post(
 		"/api/trpc/users.completeRegistration?batch=1",
 		{

@@ -22,19 +22,10 @@ import {
 	SelectValue
 } from "@/app/components/ui/select";
 import {
-	DIETARY_RESTRICTIONS,
-	type DietaryRestriction
+	DIETARY_RESTRICTION_LABELS,
+	DIETARY_RESTRICTIONS
 } from "@/lib/validation/signup";
 import { useSignupEventDetailsForm } from "./useSignupEventDetailsForm";
-
-const restrictionLabel = (restriction: DietaryRestriction) => {
-	switch (restriction) {
-		case "gluten_free":
-			return "Gluten-free";
-		default:
-			return restriction.charAt(0).toUpperCase() + restriction.slice(1);
-	}
-};
 
 export default function SignupEventDetailsForm({ user }: { user?: User }) {
 	const {
@@ -105,7 +96,7 @@ export default function SignupEventDetailsForm({ user }: { user?: User }) {
 									type="button"
 									variant="ghost"
 								>
-									{restrictionLabel(restriction)}
+									{DIETARY_RESTRICTION_LABELS[restriction]}
 									<CloseLine aria-hidden="true" data-icon="inline-end" />
 								</Button>
 							))}
@@ -130,7 +121,7 @@ export default function SignupEventDetailsForm({ user }: { user?: User }) {
 									type="button"
 									variant="outline"
 								>
-									{restrictionLabel(restriction)}
+									{DIETARY_RESTRICTION_LABELS[restriction]}
 									<AddLine aria-hidden="true" data-icon="inline-end" />
 								</Button>
 							))}
