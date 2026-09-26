@@ -7,6 +7,7 @@ import {
 } from "@/app/components/layout/icons";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 
 export type TeamMember = {
 	id: string;
@@ -51,11 +52,12 @@ function InviteRow({
 	}
 
 	return (
-		<button
-			className="flex w-full items-center gap-4 border-grey-300 border-t bg-grey-00 px-5 py-5 text-left transition enabled:hover:bg-grey-50 disabled:cursor-not-allowed"
+		<Button
+			className="h-auto w-full justify-start gap-4 whitespace-normal rounded-none border-0 border-grey-300 border-t bg-grey-00 px-5 py-5 text-left hover:bg-grey-50"
 			disabled={isFull}
 			onClick={onInvite}
 			type="button"
+			variant="ghost"
 		>
 			<span
 				className={`grid size-12 shrink-0 place-items-center rounded-lg ${iconBg}`}
@@ -70,7 +72,7 @@ function InviteRow({
 					Invite someone to join your team
 				</span>
 			</span>
-		</button>
+		</Button>
 	);
 }
 

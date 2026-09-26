@@ -53,5 +53,5 @@ jobs:
       - name: Push test database schema
         run: pnpm exec drizzle-kit push
 
-      - name: Run tests
-        run: pnpm test
+      - name: Run Integration Tests
+        run: pnpm test:int

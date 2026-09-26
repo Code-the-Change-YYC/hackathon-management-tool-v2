@@ -12,6 +12,16 @@ import { member } from "@/server/db/auth-schema";
 import { MEMBER_ROLES } from "@/types/types";
 
 async function main() {
+	const [table] = await db.execute<{ exists: boolean }>(
+		sql`select to_regclass('hackathon_member') is not null as "exists"`
+	);
+	if (table?.exists === false) {
+		console.log(
+			"Membership table does not exist yet, skipping duplicate cleanup."
+		);
+		return;
+	}
+
 	const duplicateUserIds = await db
 		.select({ userId: member.userId })
 		.from(member)

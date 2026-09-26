@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import type { ComponentProps } from "react";
+import { type ComponentProps, useEffect, useState } from "react";
 import { CloseIcon } from "@/app/components/layout/icons";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -63,6 +63,102 @@ export function ModalTitle({
 			)}
 			{...props}
 		/>
+	);
+}
+
+export function useNameField(open: boolean, initial: string) {
+	const [name, setName] = useState(initial);
+	useEffect(() => {
+		if (open) setName(initial);
+	}, [open, initial]);
+	return [name, setName] as const;
+}
+
+export function ModalHeader({
+	title,
+	description
+}: {
+	title: React.ReactNode;
+	description?: React.ReactNode;
+}) {
+	return (
+		<div className="flex flex-col gap-2">
+			<ModalTitle>{title}</ModalTitle>
+			{description && (
+				<p className="text-[16px] text-grey-600 leading-6">{description}</p>
+			)}
+		</div>
+	);
+}
+
+export function ErrorText({
+	children,
+	className
+}: {
+	children: React.ReactNode;
+	className?: string;
+}) {
+	return (
+		<p className={cn("font-medium text-[14px] text-red-700", className)}>
+			{children}
+		</p>
+	);
+}
+
+type ModalAction = {
+	label: string;
+	loadingLabel?: string;
+	onClick: () => void;
+	disabled?: boolean;
+	loading?: boolean;
+};
+
+export function ActionModal({
+	open,
+	onClose,
+	showClose,
+	title,
+	description,
+	error,
+	errorClassName,
+	danger,
+	primary,
+	secondary,
+	children
+}: {
+	open: boolean;
+	onClose: () => void;
+	showClose?: boolean;
+	title: React.ReactNode;
+	description?: React.ReactNode;
+	error?: string | null;
+	errorClassName?: string;
+	danger?: boolean;
+	primary: ModalAction;
+	secondary?: { label: string; onClick: () => void };
+	children?: React.ReactNode;
+}) {
+	const Confirm = danger ? DangerButton : PrimaryButton;
+	return (
+		<Modal onClose={onClose} open={open} showClose={showClose}>
+			<ModalHeader description={description} title={title} />
+			{children}
+			{error && <ErrorText className={errorClassName}>{error}</ErrorText>}
+			<div className="flex flex-col gap-3">
+				<Confirm
+					disabled={primary.disabled || primary.loading}
+					onClick={primary.onClick}
+					type="button"
+				>
+					{primary.loading ? primary.loadingLabel : primary.label}
+				</Confirm>
+				{secondary && (
+					<SecondaryButton onClick={secondary.onClick} type="button">
+						{secondary.label}
+					</SecondaryButton>
+				)}
+			</div>
+		</Modal>
 	);
 }
 

@@ -101,6 +101,7 @@ export function MealTicket({ displayName, ticket }: MealTicketProps) {
 								alt="Pizza slice"
 								className="h-63.5 w-63.5 shrink-0 object-contain md:h-60 md:w-63.25"
 								height={232}
+								loading="eager"
 								src="/svgs/pizza.svg"
 								width={292}
 							/>
@@ -108,6 +109,7 @@ export function MealTicket({ displayName, ticket }: MealTicketProps) {
 								alt="Cola can"
 								className="-ml-20 sm:-ml-24 md:-ml-24 h-53.25 w-53.25 shrink-0 object-contain md:h-60 md:w-61.25"
 								height={249}
+								loading="eager"
 								src="/svgs/cola.svg"
 								width={254}
 							/>

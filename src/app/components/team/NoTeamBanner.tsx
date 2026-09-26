@@ -13,6 +13,7 @@ export default function NoTeamBanner({ onAction }: { onAction: () => void }) {
 					alt=""
 					className="h-full w-auto object-contain"
 					height={160}
+					loading="eager"
 					src="/team/mascot-celebrate.png"
 					width={180}
 				/>
@@ -20,6 +21,7 @@ export default function NoTeamBanner({ onAction }: { onAction: () => void }) {
 					alt=""
 					className="-ml-8 h-full w-auto object-contain"
 					height={160}
+					loading="eager"
 					src="/team/mascot-flag.png"
 					width={160}
 				/>

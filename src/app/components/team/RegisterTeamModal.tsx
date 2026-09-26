@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Input } from "@/app/components/ui/input";
-import { isValidTeamName, TEAM_NAME_MAX } from "@/lib/teamName";
-import { Modal, ModalTitle, PrimaryButton, SecondaryButton } from "./Modal";
+import { isValidTeamName, TEAM_NAME_MAX } from "@/lib/utils";
+import { ActionModal, useNameField } from "./Modal";
 
 export default function RegisterTeamModal({
 	open,
@@ -18,27 +17,26 @@ export default function RegisterTeamModal({
 	loading?: boolean;
 	error?: string | null;
 }) {
-	const [name, setName] = useState("");
-
-	useEffect(() => {
-		if (open) {
-			setName("");
-		}
-	}, [open]);
-
+	const [name, setName] = useNameField(open, "");
 	const trimmed = name.trim();
 	const isValid = isValidTeamName(name);
 
 	return (
-		<Modal onClose={onClose} open={open}>
-			<div className="flex flex-col gap-2">
-				<ModalTitle>Register your team</ModalTitle>
-				<p className="text-[16px] text-grey-600 leading-6">
-					Pick a name for your team. You'll get a Team ID to share with your
-					teammates so they can join.
-				</p>
-			</div>
-
+		<ActionModal
+			description="Pick a name for your team. You'll get a Team ID to share with your teammates so they can join."
+			error={error}
+			onClose={onClose}
+			open={open}
+			primary={{
+				label: "Register",
+				loadingLabel: "Registering...",
+				loading,
+				disabled: !isValid,
+				onClick: () => isValid && onSubmit(trimmed)
+			}}
+			secondary={{ label: "Go back", onClick: onClose }}
+			title="Register your team"
+		>
 			<div className="flex flex-col gap-1.5">
 				<Input
 					aria-label="Team name"
@@ -53,21 +51,6 @@ export default function RegisterTeamModal({
 					chars).
 				</p>
 			</div>
-
-			{error && <p className="font-medium text-[14px] text-red-700">{error}</p>}
-
-			<div className="flex flex-col gap-3">
-				<PrimaryButton
-					disabled={!isValid || loading}
-					onClick={() => isValid && onSubmit(trimmed)}
-					type="button"
-				>
-					{loading ? "Registering..." : "Register"}
-				</PrimaryButton>
-				<SecondaryButton onClick={onClose} type="button">
-					Go back
-				</SecondaryButton>
-			</div>
-		</Modal>
+		</ActionModal>
 	);
 }

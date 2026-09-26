@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getCriteria } from "@/app/actions";
 import TeamTable from "@/app/components/admin/teamtable/TeamTable";
 import UserTable from "@/app/components/admin/usertable";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
@@ -9,6 +10,7 @@ import ScoreTable from "../components/admin/scoreTable/ScoreTable";
 
 export default async function AdminPage() {
 	const session = await requireRole([Role.ADMIN]);
+	const criteria = await getCriteria();
 
 	return (
 		<main className="flex min-h-screen flex-col bg-pale-grey font-sans text-dark-grey">
@@ -52,7 +54,7 @@ export default async function AdminPage() {
 					<h2 className="mt-8 font-semibold text-grey-purple text-xl">
 						Criteria
 					</h2>
-					<CriteriaTable />
+					<CriteriaTable criteria={criteria} />
 				</div>
 				<div>
 					<h2 className="mt-8 font-semibold text-grey-purple text-xl">

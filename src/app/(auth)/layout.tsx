@@ -27,6 +27,7 @@ export default async function layout({
 							alt="Hack the Change"
 							className="h-22.5 w-43.25 object-contain"
 							height={90}
+							loading="eager"
 							src="/svgs/CTCLogoWithText.svg"
 							width={173}
 						/>

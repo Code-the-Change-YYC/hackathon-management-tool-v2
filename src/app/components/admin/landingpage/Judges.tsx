@@ -27,6 +27,7 @@ export default async function Judges() {
 				<Image
 					alt=""
 					aria-hidden="true"
+					className="h-auto w-auto"
 					height={17}
 					src="/svgs/landingPage/green_underline.svg"
 					width={130}
