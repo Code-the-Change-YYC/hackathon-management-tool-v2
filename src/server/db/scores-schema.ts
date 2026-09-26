@@ -8,6 +8,7 @@ import {
 	uniqueIndex,
 	uuid
 } from "drizzle-orm/pg-core";
+import { user } from "./auth-schema";
 import { judgingAssignments } from "./schema";
 
 export const createTable = pgTableCreator((name) => `hackathon_${name}`);
@@ -31,15 +32,20 @@ export const scores = createTable(
 		criteriaId: uuid("criteria_id")
 			.notNull()
 			.references(() => criteria.id, { onDelete: "cascade" }),
+		// Null preserves historical shared scores whose author is unknown.
+		judgeId: text("judge_id").references(() => user.id, {
+			onDelete: "restrict"
+		}),
 		value: integer("value").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull()
 	},
 	(t) => [
-		uniqueIndex("one_score_per_criteria_per_assignment").on(
+		uniqueIndex("one_score_per_judge_per_criteria_per_assignment").on(
 			t.assignmentId,
-			t.criteriaId
+			t.criteriaId,
+			t.judgeId
 		)
 	]
 );
