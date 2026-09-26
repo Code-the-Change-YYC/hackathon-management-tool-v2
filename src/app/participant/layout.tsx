@@ -16,7 +16,8 @@ export default async function ParticipantLayout({
 }) {
 	const { user } = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
 
-	const DISCORD_URL = "https://discord.com/"; // TODO: Change to actual discord URL
+	const DISCORD_URL = "https://discord.gg/bhJnwXjJYP";
+	const DEVPOST_URL = "https://hack-the-change-2026.devpost.com/";
 
 	const PARTICPANT_NAV_GROUPS: NavGroup[] = [
 		{
@@ -51,15 +52,21 @@ export default async function ParticipantLayout({
 			groupLabel: "Quick Links",
 			items: [
 				{
+					title: "Hackathon Home",
+					href: "/",
+					icon: "link",
+					external: true
+				},
+				{
 					title: "Discord Join Link",
 					href: DISCORD_URL,
 					icon: "discord",
 					external: true
 				},
 				{
-					title: "Hackathon Home",
-					href: "/",
-					icon: "link",
+					title: "Devpost",
+					href: DEVPOST_URL,
+					icon: "code",
 					external: true
 				}
 			]
