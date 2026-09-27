@@ -79,6 +79,30 @@
 		from 180deg at 50% 50%,
 		var(--tw-gradient-stops)
 	);
+
+	/* Split-flap countdown: the old top half falls, then the new bottom half lands */
+	--animate-flip-top: flip-top 300ms ease-in both;
+	--animate-flip-bottom: flip-bottom 300ms ease-out 300ms both;
+
+	@keyframes flip-top {
+		from {
+			transform: rotateX(0deg);
+		}
+		to {
+			transform: rotateX(-90deg);
+			filter: brightness(0.8);
+		}
+	}
+
+	@keyframes flip-bottom {
+		from {
+			transform: rotateX(90deg);
+			filter: brightness(0.8);
+		}
+		to {
+			transform: rotateX(0deg);
+		}
+	}
 }
 
 @utility custom-scrollbar {
@@ -98,6 +122,13 @@
 	&::-webkit-details-marker {
 		display: none;
 	}
+}
+
+/* Even purple outline drawn behind the glyphs, with a small drop shadow for depth */
+@utility text-outline-purple {
+	-webkit-text-stroke: 6px var(--color-awesomer-purple);
+	paint-order: stroke fill;
+	filter: drop-shadow(0 3px 0 var(--color-awesomer-purple));
 }
 
 /* Figma elevation/200 token: layered drop shadow used on cards and modals */
