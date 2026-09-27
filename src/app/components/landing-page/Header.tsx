@@ -4,12 +4,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/server/better-auth/client";
-import type { HeaderProps } from "@/types/landingPage";
+import { Role } from "@/types/types";
 
-export default function Header({ hasTeam }: HeaderProps) {
+const DASHBOARD_HREFS: Record<Role, string> = {
+	[Role.ADMIN]: "/admin",
+	[Role.JUDGE]: "/judge",
+	[Role.PARTICIPANT]: "/participant"
+};
+
+export default function Header() {
 	const router = useRouter();
 	const { data: session } = authClient.useSession();
 	const isSignedIn = !!session?.user;
+	const dashboardHref =
+		DASHBOARD_HREFS[session?.user.role as Role] ??
+		DASHBOARD_HREFS[Role.PARTICIPANT];
+
+	const LINK_STYLES =
+		"font-semibold text-awesomer-purple! text-lg sm:text-xl transition-colors hover:text-awesome-purple!";
 
 	const handleSignOut = async () => {
 		const { error } = await authClient.signOut();
@@ -24,22 +36,17 @@ export default function Header({ hasTeam }: HeaderProps) {
 	};
 
 	return (
-		<header className="relative flex w-full items-center justify-between bg-white px-4 py-10 font-semibold text-awesomer-purple! text-lg shadow-[0_4px_4px_0_rgba(0,0,0,0.25)] sm:px-22 sm:text-2xl">
-			<div className="min-w-25 max-w-16 text-center sm:max-w-none">
+		<header className="fixed inset-x-0 top-0 z-10 flex h-16 w-full items-center justify-between bg-white px-6 py-6 shadow md:h-22 md:px-16 md:py-8">
+			<div className="text-center">
 				{!isSignedIn && (
-					<Link
-						className="transition-colors hover:text-awesome-purple!"
-						href="/register"
-					>
-						Join Hackathon
+					<Link className={LINK_STYLES} href="/signup">
+						<span className="hidden sm:block">Join Hackathon</span>
+						<span className="sm:hidden">Join</span>
 					</Link>
 				)}
-				{isSignedIn && !hasTeam && (
-					<Link
-						className="transition-colors hover:text-awesome-purple!"
-						href="/participant/my-team"
-					>
-						Join a Team
+				{isSignedIn && (
+					<Link className={LINK_STYLES} href={dashboardHref}>
+						Dashboard
 					</Link>
 				)}
 			</div>
@@ -47,7 +54,7 @@ export default function Header({ hasTeam }: HeaderProps) {
 			<div className="-translate-x-1/2 absolute left-1/2">
 				<Image
 					alt="CTC logo"
-					className="size-17.5"
+					className="size-10 md:size-14"
 					height={70}
 					src="/svgs/CTCLogo.svg"
 					width={70}
@@ -56,16 +63,13 @@ export default function Header({ hasTeam }: HeaderProps) {
 
 			<div className="flex min-w-25 justify-end">
 				{!isSignedIn && (
-					<Link
-						className="transition-colors hover:text-awesome-purple!"
-						href="/login"
-					>
+					<Link className={LINK_STYLES} href="/login">
 						Sign In
 					</Link>
 				)}
 				{isSignedIn && (
 					<button
-						className="cursor-pointer transition-colors hover:text-awesome-purple!"
+						className={`cursor-pointer ${LINK_STYLES}`}
 						onClick={handleSignOut}
 						type="button"
 					>

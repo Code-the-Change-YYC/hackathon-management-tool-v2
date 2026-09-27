@@ -1,4 +1,9 @@
-import type { EventDetailProps } from "@/types/landingPage";
+import type { MingCuteIcon } from "@/types/landingPage";
+
+type EventDetailProps = {
+	icon: MingCuteIcon;
+	label: string;
+};
 
 export default function EventDetailsItem({ icon, label }: EventDetailProps) {
 	const Icon = icon;

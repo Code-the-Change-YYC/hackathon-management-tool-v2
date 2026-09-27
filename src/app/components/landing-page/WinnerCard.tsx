@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getAssetUrl, getFields, getString } from "@/lib/contentful";
-import type { WinnerCardProps } from "@/types/landingPage";
+import type { PastHackathonWinner } from "@/types/contentfulTypes";
 
 const AWARD_COLORS = [
 	"bg-strawberry-red",
@@ -9,6 +9,12 @@ const AWARD_COLORS = [
 	"bg-dark-green",
 	"bg-medium-pink"
 ] as const;
+
+type WinnerCardProps = {
+	winner: PastHackathonWinner;
+	index: number;
+	total: number;
+};
 
 export default function WinnerCard({ winner, index, total }: WinnerCardProps) {
 	const scaleValue = (100 - 10 * Math.abs(index - Math.floor(total / 2))) / 100;
