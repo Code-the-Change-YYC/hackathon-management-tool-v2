@@ -61,7 +61,7 @@ function WinnerCard({ winner, index, total }: WinnerCardProps) {
 			</div>
 
 			<div className="flex flex-col gap-1 px-2.5">
-				<h3 className="line-clamp-2 break-words font-semibold @3xs:text-3xl @[12rem]:text-2xl text-white text-xl leading-tight [text-shadow:0px_4px_4px_rgb(0_0_0/0.25)]">
+				<h3 className="wrap-break-word line-clamp-2 font-semibold @3xs:text-3xl @[12rem]:text-2xl text-white text-xl leading-tight [text-shadow:0px_4px_4px_rgb(0_0_0/0.25)]">
 					{projectName}
 				</h3>
 				<p className="line-clamp-2 @[12rem]:text-sm text-white text-xs">

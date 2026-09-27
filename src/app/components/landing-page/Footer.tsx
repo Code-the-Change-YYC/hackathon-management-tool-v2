@@ -40,15 +40,7 @@ export default function Footer() {
 	return (
 		<footer className="w-full bg-awesomer-purple px-6 py-10 text-white">
 			<div className="flex flex-col items-center gap-4 text-center">
-				<p className="font-bold text-xl">Keep up with us!</p>
-				<Link
-					className="font-medium text-base text-white/90! underline transition-colors hover:text-white!"
-					href="https://hack-the-change-2024.devpost.com/project-gallery"
-					rel="noopener noreferrer"
-					target="_blank"
-				>
-					View 2024 Winners!
-				</Link>
+				<p className="font-semibold text-xl">Keep up with us!</p>
 				<div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8">
 					{SOCIAL_LINKS.map(({ label, href, icon: Icon }) => (
 						<Link

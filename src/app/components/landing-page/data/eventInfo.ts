@@ -1,8 +1,8 @@
 import {
 	Calendar2Line,
 	GiftLine,
-	LocationLine,
-	WorldLine
+	HeartLine,
+	LocationLine
 } from "@mingcute/react";
 import type { EventInfoItem } from "@/types/landingPage";
 
@@ -17,7 +17,7 @@ export const eventInfoItems: EventInfoItem[] = [
 		icon: LocationLine,
 		label: "University of Calgary - ENG 207"
 	},
-	{ id: "public", icon: WorldLine, label: "Public" },
+	{ id: "public", icon: HeartLine, label: "Public" },
 	{
 		id: "prizes",
 		icon: GiftLine,

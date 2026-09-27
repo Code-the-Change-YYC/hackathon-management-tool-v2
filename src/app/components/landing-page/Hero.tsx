@@ -11,7 +11,7 @@ import Countdown from "./Countdown";
 const EVENT_NAME = "Hack the Change";
 const EVENT_YEAR = "2026";
 const EVENT_BLURB =
-	"Hack the Change 2026 is a hybrid two-day for-charity hackathon with the mission of coding a better world together.";
+	"Hack the Change is a hybrid two-day for-charity hackathon with the mission of coding a better world together.";
 const BG_IMAGE = "/svgs/landingPage/countdown_bg.svg";
 const CTA_BUTTON_STYLES =
 	"h-15 w-40 rounded-3xl border-5 border-white bg-awesomer-purple font-semibold text-white transition-opacity hover:bg-awesomer-purple hover:opacity-70";
@@ -39,7 +39,7 @@ export default function Hero() {
 						{EVENT_NAME} <span className="text-pastel-green">{EVENT_YEAR}</span>
 					</h1>
 
-					<p className="max-w-lg font-medium text-lg text-primary leading-7 sm:max-w-xl md:max-w-2xl md:text-2xl md:leading-10 lg:max-w-220 lg:text-3xl">
+					<p className="max-w-lg font-medium text-lg text-primary leading-7 sm:max-w-xl md:max-w-2xl md:text-2xl md:leading-10 lg:max-w-200 lg:text-3xl">
 						{EVENT_BLURB}
 					</p>
 				</div>

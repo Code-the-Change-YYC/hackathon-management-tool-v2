@@ -64,7 +64,7 @@ export default async function Judges() {
 			<div className="relative mx-auto max-w-7xl">
 				<div className="mb-10 md:mb-12">
 					<h2
-						className="font-semibold text-3xl text-dark-grey sm:text-4xl lg:text-5xl"
+						className="font-bold text-3xl text-dark-grey sm:text-4xl lg:text-5xl"
 						id="judges-heading"
 					>
 						Judges

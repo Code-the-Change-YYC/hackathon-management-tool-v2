@@ -113,7 +113,7 @@ export function SectionWrapper({
 		>
 			<div
 				className={cn(
-					"relative mx-auto flex max-w-7xl flex-col items-center justify-between gap-10 lg:gap-16 xl:gap-20",
+					"relative mx-auto flex max-w-7xl flex-col items-center justify-between gap-20 lg:gap-24 xl:gap-24",
 					reverse ? "lg:flex-row-reverse" : "lg:flex-row"
 				)}
 			>
@@ -156,7 +156,7 @@ export function SectionTitle({
 	return (
 		<div className="relative inline-flex items-center gap-2">
 			{accentPosition === "before" && accent}
-			<h2 className="font-semibold text-3xl sm:text-4xl lg:text-5xl">
+			<h2 className="font-bold text-3xl sm:text-4xl lg:text-5xl">
 				{title && (
 					<span className={`${titlePrefixColor} not-italic`}>{title} </span>
 				)}
