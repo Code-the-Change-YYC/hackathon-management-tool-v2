@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
-import { DASHBOARD_HREFS } from "@/lib/constants";
+import { DASHBOARD_HREFS, LOGIN_HREF, SIGNUP_HREF } from "@/lib/constants";
 import { authClient } from "@/server/better-auth/client";
 import { Role } from "@/types/types";
 import Countdown from "./Countdown";
@@ -55,14 +55,14 @@ export default function Hero() {
 						<Button
 							className={CTA_BUTTON_STYLES}
 							nativeButton={false}
-							render={<Link href="/signup">Join Hackathon</Link>}
+							render={<Link href={SIGNUP_HREF}>Join Hackathon</Link>}
 						/>
 
 						<p className="font-medium text-base text-dark-grey sm:text-xl">
 							Already registered?{" "}
 							<Link
 								className="font-semibold text-awesomer-purple! hover:opacity-70"
-								href="/login"
+								href={LOGIN_HREF}
 							>
 								Sign in
 							</Link>
