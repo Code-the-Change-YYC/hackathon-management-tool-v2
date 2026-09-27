@@ -56,6 +56,13 @@ export default function Footer() {
 					))}
 				</div>
 
+				<Link
+					className="font-medium text-base text-white/90! underline underline-offset-2 transition-colors hover:text-white!"
+					href="/code-of-conduct"
+				>
+					Code of Conduct
+				</Link>
+
 				<p className="font-medium text-sm text-white/80">
 					Copyright © Code The Change YYC
 				</p>
