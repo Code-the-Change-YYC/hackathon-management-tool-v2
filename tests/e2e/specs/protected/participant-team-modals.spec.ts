@@ -1,7 +1,7 @@
 import { inArray } from "drizzle-orm";
 import type { Page } from "playwright/test";
 import { db } from "@/server/db";
-import { organization } from "@/server/db/auth-schema";
+import { member, organization } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../db";
 import { expect, test } from "../../fixtures/team.fixture";
@@ -155,4 +155,38 @@ test("join modal shows an error for an unknown code", async ({
 	await expect(
 		page.getByText("No team was found. Please check the code and try again.")
 	).toBeVisible();
+});
+
+test("members cannot rename the team or send invites", async ({
+	authenticatedPage: page,
+	authUser,
+	createTeam
+}) => {
+	const team = await createTeam("Member");
+	await db.insert(member).values({
+		id: crypto.randomUUID(),
+		organizationId: team.id,
+		userId: authUser.id,
+		role: "member",
+		createdAt: new Date()
+	});
+
+	await page.goto("/participant/team");
+	await expect(page.getByText(team.name, { exact: true })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Leave team" })).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Edit team name" })
+	).toHaveCount(0);
+
+	const call = (path: string, json: object) =>
+		page.request.post(`/api/trpc/${path}?batch=1`, {
+			headers: { "content-type": "application/json" },
+			data: { 0: { json } }
+		});
+	expect(
+		(await call("teams.update", { id: team.id, name: "Hijacked" })).status()
+	).toBe(403);
+	expect(
+		(await call("teams.invite", { email: "someone@example.com" })).status()
+	).toBe(403);
 });
