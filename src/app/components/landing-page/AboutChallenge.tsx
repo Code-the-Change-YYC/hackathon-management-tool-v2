@@ -1,4 +1,4 @@
-import InfoSection from "./InfoSection";
+import InfoSection, { Squiggle } from "./InfoSection";
 
 export default function AboutChallenge() {
 	return (
@@ -7,6 +7,15 @@ export default function AboutChallenge() {
 			accentSrc="accent_pink"
 			bgColor="bg-awesomer-purple"
 			bodyTextColor="text-pale-grey"
+			decoration={
+				<>
+					<Squiggle className="-top-16 -left-40 w-64" src="pink_squiggle" />
+					<Squiggle
+						className="-left-28 top-[calc(100%+2rem)] w-80"
+						src="green_squiggle"
+					/>
+				</>
+			}
 			imageAlt="About the challenge"
 			imageSrc="/svgs/landingPage/about_illustration.svg"
 			paragraphs={[

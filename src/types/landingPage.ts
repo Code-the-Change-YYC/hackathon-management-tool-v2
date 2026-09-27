@@ -9,11 +9,6 @@ export type EventInfoItem = {
 	label: string;
 };
 
-export type Criterion = {
-	category: string;
-	description: string;
-};
-
 export type Sponsor = {
 	url: string | undefined;
 	id: string;

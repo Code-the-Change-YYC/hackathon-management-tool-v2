@@ -1,42 +1,40 @@
-import InfoSection from "./InfoSection";
+import InfoSection, { Squiggle } from "./InfoSection";
 
+// Listed in podium order: 2nd on the left, 1st in the middle, 3rd on the right
 const PODIUM_DATA = [
 	{
 		place: "2nd",
 		amount: "$3,000",
 		color: "bg-awesome-purple",
-		height: "h-36 md:h-48",
-		order: "order-1"
+		height: "h-32 sm:h-40 md:h-48"
 	},
 	{
 		place: "1st",
 		amount: "$5,000",
 		color: "bg-awesomer-purple",
-		height: "h-52 md:h-64",
-		order: "order-2"
+		height: "h-44 sm:h-52 md:h-64"
 	},
 	{
 		place: "3rd",
 		amount: "$2,000",
 		color: "bg-lilac-purple",
-		height: "h-28 md:h-36",
-		order: "order-3"
+		height: "h-24 sm:h-32 md:h-36"
 	}
 ];
 
 function Podium() {
 	return (
-		<div className="flex items-end justify-around gap-4 lg:gap-10">
+		<div className="mx-auto flex w-full max-w-lg items-end justify-center gap-3 sm:gap-6 lg:gap-8">
 			{PODIUM_DATA.map((prize) => (
 				<div
-					className={`flex w-24 flex-col items-center lg:w-40 ${prize.order}`}
+					className="flex max-w-40 flex-1 flex-col items-center"
 					key={prize.place}
 				>
 					<p className="mb-2 font-bold text-dark-grey text-lg md:text-xl">
 						{prize.amount}
 					</p>
 					<div
-						className={`flex w-full flex-col items-center justify-center rounded-t-xl ${prize.color} ${prize.height} shadow-lg transition-all duration-200 hover:scale-105`}
+						className={`flex w-full flex-col items-center justify-center rounded-t-xl rounded-b-md ${prize.color} ${prize.height} transition-transform duration-200 hover:scale-105`}
 					>
 						<span className="font-black text-2xl text-white md:text-3xl">
 							{prize.place}
@@ -56,6 +54,12 @@ export default function Prizes() {
 			bgColor="bg-fuzzy-peach"
 			bodyContent={<Podium />}
 			bodyTextColor="text-dark-grey"
+			decoration={
+				<Squiggle
+					className="-right-20 top-[calc(100%+4rem)] w-72"
+					src="green_squiggle3"
+				/>
+			}
 			imageAlt="Prizes"
 			imageSrc="/svgs/landingPage/prizes_illustration.svg"
 			reverse

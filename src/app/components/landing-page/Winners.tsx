@@ -1,38 +1,27 @@
 import { getWinners } from "@/app/actions";
-import { SectionWrapper } from "./InfoSection";
+import { SectionTitle, SectionWrapper } from "./InfoSection";
 import WinnersCarousel from "./WinnersCarousel";
 
 export default async function Winners() {
 	const winners = await getWinners();
-	return (
-		<Header>
-			{winners.length ? (
-				<WinnersCarousel winners={winners} />
-			) : (
-				<NotAvailable />
-			)}
-		</Header>
-	);
-}
-const NotAvailable = () => {
-	return (
-		<p className="text-dark-grey">
-			Winner information is currently unavailable. Please check back soon.
-		</p>
-	);
-};
-const Header = ({ children }: { children: React.ReactNode }) => {
+
 	return (
 		<SectionWrapper bgColor="bg-pinky-peach">
-			<div className="w-full max-w-7xl">
-				<div className="relative mb-12 inline-flex items-center gap-2">
-					<h2 className="pr-2 font-semibold text-3xl md:text-5xl">
-						<span className="text-dark-grey not-italic">Last Year&apos;s </span>
-						<span className="text-awesomer-purple italic">Winners</span>
-					</h2>
-				</div>
-				{children}
+			<div className="flex w-full flex-col gap-10 md:gap-12">
+				<SectionTitle
+					title="Last Year's"
+					titleColor="text-awesomer-purple"
+					titleHighlight="Winners"
+					titlePrefixColor="text-dark-grey"
+				/>
+				{winners.length ? (
+					<WinnersCarousel winners={winners} />
+				) : (
+					<p className="text-dark-grey">
+						Winner information is currently unavailable. Please check back soon.
+					</p>
+				)}
 			</div>
 		</SectionWrapper>
 	);
-};
+}
