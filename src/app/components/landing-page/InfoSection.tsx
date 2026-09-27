@@ -3,10 +3,24 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-const ACCENT_SRC = {
-	accent_green: "/svgs/landingPage/accent_green.svg",
-	accent_purple: "/svgs/landingPage/accent_purple.svg",
-	accent_pink: "/svgs/landingPage/accent_pink.svg"
+// Intrinsic sizes match each SVG so next/image doesn't see a lone width or
+// height change once CSS scales the accent
+const ACCENTS = {
+	accent_green: {
+		src: "/svgs/landingPage/accent_green.svg",
+		width: 22,
+		height: 35
+	},
+	accent_purple: {
+		src: "/svgs/landingPage/accent_purple.svg",
+		width: 35,
+		height: 44
+	},
+	accent_pink: {
+		src: "/svgs/landingPage/accent_pink.svg",
+		width: 24,
+		height: 25
+	}
 } as const;
 
 // Stroke width in screen pixels, shared by every squiggle regardless of size
@@ -45,7 +59,7 @@ type SectionTitleProps = {
 	titlePrefixColor?: string;
 	titleColor?: string;
 	titleHighlight: string;
-	accentSrc?: keyof typeof ACCENT_SRC;
+	accentSrc?: keyof typeof ACCENTS;
 	accentPosition?: "before" | "after";
 };
 
@@ -147,9 +161,7 @@ export function SectionTitle({
 				accentPosition === "before" &&
 					"lg:-translate-y-1/2 lg:absolute lg:top-1/2 lg:right-full lg:mr-2"
 			)}
-			height={44}
-			src={ACCENT_SRC[accentSrc]}
-			width={35}
+			{...ACCENTS[accentSrc]}
 		/>
 	);
 
