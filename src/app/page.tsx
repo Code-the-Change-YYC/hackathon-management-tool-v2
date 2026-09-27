@@ -3,9 +3,9 @@ import Header from "@/app/components/landing-page/Header";
 import Sponsors from "@/app/components/landing-page/Sponsors";
 import { HydrateClient } from "@/trpc/server";
 import AboutChallenge from "./components/landing-page/AboutChallenge";
-import Countdown from "./components/landing-page/countdown/Countdown";
 import EventDetails from "./components/landing-page/EventDetails";
 import HackathonInformationContainer from "./components/landing-page/HackathonInformationContainer";
+import Hero from "./components/landing-page/Hero";
 import Judges from "./components/landing-page/Judges";
 import JudgingCriteria from "./components/landing-page/JudgingCriteria";
 import MLHBadge from "./components/landing-page/MLHBadge";
@@ -20,7 +20,7 @@ export default async function Home() {
 		<HydrateClient>
 			<Header />
 			<MLHBadge />
-			<Countdown />
+			<Hero />
 			<EventDetails />
 			<HackathonInformationContainer>
 				<AboutChallenge />

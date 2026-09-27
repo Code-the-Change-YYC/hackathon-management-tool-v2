@@ -3,14 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { DASHBOARD_HREFS } from "@/lib/constants";
 import { authClient } from "@/server/better-auth/client";
 import { Role } from "@/types/types";
-
-const DASHBOARD_HREFS: Record<Role, string> = {
-	[Role.ADMIN]: "/admin",
-	[Role.JUDGE]: "/judge",
-	[Role.PARTICIPANT]: "/participant"
-};
 
 export default function Header() {
 	const router = useRouter();
@@ -36,7 +31,7 @@ export default function Header() {
 	};
 
 	return (
-		<header className="fixed inset-x-0 top-0 z-10 flex h-16 w-full items-center justify-between bg-white px-6 py-6 shadow md:h-22 md:px-16 md:py-8">
+		<header className="fixed inset-x-0 top-0 z-10 flex h-16 w-full items-center justify-between bg-white px-6 py-6 md:h-22 md:px-16 md:py-8">
 			<div className="text-center">
 				{!isSignedIn && (
 					<Link className={LINK_STYLES} href="/signup">
