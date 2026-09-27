@@ -1,4 +1,4 @@
-import { MedalFill, TrophyFill } from "@mingcute/react";
+import { GiftLine, TrophyLine } from "@mingcute/react";
 import { cn } from "@/lib/utils";
 import type { MingCuteIcon } from "@/types/landingPage";
 import { SectionTitle, SectionWrapper, Squiggle } from "./InfoSection";
@@ -17,7 +17,7 @@ const PRIZES: Prize[] = [
 	{
 		place: "2nd place",
 		amount: "$3,000",
-		icon: MedalFill,
+		icon: GiftLine,
 		cardStyles:
 			"order-2 border-dark-pink shadow-[8px_8px_0_0_var(--color-medium-pink)] sm:order-1",
 		badgeStyles: "bg-pastel-pink text-dark-pink"
@@ -25,7 +25,7 @@ const PRIZES: Prize[] = [
 	{
 		place: "1st place",
 		amount: "$5,000",
-		icon: TrophyFill,
+		icon: TrophyLine,
 		cardStyles:
 			"order-1 border-awesomer-purple bg-awesomer-purple text-white shadow-[8px_8px_0_0_var(--color-awesome-purple)] sm:order-2 sm:py-12 md:py-16",
 		badgeStyles: "bg-white text-awesomer-purple"
@@ -33,7 +33,7 @@ const PRIZES: Prize[] = [
 	{
 		place: "3rd place",
 		amount: "$2,000",
-		icon: MedalFill,
+		icon: GiftLine,
 		cardStyles:
 			"order-3 border-medium-green shadow-[8px_8px_0_0_var(--color-dark-green)]",
 		badgeStyles: "bg-mint-green text-medium-green"

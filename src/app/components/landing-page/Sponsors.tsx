@@ -45,7 +45,7 @@ export default function Sponsors() {
 				<div className="grid w-full max-w-4xl grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 xl:max-w-7xl xl:grid-cols-6">
 					{sponsors.map((sponsor) => {
 						const logo = (
-							<div className="group-hover:-translate-y-1 flex size-28 items-center justify-center overflow-hidden rounded-full bg-white transition-all duration-300 group-hover:shadow-2xl sm:size-32 md:size-37.5">
+							<div className="group-hover:-translate-y-1 flex size-28 items-center justify-center overflow-hidden rounded-full bg-white transition-all duration-300 sm:size-32 md:size-37.5">
 								<Image
 									alt={sponsor.name}
 									className="h-full w-full scale-75 object-contain"
@@ -73,7 +73,7 @@ export default function Sponsors() {
 									logo
 								)}
 								{/* Revealed on hover, so only shown where hovering is common */}
-								<p className="hidden text-center text-dark-grey text-sm opacity-0 transition-all duration-300 group-hover:opacity-100 lg:block">
+								<p className="hidden text-center font-medium text-dark-grey text-sm opacity-0 transition-all duration-300 group-hover:opacity-100 lg:block">
 									{sponsor.name}
 								</p>
 							</div>
