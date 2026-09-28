@@ -32,8 +32,10 @@ export default async function MealView() {
 						className="flex md:hidden"
 						colour="purple"
 						description="(Recommended for mobile) open this to scan participant meal tickets!"
+						href="/meal"
 						layout="vertical"
 						title="Scan meal tickets"
+						type="ScanMealTickets"
 					/>
 					{/* Desktop/Tablet horizontal layout */}
 					<Banner
@@ -41,8 +43,10 @@ export default async function MealView() {
 						className="hidden md:flex"
 						colour="purple"
 						description="(Recommended for mobile) open this to scan participant meal tickets!"
+						href="/meal"
 						layout="horizontal"
 						title="Scan meal tickets"
+						type="ScanMealTickets"
 					/>
 					<ScheduleSection
 						emptyDescription="Check back soon for event times."

@@ -1,48 +1,90 @@
+import { Alarm2Line, ArrowRightLine, LocationLine } from "@mingcute/react";
+import { cva } from "class-variance-authority";
 import Image from "next/image";
 import Link from "next/link";
-import clock_icon from "public/svgs/admin/clock_icon.svg";
-import breads_svg from "public/svgs/admin/illustrations/breads.svg";
-import pizza_svg from "public/svgs/admin/illustrations/pizza.svg";
-import pin_icon from "public/svgs/admin/pin_icon.svg";
-import right_arrow_icon from "public/svgs/admin/right_arrow.svg";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 
-const ScanMealTicketsImage = ({
-	layout
+type BannerLayout = "vertical" | "horizontal";
+
+const bannerVariants = cva(
+	"relative w-fill justify-between overflow-hidden rounded-[16px] p-6",
+	{
+		variants: {
+			layout: {
+				horizontal: "flex-row",
+				vertical: "h-74.75 flex-col"
+			}
+		}
+	}
+);
+
+const scanMealTicketsImageVariants = cva("absolute rotate-[-3.941deg]", {
+	variants: {
+		slot: {
+			primary: "",
+			secondary: ""
+		},
+		layout: {
+			horizontal: "",
+			vertical: ""
+		}
+	},
+	compoundVariants: [
+		{
+			slot: "primary",
+			layout: "horizontal",
+			class: "-top-20 right-10 h-[313.777px] w-[313.777px]"
+		},
+		{
+			slot: "primary",
+			layout: "vertical",
+			class: "right-0 bottom-0 h-[161.8805px] w-[161.8805px]"
+		},
+		{
+			slot: "secondary",
+			layout: "horizontal",
+			class: "-top-20 right-68.75 h-[313.777px] w-[313.777px]"
+		},
+		{
+			slot: "secondary",
+			layout: "vertical",
+			class: "-bottom-5 right-31.25 h-[195.2742px] w-[195.2742px]"
+		}
+	]
+});
+
+const ScanMealTicketsImages = ({
+	layout = "horizontal"
 }: {
-	layout: "vertical" | "horizontal";
+	layout: BannerLayout;
 }) => {
 	return (
 		<div className="absolute top-0 left-0 z-0 h-full w-full">
 			<div
-				className={twMerge(
-					"absolute rotate-[-3.941deg]",
-					layout === "horizontal"
-						? "-top-20 right-10 h-[313.777px] w-[313.777px]"
-						: "right-0 bottom-0 h-[161.8805px] w-[161.8805px]"
-				)}
+				className={scanMealTicketsImageVariants({
+					slot: "primary",
+					layout
+				})}
 			>
 				<Image
 					alt="pizza illustration"
 					className="h-full w-full"
 					height={20}
-					src={pizza_svg}
+					src="/svgs/pizza.svg"
 					width={20}
 				/>
 			</div>
 			<div
-				className={twMerge(
-					"absolute rotate-[-3.941deg]",
-					layout === "horizontal"
-						? "-top-20 right-68.75 h-[313.777px] w-[313.777px]"
-						: "-bottom-5 right-31.25 h-[195.2742px] w-[195.2742px]"
-				)}
+				className={scanMealTicketsImageVariants({
+					slot: "secondary",
+					layout
+				})}
 			>
 				<Image
 					alt="breads illustration"
 					className="h-full w-full"
 					height={20}
-					src={breads_svg}
+					src="/svgs/breads.svg"
 					width={20}
 				/>
 			</div>
@@ -50,21 +92,33 @@ const ScanMealTicketsImage = ({
 	);
 };
 
+export type BannerType = "ScanMealTickets";
+
+function getBannerImages(bannerType: BannerType, layout: BannerLayout) {
+	switch (bannerType) {
+		case "ScanMealTickets":
+			return <ScanMealTicketsImages layout={layout} />;
+	}
+}
+
 export default function Banner({
 	className = "flex",
 	colour,
 	layout,
+	type,
 
 	title,
 	description,
 	buttonText,
 	location,
 	startTime,
-	endTime
+	endTime,
+	href
 }: {
 	className?: string;
 	colour: "purple" | "red";
 	layout: "vertical" | "horizontal";
+	type: BannerType;
 
 	title: string;
 	description: string;
@@ -72,6 +126,7 @@ export default function Banner({
 	location?: string;
 	startTime?: Date;
 	endTime?: Date;
+	href?: string;
 }) {
 	const startTimeStr = startTime
 		? startTime.toLocaleTimeString("en-US", {
@@ -89,10 +144,9 @@ export default function Banner({
 
 	return (
 		<div
-			className={twMerge(
-				"relative w-fill justify-between overflow-hidden rounded-4 p-6",
-				colour === "purple" ? "bg-purple500" : "bg-red700",
-				layout === "horizontal" ? "flex-row" : "h-74.75 flex-col",
+			className={cn(
+				bannerVariants({ layout }),
+				colour === "purple" ? "bg-purple-500" : "bg-red700",
 				className
 			)}
 		>
@@ -104,32 +158,15 @@ export default function Banner({
 					<div className="flex flex-row gap-6">
 						{location && (
 							<div className="flex flex-row items-center gap-2">
-								<div className="h-6 w-6">
-									<Image
-										alt="pin icon"
-										className="h-full w-full"
-										height={20}
-										src={pin_icon}
-										width={20}
-									/>
-								</div>
+								<LocationLine className="size-6" />
 								<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
 									{location}
 								</p>
 							</div>
 						)}
-						{/* Because sometimes only one of the times is visible */}
 						{(startTime || endTime) && (
 							<div className="flex flex-row items-center gap-2">
-								<div className="h-6 w-6">
-									<Image
-										alt="clock icon"
-										className="h-full w-full"
-										height={20}
-										src={clock_icon}
-										width={20}
-									/>
-								</div>
+								<Alarm2Line className="size-6" />
 								<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
 									{startTimeStr} - {endTimeStr}
 								</p>
@@ -141,25 +178,20 @@ export default function Banner({
 					{description}
 				</p>
 			</div>
-			{/* TODO: Update href to link to scanner */}
-			<Link
-				className="z-1 flex h-fit w-fit cursor-pointer flex-row gap-2 rounded-[12px] bg-purple50 px-4 py-2.5"
-				href="/admin/meals"
-			>
-				<p className="whitespace-nowrap font-medium text-4 text-purple800 leading-6">
-					{buttonText}
-				</p>
-				<div className="h-5 w-5">
-					<Image
-						alt="button icon"
-						className="h-full w-full"
-						height={20}
-						src={right_arrow_icon}
-						width={20}
-					/>
-				</div>
-			</Link>
-			<ScanMealTicketsImage layout={layout} />
+			{href && (
+				<Link
+					className="z-1 flex h-fit w-fit cursor-pointer flex-row items-center gap-2 rounded-[12px] bg-pale-grey px-4 py-2.5"
+					href={href}
+				>
+					<p className="whitespace-nowrap font-medium text-4 text-awesomer-purple leading-6">
+						{buttonText}
+					</p>
+					<div className="text-awesomer-purple">
+						<ArrowRightLine className="size-5" />
+					</div>
+				</Link>
+			)}
+			{getBannerImages(type, layout)}
 		</div>
 	);
 }
