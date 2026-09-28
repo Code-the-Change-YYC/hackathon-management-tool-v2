@@ -40,7 +40,7 @@ export default async function MealAnalytics() {
 			<h1 className="font-medium text-[22px] leading-7">Meal Analytics</h1>
 			<div>
 				<div className="flex max-w-[100vw] flex-row flex-wrap gap-4">
-					<div className="rounded-[12px] border border-grey300 p-4">
+					<div className="rounded-[12px] border p-4">
 						<p className="font-regular text-[32px] leading-10">{total}</p>
 						<p className="whitespace-nowrap font-medium text-[14px] leading-5">
 							Meal tickets scanned
@@ -48,10 +48,7 @@ export default async function MealAnalytics() {
 					</div>
 					{Object.entries(counts).map(([name, count]) => {
 						return (
-							<div
-								className="rounded-[12px] border border-grey300 p-4"
-								key={name}
-							>
+							<div className="rounded-[12px] border p-4" key={name}>
 								<p className="font-regular text-[32px] leading-10">{count}</p>
 								<p className="whitespace-nowrap font-medium text-[14px] leading-5">
 									{restrictionToString(name)}
@@ -60,7 +57,6 @@ export default async function MealAnalytics() {
 						);
 					})}
 				</div>
-				{/* Cannot use tailwind for grid because we cannot have dynamic values in it */}
 				<div
 					className="grid max-w-175 grid-cols-[repeat(var(--analytics-columns),minmax(0,1fr))] overflow-auto p-6"
 					style={
@@ -74,8 +70,7 @@ export default async function MealAnalytics() {
 							<p
 								className={twMerge(
 									"p-2 text-[14px] leading-5",
-									(firstIndex === 0 || secondIndex === 0) &&
-										"font-semibold text-grey800",
+									(firstIndex === 0 || secondIndex === 0) && "font-semibold",
 									secondIndex === 0 ? "justify-self-end" : "justify-self-center"
 								)}
 								key={`${gridValues[0]?.[secondIndex] ?? ""}${row[secondIndex] ?? ""}`}

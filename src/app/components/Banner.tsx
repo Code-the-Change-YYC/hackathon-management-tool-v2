@@ -128,6 +128,10 @@ export default function Banner({
 	endTime?: Date;
 	href?: string;
 }) {
+	const backgroundClass =
+		colour === "purple" ? "bg-primary" : "bg-strawberry-red";
+	const linkColourClass =
+		colour === "purple" ? "text-awesomer-purple" : "text-strawberry-red";
 	const startTimeStr = startTime
 		? startTime.toLocaleTimeString("en-US", {
 				hour: "2-digit",
@@ -143,21 +147,20 @@ export default function Banner({
 		: "";
 
 	return (
-		<div
-			className={cn(
-				bannerVariants({ layout }),
-				colour === "purple" ? "bg-purple-500" : "bg-red700",
-				className
-			)}
-		>
+		<div className={cn(bannerVariants({ layout }), backgroundClass, className)}>
 			<div className="z-1 flex max-w-100 flex-col gap-4">
 				<div className="flex flex-col gap-1">
-					<h1 className="font-semibold text-[28px] text-white leading-9">
+					<h1
+						className={cn(
+							backgroundClass,
+							"font-semibold text-[28px] text-white leading-9"
+						)}
+					>
 						{title}
 					</h1>
 					<div className="flex flex-row gap-6">
 						{location && (
-							<div className="flex flex-row items-center gap-2">
+							<div className="flex flex-row items-center gap-2 text-white">
 								<LocationLine className="size-6" />
 								<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
 									{location}
@@ -165,7 +168,7 @@ export default function Banner({
 							</div>
 						)}
 						{(startTime || endTime) && (
-							<div className="flex flex-row items-center gap-2">
+							<div className="flex flex-row items-center gap-2 text-white">
 								<Alarm2Line className="size-6" />
 								<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
 									{startTimeStr} - {endTimeStr}
@@ -174,19 +177,22 @@ export default function Banner({
 						)}
 					</div>
 				</div>
-				<p className="bg-purple500 font-regular text-4 text-white leading-6">
+				<p className={cn(backgroundClass, "text-[16px] text-white leading-6")}>
 					{description}
 				</p>
 			</div>
 			{href && (
 				<Link
-					className="z-1 flex h-fit w-fit cursor-pointer flex-row items-center gap-2 rounded-[12px] bg-pale-grey px-4 py-2.5"
+					className={cn(
+						"z-1 flex h-fit w-fit cursor-pointer flex-row items-center gap-2 rounded-[12px] bg-pale-grey px-4 py-2.5",
+						linkColourClass
+					)}
 					href={href}
 				>
-					<p className="whitespace-nowrap font-medium text-4 text-awesomer-purple leading-6">
+					<p className="whitespace-nowrap font-medium text-[16px] leading-6">
 						{buttonText}
 					</p>
-					<div className="text-awesomer-purple">
+					<div>
 						<ArrowRightLine className="size-5" />
 					</div>
 				</Link>
