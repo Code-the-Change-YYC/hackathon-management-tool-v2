@@ -9,6 +9,7 @@ import { Checkbox } from "@/app/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { RESET_CONFIRMATION_PHRASE } from "@/lib/constants";
 import { api, type RouterOutputs } from "@/trpc/react";
+import PageHeader from "../../PageHeader";
 import { Field, FieldLabel } from "../../ui/field";
 import { Input } from "../../ui/input";
 
@@ -73,12 +74,10 @@ function ScoringSection({
 	return (
 		<div className="flex w-full flex-col gap-7">
 			<div className="grid w-full grid-cols-[1fr_max-content] grid-rows-[max-content_max-content] items-center gap-x-4 gap-y-2 pr-4">
-				<p className="pl-4 font-regular text-[14px] text-grey800 leading-5">
-					{name}
-				</p>
+				<p className="pl-4 font-regular text-[14px] leading-5">{name}</p>
 
 				<textarea
-					className="field-sizing-content row-start-2 w-full resize-none rounded-3 border py-3 pr-3 pl-4 text-4 leading-6"
+					className="field-sizing-content row-start-2 w-full resize-none rounded-[12px] border py-3 pr-3 pl-4 text-4 leading-6"
 					onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
 						setAddText(event.target.value);
 					}}
@@ -106,7 +105,7 @@ function ScoringSection({
 			<div className="grid grid-cols-[1fr_max-content] justify-center gap-4">
 				{items.map((item) => (
 					<Fragment key={item.id}>
-						<div className="field-sizing-content grey500 grey400 w-full resize-none rounded-3 border py-3 pr-3 pl-4 text-4 leading-6">
+						<div className="field-sizing-content w-full resize-none rounded-[12px] border bg-muted py-3 pr-3 pl-4 text-4 leading-6">
 							{item.name}
 						</div>
 
@@ -189,7 +188,6 @@ export default function AdminControlsView() {
 			try {
 				const [result] = await createCriteriaMutation.mutateAsync({
 					name,
-					maxScore: 0,
 					isSidepot
 				});
 
@@ -290,14 +288,10 @@ export default function AdminControlsView() {
 
 	return (
 		<div className="flex w-fill flex-col gap-6 p-6">
-			<div>
-				<h1 className="font-semibold text-[32px] text-grey800 leading-10">
-					Admin Controls
-				</h1>
-				<p className="font-regular text-4 text-grey600 leading-6">
-					Reset hackathon
-				</p>
-			</div>
+			<PageHeader
+				description="Reset hackathon, edit scoring components"
+				title="Admin Controls"
+			/>
 
 			<div className="flex flex-col gap-21">
 				<div className="flex flex-col gap-16">
@@ -336,12 +330,12 @@ export default function AdminControlsView() {
 					<div className="flex w-full flex-col gap-4 md:flex-row md:gap-16">
 						<div className="flex w-full flex-col gap-2">
 							<Field>
-								<FieldLabel className="pl-4 font-regular text-[14px] text-grey800 leading-5">
+								<FieldLabel className="pl-4 font-regular text-[14px] leading-5">
 									Start Date
 								</FieldLabel>
 
 								<Input
-									className="grey500 grey400 row-start-2 w-full rounded-3 border py-3 pr-3 pl-4 text-4 leading-6"
+									className="row-start-2 w-full rounded-[12px] border py-3 pr-3 pl-4 text-4 leading-6"
 									onChange={(event) => setStartDate(event.target.value)}
 									type="date"
 									value={startDate}
@@ -351,12 +345,12 @@ export default function AdminControlsView() {
 
 						<div className="flex w-full flex-col gap-2">
 							<Field>
-								<FieldLabel className="pl-4 font-regular text-[14px] text-grey800 leading-5">
+								<FieldLabel className="pl-4 font-regular text-[14px] leading-5">
 									End Date
 								</FieldLabel>
 
 								<Input
-									className="grey500 grey400 row-start-2 w-full rounded-3 border py-3 pr-3 pl-4 text-4 leading-6"
+									className="row-start-2 w-full rounded-[12px] border py-3 pr-3 pl-4 text-4 leading-6"
 									onChange={(event) => setEndDate(event.target.value)}
 									type="date"
 									value={endDate}
@@ -384,7 +378,7 @@ export default function AdminControlsView() {
 								htmlFor="create_hackathon"
 							>
 								<RadioGroupItem
-									className="grey600 h-5 w-5 p-2"
+									className="h-5 w-5 p-2"
 									id="create_hackathon"
 									value="create"
 								/>
@@ -398,7 +392,7 @@ export default function AdminControlsView() {
 								htmlFor="reset_hackathon"
 							>
 								<RadioGroupItem
-									className="grey600 h-5 w-5 p-2"
+									className="h-5 w-5 p-2"
 									id="reset_hackathon"
 									value="reset"
 								/>
@@ -475,12 +469,12 @@ export default function AdminControlsView() {
 
 				<div className="grid w-full grid-cols-[100%] grid-rows-[max-content_max-content_max-content] justify-end gap-x-4 gap-y-2 pr-4 md:grid-cols-[max-content]">
 					<Field>
-						<FieldLabel className="w-full pl-4 font-regular text-[14px] text-grey800 leading-5">
+						<FieldLabel className="w-full pl-4 font-regular text-[14px] leading-5">
 							Enter "{RESET_CONFIRMATION_PHRASE}" to confirm reset
 						</FieldLabel>
 
 						<Input
-							className="grey500 grey400 row-start-2 w-fill rounded-3 border py-3 pr-3 pl-4 text-4 leading-6 md:w-100"
+							className="row-start-2 w-fill rounded-[12px] border py-3 pr-3 pl-4 text-4 leading-6 md:w-100"
 							onChange={(event) => setConfirmation(event.target.value)}
 							placeholder={RESET_CONFIRMATION_PHRASE}
 							type="text"
