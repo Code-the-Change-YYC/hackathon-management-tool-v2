@@ -146,12 +146,15 @@ export const usersRouter = createTRPCRouter({
 			for (const restriction of DIETARY_RESTRICTIONS) {
 				if (selected.has(restriction)) {
 					counts[restriction] = (counts[restriction] ?? 0) + 1;
+					overlaps[restriction][restriction] =
+						(overlaps[restriction][restriction] ?? 0) + 1;
 				}
 			}
 
 			for (const [left, right] of pairs) {
 				if (selected.has(left) && selected.has(right)) {
 					overlaps[left][right] = (overlaps[left][right] ?? 0) + 1;
+					overlaps[right][left] = (overlaps[right][left] ?? 0) + 1;
 				}
 			}
 		}
