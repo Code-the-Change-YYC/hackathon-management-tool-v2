@@ -44,6 +44,7 @@ export const hackathonSettingsRouter = createTRPCRouter({
 			return updated;
 		}),
 
+	// Reset hackathon tables (admin only)
 	resetHackathon: adminProcedure
 		.input(
 			z
