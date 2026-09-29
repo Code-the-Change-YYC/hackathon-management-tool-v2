@@ -1,5 +1,6 @@
 import {
 	Calendar2Line,
+	CodeLine,
 	DiscordLine,
 	GroupLine,
 	HamburgerLine,
@@ -21,7 +22,8 @@ export const NAV_ICONS = {
 	question: QuestionLine,
 	discord: DiscordLine,
 	user: User3Line,
-	settings: Settings3Line
+	settings: Settings3Line,
+	code: CodeLine
 } as const;
 
 export type NavIconKey = keyof typeof NAV_ICONS;

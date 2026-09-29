@@ -1,5 +1,6 @@
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { resolveAvatarSrc } from "@/lib/avatars";
+import { DEVPOST_URL, DISCORD_URL } from "@/lib/constants";
 import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
@@ -15,8 +16,6 @@ export default async function ParticipantLayout({
 	children: React.ReactNode;
 }) {
 	const { user } = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
-
-	const DISCORD_URL = "https://discord.com/"; // TODO: Change to actual discord URL
 
 	const PARTICPANT_NAV_GROUPS: NavGroup[] = [
 		{
@@ -51,15 +50,21 @@ export default async function ParticipantLayout({
 			groupLabel: "Quick Links",
 			items: [
 				{
+					title: "Hackathon Home",
+					href: "/",
+					icon: "link",
+					external: true
+				},
+				{
 					title: "Discord Join Link",
 					href: DISCORD_URL,
 					icon: "discord",
 					external: true
 				},
 				{
-					title: "Hackathon Home",
-					href: "/",
-					icon: "link",
+					title: "Devpost",
+					href: DEVPOST_URL,
+					icon: "code",
 					external: true
 				}
 			]
