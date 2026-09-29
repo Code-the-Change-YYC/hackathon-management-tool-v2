@@ -58,19 +58,6 @@ export function resetSignupWizard(state: { signupWizard: SignupWizardState }) {
 	};
 }
 
-export function getNameParts(name: string) {
-	const [firstName = "", ...lastName] = name.trim().split(/\s+/);
-
-	return {
-		firstName,
-		lastName: lastName.join(" ")
-	};
-}
-
-export function getFullName(firstName: string, lastName: string) {
-	return `${firstName.trim()} ${lastName.trim()}`.trim();
-}
-
 createStore(
 	{ signupWizard: initialSignupWizardState },
 	{

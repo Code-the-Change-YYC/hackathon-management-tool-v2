@@ -1,276 +1,245 @@
 "use client";
 
-import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { AddLine } from "@mingcute/react";
 import {
 	AllCommunityModule,
 	ModuleRegistry,
 	themeQuartz
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { useMemo, useRef, useState } from "react";
-import { api, type RouterOutputs } from "@/trpc/react";
+import { useRef, useState } from "react";
+import {
+	ConfirmAlertDialog,
+	useConfirmDialog
+} from "@/app/components/ConfirmAlertDialog";
+import { Button } from "@/app/components/ui/button";
+import { Checkbox } from "@/app/components/ui/checkbox";
+import { Field, FieldGroup, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { Spinner } from "@/app/components/ui/spinner";
 import { TABLE_THEME_PARAMS } from "@/types/teamTableConstants";
+import {
+	type Criteria,
+	type CriteriaUpdate,
+	createColumnDefs,
+	defaultColDef
+} from "./columns";
+import {
+	useCreateCriteria,
+	useDeleteCriteria,
+	useUpdateCriteria
+} from "./hooks";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-type Criteria = RouterOutputs["criteria"]["getAll"][number];
-
-export default function CriteriaTable() {
-	const { data, isLoading } = api.criteria.getAll.useQuery();
-	const utils = api.useUtils();
-
+export default function CriteriaTable({
+	criteria: initialCriteria
+}: {
+	criteria: Criteria[];
+}) {
+	const { confirm, dialogProps } = useConfirmDialog();
+	const createCriteriaMutation = useCreateCriteria();
+	const updateCriteriaMutation = useUpdateCriteria();
+	const deleteCriteriaMutation = useDeleteCriteria();
 	const [showAddForm, setShowAddForm] = useState(false);
-	const [deleteTarget, setDeleteTarget] = useState<Criteria | null>(null);
-	const [hasScores, setHasScores] = useState(false);
 	const [newName, setNewName] = useState("");
 	const [newDescription, setNewDescription] = useState("");
 	const [newDisplayOrder, setNewDisplayOrder] = useState(0);
 	const [newMaxScore, setNewMaxScore] = useState(10);
 	const [newIsSidepot, setNewIsSidepot] = useState(false);
-	const [addError, setAddError] = useState("");
 	const nameInputRef = useRef<HTMLInputElement>(null);
 
-	const update = api.criteria.update.useMutation({
-		onSuccess: () => utils.criteria.getAll.invalidate()
-	});
+	const mutationError =
+		createCriteriaMutation.error ??
+		updateCriteriaMutation.error ??
+		deleteCriteriaMutation.error;
 
-	const create = api.criteria.create.useMutation({
-		onSuccess: async () => {
-			await utils.criteria.getAll.invalidate();
-			setNewName("");
-			setNewDescription("");
-			setNewDisplayOrder(0);
-			setNewMaxScore(10);
-			setNewIsSidepot(false);
-			setShowAddForm(false);
-		},
-		onError: (e) => setAddError(e.message)
-	});
-
-	const deleteMutation = api.criteria.delete.useMutation({
-		onSuccess: async () => {
-			await utils.criteria.getAll.invalidate();
-			setDeleteTarget(null);
-			setHasScores(false);
-		},
-		onError: (e) => {
-			if (e.data?.code === "PRECONDITION_FAILED") setHasScores(true);
-		}
-	});
-
-	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
-
-	const columnDefs = useMemo<ColDef<Criteria>[]>(
-		() => [
-			{
-				headerName: "Name",
-				field: "name",
-				editable: true,
-				flex: 2
-			},
-			{
-				headerName: "Description",
-				field: "description",
-				editable: true,
-				flex: 4
-			},
-			{
-				headerName: "Display Order",
-				field: "displayOrder",
-				editable: true,
-				width: 130
-			},
-			{
-				headerName: "Max Score",
-				field: "maxScore",
-				editable: true,
-				width: 130
-			},
-			{
-				headerName: "Sidepot",
-				field: "isSidepot",
-				width: 100,
-				cellRenderer: (params: ICellRendererParams<Criteria>) => (
-					<input
-						checked={params.value as boolean}
-						onChange={(e) => {
-							if (!params.data) return;
-							update.mutate({
-								id: params.data.id,
-								isSidepot: e.target.checked
-							});
-						}}
-						type="checkbox"
-					/>
-				)
-			},
-			{
-				headerName: "",
-				width: 90,
-				sortable: false,
-				filter: false,
-				cellRenderer: (params: ICellRendererParams<Criteria>) => (
-					<button
-						onClick={() => {
-							if (!params.data) return;
-							setHasScores(false);
-							setDeleteTarget(params.data);
-						}}
-						type="button"
-					>
-						Delete
-					</button>
-				)
-			}
-		],
-		[update]
-	);
-
-	const defaultColDef = useMemo<ColDef<Criteria>>(
-		() => ({ flex: 1, sortable: true, filter: true, resizable: true }),
-		[]
-	);
-
-	const handleSubmit = () => {
-		if (!newName.trim()) return;
-		create.mutate({
-			name: newName,
-			description: newDescription.trim(),
-			displayOrder: newDisplayOrder,
-			maxScore: newMaxScore,
-			isSidepot: newIsSidepot
-		});
+	const resetMutationErrors = () => {
+		createCriteriaMutation.reset();
+		updateCriteriaMutation.reset();
+		deleteCriteriaMutation.reset();
 	};
 
+	const update = (input: CriteriaUpdate, onError?: () => void) => {
+		resetMutationErrors();
+		updateCriteriaMutation.mutate(input, { onError });
+	};
+
+	const handleSubmit = () => {
+		if (!newName.trim() || createCriteriaMutation.isPending) return;
+
+		resetMutationErrors();
+		createCriteriaMutation.mutate(
+			{
+				name: newName,
+				description: newDescription.trim(),
+				displayOrder: newDisplayOrder,
+				maxScore: newMaxScore,
+				isSidepot: newIsSidepot
+			},
+			{
+				onSuccess: () => {
+					setNewName("");
+					setNewDescription("");
+					setNewDisplayOrder(0);
+					setNewMaxScore(10);
+					setNewIsSidepot(false);
+					setShowAddForm(false);
+				}
+			}
+		);
+	};
+
+	const handleDelete = async (criterion: Criteria) => {
+		if (deleteCriteriaMutation.isPending) return;
+		const confirmed = await confirm({
+			title: `Delete "${criterion.name}"?`,
+			description: "This criterion and its associated scores will be removed.",
+			confirmLabel: "Delete",
+			destructive: true
+		});
+		if (!confirmed) return;
+
+		resetMutationErrors();
+		deleteCriteriaMutation.mutate({ id: criterion.id });
+	};
+
+	const theme = themeQuartz.withParams(TABLE_THEME_PARAMS);
+	const columnDefs = createColumnDefs({
+		deletePending: deleteCriteriaMutation.isPending,
+		onUpdate: update,
+		onDelete: handleDelete
+	});
+
 	return (
-		// TODO: remove all the styling here and replace with tailwind later
-		<div>
-			{/* Toolbar */}
-			<div style={{ marginBottom: 8 }}>
-				<button
+		<section className="flex flex-col gap-4">
+			<div className="flex items-center justify-between">
+				<Button
 					onClick={() => {
 						setShowAddForm(true);
-						setAddError("");
+						resetMutationErrors();
 						setTimeout(() => nameInputRef.current?.focus(), 0);
 					}}
+					size="sm"
 					type="button"
 				>
-					+ Add Criteria
-				</button>
+					<AddLine data-icon="inline-start" />
+					Add criteria
+				</Button>
 			</div>
 
 			{showAddForm && (
-				<div
-					style={{
-						marginBottom: 8,
-						display: "flex",
-						alignItems: "center",
-						gap: 8,
-						flexWrap: "wrap"
+				<form
+					className="rounded-lg border border-border bg-card p-4"
+					onSubmit={(event) => {
+						event.preventDefault();
+						void handleSubmit();
 					}}
 				>
-					<input
-						onChange={(e) => setNewName(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") handleSubmit();
-							if (e.key === "Escape") setShowAddForm(false);
-						}}
-						placeholder="Name"
-						ref={nameInputRef}
-						value={newName}
-					/>
-					<input
-						onChange={(e) => setNewDescription(e.target.value)}
-						placeholder="Description"
-						value={newDescription}
-					/>
-					<input
-						aria-label="Display order"
-						onChange={(e) => setNewDisplayOrder(Number(e.target.value))}
-						style={{ width: 100 }}
-						type="number"
-						value={newDisplayOrder}
-					/>
-					<input
-						max={100}
-						min={1}
-						onChange={(e) => setNewMaxScore(Number(e.target.value))}
-						style={{ width: 70 }}
-						type="number"
-						value={newMaxScore}
-					/>
-					<label style={{ display: "flex", alignItems: "center", gap: 4 }}>
-						<input
-							checked={newIsSidepot}
-							onChange={(e) => setNewIsSidepot(e.target.checked)}
-							type="checkbox"
-						/>
-						Sidepot
-					</label>
-					<button
-						disabled={!newName.trim() || create.isPending}
-						onClick={handleSubmit}
-						type="button"
-					>
-						{create.isPending ? "Adding…" : "Add"}
-					</button>
-					<button onClick={() => setShowAddForm(false)} type="button">
-						Cancel
-					</button>
-					{addError && (
-						<span style={{ color: "red", fontSize: 12 }}>{addError}</span>
-					)}
-				</div>
+					<FieldGroup className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(12rem,1fr)_minmax(16rem,2fr)_8rem_7rem_auto_auto] xl:items-end">
+						<Field>
+							<FieldLabel htmlFor="criteria-name">Name</FieldLabel>
+							<Input
+								id="criteria-name"
+								onChange={(event) => setNewName(event.target.value)}
+								placeholder="Technical execution"
+								ref={nameInputRef}
+								required
+								value={newName}
+							/>
+						</Field>
+						<Field>
+							<FieldLabel htmlFor="criteria-description">
+								Description
+							</FieldLabel>
+							<Input
+								id="criteria-description"
+								onChange={(event) => setNewDescription(event.target.value)}
+								placeholder="Optional judging guidance"
+								value={newDescription}
+							/>
+						</Field>
+						<Field>
+							<FieldLabel htmlFor="criteria-display-order">Order</FieldLabel>
+							<Input
+								id="criteria-display-order"
+								onChange={(event) =>
+									setNewDisplayOrder(Number(event.target.value))
+								}
+								type="number"
+								value={newDisplayOrder}
+							/>
+						</Field>
+						<Field>
+							<FieldLabel htmlFor="criteria-max-score">Max score</FieldLabel>
+							<Input
+								id="criteria-max-score"
+								max={100}
+								min={1}
+								onChange={(event) => setNewMaxScore(Number(event.target.value))}
+								type="number"
+								value={newMaxScore}
+							/>
+						</Field>
+						<Field className="h-10 w-auto self-end" orientation="horizontal">
+							<Checkbox
+								checked={newIsSidepot}
+								id="criteria-sidepot"
+								onCheckedChange={(checked) => setNewIsSidepot(checked === true)}
+							/>
+							<FieldLabel htmlFor="criteria-sidepot">Sidepot</FieldLabel>
+						</Field>
+						<Field className="w-auto self-end" orientation="horizontal">
+							<Button
+								disabled={!newName.trim() || createCriteriaMutation.isPending}
+								type="submit"
+							>
+								{createCriteriaMutation.isPending && (
+									<Spinner data-icon="inline-start" />
+								)}
+								Add
+							</Button>
+							<Button
+								onClick={() => setShowAddForm(false)}
+								type="button"
+								variant="outline"
+							>
+								Cancel
+							</Button>
+						</Field>
+					</FieldGroup>
+				</form>
 			)}
 
-			<div style={{ height: 400, width: "100%" }}>
+			{mutationError && (
+				<p aria-live="polite" className="text-destructive text-sm">
+					{mutationError.message}
+				</p>
+			)}
+
+			<div className="h-100 w-full">
 				<AgGridReact
 					columnDefs={columnDefs}
 					defaultColDef={defaultColDef}
 					getRowId={({ data }) => data.id}
-					loading={isLoading}
 					onCellValueChanged={(e) => {
 						if (!e.data || !e.colDef.field) return;
 						if (e.newValue === e.oldValue) return;
+						const field = e.colDef.field;
 						if (
-							e.colDef.field === "name" ||
-							e.colDef.field === "description" ||
-							e.colDef.field === "displayOrder" ||
-							e.colDef.field === "maxScore"
+							field in
+							new Set(["name", "description", "displayOrder", "maxScore"])
 						) {
-							update.mutate({ id: e.data.id, [e.colDef.field]: e.newValue });
+							update({ id: e.data.id, [field]: e.newValue }, () =>
+								e.node.setDataValue(field, e.oldValue)
+							);
 						}
 					}}
-					rowData={data ?? []}
+					rowData={initialCriteria}
 					theme={theme}
 				/>
 			</div>
-
-			{deleteTarget && (
-				<div style={{ marginTop: 8 }}>
-					{hasScores ? (
-						<p>⚠️ "{deleteTarget.name}" has existing scores. Delete anyway?</p>
-					) : (
-						<p>Delete "{deleteTarget.name}"?</p>
-					)}
-					<button
-						disabled={deleteMutation.isPending}
-						onClick={() => deleteMutation.mutate({ id: deleteTarget.id })}
-						type="button"
-					>
-						{deleteMutation.isPending ? "Deleting…" : "Confirm"}
-					</button>{" "}
-					<button
-						onClick={() => {
-							setDeleteTarget(null);
-							setHasScores(false);
-						}}
-						type="button"
-					>
-						Cancel
-					</button>
-				</div>
-			)}
-		</div>
+			<ConfirmAlertDialog {...dialogProps} />
+		</section>
 	);
 }

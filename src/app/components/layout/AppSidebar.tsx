@@ -1,9 +1,4 @@
 import { NotificationLine } from "@mingcute/react";
-import {
-	Avatar,
-	AvatarFallback,
-	AvatarImage
-} from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
 import {
 	Sidebar,
@@ -16,6 +11,7 @@ import {
 	SidebarTrigger
 } from "@/app/components/ui/sidebar";
 import { SidebarNavItem } from "./SidebarNavItem";
+import { SidebarUserMenu } from "./SidebarUserMenu";
 import type { NavGroup } from "./sidebar-nav";
 
 export type { NavGroup, NavIconKey, NavItem } from "./sidebar-nav";
@@ -24,28 +20,24 @@ interface AppSidebarProps {
 	navGroups: NavGroup[];
 	userName: string;
 	avatarUrl?: string;
+	profileHref?: string;
 }
 
 export function AppSidebar({
 	navGroups,
 	userName,
-	avatarUrl
+	avatarUrl,
+	profileHref
 }: AppSidebarProps) {
-	const initials = userName.slice(0, 1).toUpperCase();
-
 	return (
 		<Sidebar className="border-none" collapsible="offcanvas">
 			<SidebarHeader className="p-4">
 				<div className="flex items-center gap-2">
-					<Avatar className="size-8">
-						{avatarUrl ? <AvatarImage alt={userName} src={avatarUrl} /> : null}
-						<AvatarFallback className="bg-primary text-primary-foreground">
-							{initials}
-						</AvatarFallback>
-					</Avatar>
-					<span className="flex-1 truncate font-medium text-sm">
-						{userName}
-					</span>
+					<SidebarUserMenu
+						avatarUrl={avatarUrl}
+						profileHref={profileHref}
+						userName={userName}
+					/>
 					<Button aria-label="Notifications" size="icon-sm" variant="ghost">
 						<NotificationLine />
 					</Button>

@@ -12,6 +12,9 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { AVATAR_IDS, getAvatarSrc } from "@/lib/avatars";
+import { getFullName } from "@/lib/names";
+import { profileSchema } from "@/lib/validation/profile";
 import {
 	DIETARY_RESTRICTIONS,
 	type DietaryRestriction,
@@ -56,7 +59,47 @@ export const usersRouter = createTRPCRouter({
 
 			return updated;
 		}),
-	update: protectedProcedure
+	updateProfile: protectedProcedure
+		.input(profileSchema)
+		.mutation(async ({ ctx, input }) => {
+			const [updated] = await ctx.db
+				.update(user)
+				.set({
+					name: getFullName(input.firstName, input.lastName),
+					school: input.school,
+					program: input.program
+				})
+				.where(eq(user.id, ctx.session.user.id))
+				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
+			return updated;
+		}),
+	updateAvatar: protectedProcedure
+		.input(z.object({ avatarId: z.enum(AVATAR_IDS) }))
+		.mutation(async ({ ctx, input }) => {
+			const [updated] = await ctx.db
+				.update(user)
+				.set({ image: getAvatarSrc(input.avatarId) })
+				.where(eq(user.id, ctx.session.user.id))
+				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
+			return updated;
+		}),
+	update: adminProcedure
 		.input(
 			z.object({
 				id: z.string(),
