@@ -4,6 +4,10 @@ import { AddLine } from "@mingcute/react";
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
+import {
+	ConfirmAlertDialog,
+	useConfirmDialog
+} from "@/app/components/ConfirmAlertDialog";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
@@ -18,13 +22,34 @@ type Criterion = RouterOutputs["criteria"]["getAll"][number];
 function formatDateInput(value: Date | string | null | undefined) {
 	if (!value) return "";
 
-	return new Date(value).toISOString().slice(0, 10);
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "";
+
+	const pad = (part: number) => String(part).padStart(2, "0");
+	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 function parseDateInput(value: string) {
 	if (!value) return null;
 
-	const parsed = new Date(`${value}T00:00:00.000Z`);
+	const parts = value.split("-").map(Number);
+	if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) {
+		return null;
+	}
+
+	const [year, month, day] = parts;
+	if (year === undefined || month === undefined || day === undefined) {
+		return null;
+	}
+
+	const parsed = new Date(year, month - 1, day);
+	if (
+		parsed.getFullYear() !== year ||
+		parsed.getMonth() !== month - 1 ||
+		parsed.getDate() !== day
+	) {
+		return null;
+	}
 
 	return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
@@ -45,6 +70,7 @@ function ScoringSection({
 	handleDelete: (id: string) => Promise<{ success: boolean }>;
 }) {
 	const [addText, setAddText] = useState("");
+	const { confirm, dialogProps } = useConfirmDialog();
 
 	const createItem = useCallback(async () => {
 		const name = addText.trim();
@@ -59,16 +85,27 @@ function ScoringSection({
 	}, [addText, handleCreate, sidepot]);
 
 	const deleteItem = useCallback(
-		async (id: string) => {
+		async (item: Criterion) => {
+			if (
+				!(await confirm({
+					title: `Delete "${item.name}"?`,
+					description:
+						"This will also remove all scores recorded for this criterion.",
+					confirmLabel: "Delete",
+					destructive: true
+				}))
+			)
+				return;
+
 			try {
-				await handleDelete(id);
+				await handleDelete(item.id);
 				toast.success("Deleted");
 			} catch (error) {
 				console.error(error);
 				toast.error("Failed to delete");
 			}
 		},
-		[handleDelete]
+		[confirm, handleDelete]
 	);
 
 	return (
@@ -111,7 +148,7 @@ function ScoringSection({
 
 						<Button
 							className="bg-strawberry-red text-white hover:bg-strawberry-red/90"
-							onClick={() => void deleteItem(item.id)}
+							onClick={() => void deleteItem(item)}
 							type="button"
 							variant="destructive"
 						>
@@ -121,6 +158,8 @@ function ScoringSection({
 					</Fragment>
 				))}
 			</div>
+
+			<ConfirmAlertDialog {...dialogProps} />
 		</div>
 	);
 }
@@ -144,6 +183,8 @@ export default function AdminControlsView() {
 	const [resetRooms, setResetRooms] = useState(false);
 	const [resetScores, setResetScores] = useState(false);
 	const [confirmation, setConfirmation] = useState("");
+	const scoresAreImplicitlyReset = resetTeams || resetRooms;
+	const willResetScores = resetScores || scoresAreImplicitlyReset;
 
 	useEffect(() => {
 		if (!settings) return;
@@ -243,7 +284,7 @@ export default function AdminControlsView() {
 			return;
 		}
 
-		if (confirmation !== "i love code the change") {
+		if (confirmation !== RESET_CONFIRMATION_PHRASE) {
 			toast.error("Incorrect confirmation text.");
 			return;
 		}
@@ -254,9 +295,16 @@ export default function AdminControlsView() {
 				users: resetUsers,
 				teams: resetTeams,
 				rooms: resetRooms,
-				scores: resetScores
+				scores: willResetScores
 			});
 			toast.success("Hackathon successfully reset.");
+
+			setSelectedAction("");
+			setResetUsers(false);
+			setResetTeams(false);
+			setResetRooms(false);
+			setResetScores(false);
+			setConfirmation("");
 		} catch (error) {
 			console.error(error);
 			toast.error("Failed to reset hackathon");
@@ -267,7 +315,7 @@ export default function AdminControlsView() {
 		resetUsers,
 		resetTeams,
 		resetRooms,
-		resetScores,
+		willResetScores,
 		confirmation
 	]);
 
@@ -322,7 +370,12 @@ export default function AdminControlsView() {
 					</div>
 				</div>
 
-				<div className="flex flex-col gap-4">
+				<div
+					className={twMerge(
+						"flex flex-col gap-4",
+						selectedAction === "create" ? "opacity-100" : "opacity-50"
+					)}
+				>
 					<p className="font-medium text-[22px] leading-7">
 						Set Hackathon Dates
 					</p>
@@ -336,6 +389,7 @@ export default function AdminControlsView() {
 
 								<Input
 									className="row-start-2 w-full rounded-[12px] border py-3 pr-3 pl-4 text-4 leading-6"
+									disabled={selectedAction !== "create"}
 									onChange={(event) => setStartDate(event.target.value)}
 									type="date"
 									value={startDate}
@@ -351,6 +405,7 @@ export default function AdminControlsView() {
 
 								<Input
 									className="row-start-2 w-full rounded-[12px] border py-3 pr-3 pl-4 text-4 leading-6"
+									disabled={selectedAction !== "create"}
 									onChange={(event) => setEndDate(event.target.value)}
 									type="date"
 									value={endDate}
@@ -369,6 +424,13 @@ export default function AdminControlsView() {
 							onValueChange={(value) => {
 								if (value === "create" || value === "reset") {
 									setSelectedAction(value);
+									if (value === "create") {
+										setResetUsers(false);
+										setResetTeams(false);
+										setResetRooms(false);
+										setResetScores(false);
+										setConfirmation("");
+									}
 								}
 							}}
 							value={selectedAction}
@@ -454,14 +516,25 @@ export default function AdminControlsView() {
 								htmlFor="reset_scores"
 							>
 								<Checkbox
-									checked={resetScores}
-									disabled={selectedAction !== "reset"}
+									checked={willResetScores}
+									disabled={
+										selectedAction !== "reset" || scoresAreImplicitlyReset
+									}
 									id="reset_scores"
 									onCheckedChange={(checked) =>
 										setResetScores(checked === true)
 									}
 								/>
-								<p className="font-regular text-4 leading-6">Reset Scores</p>
+								<span className="flex flex-col">
+									<span className="font-regular text-4 leading-6">
+										Reset Scores
+									</span>
+									{scoresAreImplicitlyReset ? (
+										<span className="text-muted-foreground text-sm">
+											Included with teams or rooms
+										</span>
+									) : null}
+								</span>
 							</label>
 						</div>
 					</div>

@@ -63,7 +63,11 @@ export const hackathonSettingsRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			return ctx.db.transaction(async (tx) => {
-				if (input.scores) {
+				// Rooms and teams own the assignments that scores belong to, so
+				// deleting either also explicitly resets scores.
+				const shouldResetScores = input.scores || input.rooms || input.teams;
+
+				if (shouldResetScores) {
 					await tx.delete(scores);
 				}
 
