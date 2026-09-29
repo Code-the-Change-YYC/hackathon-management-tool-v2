@@ -1,5 +1,6 @@
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { resolveAvatarSrc } from "@/lib/avatars";
+import { DEVPOST_URL, DISCORD_URL } from "@/lib/constants";
 import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
@@ -15,9 +16,6 @@ export default async function ParticipantLayout({
 	children: React.ReactNode;
 }) {
 	const { user } = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
-
-	const DISCORD_URL = "https://discord.gg/bhJnwXjJYP";
-	const DEVPOST_URL = "https://hack-the-change-2026.devpost.com/";
 
 	const PARTICPANT_NAV_GROUPS: NavGroup[] = [
 		{
