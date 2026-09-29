@@ -41,7 +41,7 @@ export default async function MealAnalytics() {
 			<div>
 				<div className="flex max-w-[100vw] flex-row flex-wrap gap-4">
 					<div className="rounded-[12px] border p-4">
-						<p className="font-regular text-[32px] leading-10">{total}</p>
+						<p className="font-normal text-[32px] leading-10">{total}</p>
 						<p className="whitespace-nowrap font-medium text-[14px] leading-5">
 							Meal tickets scanned
 						</p>
@@ -49,7 +49,7 @@ export default async function MealAnalytics() {
 					{Object.entries(counts).map(([name, count]) => {
 						return (
 							<div className="rounded-[12px] border p-4" key={name}>
-								<p className="font-regular text-[32px] leading-10">{count}</p>
+								<p className="font-normal text-[32px] leading-10">{count}</p>
 								<p className="whitespace-nowrap font-medium text-[14px] leading-5">
 									{restrictionToString(name)}
 								</p>

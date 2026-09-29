@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 type BannerLayout = "vertical" | "horizontal";
 
 const bannerVariants = cva(
-	"relative w-fill justify-between overflow-hidden rounded-[16px] p-6",
+	"relative w-full justify-between overflow-hidden rounded-[16px] p-6",
 	{
 		variants: {
 			layout: {
