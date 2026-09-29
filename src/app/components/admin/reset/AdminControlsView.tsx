@@ -2,7 +2,7 @@
 
 import { AddLine } from "@mingcute/react";
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
@@ -24,7 +24,7 @@ function formatDateInput(value: Date | string | null | undefined) {
 function parseDateInput(value: string) {
 	if (!value) return null;
 
-	const parsed = new Date(`${value}T00:00:00`);
+	const parsed = new Date(`${value}T00:00:00.000Z`);
 
 	return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
