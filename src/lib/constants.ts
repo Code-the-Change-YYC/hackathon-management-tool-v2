@@ -1,6 +1,7 @@
 import { Role } from "@/types/types";
 
 export const DISCORD_URL = "https://discord.gg/codethechangeyyc";
+export const RESET_CONFIRMATION_PHRASE = "i love code the change";
 
 export const DASHBOARD_HREFS: Record<Role, string> = {
 	[Role.ADMIN]: "/admin",
