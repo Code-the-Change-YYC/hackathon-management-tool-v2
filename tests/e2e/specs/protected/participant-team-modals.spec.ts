@@ -61,7 +61,10 @@ test("register flow walks situation, register and success modals", async ({
 	await expect(page.getByText("Your Team ID", { exact: true })).toBeVisible();
 
 	await page.getByRole("button", { name: "Finish" }).click();
-	await expect(page.getByText(name)).toBeVisible();
+	await expect(
+		page.getByRole("heading", { name: `${name} is registered!` })
+	).toBeHidden();
+	await expect(page.getByText(name, { exact: true })).toBeVisible();
 });
 
 test("owner can open invite, edit name and leave modals", async ({
@@ -124,7 +127,10 @@ test("join flow accepts a valid code and shows success modal", async ({
 
 	await expect(page.getByText(`You've joined ${team.name}!`)).toBeVisible();
 	await page.getByRole("button", { name: "Finish" }).click();
-	await expect(page.getByText(team.name)).toBeVisible();
+	await expect(
+		page.getByRole("heading", { name: `You've joined ${team.name}!` })
+	).toBeHidden();
+	await expect(page.getByText(team.name, { exact: true })).toBeVisible();
 });
 
 test("join modal shows an error for an unknown code", async ({

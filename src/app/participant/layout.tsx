@@ -1,4 +1,6 @@
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
+import { resolveAvatarSrc } from "@/lib/avatars";
+import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 import type { NavGroup } from "../components/layout/AppSidebar";
@@ -12,7 +14,7 @@ export default async function ParticipantLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	await requireRole([Role.PARTICIPANT, Role.ADMIN]);
+	const { user } = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
 
 	const DISCORD_URL = "https://discord.com/"; // TODO: Change to actual discord URL
 
@@ -66,7 +68,12 @@ export default async function ParticipantLayout({
 
 	return (
 		<SidebarProvider>
-			<AppSidebar navGroups={PARTICPANT_NAV_GROUPS} userName="Participant" />
+			<AppSidebar
+				avatarUrl={resolveAvatarSrc(user.image)}
+				navGroups={PARTICPANT_NAV_GROUPS}
+				profileHref="/participant/profile"
+				userName={getNameParts(user.name).firstName || "Participant"}
+			/>
 			<SidebarInset>
 				<AppSidebarTriggerHeader />
 				{children}
