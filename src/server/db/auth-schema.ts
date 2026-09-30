@@ -65,6 +65,8 @@ export const user = createTable("user", {
 		.notNull(),
 	school: text("school"),
 	program: text("program", { enum: PROGRAMS }),
+	// Null until the participant answers during onboarding.
+	wantsFood: boolean("wants_food"),
 	completedRegistration: boolean("completed_registration")
 		.default(false)
 		.notNull()

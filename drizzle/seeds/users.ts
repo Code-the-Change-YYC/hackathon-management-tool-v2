@@ -11,6 +11,14 @@ type CreateUserInput = {
 	role?: User["role"];
 };
 
+// Seeded accounts skip email verification so they can log in right away.
+async function markEmailVerified(email: string) {
+	await db
+		.update(user)
+		.set({ emailVerified: true })
+		.where(eq(user.email, email));
+}
+
 export async function createOrGetUser({
 	email,
 	password,
@@ -23,6 +31,7 @@ export async function createOrGetUser({
 
 	if (existingUser) {
 		console.log(`User already exists: ${email}`);
+		await markEmailVerified(email);
 		return existingUser as User;
 	}
 
@@ -34,6 +43,7 @@ export async function createOrGetUser({
 			password
 		}
 	});
+	await markEmailVerified(email);
 
 	console.log(`User created: ${email}`);
 
@@ -113,6 +123,7 @@ export async function seedUsers(): Promise<SeedUsersResult> {
 			dietaryRestrictions: ["halal", "gluten_free"],
 			school: "Hackathon University",
 			program: "computer_science",
+			wantsFood: true,
 			completedRegistration: true
 		})
 		.where(eq(user.id, participantUser.id));

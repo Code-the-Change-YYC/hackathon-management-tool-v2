@@ -11,7 +11,9 @@ export const SCHOOLS = [
 	"University of Calgary",
 	"Mount Royal University",
 	"SAIT",
-	"Other"
+	"High school",
+	"Other",
+	"Not attending school"
 ] as const;
 
 export const DIETARY_RESTRICTIONS = [
@@ -19,28 +21,31 @@ export const DIETARY_RESTRICTIONS = [
 	"vegetarian",
 	"vegan",
 	"gluten_free",
+	"dairy_free",
+	"nut_allergy",
 	"other"
 ] as const;
 
 export type DietaryRestriction = (typeof DIETARY_RESTRICTIONS)[number];
 
-export const signupCredentialsSchema = z.object({
-	email: z
-		.string()
-		.min(1, "Email is required")
-		.regex(/^\S+@\S+\.\S+$/, "Enter a valid email address"),
-	password: z
-		.string()
-		.min(8, "Use at least 8 characters")
-		.regex(/[0-9]/, "Include at least one number")
-		.regex(/[^A-Za-z0-9]/, "Include at least one special character")
-});
+export const DIETARY_RESTRICTION_LABELS = {
+	halal: "Halal",
+	vegetarian: "Vegetarian",
+	vegan: "Vegan",
+	gluten_free: "Gluten-free",
+	dairy_free: "Dairy-free",
+	nut_allergy: "Nut allergy",
+	other: "Other"
+} satisfies Record<DietaryRestriction, string>;
 
-export const signupPersonalDetailsSchema = z.object({
-	firstName: z.string().min(1, "First name is required"),
-	lastName: z.string().min(1, "Last name is required"),
-	school: z.string().min(1, "Select your institution")
-});
+/** Keeps the known restrictions from a stored list, in display order. */
+export function toDietaryRestrictions(
+	values: readonly string[]
+): DietaryRestriction[] {
+	return DIETARY_RESTRICTIONS.filter((restriction) =>
+		values.includes(restriction)
+	);
+}
 
 export const dietaryRestrictionsSchema = z
 	.array(z.enum(DIETARY_RESTRICTIONS))
@@ -50,37 +55,14 @@ export const dietaryRestrictionsSchema = z
 		{ message: "Duplicate dietary restrictions are not allowed" }
 	);
 
-export function createSignupIdentitySchema(requiresPassword: boolean) {
-	return z.object({
-		firstName: z.string().min(1, "First name is required"),
-		lastName: z.string().min(1, "Last name is required"),
-		email: z
-			.string()
-			.min(1, "Email is required")
-			.regex(/^\S+@\S+\.\S+$/, "Enter a valid email address"),
-		password: requiresPassword
-			? z.string().min(1, "Password is required")
-			: z.string()
-	});
-}
+const WANTS_FOOD_REQUIRED = "Let us know if you'd like free meals";
 
-const wantsFoodSchema = z
-	.union([z.literal(""), z.enum(["yes", "no"])])
-	.refine((value): value is "yes" | "no" => value !== "", {
-		message: "Select whether you want provided food"
-	});
-
-const programSchema = z
-	.union([z.literal(""), z.enum(PROGRAMS)])
-	.optional()
-	.transform((value) => (value === "" ? undefined : value));
-
-export const signupEventDetailsSchema = z.object({
-	school: z.string(),
-	program: programSchema,
-	dietaryRestrictions: dietaryRestrictionsSchema,
-	wantsFood: wantsFoodSchema
+export const foodPreferencesSchema = z.object({
+	wantsFood: z.boolean({
+		invalid_type_error: WANTS_FOOD_REQUIRED,
+		required_error: WANTS_FOOD_REQUIRED
+	}),
+	dietaryRestrictions: dietaryRestrictionsSchema
 });
 
-export type SignupEventDetails = z.output<typeof signupEventDetailsSchema>;
-export type SignupEventDetailsInput = z.input<typeof signupEventDetailsSchema>;
+export type FoodPreferences = z.infer<typeof foodPreferencesSchema>;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getNameParts } from "@/lib/names";
 import type { Program } from "@/types/types";
 import { PROGRAMS, SCHOOLS } from "./signup";
 
@@ -12,6 +13,16 @@ export const PROGRAM_LABELS = {
 	electrical_engineering: "Electrical Engineering",
 	other: "Other"
 } satisfies Record<Program, string>;
+
+export const SCHOOL_OPTIONS = SCHOOLS.map((school) => ({
+	value: school,
+	label: school
+}));
+
+export const PROGRAM_OPTIONS = PROGRAMS.map((program) => ({
+	value: program,
+	label: PROGRAM_LABELS[program]
+}));
 
 export const NAME_MAX_LENGTH = 50;
 
@@ -59,3 +70,16 @@ export const profileSchema = z
 
 export type ProfileInput = z.input<typeof profileSchema>;
 export type ProfileValues = z.output<typeof profileSchema>;
+
+/** Profile form values for a user; an institution we don't list starts blank. */
+export function getProfileDefaults(user: {
+	name: string;
+	school?: string | null;
+	program?: Program | null;
+}): Partial<ProfileInput> {
+	return {
+		...getNameParts(user.name),
+		school: isSchool(user.school) ? user.school : undefined,
+		program: user.program ?? null
+	};
+}

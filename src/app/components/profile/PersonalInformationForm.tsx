@@ -3,51 +3,28 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import {
-	type DefaultValues,
-	useForm,
-	useFormState,
-	useWatch
-} from "react-hook-form";
+import { useForm, useFormState, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { SelectField } from "@/app/components/forms/SelectField";
 import { TextField } from "@/app/components/forms/TextField";
 import { Button } from "@/app/components/ui/button";
 import { FieldGroup } from "@/app/components/ui/field";
 import { Spinner } from "@/app/components/ui/spinner";
-import { getNameParts } from "@/lib/names";
 import {
 	asksForMajor,
-	isSchool,
+	getProfileDefaults,
 	NAME_MAX_LENGTH,
-	PROGRAM_LABELS,
+	PROGRAM_OPTIONS,
 	type ProfileInput,
 	type ProfileValues,
-	profileSchema
+	profileSchema,
+	SCHOOL_OPTIONS
 } from "@/lib/validation/profile";
-import { PROGRAMS, SCHOOLS } from "@/lib/validation/signup";
 import { api } from "@/trpc/react";
 import { PersonalInformationCard } from "./PersonalInformationCard";
 import type { Profile } from "./types";
 
 const FORM_ID = "personal-information-form";
-
-const SCHOOL_OPTIONS = SCHOOLS.map((school) => ({
-	value: school,
-	label: school
-}));
-const PROGRAM_OPTIONS = PROGRAMS.map((program) => ({
-	value: program,
-	label: PROGRAM_LABELS[program]
-}));
-
-function getDefaultValues(profile: Profile): DefaultValues<ProfileInput> {
-	return {
-		...getNameParts(profile.name),
-		school: isSchool(profile.school) ? profile.school : undefined,
-		program: profile.program
-	};
-}
 
 export function PersonalInformationForm({
 	profile,
@@ -60,7 +37,7 @@ export function PersonalInformationForm({
 	const [isRefreshing, startTransition] = useTransition();
 	const updateProfile = api.users.updateProfile.useMutation();
 	const form = useForm<ProfileInput, unknown, ProfileValues>({
-		defaultValues: getDefaultValues(profile),
+		defaultValues: getProfileDefaults(profile),
 		resolver: zodResolver(profileSchema)
 	});
 	const { isDirty } = useFormState({ control: form.control });
