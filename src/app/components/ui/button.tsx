@@ -8,6 +8,8 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
+				"event-purple":
+					"rounded-xl bg-purple-50 text-purple-800 shadow-elevation-200 hover:bg-purple-100",
 				event:
 					"rounded-xl bg-red-50 text-red-900 shadow-elevation-200 hover:bg-red-200",
 				default: "bg-primary text-primary-foreground hover:bg-primary/80",
