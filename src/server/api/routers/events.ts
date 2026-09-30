@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, eq } from "drizzle-orm";
 import { z } from "zod";
+import { eventNavigationUrlSchema } from "@/lib/participant-events";
 import {
 	adminProcedure,
 	createTRPCRouter,
@@ -53,6 +54,8 @@ export const eventsRouter = createTRPCRouter({
 		.input(
 			eventTimeRangeSchema.and(
 				z.object({
+					location: z.string().trim().max(200).optional().nullable(),
+					navigationUrl: eventNavigationUrlSchema.optional().nullable(),
 					type: z.enum(EVENT_TYPES),
 					status: z.enum(EVENT_STATUSES).default(EventStatus.DRAFT)
 				})
@@ -61,6 +64,26 @@ export const eventsRouter = createTRPCRouter({
 		.mutation(async ({ input, ctx }) => {
 			const [newEvent] = await ctx.db.insert(event).values(input).returning();
 			return newEvent;
+		}),
+
+	updateEventDetails: adminProcedure
+		.input(
+			z.object({
+				id: z.string().uuid(),
+				location: z.string().trim().max(200).nullable(),
+				navigationUrl: eventNavigationUrlSchema.nullable()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const { id, ...details } = input;
+			const [updated] = await ctx.db
+				.update(event)
+				.set(details)
+				.where(eq(event.id, id))
+				.returning();
+			if (!updated)
+				throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
+			return updated;
 		}),
 
 	getAllEvents: adminProcedure.query(async ({ ctx }) => {
