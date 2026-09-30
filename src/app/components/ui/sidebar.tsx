@@ -33,6 +33,7 @@ const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 type SidebarContextProps = {
 	state: "expanded" | "collapsed";
+	desktopBreakpoint: "md" | "lg" | "xl";
 	open: boolean;
 	setOpen: (open: boolean) => void;
 	openMobile: boolean;
@@ -54,6 +55,7 @@ function useSidebar() {
 
 function SidebarProvider({
 	defaultOpen = true,
+	desktopBreakpoint = "md",
 	open: openProp,
 	onOpenChange: setOpenProp,
 	className,
@@ -62,10 +64,17 @@ function SidebarProvider({
 	...props
 }: React.ComponentProps<"div"> & {
 	defaultOpen?: boolean;
+	desktopBreakpoint?: "md" | "lg" | "xl";
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
 }) {
-	const isMobile = useIsMobile();
+	const isMobile = useIsMobile(
+		desktopBreakpoint === "xl"
+			? "(min-width: 80rem)"
+			: desktopBreakpoint === "lg"
+				? "(min-width: 64rem)"
+				: "(min-width: 48rem)"
+	);
 	const [openMobile, setOpenMobile] = React.useState(false);
 
 	// This is the internal state of the sidebar.
@@ -114,6 +123,7 @@ function SidebarProvider({
 
 	const contextValue = React.useMemo<SidebarContextProps>(
 		() => ({
+			desktopBreakpoint,
 			state,
 			open,
 			setOpen,
@@ -122,7 +132,16 @@ function SidebarProvider({
 			setOpenMobile,
 			toggleSidebar
 		}),
-		[state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+		[
+			desktopBreakpoint,
+			state,
+			open,
+			setOpen,
+			isMobile,
+			openMobile,
+			setOpenMobile,
+			toggleSidebar
+		]
 	);
 
 	return (
@@ -161,7 +180,8 @@ function Sidebar({
 	variant?: "sidebar" | "floating" | "inset";
 	collapsible?: "offcanvas" | "icon" | "none";
 }) {
-	const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+	const { isMobile, state, openMobile, setOpenMobile, desktopBreakpoint } =
+		useSidebar();
 
 	if (collapsible === "none") {
 		return (
@@ -206,7 +226,14 @@ function Sidebar({
 
 	return (
 		<div
-			className="group peer hidden text-sidebar-foreground md:block"
+			className={cn(
+				"group peer hidden text-sidebar-foreground",
+				desktopBreakpoint === "xl"
+					? "xl:block"
+					: desktopBreakpoint === "lg"
+						? "lg:block"
+						: "md:block"
+			)}
 			data-collapsible={state === "collapsed" ? collapsible : ""}
 			data-side={side}
 			data-slot="sidebar"
@@ -227,7 +254,12 @@ function Sidebar({
 			/>
 			<div
 				className={cn(
-					"fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=right]:right-0 data-[side=left]:left-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] md:flex",
+					"fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=right]:right-0 data-[side=left]:left-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]",
+					desktopBreakpoint === "xl"
+						? "xl:flex"
+						: desktopBreakpoint === "lg"
+							? "lg:flex"
+							: "md:flex",
 					// Adjust the padding for floating and inset variants.
 					variant === "floating" || variant === "inset"
 						? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
