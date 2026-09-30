@@ -1,4 +1,5 @@
+import { ParticipantSchedule } from "@/app/components/participant/ParticipantSchedule";
+
 export default function SchedulePage() {
-	// TODO: Implement schedule page
-	return <div>SchedulePage</div>;
+	return <ParticipantSchedule />;
 }
