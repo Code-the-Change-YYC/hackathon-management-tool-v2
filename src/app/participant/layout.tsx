@@ -72,7 +72,10 @@ export default async function ParticipantLayout({
 	];
 
 	return (
-		<SidebarProvider>
+		<SidebarProvider
+			desktopBreakpoint="xl"
+			style={{ "--sidebar-width": "209px" } as React.CSSProperties}
+		>
 			<AppSidebar
 				avatarUrl={resolveAvatarSrc(user.image)}
 				navGroups={PARTICPANT_NAV_GROUPS}
@@ -80,7 +83,7 @@ export default async function ParticipantLayout({
 				userName={getNameParts(user.name).firstName || "Participant"}
 			/>
 			<SidebarInset>
-				<AppSidebarTriggerHeader />
+				<AppSidebarTriggerHeader desktopBreakpoint="xl" />
 				{children}
 			</SidebarInset>
 		</SidebarProvider>

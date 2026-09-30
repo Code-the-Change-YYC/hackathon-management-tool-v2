@@ -63,9 +63,21 @@ export function AppSidebar({
 	);
 }
 
-export function AppSidebarTriggerHeader() {
+export function AppSidebarTriggerHeader({
+	desktopBreakpoint = "md"
+}: {
+	desktopBreakpoint?: "md" | "lg" | "xl";
+}) {
 	return (
-		<header className="flex items-center justify-between gap-2 border-b px-4 py-3 md:hidden">
+		<header
+			className={
+				desktopBreakpoint === "xl"
+					? "flex items-center justify-between gap-2 border-b px-8 py-5 xl:hidden"
+					: desktopBreakpoint === "lg"
+						? "flex items-center justify-between gap-2 px-4 py-3 lg:hidden"
+						: "flex items-center justify-between gap-2 border-b px-4 py-3 md:hidden"
+			}
+		>
 			<SidebarTrigger />
 			<Button aria-label="Notifications" size="icon-sm" variant="ghost">
 				<NotificationLine />
