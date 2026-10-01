@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
 	boolean,
 	integer,
@@ -17,6 +17,8 @@ export const criteria = createTable("criteria", {
 	name: text("name").notNull(),
 	description: text("description").notNull().default(""),
 	displayOrder: integer("display_order").notNull().default(0),
+	// Empty means the criterion applies to every round (including existing criteria).
+	roundIds: uuid("round_ids").array().notNull().default(sql`'{}'::uuid[]`),
 	maxScore: integer("max_score").notNull(),
 	isSidepot: boolean("is_sidepot").default(false).notNull()
 });
