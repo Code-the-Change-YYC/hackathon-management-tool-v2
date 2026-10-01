@@ -106,6 +106,8 @@ export function VerifyEmailForm({ email }: { email: string }) {
 					autoComplete="one-time-code"
 					control={form.control}
 					disabled={isBusy}
+					hideLabel
+					label="One-time code"
 					length={VERIFICATION_CODE_LENGTH}
 					name="code"
 					pattern={REGEXP_ONLY_DIGITS}

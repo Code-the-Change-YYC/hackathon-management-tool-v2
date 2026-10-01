@@ -13,6 +13,7 @@ import {
 	InputOTPGroup,
 	InputOTPSlot
 } from "@/app/components/ui/input-otp";
+import { cn } from "@/lib/utils";
 
 type CodeFieldProps<
 	TFieldValues extends FieldValues,
@@ -22,6 +23,8 @@ type CodeFieldProps<
 	control: Control<TFieldValues, unknown, TTransformedValues>;
 	name: TName;
 	label: string;
+	/** Keeps the label for screen readers only, when the page already explains the field. */
+	hideLabel?: boolean;
 	length: number;
 	/** Regex source each character must match, e.g. `REGEXP_ONLY_DIGITS`. */
 	pattern: string;
@@ -39,6 +42,7 @@ export function CodeField<
 	control,
 	name,
 	label,
+	hideLabel,
 	length,
 	pattern,
 	inputMode = "numeric",
@@ -56,7 +60,10 @@ export function CodeField<
 			data-invalid={fieldState.invalid}
 		>
 			<FieldLabel
-				className="justify-center text-muted-foreground text-xs"
+				className={cn(
+					"justify-center text-muted-foreground text-xs",
+					hideLabel && "sr-only"
+				)}
 				htmlFor={id}
 			>
 				{label}
