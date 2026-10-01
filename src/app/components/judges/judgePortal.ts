@@ -2,7 +2,10 @@ import type { RouterOutputs } from "@/trpc/react";
 
 export type JudgeAssignment =
 	RouterOutputs["judgingAssignments"]["getByJudge"][number];
-export type Criterion = RouterOutputs["criteria"]["getAll"][number];
+export type Criterion = Omit<
+	RouterOutputs["criteria"]["getAll"][number],
+	"roundIds"
+> & { roundIds?: string[] };
 
 export function sortCriteria(a: Criterion, b: Criterion) {
 	return (
