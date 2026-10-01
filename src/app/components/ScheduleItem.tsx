@@ -1,9 +1,13 @@
 import {
+	Alarm1Line,
 	AnnouncementLine,
 	HamburgerLine,
 	LaptopLine,
+	LocationLine,
 	TrophyLine
 } from "@mingcute/react";
+import { Badge } from "@/app/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { EventType } from "@/types/types";
 
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -18,6 +22,7 @@ export type ScheduleItemData = {
 	endTime: Date;
 	eventType: EventType;
 	description: string;
+	location?: string | null;
 };
 
 type ScheduleItemTheme = {
@@ -91,11 +96,11 @@ export function getScheduleItemStatus(item: ScheduleItemData, now: Date) {
 	const endTime = item.endTime.getTime();
 	const currentTime = now.getTime();
 
-	if (currentTime >= startTime && currentTime <= endTime) {
+	if (currentTime >= startTime && currentTime < endTime) {
 		return "Ongoing";
 	}
 
-	if (currentTime > endTime) {
+	if (currentTime >= endTime) {
 		return "Completed";
 	}
 
@@ -114,15 +119,72 @@ export function getScheduleItemStatus(item: ScheduleItemData, now: Date) {
 type ScheduleItemProps = {
 	item: ScheduleItemData;
 	now: Date;
+	variant?: "default" | "compact";
+	timeZone?: string;
 };
 
-export function ScheduleItem({ item, now }: ScheduleItemProps) {
+export function ScheduleItem({
+	item,
+	now,
+	variant = "default",
+	timeZone
+}: ScheduleItemProps) {
 	const status = getScheduleItemStatus(item, now);
 	const { badgeClassName, lineClassName, previewClassName, iconColor } =
 		getScheduleItemTheme(item.eventType);
 	const icon = getScheduleItemIcon(item.eventType, iconColor);
 	const badgeLabel =
 		item.eventType.charAt(0).toUpperCase() + item.eventType.slice(1);
+
+	if (variant === "compact") {
+		const formatter = new Intl.DateTimeFormat("en-US", {
+			hour: "numeric",
+			minute: "2-digit",
+			timeZone
+		});
+		return (
+			<li className="flex min-w-0 flex-col gap-2 rounded-lg bg-grey-50 px-2 py-4 sm:flex-row sm:items-stretch">
+				<div className="flex shrink-0 items-center gap-2 sm:w-17 sm:flex-col sm:items-end sm:py-1">
+					<Badge variant={item.eventType}>{badgeLabel}</Badge>
+					<span className="text-[11px]/4 text-grey-600">{status}</span>
+				</div>
+				<div
+					aria-hidden
+					className={cn(
+						"h-px w-full shrink-0 sm:h-auto sm:w-px",
+						lineClassName
+					)}
+				/>
+				<div className="flex min-w-0 items-center gap-2">
+					<div
+						aria-hidden
+						className={cn(
+							"flex size-14 shrink-0 items-center justify-center rounded-lg p-2.5",
+							item.eventType === EventType.FOOD ? "bg-red-50" : previewClassName
+						)}
+					>
+						{icon}
+					</div>
+					<div className="flex min-w-0 flex-col">
+						<h3 className="wrap-break-word font-medium text-base/6">
+							{item.title}
+						</h3>
+						<div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-1 font-medium text-grey-600 text-xs/4">
+							<span className="flex items-center gap-1">
+								<LocationLine aria-hidden className="size-4 shrink-0" />
+								{item.location || "Location TBA"}
+							</span>
+							<span className="flex items-center gap-1">
+								<Alarm1Line aria-hidden className="size-4 shrink-0" />
+								{formatter.format(item.startTime)} –{" "}
+								{formatter.format(item.endTime)}
+							</span>
+						</div>
+					</div>
+				</div>
+			</li>
+		);
+	}
 
 	return (
 		<li className="flex min-w-0 flex-col gap-3 md:flex-row md:items-stretch md:gap-2">

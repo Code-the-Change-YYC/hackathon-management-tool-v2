@@ -9,6 +9,10 @@ const badgeVariants = cva(
 	{
 		variants: {
 			variant: {
+				food: "h-4 bg-red-700 px-2 py-0 text-[11px] text-white",
+				activity: "h-4 bg-emerald-green px-2 py-0 text-[11px] text-white",
+				project: "h-4 bg-grapefruit px-2 py-0 text-[11px] text-white",
+				ceremony: "h-4 bg-purple-500 px-2 py-0 text-[11px] text-white",
 				default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
 				secondary:
 					"bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
