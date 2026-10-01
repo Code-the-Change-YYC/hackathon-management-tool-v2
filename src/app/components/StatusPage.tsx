@@ -35,8 +35,21 @@ const CONTENT = {
 	"under-construction": {
 		mascot: ERROR_MASCOT,
 		title: "Under Construction",
-		description:
-			"We're still building this page. Check back soon to join Hack the Change 2026!"
+		description: (
+			<>
+				We're still building this page. Check back soon to join Hack the Change
+				2026! In the meantime, sign up to our{" "}
+				<a
+					className="font-bold underline underline-offset-4"
+					href="https://forms.gle/YchkoZGSyXehhK5E7"
+					rel="noopener noreferrer"
+					target="_blank"
+				>
+					waiting list
+				</a>
+				.
+			</>
+		)
 	},
 	error: {
 		mascot: ERROR_MASCOT,
