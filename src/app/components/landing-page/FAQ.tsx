@@ -37,9 +37,9 @@ const FAQ_ITEMS = [
 		question: "Who can participate?",
 		answer: (
 			<p>
-				Anyone interested in software development and open to collaborating with
-				a team can participate. Hackathons are a great fit for first-time and
-				experienced hackers alike.
+				Canadian students interested in software development and open to
+				collaborating with a team can participate. Hackathons are a great fit
+				for first-time and experienced hackers alike.
 			</p>
 		)
 	},
