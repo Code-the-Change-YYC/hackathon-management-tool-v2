@@ -18,6 +18,8 @@ export const env = createEnv({
 		DATABASE_URL: z.string().url(),
 		CONTENTFUL_SPACE_ID: z.string().min(1),
 		CONTENTFUL_ACCESS_TOKEN: z.string().min(1),
+		RESEND_API_KEY: z.string().optional(),
+		EMAIL_FROM: z.string().default("Hackathon <onboarding@resend.dev>"),
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development")
@@ -45,6 +47,8 @@ export const env = createEnv({
 		DATABASE_URL: process.env.DATABASE_URL,
 		CONTENTFUL_SPACE_ID: process.env.CONTENTFUL_SPACE_ID,
 		CONTENTFUL_ACCESS_TOKEN: process.env.CONTENTFUL_ACCESS_TOKEN,
+		RESEND_API_KEY: process.env.RESEND_API_KEY,
+		EMAIL_FROM: process.env.EMAIL_FROM,
 		NODE_ENV: process.env.NODE_ENV
 	},
 	/**

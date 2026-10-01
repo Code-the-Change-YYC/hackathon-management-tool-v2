@@ -27,6 +27,7 @@ import {
 } from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
+import { applyInvitedRole } from "./invitations";
 
 export const usersRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -123,27 +124,32 @@ export const usersRouter = createTRPCRouter({
 	completeRegistration: protectedProcedure
 		.input(signupEventDetailsSchema)
 		.mutation(async ({ ctx, input }) => {
-			const [updated] = await ctx.db
-				.update(user)
-				.set({
-					school: input.school?.trim() ? input.school.trim() : null,
-					program: input.program ?? null,
-					dietaryRestrictions: input.dietaryRestrictions ?? [],
-					completedRegistration: true,
-					role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
-				})
-				.where(eq(user.id, ctx.session.user.id))
-				.returning();
+			const { updated, invitedRole } = await ctx.db.transaction(async (tx) => {
+				const [row] = await tx
+					.update(user)
+					.set({
+						school: input.school?.trim() ? input.school.trim() : null,
+						program: input.program ?? null,
+						dietaryRestrictions: input.dietaryRestrictions ?? [],
+						completedRegistration: true,
+						role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
+					})
+					.where(eq(user.id, ctx.session.user.id))
+					.returning();
 
-			if (!updated) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Authenticated user not found"
-				});
-			}
+				if (!row) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Authenticated user not found"
+					});
+				}
+
+				const appliedRole = await applyInvitedRole(tx, row.id, row.email);
+				return { updated: row, invitedRole: appliedRole };
+			});
 
 			return {
-				user: updated,
+				user: invitedRole ? { ...updated, role: invitedRole } : updated,
 				wantsFood: input.wantsFood,
 				wantsFoodStored: false
 			};
