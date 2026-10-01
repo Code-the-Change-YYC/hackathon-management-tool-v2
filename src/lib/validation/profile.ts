@@ -1,11 +1,18 @@
 import { z } from "zod";
+import { isCountryCode } from "@/lib/countries";
 import { getNameParts } from "@/lib/names";
+import {
+	SCHOOL_NAME_MAX_LENGTH,
+	SCHOOL_NOT_LISTED,
+	UNIVERSITY_OF_CALGARY
+} from "@/lib/schools";
 import type { Program } from "@/types/types";
-import { PROGRAMS, SCHOOLS } from "./signup";
-
-export type School = (typeof SCHOOLS)[number];
-
-export const UNIVERSITY_OF_CALGARY = "University of Calgary" satisfies School;
+import {
+	LEVEL_OF_STUDY_LABELS,
+	LEVELS_OF_STUDY,
+	type LevelOfStudy,
+	PROGRAMS
+} from "./signup";
 
 export const PROGRAM_LABELS = {
 	computer_science: "Computer Science",
@@ -14,25 +21,45 @@ export const PROGRAM_LABELS = {
 	other: "Other"
 } satisfies Record<Program, string>;
 
-export const SCHOOL_OPTIONS = SCHOOLS.map((school) => ({
-	value: school,
-	label: school
-}));
-
 export const PROGRAM_OPTIONS = PROGRAMS.map((program) => ({
 	value: program,
 	label: PROGRAM_LABELS[program]
 }));
 
-export const NAME_MAX_LENGTH = 50;
+export const LEVEL_OF_STUDY_OPTIONS = LEVELS_OF_STUDY.map((level) => ({
+	value: level,
+	label: LEVEL_OF_STUDY_LABELS[level]
+}));
 
-export function isSchool(value: string | null | undefined): value is School {
-	return SCHOOLS.some((school) => school === value);
-}
+// MLH asks for an age rather than a date of birth. High school students can
+// take part, so the youngest option is 13.
+export const MIN_AGE = 13;
+export const MAX_AGE = 99;
+
+export const AGE_OPTIONS = Array.from(
+	{ length: MAX_AGE - MIN_AGE + 1 },
+	(_, index) => {
+		const age = MIN_AGE + index;
+		return { value: age, label: String(age) };
+	}
+);
+
+export const NAME_MAX_LENGTH = 50;
+export const PHONE_NUMBER_MAX_LENGTH = 30;
 
 /** We only collect a major from University of Calgary students. */
 export function asksForMajor(school: string | null | undefined) {
 	return school === UNIVERSITY_OF_CALGARY;
+}
+
+/** The school a profile form names: the one picked, or the one typed in. */
+export function getSchoolName(
+	school: string | null | undefined,
+	otherSchool: string | undefined
+) {
+	return school === SCHOOL_NOT_LISTED
+		? (otherSchool ?? "").trim()
+		: (school ?? "");
 }
 
 const nameSchema = (label: string) =>
@@ -45,41 +72,149 @@ const nameSchema = (label: string) =>
 			`${label} must be ${NAME_MAX_LENGTH} characters or fewer`
 		);
 
-export const profileSchema = z
-	.object({
-		firstName: nameSchema("First name"),
-		lastName: nameSchema("Last name"),
-		school: z.enum(SCHOOLS, {
-			errorMap: () => ({ message: "Select your institution" })
-		}),
-		program: z.enum(PROGRAMS).nullable()
+const PHONE_NUMBER_CHARACTERS = /^\+?[\d\s().-]+$/;
+
+// Allows common formatting, like "+1 (403) 555-0123", with room for
+// international numbers.
+const phoneNumberSchema = z
+	.string()
+	.trim()
+	.min(1, "Phone number is required")
+	.max(PHONE_NUMBER_MAX_LENGTH, "Enter a valid phone number")
+	.refine((phoneNumber) => {
+		const digitCount = phoneNumber.replace(/\D/g, "").length;
+		return (
+			PHONE_NUMBER_CHARACTERS.test(phoneNumber) &&
+			digitCount >= 10 &&
+			digitCount <= 15
+		);
+	}, "Enter a valid phone number, including the area code");
+
+const requiredChoice = (message: string) => ({
+	required_error: message,
+	invalid_type_error: message
+});
+
+const detailsSchema = z.object({
+	firstName: nameSchema("First name"),
+	lastName: nameSchema("Last name"),
+	age: z
+		.number(requiredChoice("Select your age"))
+		.int()
+		.min(MIN_AGE, "Select your age")
+		.max(MAX_AGE, "Select your age"),
+	phoneNumber: phoneNumberSchema,
+	countryOfResidence: z
+		.string(requiredChoice("Select your country of residence"))
+		.refine(isCountryCode, "Select your country of residence"),
+	levelOfStudy: z.enum(LEVELS_OF_STUDY, {
+		errorMap: () => ({ message: "Select your level of study" })
+	}),
+	program: z.enum(PROGRAMS).nullable()
+});
+
+function requireMajorForSchool(
+	school: string,
+	program: Program | null,
+	ctx: z.RefinementCtx
+) {
+	if (asksForMajor(school) && !program) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: "Select your major",
+			path: ["program"]
+		});
+	}
+}
+
+/** The details the API saves. By now the school is always a name. */
+export const profileSchema = detailsSchema
+	.extend({
+		school: z
+			.string()
+			.trim()
+			.min(1, "Select your institution")
+			.max(
+				SCHOOL_NAME_MAX_LENGTH,
+				`Institution must be ${SCHOOL_NAME_MAX_LENGTH} characters or fewer`
+			)
 	})
-	.superRefine(({ school, program }, ctx) => {
-		if (asksForMajor(school) && !program) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "Select your major",
-				path: ["program"]
-			});
-		}
-	})
+	.superRefine(({ school, program }, ctx) =>
+		requireMajorForSchool(school, program, ctx)
+	)
 	.transform((profile) => ({
 		...profile,
 		program: asksForMajor(profile.school) ? profile.program : null
 	}));
 
-export type ProfileInput = z.input<typeof profileSchema>;
-export type ProfileValues = z.output<typeof profileSchema>;
+/**
+ * The profile form. The school is picked from MLH's list, or typed in when
+ * the participant picks "My school isn't listed".
+ */
+export const profileFormSchema = detailsSchema
+	.extend({
+		school: z.string(requiredChoice("Select your institution")),
+		otherSchool: z
+			.string()
+			.trim()
+			.max(
+				SCHOOL_NAME_MAX_LENGTH,
+				`Institution must be ${SCHOOL_NAME_MAX_LENGTH} characters or fewer`
+			)
+	})
+	.superRefine(({ school, otherSchool, program }, ctx) => {
+		if (school === SCHOOL_NOT_LISTED && !otherSchool) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "Enter your institution’s name",
+				path: ["otherSchool"]
+			});
+		}
+		requireMajorForSchool(getSchoolName(school, otherSchool), program, ctx);
+	})
+	.transform(({ school, otherSchool, ...profile }) => {
+		const schoolName = getSchoolName(school, otherSchool);
+		return {
+			...profile,
+			school: schoolName,
+			program: asksForMajor(schoolName) ? profile.program : null
+		};
+	});
 
-/** Profile form values for a user; an institution we don't list starts blank. */
-export function getProfileDefaults(user: {
+export type ProfileInput = z.input<typeof profileFormSchema>;
+export type ProfileValues = z.output<typeof profileFormSchema>;
+
+type ProfileUser = {
 	name: string;
+	firstName?: string | null;
+	lastName?: string | null;
+	age?: number | null;
+	phoneNumber?: string | null;
+	countryOfResidence?: string | null;
 	school?: string | null;
+	schoolIsListed: boolean;
+	levelOfStudy?: LevelOfStudy | null;
 	program?: Program | null;
-}): Partial<ProfileInput> {
+};
+
+/**
+ * Profile form values for a user. Accounts that haven't saved a first and
+ * last name yet (e.g. from Google) start from their full name.
+ */
+export function getProfileDefaults(user: ProfileUser): Partial<ProfileInput> {
+	const nameParts = getNameParts(user.name);
+	const typedSchool =
+		user.school && !user.schoolIsListed ? user.school : undefined;
+
 	return {
-		...getNameParts(user.name),
-		school: isSchool(user.school) ? user.school : undefined,
+		firstName: user.firstName ?? nameParts.firstName,
+		lastName: user.lastName ?? nameParts.lastName,
+		age: user.age ?? undefined,
+		phoneNumber: user.phoneNumber ?? "",
+		countryOfResidence: user.countryOfResidence ?? undefined,
+		school: typedSchool ? SCHOOL_NOT_LISTED : (user.school ?? undefined),
+		otherSchool: typedSchool ?? "",
+		levelOfStudy: user.levelOfStudy ?? undefined,
 		program: user.program ?? null
 	};
 }

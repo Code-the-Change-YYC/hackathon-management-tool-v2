@@ -5,7 +5,7 @@ import { admin, emailOTP, organization } from "better-auth/plugins";
 import { env } from "@/env";
 import { VERIFICATION_CODE_LENGTH } from "@/lib/validation/auth";
 import { db } from "@/server/db";
-import { PROGRAMS } from "@/server/db/auth-schema";
+import { LEVELS_OF_STUDY, PROGRAMS } from "@/server/db/auth-schema";
 import { sendEmail } from "@/server/email";
 import {
 	existingAccountEmail,
@@ -92,8 +92,38 @@ export const betterAuthDefaultConfig = {
 				defaultValue: [],
 				input: false
 			},
+			firstName: {
+				type: "string",
+				required: false,
+				input: false
+			},
+			lastName: {
+				type: "string",
+				required: false,
+				input: false
+			},
+			age: {
+				type: "number",
+				required: false,
+				input: false
+			},
+			phoneNumber: {
+				type: "string",
+				required: false,
+				input: false
+			},
+			countryOfResidence: {
+				type: "string",
+				required: false,
+				input: false
+			},
 			school: {
 				type: "string",
+				required: false,
+				input: false
+			},
+			levelOfStudy: {
+				type: [...LEVELS_OF_STUDY],
 				required: false,
 				input: false
 			},
@@ -105,6 +135,22 @@ export const betterAuthDefaultConfig = {
 			wantsFood: {
 				type: "boolean",
 				required: false,
+				input: false
+			},
+			mlhCodeOfConductAcceptedAt: {
+				type: "date",
+				required: false,
+				input: false
+			},
+			mlhDataSharingAcceptedAt: {
+				type: "date",
+				required: false,
+				input: false
+			},
+			mlhEmailOptIn: {
+				type: "boolean",
+				required: false,
+				defaultValue: false,
 				input: false
 			},
 			completedRegistration: {

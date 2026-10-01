@@ -11,6 +11,7 @@ export const ONBOARDING_ROUTES = {
 	start: "/onboarding",
 	personalDetails: "/onboarding/personal-details",
 	foodPreferences: "/onboarding/food-preferences",
+	mlhPolicies: "/onboarding/mlh-policies",
 	discord: "/onboarding/discord",
 	team: "/onboarding/team",
 	joinTeam: "/onboarding/team/join",

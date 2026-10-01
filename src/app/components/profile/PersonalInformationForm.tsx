@@ -5,20 +5,26 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useForm, useFormState, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { ComboboxField } from "@/app/components/forms/ComboboxField";
+import { SchoolField } from "@/app/components/forms/SchoolField";
 import { SelectField } from "@/app/components/forms/SelectField";
 import { TextField } from "@/app/components/forms/TextField";
 import { Button } from "@/app/components/ui/button";
 import { FieldGroup } from "@/app/components/ui/field";
 import { Spinner } from "@/app/components/ui/spinner";
+import { COUNTRY_CODES, getCountryName } from "@/lib/countries";
 import {
+	AGE_OPTIONS,
 	asksForMajor,
 	getProfileDefaults,
+	getSchoolName,
+	LEVEL_OF_STUDY_OPTIONS,
 	NAME_MAX_LENGTH,
+	PHONE_NUMBER_MAX_LENGTH,
 	PROGRAM_OPTIONS,
 	type ProfileInput,
 	type ProfileValues,
-	profileSchema,
-	SCHOOL_OPTIONS
+	profileFormSchema
 } from "@/lib/validation/profile";
 import { api } from "@/trpc/react";
 import { PersonalInformationCard } from "./PersonalInformationCard";
@@ -38,10 +44,13 @@ export function PersonalInformationForm({
 	const updateProfile = api.users.updateProfile.useMutation();
 	const form = useForm<ProfileInput, unknown, ProfileValues>({
 		defaultValues: getProfileDefaults(profile),
-		resolver: zodResolver(profileSchema)
+		resolver: zodResolver(profileFormSchema)
 	});
 	const { isDirty } = useFormState({ control: form.control });
-	const school = useWatch({ control: form.control, name: "school" });
+	const [school, otherSchool] = useWatch({
+		control: form.control,
+		name: ["school", "otherSchool"]
+	});
 	const isSaving = updateProfile.isPending || isRefreshing;
 
 	function cancel() {
@@ -111,12 +120,44 @@ export function PersonalInformationForm({
 					<SelectField
 						control={form.control}
 						disabled={isSaving}
-						label="Institution"
-						name="school"
-						options={SCHOOL_OPTIONS}
-						placeholder="Select an institution"
+						label="Age"
+						name="age"
+						options={AGE_OPTIONS}
+						placeholder="Select your age"
 					/>
-					{asksForMajor(school) && (
+					<TextField
+						autoComplete="tel"
+						control={form.control}
+						disabled={isSaving}
+						label="Phone number"
+						maxLength={PHONE_NUMBER_MAX_LENGTH}
+						name="phoneNumber"
+						type="tel"
+					/>
+					<ComboboxField
+						control={form.control}
+						disabled={isSaving}
+						emptyMessage="No countries found"
+						items={COUNTRY_CODES}
+						itemToLabel={getCountryName}
+						label="Country of residence"
+						name="countryOfResidence"
+						placeholder="Search for your country"
+					/>
+					<SchoolField
+						control={form.control}
+						disabled={isSaving}
+						label="Institution"
+					/>
+					<SelectField
+						control={form.control}
+						disabled={isSaving}
+						label="Level of study"
+						name="levelOfStudy"
+						options={LEVEL_OF_STUDY_OPTIONS}
+						placeholder="Select your level of study"
+					/>
+					{asksForMajor(getSchoolName(school, otherSchool)) && (
 						<SelectField
 							control={form.control}
 							disabled={isSaving}

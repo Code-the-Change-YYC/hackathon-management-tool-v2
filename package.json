@@ -17,6 +17,7 @@
 		"db:studio": "drizzle-kit studio",
 		"dev": "pnpm db:up && next dev",
 		"lint": "biome lint .",
+		"mlh:schools": "bun scripts/update-mlh-schools.ts",
 		"format": "biome format --write .",
 		"prepare": "lefthook install",
 		"preview": "next build && next start",

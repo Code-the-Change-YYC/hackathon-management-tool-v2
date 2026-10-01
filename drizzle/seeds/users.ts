@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { getNameParts } from "@/lib/names";
 import { auth } from "@/server/better-auth";
 import { db } from "@/server/db";
 import { user } from "@/server/db/auth-schema";
@@ -116,14 +117,24 @@ export async function seedUsers(): Promise<SeedUsersResult> {
 	});
 
 	// Complete the sample participant profile for registration-dependent flows.
+	const { firstName, lastName } = getNameParts(participantName);
+	const acceptedMlhPoliciesAt = new Date();
 	await db
 		.update(user)
 		.set({
 			role: Role.PARTICIPANT,
+			firstName,
+			lastName,
+			age: 20,
+			phoneNumber: "403-555-0100",
+			countryOfResidence: "CA",
 			dietaryRestrictions: ["halal", "gluten_free"],
-			school: "Hackathon University",
+			school: "University of Calgary",
+			levelOfStudy: "undergraduate_three_plus_year",
 			program: "computer_science",
 			wantsFood: true,
+			mlhCodeOfConductAcceptedAt: acceptedMlhPoliciesAt,
+			mlhDataSharingAcceptedAt: acceptedMlhPoliciesAt,
 			completedRegistration: true
 		})
 		.where(eq(user.id, participantUser.id));

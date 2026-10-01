@@ -6,19 +6,32 @@ import {
 } from "@/lib/onboarding";
 import { ONBOARDING_ROUTES } from "@/lib/routes";
 
-const newUser = { name: "", school: null, wantsFood: null };
+const newUser = { firstName: null, school: null, wantsFood: null };
 const userWithDetails = {
-	name: "E2E Participant",
+	firstName: "E2E",
+	lastName: "Participant",
+	age: 20,
+	phoneNumber: "403-555-0100",
+	countryOfResidence: "CA",
 	school: "University of Calgary",
-	wantsFood: false
+	levelOfStudy: "undergraduate_three_plus_year",
+	wantsFood: false,
+	mlhCodeOfConductAcceptedAt: new Date(),
+	mlhDataSharingAcceptedAt: new Date()
 };
 
 describe("onboarding steps", () => {
 	it("resumes at the first step that still needs an answer", () => {
 		expect(getResumeStep(newUser)).toBe("personalDetails");
+		expect(getResumeStep({ ...userWithDetails, phoneNumber: null })).toBe(
+			"personalDetails"
+		);
 		expect(getResumeStep({ ...userWithDetails, wantsFood: null })).toBe(
 			"foodPreferences"
 		);
+		expect(
+			getResumeStep({ ...userWithDetails, mlhDataSharingAcceptedAt: null })
+		).toBe("mlhPolicies");
 		expect(getResumeStep(userWithDetails)).toBe("discord");
 	});
 
@@ -26,6 +39,12 @@ describe("onboarding steps", () => {
 		expect(canAccessStep(newUser, "personalDetails")).toBe(true);
 		expect(canAccessStep(newUser, "foodPreferences")).toBe(false);
 		expect(canAccessStep(newUser, "team")).toBe(false);
+		expect(
+			canAccessStep(
+				{ ...userWithDetails, mlhCodeOfConductAcceptedAt: null },
+				"discord"
+			)
+		).toBe(false);
 	});
 
 	it("opens the team step once the details are in", () => {

@@ -77,7 +77,9 @@ export default async function ParticipantLayout({
 				avatarUrl={resolveAvatarSrc(user.image)}
 				navGroups={PARTICPANT_NAV_GROUPS}
 				profileHref="/participant/profile"
-				userName={getNameParts(user.name).firstName || "Participant"}
+				userName={
+					user.firstName || getNameParts(user.name).firstName || "Participant"
+				}
 			/>
 			<SidebarInset>
 				<AppSidebarTriggerHeader />

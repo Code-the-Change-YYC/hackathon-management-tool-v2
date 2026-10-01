@@ -4,20 +4,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { ComboboxField } from "@/app/components/forms/ComboboxField";
+import { SchoolField } from "@/app/components/forms/SchoolField";
 import { SelectField } from "@/app/components/forms/SelectField";
 import { TextField } from "@/app/components/forms/TextField";
 import { Button } from "@/app/components/ui/button";
 import { FieldGroup } from "@/app/components/ui/field";
 import { Spinner } from "@/app/components/ui/spinner";
+import { COUNTRY_CODES, getCountryName } from "@/lib/countries";
 import { ONBOARDING_ROUTES } from "@/lib/routes";
 import {
+	AGE_OPTIONS,
 	asksForMajor,
+	getSchoolName,
+	LEVEL_OF_STUDY_OPTIONS,
 	NAME_MAX_LENGTH,
+	PHONE_NUMBER_MAX_LENGTH,
 	PROGRAM_OPTIONS,
 	type ProfileInput,
 	type ProfileValues,
-	profileSchema,
-	SCHOOL_OPTIONS
+	profileFormSchema
 } from "@/lib/validation/profile";
 import { api } from "@/trpc/react";
 
@@ -29,9 +35,12 @@ export function PersonalDetailsForm({
 	const router = useRouter();
 	const form = useForm<ProfileInput, unknown, ProfileValues>({
 		defaultValues,
-		resolver: zodResolver(profileSchema)
+		resolver: zodResolver(profileFormSchema)
 	});
-	const school = useWatch({ control: form.control, name: "school" });
+	const [school, otherSchool] = useWatch({
+		control: form.control,
+		name: ["school", "otherSchool"]
+	});
 
 	const saveDetails = api.users.updateProfile.useMutation({
 		onSuccess: () => router.push(ONBOARDING_ROUTES.foodPreferences),
@@ -67,12 +76,44 @@ export function PersonalDetailsForm({
 				<SelectField
 					control={form.control}
 					disabled={isBusy}
-					label="Which institution are you attending?"
-					name="school"
-					options={SCHOOL_OPTIONS}
-					placeholder="Select an institution"
+					label="Age"
+					name="age"
+					options={AGE_OPTIONS}
+					placeholder="Select your age"
 				/>
-				{asksForMajor(school) && (
+				<TextField
+					autoComplete="tel"
+					control={form.control}
+					disabled={isBusy}
+					label="Phone number"
+					maxLength={PHONE_NUMBER_MAX_LENGTH}
+					name="phoneNumber"
+					type="tel"
+				/>
+				<ComboboxField
+					control={form.control}
+					disabled={isBusy}
+					emptyMessage="No countries found"
+					items={COUNTRY_CODES}
+					itemToLabel={getCountryName}
+					label="Country of residence"
+					name="countryOfResidence"
+					placeholder="Search for your country"
+				/>
+				<SchoolField
+					control={form.control}
+					disabled={isBusy}
+					label="Which institution are you attending?"
+				/>
+				<SelectField
+					control={form.control}
+					disabled={isBusy}
+					label="What is your current level of study?"
+					name="levelOfStudy"
+					options={LEVEL_OF_STUDY_OPTIONS}
+					placeholder="Select your level of study"
+				/>
+				{asksForMajor(getSchoolName(school, otherSchool)) && (
 					<SelectField
 						control={form.control}
 						disabled={isBusy}

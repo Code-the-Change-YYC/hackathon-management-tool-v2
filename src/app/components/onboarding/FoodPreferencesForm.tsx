@@ -36,7 +36,7 @@ export function FoodPreferencesForm({
 	});
 
 	const savePreferences = api.users.updateFoodPreferences.useMutation({
-		onSuccess: () => router.push(ONBOARDING_ROUTES.discord),
+		onSuccess: () => router.push(ONBOARDING_ROUTES.mlhPolicies),
 		onError: () =>
 			toast.error("We couldn't save your food preferences. Please try again.")
 	});

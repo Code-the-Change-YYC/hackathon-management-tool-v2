@@ -2,8 +2,8 @@
  * tRPC router for user management.
  *
  * Onboarding saves each step as the user goes (`updateProfile`,
- * `updateFoodPreferences`), then `completeRegistration` marks the account
- * registered. It also upgrades `role` to PARTICIPANT when it isn't already a
+ * `updateFoodPreferences`, `acceptMlhPolicies`), then `completeRegistration`
+ * marks the account registered. It also upgrades `role` to PARTICIPANT when it isn't already a
  * real app role: better-auth gives new sign-ups a generic default role
  * ("user") that isn't one of this app's roles, so left as-is, they would get
  * redirected out of every role-gated page (e.g. `/participant`). The SQL
@@ -16,6 +16,7 @@ import { z } from "zod";
 import { AVATAR_IDS, getAvatarSrc } from "@/lib/avatars";
 import { getFullName } from "@/lib/names";
 import { hasRegistrationDetails } from "@/lib/onboarding";
+import { mlhPoliciesSchema } from "@/lib/validation/mlh";
 import { profileSchema } from "@/lib/validation/profile";
 import {
 	dietaryRestrictionsSchema,
@@ -66,7 +67,13 @@ export const usersRouter = createTRPCRouter({
 				.update(user)
 				.set({
 					name: getFullName(input.firstName, input.lastName),
+					firstName: input.firstName,
+					lastName: input.lastName,
+					age: input.age,
+					phoneNumber: input.phoneNumber,
+					countryOfResidence: input.countryOfResidence,
 					school: input.school,
+					levelOfStudy: input.levelOfStudy,
 					program: input.program
 				})
 				.where(eq(user.id, ctx.session.user.id))
@@ -89,6 +96,30 @@ export const usersRouter = createTRPCRouter({
 				.set({
 					wantsFood: input.wantsFood,
 					dietaryRestrictions: input.dietaryRestrictions
+				})
+				.where(eq(user.id, ctx.session.user.id))
+				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
+			return updated;
+		}),
+	acceptMlhPolicies: protectedProcedure
+		.input(mlhPoliciesSchema)
+		.mutation(async ({ ctx, input }) => {
+			// The schema only lets this through once both required boxes are ticked.
+			const acceptedAt = new Date();
+			const [updated] = await ctx.db
+				.update(user)
+				.set({
+					mlhCodeOfConductAcceptedAt: acceptedAt,
+					mlhDataSharingAcceptedAt: acceptedAt,
+					mlhEmailOptIn: input.emailOptIn
 				})
 				.where(eq(user.id, ctx.session.user.id))
 				.returning();
@@ -147,7 +178,7 @@ export const usersRouter = createTRPCRouter({
 		if (!hasRegistrationDetails(ctx.session.user)) {
 			throw new TRPCError({
 				code: "PRECONDITION_FAILED",
-				message: "Finish your personal details and food preferences first"
+				message: "Finish the earlier registration steps first"
 			});
 		}
 
