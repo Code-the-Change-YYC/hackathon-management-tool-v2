@@ -10,12 +10,14 @@
  */
 
 import { TRPCError } from "@trpc/server";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { AVATAR_IDS, getAvatarSrc } from "@/lib/avatars";
 import { getFullName } from "@/lib/names";
 import { profileSchema } from "@/lib/validation/profile";
 import {
+	DIETARY_RESTRICTIONS,
+	type DietaryRestriction,
 	dietaryRestrictionsSchema,
 	PROGRAMS,
 	signupEventDetailsSchema
@@ -147,5 +149,62 @@ export const usersRouter = createTRPCRouter({
 				wantsFood: input.wantsFood,
 				wantsFoodStored: false
 			};
-		})
+		}),
+	getDietaryAnalytics: adminProcedure.query(async ({ ctx }) => {
+		const users = await ctx.db.query.user.findMany({
+			columns: {
+				dietaryRestrictions: true
+			},
+			where: and(
+				eq(user.role, Role.PARTICIPANT),
+				eq(user.completedRegistration, true)
+			)
+		});
+
+		// Calculate totals
+		const counts: Record<DietaryRestriction, number> = Object.fromEntries(
+			DIETARY_RESTRICTIONS.map((restriction) => [restriction, 0])
+		) as Record<DietaryRestriction, number>;
+
+		// Calculate overlaps
+		const overlaps: Record<
+			DietaryRestriction,
+			Record<DietaryRestriction, number>
+		> = Object.fromEntries(
+			DIETARY_RESTRICTIONS.map((left) => [
+				left,
+				Object.fromEntries(DIETARY_RESTRICTIONS.map((right) => [right, 0]))
+			])
+		) as Record<DietaryRestriction, Record<DietaryRestriction, number>>;
+		const pairs: [DietaryRestriction, DietaryRestriction][] =
+			DIETARY_RESTRICTIONS.flatMap((left, index) =>
+				DIETARY_RESTRICTIONS.slice(index + 1).map(
+					(right) => [left, right] as [DietaryRestriction, DietaryRestriction]
+				)
+			);
+
+		for (const currentUser of users) {
+			const selected = new Set(currentUser.dietaryRestrictions);
+
+			for (const restriction of DIETARY_RESTRICTIONS) {
+				if (selected.has(restriction)) {
+					counts[restriction] = (counts[restriction] ?? 0) + 1;
+					overlaps[restriction][restriction] =
+						(overlaps[restriction][restriction] ?? 0) + 1;
+				}
+			}
+
+			for (const [left, right] of pairs) {
+				if (selected.has(left) && selected.has(right)) {
+					overlaps[left][right] = (overlaps[left][right] ?? 0) + 1;
+					overlaps[right][left] = (overlaps[right][left] ?? 0) + 1;
+				}
+			}
+		}
+
+		return {
+			counts,
+			overlaps
+		};
+	})
 });
