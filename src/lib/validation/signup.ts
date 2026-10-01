@@ -24,6 +24,14 @@ export const DIETARY_RESTRICTIONS = [
 
 export type DietaryRestriction = (typeof DIETARY_RESTRICTIONS)[number];
 
+export const DIETARY_RESTRICTION_LABELS = {
+	halal: "Halal",
+	vegetarian: "Vegetarian",
+	vegan: "Vegan",
+	gluten_free: "Gluten-free",
+	other: "Other"
+} satisfies Record<DietaryRestriction, string>;
+
 export const signupCredentialsSchema = z.object({
 	email: z
 		.string()

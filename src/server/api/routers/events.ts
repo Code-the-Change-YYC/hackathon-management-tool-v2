@@ -1,4 +1,3 @@
-import { createHash, randomBytes } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -9,6 +8,10 @@ import {
 } from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
+import {
+	createEventTicketToken,
+	hashEventTicketToken
+} from "@/server/lib/event-tickets";
 import {
 	EVENT_STATUSES,
 	EVENT_TICKET_TOKEN_PATTERN,
@@ -35,14 +38,6 @@ const eventTimeRangeSchema = z
 const ticketTokenSchema = z
 	.string()
 	.regex(EVENT_TICKET_TOKEN_PATTERN, "Invalid event ticket format.");
-
-function hashTicketToken(token: string) {
-	return createHash("sha256").update(token).digest("hex");
-}
-
-function createTicketToken() {
-	return `evt1_${randomBytes(32).toString("base64url")}`;
-}
 
 function supportsQrTickets(type: EventType) {
 	return QR_EVENT_TYPES.some((qrType) => qrType === type);
@@ -185,19 +180,19 @@ export const eventsRouter = createTRPCRouter({
 					} as const;
 				}
 
-				const token = createTicketToken();
+				const token = createEventTicketToken();
 				await tx
 					.insert(eventTicket)
 					.values({
 						userId: ctx.session.user.id,
 						eventId: input.eventId,
-						tokenHash: hashTicketToken(token),
+						tokenHash: hashEventTicketToken(token),
 						expiresAt: ticketEvent.endTime
 					})
 					.onConflictDoUpdate({
 						target: [eventTicket.userId, eventTicket.eventId],
 						set: {
-							tokenHash: hashTicketToken(token),
+							tokenHash: hashEventTicketToken(token),
 							expiresAt: ticketEvent.endTime,
 							updatedAt: now
 						}
@@ -238,7 +233,7 @@ export const eventsRouter = createTRPCRouter({
 					.from(eventTicket)
 					.innerJoin(user, eq(eventTicket.userId, user.id))
 					.innerJoin(event, eq(eventTicket.eventId, event.id))
-					.where(eq(eventTicket.tokenHash, hashTicketToken(input.token)))
+					.where(eq(eventTicket.tokenHash, hashEventTicketToken(input.token)))
 					.limit(1)
 					.for("update");
 
