@@ -42,6 +42,33 @@ test("cancelling an edit keeps the saved profile", async ({
 	await expect(detail(page, "First name")).toHaveText("Profile");
 });
 
+test("picks and saves a new avatar", async ({
+	authenticatedPage: page,
+	authUser
+}) => {
+	await page.goto("/participant/profile");
+	await page.getByRole("button", { name: "Change avatar" }).click();
+
+	const dialog = page.getByRole("dialog");
+	const save = dialog.getByRole("button", { name: "Save changes" });
+	await expect(save).toBeDisabled();
+
+	await dialog.getByRole("radio", { name: "Pizza" }).click();
+	await save.click();
+
+	await expect(page.getByText("Profile picture was updated")).toBeVisible();
+	await expect(dialog).toBeHidden();
+	await expect(page.getByAltText("Your avatar")).toHaveAttribute(
+		"src",
+		/pizza/
+	);
+
+	const saved = await db.query.user.findFirst({
+		where: eq(user.id, authUser.id)
+	});
+	expect(saved?.image).toBe("/avatars/pizza.webp");
+});
+
 test("validates and saves profile edits", async ({
 	authenticatedPage: page,
 	authUser

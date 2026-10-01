@@ -3,6 +3,7 @@ import type { Page } from "playwright/test";
 import { db } from "@/server/db";
 import { member, organization } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
+import { createTestUser } from "../../../utils/auth";
 import { assertE2EDatabaseSafety } from "../../db";
 import { expect, test } from "../../fixtures/team.fixture";
 
@@ -155,6 +156,86 @@ test("join modal shows an error for an unknown code", async ({
 	await expect(
 		page.getByText("No team was found. Please check the code and try again.")
 	).toBeVisible();
+});
+
+async function addMembers(teamId: string, count: number) {
+	const users = await Promise.all(
+		Array.from({ length: count }, (_, i) =>
+			createTestUser({ name: `Teammate ${i + 1}` })
+		)
+	);
+	await db.insert(member).values(
+		users.map(({ user }) => ({
+			id: crypto.randomUUID(),
+			organizationId: teamId,
+			userId: user.id,
+			role: "member" as const,
+			createdAt: new Date()
+		}))
+	);
+	return async () => {
+		for (const { cleanup } of users) await cleanup();
+	};
+}
+
+async function joinAsOwner(teamId: string, userId: string) {
+	await db.insert(member).values({
+		id: crypto.randomUUID(),
+		organizationId: teamId,
+		userId,
+		role: "owner",
+		createdAt: new Date()
+	});
+}
+
+test("lists teammates and marks the current user", async ({
+	authenticatedPage: page,
+	authUser,
+	createTeam
+}) => {
+	const team = await createTeam("Roster");
+	await joinAsOwner(team.id, authUser.id);
+	const cleanup = await addMembers(team.id, 2);
+
+	try {
+		await page.goto("/participant/team");
+		await expect(page.getByText("3/5 Members")).toBeVisible();
+
+		await expect(page.getByText("YOU", { exact: true })).toHaveCount(1);
+		await expect(page.getByText(authUser.email)).toBeVisible();
+		await expect(page.getByRole("button", { name: "Leave team" })).toHaveCount(
+			1
+		);
+		for (const name of ["Teammate 1", "Teammate 2"]) {
+			await expect(page.getByText(name, { exact: true })).toBeVisible();
+		}
+		await expect(page.getByText("Member", { exact: true })).toHaveCount(2);
+		await expect(
+			page.getByRole("button", { name: /Invite Team Member/ })
+		).toBeEnabled();
+	} finally {
+		await cleanup();
+	}
+});
+
+test("a full team cannot invite more members", async ({
+	authenticatedPage: page,
+	authUser,
+	createTeam
+}) => {
+	const team = await createTeam("Full");
+	await joinAsOwner(team.id, authUser.id);
+	const cleanup = await addMembers(team.id, 4);
+
+	try {
+		await page.goto("/participant/team");
+		await expect(page.getByText("5/5 Members")).toBeVisible();
+		await expect(
+			page.getByRole("button", { name: /Invite Team Member/ })
+		).toBeDisabled();
+	} finally {
+		await cleanup();
+	}
 });
 
 test("members cannot rename the team or send invites", async ({
