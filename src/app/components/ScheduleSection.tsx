@@ -1,11 +1,6 @@
 import { cn } from "@/lib/utils";
 import { ScheduleItem, type ScheduleItemData } from "./ScheduleItem";
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-	weekday: "long",
-	month: "long",
-	day: "numeric"
-});
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
 
 export type ScheduleGroup = {
 	key: string;
@@ -13,29 +8,60 @@ export type ScheduleGroup = {
 	items: ScheduleItemData[];
 };
 
-function formatDateKey(date: Date) {
-	return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+function formatDateKey(date: Date, timeZone?: string) {
+	return new Intl.DateTimeFormat("en-CA", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		timeZone
+	}).format(date);
 }
 
-// TODO: do this grouping logic in the procedure instead
-export function groupScheduleItemsByDate(items: ScheduleItemData[]) {
-	return items.reduce<ScheduleGroup[]>((groups, item) => {
-		const key = formatDateKey(item.startTime);
-		const existingGroup = groups.find((group) => group.key === key);
+export function groupScheduleItemsByDate(
+	items: ScheduleItemData[],
+	timeZone?: string,
+	ordinal = false
+) {
+	const dateFormatter = new Intl.DateTimeFormat("en-US", {
+		weekday: "long",
+		month: "long",
+		day: "numeric",
+		timeZone
+	});
+	return [...items]
+		.sort(
+			(a, b) =>
+				a.startTime.getTime() - b.startTime.getTime() ||
+				a.id.localeCompare(b.id)
+		)
+		.reduce<ScheduleGroup[]>((groups, item) => {
+			const key = formatDateKey(item.startTime, timeZone);
+			const existingGroup = groups.find((group) => group.key === key);
 
-		if (existingGroup) {
-			existingGroup.items.push(item);
+			if (existingGroup) {
+				existingGroup.items.push(item);
+				return groups;
+			}
+
+			const day = Number(
+				dateFormatter
+					.formatToParts(item.startTime)
+					.find((part) => part.type === "day")?.value
+			);
+			const suffix =
+				day % 100 >= 11 && day % 100 <= 13
+					? "th"
+					: (({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[
+							day % 10
+						] ?? "th");
+			groups.push({
+				key,
+				label: dateFormatter.format(item.startTime) + (ordinal ? suffix : ""),
+				items: [item]
+			});
+
 			return groups;
-		}
-
-		groups.push({
-			key,
-			label: dateFormatter.format(item.startTime),
-			items: [item]
-		});
-
-		return groups;
-	}, []);
+		}, []);
 }
 
 type ScheduleSectionProps = {
@@ -44,6 +70,8 @@ type ScheduleSectionProps = {
 	now: Date;
 	emptyTitle: string;
 	emptyDescription: string;
+	variant?: "default" | "timeline";
+	timeZone?: string;
 };
 
 export function ScheduleSection({
@@ -51,40 +79,80 @@ export function ScheduleSection({
 	items,
 	now,
 	emptyTitle,
-	emptyDescription
+	emptyDescription,
+	variant = "default",
+	timeZone
 }: ScheduleSectionProps) {
-	const groupedItems = groupScheduleItemsByDate(items);
-	const todayKey = formatDateKey(now);
+	const groupedItems = groupScheduleItemsByDate(
+		items,
+		timeZone,
+		variant === "timeline"
+	);
+	const todayKey = formatDateKey(now, timeZone);
+	const timeline = variant === "timeline";
 
 	return (
-		<section className="flex flex-col gap-5">
-			<h2 className="font-medium text-dark-grey text-lg">{title}</h2>
+		<section className={cn("flex flex-col", timeline ? "gap-4" : "gap-5")}>
+			<h2
+				className={cn(
+					"font-medium",
+					timeline ? "text-[22px]/7" : "text-dark-grey text-lg"
+				)}
+			>
+				{title}
+			</h2>
 
 			{groupedItems.length > 0 ? (
-				<div className="grid gap-8 xl:grid-cols-2">
+				<div
+					className={cn(
+						"grid items-start xl:grid-cols-2",
+						timeline ? "gap-6" : "gap-8"
+					)}
+				>
 					{groupedItems.map((group) => (
-						<div className="flex flex-col gap-4" key={group.key}>
+						<div
+							className={cn(
+								"flex min-w-0 flex-col",
+								timeline ? "gap-2" : "gap-4"
+							)}
+							key={group.key}
+						>
 							<h3
 								className={cn(
-									"text-dark-grey text-sm",
+									timeline ? "text-base/6" : "text-dark-grey text-sm",
 									group.key === todayKey ? "font-semibold" : "font-normal"
 								)}
 							>
 								{group.label}
 							</h3>
-							<ol className="flex flex-col gap-10 border-medium-grey border-l-4 py-1 pl-4 md:gap-8">
+							<ol
+								className={cn(
+									"flex flex-col border-l-4",
+									timeline
+										? "gap-4 border-grey-300 pl-2"
+										: "gap-10 border-medium-grey py-1 pl-4 md:gap-8"
+								)}
+							>
 								{group.items.map((item) => (
-									<ScheduleItem item={item} key={item.id} now={now} />
+									<ScheduleItem
+										item={item}
+										key={item.id}
+										now={now}
+										timeZone={timeZone}
+										variant={variant}
+									/>
 								))}
 							</ol>
 						</div>
 					))}
 				</div>
 			) : (
-				<div className="rounded-lg border border-medium-grey border-dashed bg-white px-6 py-10 text-center">
-					<p className="font-semibold text-dark-grey">{emptyTitle}</p>
-					<p className="mt-2 text-dark-grey/60 text-sm">{emptyDescription}</p>
-				</div>
+				<Empty>
+					<EmptyHeader>
+						<EmptyTitle>{emptyTitle}</EmptyTitle>
+						<EmptyDescription>{emptyDescription}</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
 			)}
 		</section>
 	);

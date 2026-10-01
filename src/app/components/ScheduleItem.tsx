@@ -6,6 +6,7 @@ import {
 	LocationLine,
 	TrophyLine
 } from "@mingcute/react";
+import Image from "next/image";
 import { Badge } from "@/app/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { EventType } from "@/types/types";
@@ -116,10 +117,26 @@ export function getScheduleItemStatus(item: ScheduleItemData, now: Date) {
 	return "Scheduled";
 }
 
+const timelineThemes = {
+	food: { preview: "bg-red-50", line: "bg-red-500" },
+	activity: { preview: "bg-green-50", line: "bg-green-400" },
+	ceremony: { preview: "bg-purple-50", line: "bg-purple-500" },
+	project: { preview: "bg-event-project-surface", line: "bg-orange-400" }
+};
+
+function relativeStatus(item: ScheduleItemData, now: Date) {
+	const status = getScheduleItemStatus(item, now);
+	if (status !== "Scheduled") return status;
+	const hours = Math.ceil(
+		(item.startTime.getTime() - now.getTime()) / 3_600_000
+	);
+	return `In ${hours} ${hours === 1 ? "hour" : "hours"}`;
+}
+
 type ScheduleItemProps = {
 	item: ScheduleItemData;
 	now: Date;
-	variant?: "default" | "compact";
+	variant?: "default" | "compact" | "timeline";
 	timeZone?: string;
 };
 
@@ -129,57 +146,131 @@ export function ScheduleItem({
 	variant = "default",
 	timeZone
 }: ScheduleItemProps) {
-	const status = getScheduleItemStatus(item, now);
+	const timeline = variant === "timeline";
+	const status = timeline
+		? relativeStatus(item, now)
+		: getScheduleItemStatus(item, now);
 	const { badgeClassName, lineClassName, previewClassName, iconColor } =
 		getScheduleItemTheme(item.eventType);
 	const icon = getScheduleItemIcon(item.eventType, iconColor);
 	const badgeLabel =
 		item.eventType.charAt(0).toUpperCase() + item.eventType.slice(1);
 
-	if (variant === "compact") {
+	if (variant !== "default") {
 		const formatter = new Intl.DateTimeFormat("en-US", {
 			hour: "numeric",
 			minute: "2-digit",
 			timeZone
 		});
 		return (
-			<li className="flex min-w-0 flex-col gap-2 rounded-lg bg-grey-50 px-2 py-4 sm:flex-row sm:items-stretch">
-				<div className="flex shrink-0 items-center gap-2 sm:w-17 sm:flex-col sm:items-end sm:py-1">
-					<Badge variant={item.eventType}>{badgeLabel}</Badge>
+			<li
+				aria-current={timeline && status === "Ongoing" ? "true" : undefined}
+				className={cn(
+					"flex min-w-0 flex-col gap-2 rounded-lg bg-grey-50 px-2 py-4 sm:flex-row sm:items-stretch",
+					timeline && status === "Ongoing" && "bg-grey-200"
+				)}
+			>
+				<div
+					className={cn(
+						"flex shrink-0 items-center gap-2 sm:w-17 sm:flex-col sm:items-end sm:py-1",
+						timeline && "py-1"
+					)}
+				>
+					<Badge
+						tone={timeline ? "timeline" : "default"}
+						variant={item.eventType}
+					>
+						{badgeLabel}
+					</Badge>
 					<span className="text-[11px]/4 text-grey-600">{status}</span>
 				</div>
 				<div
 					aria-hidden
 					className={cn(
 						"h-px w-full shrink-0 sm:h-auto sm:w-px",
-						lineClassName
+						timeline ? timelineThemes[item.eventType].line : lineClassName
 					)}
 				/>
-				<div className="flex min-w-0 items-center gap-2">
+				<div
+					className={cn(
+						"flex min-w-0 gap-2",
+						timeline ? "flex-1 items-start" : "items-center"
+					)}
+				>
 					<div
 						aria-hidden
 						className={cn(
-							"flex size-14 shrink-0 items-center justify-center rounded-lg p-2.5",
-							item.eventType === EventType.FOOD ? "bg-red-50" : previewClassName
+							"flex shrink-0 items-center justify-center rounded-lg",
+							timeline
+								? cn("size-22", timelineThemes[item.eventType].preview)
+								: cn(
+										"size-14 p-2.5",
+										item.eventType === EventType.FOOD
+											? "bg-red-50"
+											: previewClassName
+									)
 						)}
 					>
-						{icon}
+						{timeline ? (
+							<Image
+								alt=""
+								height={48}
+								src={`/images/participant-schedule/${item.eventType}.svg`}
+								width={48}
+							/>
+						) : (
+							icon
+						)}
 					</div>
 					<div className="flex min-w-0 flex-col">
-						<h3 className="wrap-break-word font-medium text-base/6">
-							{item.title}
-						</h3>
+						{timeline ? (
+							<h4
+								className={cn(
+									"wrap-break-word font-medium text-base/6",
+									status === "Ongoing" && "font-semibold"
+								)}
+							>
+								{item.title}
+							</h4>
+						) : (
+							<h3 className="wrap-break-word font-medium text-base/6">
+								{item.title}
+							</h3>
+						)}
 						<div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-1 font-medium text-grey-600 text-xs/4">
 							<span className="flex items-center gap-1">
-								<LocationLine aria-hidden className="size-4 shrink-0" />
+								{timeline ? (
+									<Image
+										alt=""
+										height={16}
+										src="/images/participant-schedule/location.svg"
+										width={16}
+									/>
+								) : (
+									<LocationLine aria-hidden className="size-4 shrink-0" />
+								)}
 								{item.location || "Location TBA"}
 							</span>
 							<span className="flex items-center gap-1">
-								<Alarm1Line aria-hidden className="size-4 shrink-0" />
+								{timeline ? (
+									<Image
+										alt=""
+										height={16}
+										src="/images/participant-schedule/time.svg"
+										width={16}
+									/>
+								) : (
+									<Alarm1Line aria-hidden className="size-4 shrink-0" />
+								)}
 								{formatter.format(item.startTime)} –{" "}
 								{formatter.format(item.endTime)}
 							</span>
 						</div>
+						{timeline && (
+							<p className="wrap-break-word mt-2 text-sm/5">
+								{item.description}
+							</p>
+						)}
 					</div>
 				</div>
 			</li>
