@@ -8,14 +8,16 @@ import Image from "next/image";
 export function AuthShell({ children }: { children: React.ReactNode }) {
 	return (
 		<div className="relative isolate flex min-h-svh items-center justify-center px-4 py-8 lg:items-stretch lg:justify-start lg:p-0">
-			<Image
-				alt=""
-				className="-z-10 object-cover"
-				fill
-				preload
-				sizes="100vw"
-				src="/images/auth-background.webp"
-			/>
+			<div className="-z-10 fixed inset-0">
+				<Image
+					alt=""
+					className="object-cover"
+					fill
+					preload
+					sizes="100vw"
+					src="/images/auth-background.webp"
+				/>
+			</div>
 			<main className="theme-auth flex w-full max-w-160 flex-col gap-6 rounded-xl bg-background px-6 py-12 text-foreground shadow-elevation-500 sm:px-24 lg:min-h-svh lg:w-160 lg:max-w-none lg:rounded-l-none lg:shadow-none">
 				<Image
 					alt="Code the Change YYC"
