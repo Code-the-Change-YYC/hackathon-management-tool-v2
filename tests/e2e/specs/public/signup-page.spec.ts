@@ -1,53 +1,38 @@
+import { getVerificationCode } from "../../../utils/auth";
 import { createSignupData } from "../../../utils/signup-data";
 import { expect, test } from "../../fixtures/pages.fixture";
 
-test("a participant can complete individual registration", async ({
+test("a new participant signs up, verifies their email and starts onboarding", async ({
 	page,
 	signupPage,
 	registerUserForCleanup
 }, testInfo) => {
-	const signupData = createSignupData(
+	const credentials = createSignupData(
 		`${Date.now()}-${testInfo.parallelIndex}`
 	);
-	registerUserForCleanup(signupData.email);
+	registerUserForCleanup(credentials.email);
 
 	await signupPage.goto();
 	await expect(
-		page.getByRole("heading", { name: /Welcome to Hack the Change 2026/i })
+		page.getByRole("heading", { name: "Welcome to Hack the Change 2026!" })
 	).toBeVisible();
+	await signupPage.signUp(credentials);
 
-	await signupPage.fillForm(signupData);
-	await signupPage.submit();
+	await expect(page).toHaveURL(/\/verify-email\?email=/);
+	let code: string | undefined;
+	await expect
+		.poll(async () => {
+			code = await getVerificationCode(credentials.email);
+			return code;
+		})
+		.toMatch(/^\d+$/);
+	await page.getByLabel("One-time code").fill(code ?? "");
+	await page.getByRole("button", { name: "Verify", exact: true }).click();
 
-	await expect(page).toHaveURL(/\/$/);
+	await expect(page).toHaveURL(/\/onboarding\/personal-details$/);
 });
 
-test("manual registration retains identity details when navigating back", async ({
-	page
-}) => {
-	await page.goto("/signup");
-	await page.getByLabel("Email").fill("ada@example.com");
-	await page.getByRole("textbox", { name: "Password" }).fill("Password123!");
-	await page.getByRole("button", { name: "Sign Up", exact: true }).click();
-	await page.getByLabel("First name").fill("Ada");
-	await page.getByLabel("Last name").fill("Lovelace");
-	expect(
-		await page.evaluate(() => sessionStorage.getItem("signup-wizard"))
-	).toBeNull();
-	await page.getByLabel("Which institution are you attending?*").click();
-	await page.getByRole("option", { name: "SAIT", exact: true }).click();
-	await page.getByRole("button", { name: "Continue", exact: true }).click();
-	await page.waitForURL("/signup/event-details");
-	await page.getByRole("link", { name: "Back" }).click();
-
-	await expect(page.getByLabel("First name")).toHaveValue("Ada");
-	await expect(page.getByLabel("Last name")).toHaveValue("Lovelace");
-	await expect(
-		page.getByLabel("Which institution are you attending?*")
-	).toHaveText("SAIT");
-});
-
-test("credentials validation exposes requirements and responsive controls", async ({
+test("password requirements appear once a password is typed", async ({
 	page
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
@@ -56,19 +41,19 @@ test("credentials validation exposes requirements and responsive controls", asyn
 	const email = page.getByLabel("Email");
 	const password = page.getByRole("textbox", { name: "Password" });
 	const submit = page.getByRole("button", { name: "Sign Up", exact: true });
+	const requirementsId = await password.getAttribute("aria-describedby");
+	const requirements = page.locator(`[id="${requirementsId}"]`);
 
-	await expect(email).toBeVisible();
-	await expect(password).toBeVisible();
 	await expect(submit).toBeDisabled();
-	await expect(page.getByText("Minimum 8 characters")).toBeVisible();
-	await expect(page.getByText("At least one number")).toBeVisible();
-	await expect(page.getByText("At least one special character")).toBeVisible();
+	await expect(requirements).toHaveAttribute("aria-hidden", "true");
 
 	await email.fill("participant@example.com");
 	await password.fill("short");
+	await expect(requirements).toHaveAttribute("aria-hidden", "false");
+	await expect(requirements).toContainText("Minimum 8 characters");
+	await expect(requirements).toContainText("At least one number");
+	await expect(requirements).toContainText("At least one special character");
 	await expect(submit).toBeDisabled();
-	await password.focus();
-	await expect(password).toBeFocused();
 
 	await password.fill("Password123!");
 	await expect(submit).toBeEnabled();
