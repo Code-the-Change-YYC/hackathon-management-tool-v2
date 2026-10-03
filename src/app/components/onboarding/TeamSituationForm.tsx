@@ -81,7 +81,8 @@ export function TeamSituationForm() {
 						>
 							{SITUATIONS.map((situation) => (
 								<FieldLabel
-									className="bg-card *:data-[slot=field]:px-4 *:data-[slot=field]:py-3"
+									className="bg-card data-[invalid=true]:border-destructive *:data-[slot=field]:px-4 *:data-[slot=field]:py-3"
+									data-invalid={fieldState.invalid}
 									htmlFor={`situation-${situation}`}
 									key={situation}
 								>
