@@ -40,11 +40,9 @@ test("password requirements appear once a password is typed", async ({
 
 	const email = page.getByLabel("Email");
 	const password = page.getByRole("textbox", { name: "Password" });
-	const submit = page.getByRole("button", { name: "Sign Up", exact: true });
 	const requirementsId = await password.getAttribute("aria-describedby");
 	const requirements = page.locator(`[id="${requirementsId}"]`);
 
-	await expect(submit).toBeDisabled();
 	await expect(requirements).toHaveAttribute("aria-hidden", "true");
 
 	await email.fill("participant@example.com");
@@ -53,10 +51,6 @@ test("password requirements appear once a password is typed", async ({
 	await expect(requirements).toContainText("Minimum 8 characters");
 	await expect(requirements).toContainText("At least one number");
 	await expect(requirements).toContainText("At least one special character");
-	await expect(submit).toBeDisabled();
-
-	await password.fill("Password123!");
-	await expect(submit).toBeEnabled();
 	const hasNoHorizontalOverflow = await page.evaluate(
 		() => document.body.scrollWidth <= window.innerWidth
 	);

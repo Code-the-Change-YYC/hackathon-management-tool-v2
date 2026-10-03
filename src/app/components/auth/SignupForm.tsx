@@ -94,11 +94,7 @@ export function SignupForm({ googleFailed }: { googleFailed: boolean }) {
 					/>
 				</FieldGroup>
 				<AuthActions>
-					<Button
-						className="w-full"
-						disabled={!form.formState.isValid || isBusy}
-						type="submit"
-					>
+					<Button className="w-full" disabled={isBusy} type="submit">
 						{isBusy && <Spinner data-icon="inline-start" />}
 						Sign Up
 					</Button>
