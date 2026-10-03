@@ -32,7 +32,7 @@ import { user } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
 
 export const usersRouter = createTRPCRouter({
-	getAll: protectedProcedure.query(async ({ ctx }) => {
+	getAll: adminProcedure.query(async ({ ctx }) => {
 		const users = await ctx.db.query.user.findMany({
 			orderBy: [desc(user.createdAt)]
 		});

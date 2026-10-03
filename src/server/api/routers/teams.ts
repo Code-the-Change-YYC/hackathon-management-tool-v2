@@ -203,7 +203,7 @@ export const teamsRouter = createTRPCRouter({
 		};
 	}),
 
-	getAll: protectedProcedure.query(async ({ ctx }) => {
+	getAll: adminProcedure.query(async ({ ctx }) => {
 		const teams = await ctx.db.query.organization.findMany({
 			orderBy: [desc(organization.createdAt)]
 		});
