@@ -18,7 +18,7 @@ export default async function SignupPage({
 
 	return (
 		<>
-			<AuthHeading>Welcome to Hack the Change 2026!</AuthHeading>
+			<AuthHeading title="Welcome to Hack the Change 2026!" />
 			<SignupForm googleFailed={Boolean(error)} />
 		</>
 	);

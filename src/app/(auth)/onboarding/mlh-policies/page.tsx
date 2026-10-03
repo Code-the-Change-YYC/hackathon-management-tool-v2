@@ -7,10 +7,10 @@ export default async function MlhPoliciesPage() {
 
 	return (
 		<>
-			<AuthHeading>Review the MLH policies</AuthHeading>
-			<p>
-				Hack the Change is an official Major League Hacking (MLH) Member Event.
-			</p>
+			<AuthHeading
+				description="Hack the Change is an official Major League Hacking (MLH) Member Event."
+				title="Review the MLH policies"
+			/>
 			<MlhPoliciesForm
 				defaultValues={{
 					codeOfConduct: user.mlhCodeOfConductAcceptedAt != null,

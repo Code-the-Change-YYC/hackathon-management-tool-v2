@@ -9,7 +9,7 @@ export default async function RegisterTeamPage() {
 
 	return (
 		<>
-			<AuthHeading>Register your team</AuthHeading>
+			<AuthHeading title="Register your team" />
 			<RegisterTeamForm />
 		</>
 	);

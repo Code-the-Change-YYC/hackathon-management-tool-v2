@@ -10,8 +10,10 @@ export default async function TeamJoinedPage() {
 
 	return (
 		<>
-			<AuthHeading>You have joined team {team.name}!</AuthHeading>
-			<p>Your team details will appear on your “My Team” page.</p>
+			<AuthHeading
+				description="Your team details will appear on your “My Team” page."
+				title={<>You have joined team {team.name}!</>}
+			/>
 			<Image
 				alt=""
 				className="self-center"

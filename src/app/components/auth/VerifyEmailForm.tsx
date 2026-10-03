@@ -74,59 +74,51 @@ export function VerifyEmailForm({ email }: { email: string }) {
 	const isBusy = verify.isPending || verify.isSuccess;
 
 	return (
-		<>
-			<div className="flex flex-col items-start gap-1">
-				<p>
-					We sent an email with a one-time code to{" "}
-					<span className="font-medium">{email}</span>
-				</p>
-			</div>
-			<form
-				className="flex flex-col gap-6"
-				noValidate
-				onSubmit={form.handleSubmit((values) => {
-					// A used-up code can't work, so don't send it.
-					if (codeAttempts.spentCodeMessage) {
-						form.setError(
-							"code",
-							{ message: codeAttempts.spentCodeMessage },
-							{ shouldFocus: true }
-						);
-						return;
-					}
-					verify.mutate(values);
-				})}
-			>
-				<CodeField
-					autoComplete="one-time-code"
-					control={form.control}
-					disabled={isBusy}
-					hideLabel
-					label="One-time code"
-					length={VERIFICATION_CODE_LENGTH}
-					name="code"
-					pattern={REGEXP_ONLY_DIGITS}
-				/>
-				<AuthActions className="items-center">
-					<Button
-						className="w-full"
-						disabled={code.length < VERIFICATION_CODE_LENGTH || isBusy}
-						type="submit"
-					>
-						{isBusy && <Spinner data-icon="inline-start" />}
-						Verify
-					</Button>
-					<button
-						className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-purple-800 text-sm underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
-						disabled={resendCode.isPending || isBusy}
-						onClick={() => resendCode.mutate()}
-						type="button"
-					>
-						{resendCode.isPending && <Spinner />}
-						Resend one-time code
-					</button>
-				</AuthActions>
-			</form>
-		</>
+		<form
+			className="flex flex-col gap-6"
+			noValidate
+			onSubmit={form.handleSubmit((values) => {
+				// A used-up code can't work, so don't send it.
+				if (codeAttempts.spentCodeMessage) {
+					form.setError(
+						"code",
+						{ message: codeAttempts.spentCodeMessage },
+						{ shouldFocus: true }
+					);
+					return;
+				}
+				verify.mutate(values);
+			})}
+		>
+			<CodeField
+				autoComplete="one-time-code"
+				control={form.control}
+				disabled={isBusy}
+				hideLabel
+				label="One-time code"
+				length={VERIFICATION_CODE_LENGTH}
+				name="code"
+				pattern={REGEXP_ONLY_DIGITS}
+			/>
+			<AuthActions className="items-center">
+				<Button
+					className="w-full"
+					disabled={code.length < VERIFICATION_CODE_LENGTH || isBusy}
+					type="submit"
+				>
+					{isBusy && <Spinner data-icon="inline-start" />}
+					Verify
+				</Button>
+				<button
+					className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-purple-800 text-sm underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
+					disabled={resendCode.isPending || isBusy}
+					onClick={() => resendCode.mutate()}
+					type="button"
+				>
+					{resendCode.isPending && <Spinner />}
+					Resend one-time code
+				</button>
+			</AuthActions>
+		</form>
 	);
 }

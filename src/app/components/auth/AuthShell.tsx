@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export function AuthShell({ children }: { children: React.ReactNode }) {
@@ -14,10 +15,10 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 					src="/images/auth-background.webp"
 				/>
 			</div>
-			<main className="theme-auth lg:no-scrollbar wrap-anywhere flex w-full max-w-160 flex-col gap-6 rounded-2xl bg-background px-6 py-12 text-foreground shadow-elevation-500 sm:px-20 lg:m-4 lg:w-160 lg:max-w-none lg:scroll-pb-48 lg:overflow-y-auto">
+			<main className="theme-auth lg:no-scrollbar wrap-anywhere flex w-full max-w-150 flex-col gap-6 rounded-2xl bg-background px-6 pt-6 pb-12 text-foreground shadow-elevation-500 sm:px-24 lg:m-4 lg:w-160 lg:max-w-none lg:scroll-pb-48 lg:overflow-y-auto">
 				<Image
 					alt="Code the Change YYC"
-					className="self-center"
+					className="h-18 w-auto self-center sm:h-22.5"
 					height={90}
 					preload
 					src="/svgs/CTCLogoWithText.svg"
@@ -29,8 +30,22 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 	);
 }
 
-export function AuthHeading({ children }: { children: React.ReactNode }) {
-	return <h1 className="font-semibold text-[28px] leading-9">{children}</h1>;
+interface AuthHeadingProps {
+	title: ReactNode;
+	description?: ReactNode;
+}
+
+export function AuthHeading({ title, description }: AuthHeadingProps) {
+	return (
+		<div>
+			<h1 className="text-balance font-semibold text-[28px] leading-9">
+				{title}
+			</h1>
+			{description && (
+				<p className="mt-2 text-muted-foreground">{description}</p>
+			)}
+		</div>
+	);
 }
 
 /**

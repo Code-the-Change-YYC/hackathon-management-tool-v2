@@ -11,15 +11,10 @@ export default async function FindTeamPage() {
 
 	return (
 		<>
-			<div className="flex flex-col gap-4">
-				<AuthHeading>
-					Check out the #looking-for-a-team channel on our Discord!
-				</AuthHeading>
-				<p>
-					Please find teammates on our Discord server or on your own before
-					registering a team in the system through your dashboard!
-				</p>
-			</div>
+			<AuthHeading
+				description="Please find teammates on our Discord server or on your own before registering a team in the system through your dashboard!"
+				title="Check out the #looking-for-a-team channel on our Discord!"
+			/>
 			<Image
 				alt=""
 				className="self-center"

@@ -22,7 +22,10 @@ export default async function ForgotPasswordPage({
 
 	return (
 		<>
-			<AuthHeading>Forgot your password?</AuthHeading>
+			<AuthHeading
+				description="Enter the email you signed up with and we'll send you a code to choose a new password."
+				title="Forgot your password?"
+			/>
 			<ForgotPasswordForm email={email.success ? email.data : ""} />
 		</>
 	);

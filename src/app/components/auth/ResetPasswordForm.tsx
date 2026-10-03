@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -14,7 +13,7 @@ import { Button } from "@/app/components/ui/button";
 import { FieldGroup } from "@/app/components/ui/field";
 import { Spinner } from "@/app/components/ui/spinner";
 import { getSignedInHref } from "@/lib/onboarding";
-import { AUTH_ROUTES, getForgotPasswordHref } from "@/lib/routes";
+import { AUTH_ROUTES } from "@/lib/routes";
 import {
 	type ResetPasswordValues,
 	resetPasswordSchema,
@@ -90,69 +89,57 @@ export function ResetPasswordForm({ email }: { email: string }) {
 	const isBusy = resetPassword.isPending || resetPassword.isSuccess;
 
 	return (
-		<>
-			<p>
-				If <span className="font-medium">{email}</span> has an account, we sent
-				it an email with a one-time code.{" "}
-				<Link
-					className="font-medium text-purple-800 underline-offset-4 hover:underline"
-					href={getForgotPasswordHref(email)}
+		<form
+			className="flex flex-col gap-6"
+			noValidate
+			onSubmit={form.handleSubmit((values) => {
+				// A used-up code can't work, so don't send it.
+				if (codeAttempts.spentCodeMessage) {
+					form.setError(
+						"code",
+						{ message: codeAttempts.spentCodeMessage },
+						{ shouldFocus: true }
+					);
+					return;
+				}
+				resetPassword.mutate(values);
+			})}
+		>
+			<FieldGroup className="gap-6">
+				<CodeField
+					autoComplete="one-time-code"
+					control={form.control}
+					disabled={isBusy}
+					label="One-time code"
+					length={VERIFICATION_CODE_LENGTH}
+					name="code"
+					pattern={REGEXP_ONLY_DIGITS}
+				/>
+				<PasswordField
+					autoComplete="new-password"
+					control={form.control}
+					description={<PasswordRequirements password={password} />}
+					disabled={isBusy}
+					label="New password"
+					name="password"
+					placeholder="New password"
+				/>
+			</FieldGroup>
+			<AuthActions className="items-center">
+				<Button className="w-full" disabled={isBusy} type="submit">
+					{isBusy && <Spinner data-icon="inline-start" />}
+					Reset Password
+				</Button>
+				<button
+					className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-purple-800 text-sm underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
+					disabled={resendCode.isPending || isBusy}
+					onClick={() => resendCode.mutate()}
+					type="button"
 				>
-					Use a different email
-				</Link>
-			</p>
-			<form
-				className="flex flex-col gap-6"
-				noValidate
-				onSubmit={form.handleSubmit((values) => {
-					// A used-up code can't work, so don't send it.
-					if (codeAttempts.spentCodeMessage) {
-						form.setError(
-							"code",
-							{ message: codeAttempts.spentCodeMessage },
-							{ shouldFocus: true }
-						);
-						return;
-					}
-					resetPassword.mutate(values);
-				})}
-			>
-				<FieldGroup className="gap-6">
-					<CodeField
-						autoComplete="one-time-code"
-						control={form.control}
-						disabled={isBusy}
-						label="One-time code"
-						length={VERIFICATION_CODE_LENGTH}
-						name="code"
-						pattern={REGEXP_ONLY_DIGITS}
-					/>
-					<PasswordField
-						autoComplete="new-password"
-						control={form.control}
-						description={<PasswordRequirements password={password} />}
-						disabled={isBusy}
-						label="New password"
-						name="password"
-						placeholder="New password"
-					/>
-				</FieldGroup>
-				<AuthActions className="items-center">
-					<Button className="w-full" disabled={isBusy} type="submit">
-						{isBusy && <Spinner data-icon="inline-start" />}
-						Reset Password
-					</Button>
-					<button
-						className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-purple-800 text-sm underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
-						disabled={resendCode.isPending || isBusy}
-						onClick={() => resendCode.mutate()}
-						type="button"
-					>
-						{resendCode.isPending && <Spinner />}
-						Resend one-time code
-					</button>
-				</AuthActions>
-			</form>
-		</>
+					{resendCode.isPending && <Spinner />}
+					Resend one-time code
+				</button>
+			</AuthActions>
+		</form>
 	);
 }

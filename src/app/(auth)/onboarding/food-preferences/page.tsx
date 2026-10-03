@@ -8,7 +8,7 @@ export default async function FoodPreferencesPage() {
 
 	return (
 		<>
-			<AuthHeading>Fill out your food preferences</AuthHeading>
+			<AuthHeading title="Fill out your food preferences" />
 			<FoodPreferencesForm
 				defaultValues={{
 					wantsFood: user.wantsFood ?? false,

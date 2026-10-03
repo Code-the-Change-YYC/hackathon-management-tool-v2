@@ -26,7 +26,15 @@ export default async function VerifyEmailPage({
 
 	return (
 		<>
-			<AuthHeading>Verify your email</AuthHeading>
+			<AuthHeading
+				description={
+					<>
+						We sent an email with a one-time code to{" "}
+						<span className="font-medium">{email.data}</span>
+					</>
+				}
+				title="Verify your email"
+			/>
 			<VerifyEmailForm email={email.data} />
 		</>
 	);

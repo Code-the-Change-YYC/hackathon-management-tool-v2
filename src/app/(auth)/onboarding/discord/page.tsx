@@ -12,10 +12,7 @@ export default async function DiscordPage() {
 
 	return (
 		<>
-			<AuthHeading>
-				Join the Hack the Change 2026 Discord Server for live updates,
-				questions, and more!
-			</AuthHeading>
+			<AuthHeading title="Join the Hack the Change 2026 Discord Server for live updates, questions, and more!" />
 			<Image
 				alt=""
 				className="self-center"

@@ -10,11 +10,10 @@ export default async function TeamRegisteredPage() {
 
 	return (
 		<>
-			<AuthHeading>Invite others to join your team!</AuthHeading>
-			<p>
-				Share this code with your teammates so they can join your team! You can
-				always find this code by inviting teammates on the “My Team” page.
-			</p>
+			<AuthHeading
+				description="Share this code with your teammates so they can join your team! You can always find this code by inviting teammates on the “My Team” page."
+				title="Invite others to join your team!"
+			/>
 			{team.teamCode && <TeamCodeDisplay code={team.teamCode} />}
 			<AuthActions>
 				<CompleteRegistrationButton />

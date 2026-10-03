@@ -9,14 +9,6 @@ import { toast } from "sonner";
 import { AuthActions } from "@/app/components/auth/AuthShell";
 import { CodeField } from "@/app/components/forms/CodeField";
 import { Button, buttonVariants } from "@/app/components/ui/button";
-import {
-	Popover,
-	PopoverContent,
-	PopoverDescription,
-	PopoverHeader,
-	PopoverTitle,
-	PopoverTrigger
-} from "@/app/components/ui/popover";
 import { Spinner } from "@/app/components/ui/spinner";
 import { ONBOARDING_ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -63,58 +55,36 @@ export function JoinTeamForm() {
 	const isBusy = joinTeam.isPending || joinTeam.isSuccess;
 
 	return (
-		<>
-			<div className="flex flex-col items-start gap-1">
-				<p>
-					Your teammates can share a join code with you to invite members on
-					their “My Team” page.
-				</p>
-				<Popover>
-					<PopoverTrigger className="cursor-pointer font-medium text-purple-800 text-sm underline-offset-4 hover:underline">
-						Where is this code?
-					</PopoverTrigger>
-					<PopoverContent align="start">
-						<PopoverHeader>
-							<PopoverTitle>Finding your invite code</PopoverTitle>
-							<PopoverDescription>
-								Whoever registered your team can find its 6-character code by
-								selecting Invite on their “My Team” page.
-							</PopoverDescription>
-						</PopoverHeader>
-					</PopoverContent>
-				</Popover>
-			</div>
-			<form
-				className="flex flex-col gap-6"
-				noValidate
-				onSubmit={form.handleSubmit((values) => joinTeam.mutate(values))}
-			>
-				<CodeField
-					control={form.control}
-					disabled={isBusy}
-					inputMode="text"
-					label="Team invite code"
-					length={TEAM_CODE_LENGTH}
-					name="teamCode"
-					pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
-				/>
-				<AuthActions>
-					<Button
-						className="w-full"
-						disabled={teamCode.length < TEAM_CODE_LENGTH || isBusy}
-						type="submit"
-					>
-						{isBusy && <Spinner data-icon="inline-start" />}
-						Continue
-					</Button>
-					<Link
-						className={cn(buttonVariants({ variant: "outline" }), "w-full")}
-						href={ONBOARDING_ROUTES.team}
-					>
-						Go back
-					</Link>
-				</AuthActions>
-			</form>
-		</>
+		<form
+			className="flex flex-col gap-6"
+			noValidate
+			onSubmit={form.handleSubmit((values) => joinTeam.mutate(values))}
+		>
+			<CodeField
+				control={form.control}
+				disabled={isBusy}
+				inputMode="text"
+				label="Team invite code"
+				length={TEAM_CODE_LENGTH}
+				name="teamCode"
+				pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+			/>
+			<AuthActions>
+				<Button
+					className="w-full"
+					disabled={teamCode.length < TEAM_CODE_LENGTH || isBusy}
+					type="submit"
+				>
+					{isBusy && <Spinner data-icon="inline-start" />}
+					Continue
+				</Button>
+				<Link
+					className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+					href={ONBOARDING_ROUTES.team}
+				>
+					Go back
+				</Link>
+			</AuthActions>
+		</form>
 	);
 }

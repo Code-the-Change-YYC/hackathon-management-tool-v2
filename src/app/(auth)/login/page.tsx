@@ -18,7 +18,7 @@ export default async function LoginPage({
 
 	return (
 		<>
-			<AuthHeading>Welcome back to Hack the Change 2026!</AuthHeading>
+			<AuthHeading title="Welcome back to Hack the Change 2026!" />
 			<LoginForm googleFailed={Boolean(error)} />
 		</>
 	);

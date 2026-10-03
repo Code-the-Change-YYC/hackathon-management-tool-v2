@@ -9,9 +9,7 @@ export default async function TeamPage() {
 
 	return (
 		<>
-			<AuthHeading>
-				Select the statement that describes your situation best
-			</AuthHeading>
+			<AuthHeading title="Select the statement that describes your situation best" />
 			<TeamSituationForm />
 		</>
 	);

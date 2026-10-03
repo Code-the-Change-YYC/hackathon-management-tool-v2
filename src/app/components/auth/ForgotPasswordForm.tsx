@@ -37,41 +37,35 @@ export function ForgotPasswordForm({ email }: { email: string }) {
 	const isBusy = sendCode.isPending || sendCode.isSuccess;
 
 	return (
-		<>
-			<p>
-				Enter the email you signed up with and we'll send you a code to choose a
-				new password.
-			</p>
-			<form
-				className="flex flex-col gap-6"
-				noValidate
-				onSubmit={form.handleSubmit((values) => sendCode.mutate(values))}
-			>
-				<TextField
-					autoComplete="email"
-					control={form.control}
-					disabled={isBusy}
-					label="Email"
-					name="email"
-					placeholder="Email"
-					type="email"
-				/>
-				<AuthActions>
-					<Button className="w-full" disabled={isBusy} type="submit">
-						{isBusy && <Spinner data-icon="inline-start" />}
-						Send Code
-					</Button>
-					<p className="text-center font-medium text-sm">
-						Remembered it?{" "}
-						<Link
-							className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
-							href={AUTH_ROUTES.login}
-						>
-							Log In
-						</Link>
-					</p>
-				</AuthActions>
-			</form>
-		</>
+		<form
+			className="flex flex-col gap-6"
+			noValidate
+			onSubmit={form.handleSubmit((values) => sendCode.mutate(values))}
+		>
+			<TextField
+				autoComplete="email"
+				control={form.control}
+				disabled={isBusy}
+				label="Email"
+				name="email"
+				placeholder="Email"
+				type="email"
+			/>
+			<AuthActions>
+				<Button className="w-full" disabled={isBusy} type="submit">
+					{isBusy && <Spinner data-icon="inline-start" />}
+					Send Code
+				</Button>
+				<p className="text-center font-medium text-sm">
+					Remembered it?{" "}
+					<Link
+						className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
+						href={AUTH_ROUTES.login}
+					>
+						Log In
+					</Link>
+				</p>
+			</AuthActions>
+		</form>
 	);
 }

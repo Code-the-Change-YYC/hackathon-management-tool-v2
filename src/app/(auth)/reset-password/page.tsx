@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { AuthHeading } from "@/app/components/auth/AuthShell";
 import { ResetPasswordForm } from "@/app/components/auth/ResetPasswordForm";
-import { AUTH_ROUTES } from "@/lib/routes";
+import { AUTH_ROUTES, getForgotPasswordHref } from "@/lib/routes";
 import { redirectSignedInUser } from "@/server/better-auth/auth-helpers/helpers";
 
 export const metadata: Metadata = {
@@ -26,7 +27,21 @@ export default async function ResetPasswordPage({
 
 	return (
 		<>
-			<AuthHeading>Reset your password</AuthHeading>
+			<AuthHeading
+				description={
+					<>
+						If <span className="font-medium">{email.data}</span> has an account,
+						we sent it an email with a one-time code.{" "}
+						<Link
+							className="font-medium text-purple-800 underline-offset-4 hover:underline"
+							href={getForgotPasswordHref(email.data)}
+						>
+							Use a different email
+						</Link>
+					</>
+				}
+				title="Reset your password"
+			/>
 			<ResetPasswordForm email={email.data} />
 		</>
 	);

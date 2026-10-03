@@ -9,7 +9,7 @@ export default async function PersonalDetailsPage() {
 
 	return (
 		<>
-			<AuthHeading>Fill out your personal profile</AuthHeading>
+			<AuthHeading title="Fill out your personal profile" />
 			<PersonalDetailsForm
 				defaultValues={getProfileDefaults({
 					...user,
