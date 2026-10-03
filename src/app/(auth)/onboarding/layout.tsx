@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Register | Hack the Change"
+	// Each step names itself, so tabs and history tell the steps apart.
+	title: {
+		default: "Register | Hack the Change",
+		template: "%s | Hack the Change"
+	}
 };
 
 export default function OnboardingLayout({

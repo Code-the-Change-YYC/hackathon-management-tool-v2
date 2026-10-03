@@ -96,7 +96,7 @@ export function SignupForm({ googleFailed }: { googleFailed: boolean }) {
 				<AuthActions>
 					<Button className="w-full" disabled={isBusy} type="submit">
 						{isBusy && <Spinner data-icon="inline-start" />}
-						Sign Up
+						Sign up
 					</Button>
 					<p className="text-center font-medium text-sm">
 						Already have an account?{" "}
@@ -104,7 +104,7 @@ export function SignupForm({ googleFailed }: { googleFailed: boolean }) {
 							className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
 							href={AUTH_ROUTES.login}
 						>
-							Log In
+							Log in
 						</Link>
 					</p>
 				</AuthActions>

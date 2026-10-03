@@ -1,13 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { AuthActions } from "@/app/components/auth/AuthShell";
-import { Button, buttonVariants } from "@/app/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
 	Field,
 	FieldContent,
@@ -20,7 +19,6 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Spinner } from "@/app/components/ui/spinner";
 import { ONBOARDING_ROUTES } from "@/lib/routes";
-import { cn } from "@/lib/utils";
 
 const SITUATIONS = ["registered", "unregistered", "no-team"] as const;
 
@@ -114,12 +112,6 @@ export function TeamSituationForm() {
 					{isNavigating && <Spinner data-icon="inline-start" />}
 					Continue
 				</Button>
-				<Link
-					className={cn(buttonVariants({ variant: "outline" }), "w-full")}
-					href={ONBOARDING_ROUTES.discord}
-				>
-					Go back
-				</Link>
 			</AuthActions>
 		</form>
 	);

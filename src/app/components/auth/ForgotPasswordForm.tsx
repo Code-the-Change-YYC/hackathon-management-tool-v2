@@ -54,7 +54,7 @@ export function ForgotPasswordForm({ email }: { email: string }) {
 			<AuthActions>
 				<Button className="w-full" disabled={isBusy} type="submit">
 					{isBusy && <Spinner data-icon="inline-start" />}
-					Send Code
+					Send code
 				</Button>
 				<p className="text-center font-medium text-sm">
 					Remembered it?{" "}
@@ -62,7 +62,7 @@ export function ForgotPasswordForm({ email }: { email: string }) {
 						className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
 						href={AUTH_ROUTES.login}
 					>
-						Log In
+						Log in
 					</Link>
 				</p>
 			</AuthActions>

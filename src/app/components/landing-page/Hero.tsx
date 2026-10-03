@@ -64,7 +64,7 @@ export default function Hero() {
 								className="font-semibold text-awesomer-purple! hover:opacity-70"
 								href="/login"
 							>
-								Sign in
+								Log in
 							</Link>
 						</p>
 					</div>

@@ -47,7 +47,7 @@ export function JoinTeamForm() {
 					{ shouldFocus: true }
 				);
 			} else {
-				toast.error("We couldn't join that team. Please try again.");
+				toast.error("We couldn’t join that team. Please try again.");
 			}
 		}
 	});

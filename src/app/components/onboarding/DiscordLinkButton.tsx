@@ -3,10 +3,16 @@ import { buttonVariants } from "@/app/components/ui/button";
 import { DISCORD_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-export function DiscordLinkButton({ children }: { children: React.ReactNode }) {
+export function DiscordLinkButton({
+	children,
+	variant = "default"
+}: {
+	children: React.ReactNode;
+	variant?: "default" | "outline";
+}) {
 	return (
 		<a
-			className={cn(buttonVariants(), "w-full")}
+			className={cn(buttonVariants({ variant }), "w-full")}
 			href={DISCORD_URL}
 			rel="noopener noreferrer"
 			target="_blank"

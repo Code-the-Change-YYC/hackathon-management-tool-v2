@@ -31,7 +31,7 @@ export function FoodPreferencesForm({
 	const savePreferences = api.users.updateFoodPreferences.useMutation({
 		onSuccess: () => router.push(ONBOARDING_ROUTES.mlhPolicies),
 		onError: () =>
-			toast.error("We couldn't save your food preferences. Please try again.")
+			toast.error("We couldn’t save your food preferences. Please try again.")
 	});
 	// Stay busy after success while the next step loads.
 	const isBusy = savePreferences.isPending || savePreferences.isSuccess;

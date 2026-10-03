@@ -49,7 +49,7 @@ export function isCodeError(error: unknown) {
 const MESSAGES: Record<string, string> = {
 	INVALID_EMAIL: "Enter a valid email address",
 	INVALID_EMAIL_OR_PASSWORD: "Incorrect email or password",
-	INVALID_OTP: "That code isn't right. Check your email and try again.",
+	INVALID_OTP: "That code isn’t right. Check your email and try again.",
 	OTP_EXPIRED: "That code has expired. Resend the code to get a new one.",
 	TOO_MANY_ATTEMPTS:
 		"Too many incorrect attempts. Resend the code to get a new one.",

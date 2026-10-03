@@ -100,15 +100,15 @@ export function LoginForm({ googleFailed }: { googleFailed: boolean }) {
 				<AuthActions>
 					<Button className="w-full" disabled={isBusy} type="submit">
 						{isBusy && <Spinner data-icon="inline-start" />}
-						Log In
+						Log in
 					</Button>
 					<p className="text-center font-medium text-sm">
-						Don't have an account yet?{" "}
+						Don’t have an account yet?{" "}
 						<Link
 							className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
 							href={AUTH_ROUTES.signup}
 						>
-							Sign Up
+							Sign up
 						</Link>
 					</p>
 				</AuthActions>

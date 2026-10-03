@@ -49,7 +49,7 @@ export function PersonalDetailsForm({
 	const saveDetails = api.users.updateProfile.useMutation({
 		onSuccess: () => router.push(ONBOARDING_ROUTES.foodPreferences),
 		onError: () =>
-			toast.error("We couldn't save your details. Please try again.")
+			toast.error("We couldn’t save your details. Please try again.")
 	});
 	// Stay busy after success while the next step loads.
 	const isBusy = saveDetails.isPending || saveDetails.isSuccess;

@@ -36,7 +36,7 @@ export function RegisterTeamForm() {
 					{ shouldFocus: true }
 				);
 			} else {
-				toast.error("We couldn't register your team. Please try again.");
+				toast.error("We couldn’t register your team. Please try again.");
 			}
 		}
 	});

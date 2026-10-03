@@ -61,7 +61,7 @@ export function GoogleSignInButton({
 			</Button>
 			{failed && (
 				<FieldError className="text-center">
-					We couldn't sign you in with Google. Please try again.
+					We couldn’t sign you in with Google. Please try again.
 				</FieldError>
 			)}
 		</div>

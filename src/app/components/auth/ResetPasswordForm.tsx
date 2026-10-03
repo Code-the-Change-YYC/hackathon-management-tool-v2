@@ -128,7 +128,7 @@ export function ResetPasswordForm({ email }: { email: string }) {
 			<AuthActions className="items-center">
 				<Button className="w-full" disabled={isBusy} type="submit">
 					{isBusy && <Spinner data-icon="inline-start" />}
-					Reset Password
+					Reset password
 				</Button>
 				<button
 					className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-purple-800 text-sm underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"

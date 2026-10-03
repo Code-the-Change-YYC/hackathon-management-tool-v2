@@ -22,7 +22,7 @@ test("a participant who forgot their password resets it with an emailed code", a
 
 		await expect(page).toHaveURL(/\/forgot-password\?email=/);
 		await expect(page.getByLabel("Email")).toHaveValue(user.email);
-		await page.getByRole("button", { name: "Send Code", exact: true }).click();
+		await page.getByRole("button", { name: "Send code", exact: true }).click();
 
 		await expect(page).toHaveURL(/\/reset-password\?email=/);
 		let code: string | undefined;
@@ -35,7 +35,7 @@ test("a participant who forgot their password resets it with an emailed code", a
 		await page.getByLabel("One-time code").fill(code ?? "");
 		await page.getByRole("textbox", { name: "New password" }).fill(newPassword);
 		await page
-			.getByRole("button", { name: "Reset Password", exact: true })
+			.getByRole("button", { name: "Reset password", exact: true })
 			.click();
 
 		// Resetting logs them in and picks up where they left off.
@@ -60,11 +60,11 @@ test("a wrong reset code is shown on the code field", async ({ page }) => {
 		.getByRole("textbox", { name: "New password" })
 		.fill("Password123!");
 	await page
-		.getByRole("button", { name: "Reset Password", exact: true })
+		.getByRole("button", { name: "Reset password", exact: true })
 		.click();
 
 	await expect(
-		page.getByText("That code isn't right. Check your email and try again.")
+		page.getByText("That code isn’t right. Check your email and try again.")
 	).toBeVisible();
 	await expect(page).toHaveURL(/\/reset-password\?email=/);
 });
@@ -79,7 +79,7 @@ test("a used-up reset code says so until a new one is sent", async ({
 	});
 	const codeField = page.getByLabel("One-time code");
 	const submit = page.getByRole("button", {
-		name: "Reset Password",
+		name: "Reset password",
 		exact: true
 	});
 	const resetRequests: string[] = [];
@@ -93,7 +93,7 @@ test("a used-up reset code says so until a new one is sent", async ({
 		await page.goto(
 			`/forgot-password?${new URLSearchParams({ email: user.email })}`
 		);
-		await page.getByRole("button", { name: "Send Code", exact: true }).click();
+		await page.getByRole("button", { name: "Send code", exact: true }).click();
 		await expect(page).toHaveURL(/\/reset-password\?email=/);
 		let code: string | undefined;
 		await expect
@@ -108,8 +108,8 @@ test("a used-up reset code says so until a new one is sent", async ({
 			.fill("NewPassword456!");
 
 		for (const message of [
-			"That code isn't right. Check your email and try again.",
-			"That code isn't right. Check your email and try again.",
+			"That code isn’t right. Check your email and try again.",
+			"That code isn’t right. Check your email and try again.",
 			"Too many incorrect attempts. Resend the code to get a new one."
 		]) {
 			await codeField.fill(wrongCode);

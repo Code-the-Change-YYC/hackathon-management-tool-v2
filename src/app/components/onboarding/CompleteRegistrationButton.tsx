@@ -15,7 +15,7 @@ export function CompleteRegistrationButton({
 	const router = useRouter();
 	const completeRegistration = api.users.completeRegistration.useMutation({
 		onSuccess: ({ role }) => {
-			toast.success("You're registered for Hack the Change 2026!");
+			toast.success("You’re registered for Hack the Change 2026!");
 			router.replace(getDashboardHref(role));
 		},
 		onError: (error) => toast.error(error.message)

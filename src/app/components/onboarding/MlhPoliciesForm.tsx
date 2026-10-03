@@ -50,7 +50,7 @@ export function MlhPoliciesForm({
 	const acceptPolicies = api.users.acceptMlhPolicies.useMutation({
 		onSuccess: () => router.push(ONBOARDING_ROUTES.discord),
 		onError: () =>
-			toast.error("We couldn't save your answers. Please try again.")
+			toast.error("We couldn’t save your answers. Please try again.")
 	});
 	// Stay busy after success while the next step loads.
 	const isBusy = acceptPolicies.isPending || acceptPolicies.isSuccess;

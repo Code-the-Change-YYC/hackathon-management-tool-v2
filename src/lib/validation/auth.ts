@@ -41,7 +41,7 @@ const newPasswordSchema = z
 	.refine(
 		(password) =>
 			PASSWORD_REQUIREMENTS.every((requirement) => requirement.isMet(password)),
-		"Your password doesn't meet the requirements below"
+		"Your password doesn’t meet the requirements below"
 	);
 
 const verificationCodeSchema = z

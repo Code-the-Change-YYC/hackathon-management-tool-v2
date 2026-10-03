@@ -14,7 +14,7 @@ export class SignupPage {
 		await this.page.getByLabel("Email").fill(email);
 		await this.page.getByRole("textbox", { name: "Password" }).fill(password);
 		await this.page
-			.getByRole("button", { name: "Sign Up", exact: true })
+			.getByRole("button", { name: "Sign up", exact: true })
 			.click();
 	}
 }

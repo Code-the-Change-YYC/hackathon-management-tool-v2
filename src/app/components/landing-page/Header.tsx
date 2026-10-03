@@ -59,7 +59,7 @@ export default function Header() {
 			<div className="flex min-w-25 justify-end">
 				{!isSignedIn && (
 					<Link className={LINK_STYLES} href="/login">
-						Sign In
+						Log in
 					</Link>
 				)}
 				{isSignedIn && (
@@ -68,7 +68,7 @@ export default function Header() {
 						onClick={handleSignOut}
 						type="button"
 					>
-						Sign Out
+						Log out
 					</button>
 				)}
 			</div>

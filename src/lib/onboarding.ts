@@ -7,7 +7,7 @@
 
 import { getDashboardHref, ONBOARDING_ROUTES } from "@/lib/routes";
 
-const STEPS = [
+export const ONBOARDING_STEPS = [
 	"personalDetails",
 	"foodPreferences",
 	"mlhPolicies",
@@ -15,7 +15,7 @@ const STEPS = [
 	"team"
 ] as const;
 
-export type OnboardingStep = (typeof STEPS)[number];
+export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
 type RegistrationUser = {
 	firstName?: string | null;
@@ -65,7 +65,8 @@ export function getResumeStep(user: RegistrationUser): OnboardingStep {
 export function canAccessStep(user: RegistrationUser, step: OnboardingStep) {
 	return (
 		hasRegistrationDetails(user) ||
-		STEPS.indexOf(step) <= STEPS.indexOf(getResumeStep(user))
+		ONBOARDING_STEPS.indexOf(step) <=
+			ONBOARDING_STEPS.indexOf(getResumeStep(user))
 	);
 }
 

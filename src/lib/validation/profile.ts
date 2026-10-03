@@ -57,21 +57,18 @@ export function getSchoolName(
 		: (school ?? "");
 }
 
-const nameSchema = (label: string) =>
+const nameSchema = (name: string) =>
 	z
 		.string()
 		.trim()
-		.min(1, `${label} is required`)
-		.max(
-			NAME_MAX_LENGTH,
-			`${label} must be ${NAME_MAX_LENGTH} characters or fewer`
-		);
+		.min(1, `Enter your ${name}`)
+		.max(NAME_MAX_LENGTH, `Use ${NAME_MAX_LENGTH} characters or fewer`);
 
 // The phone input gives numbers in E.164 format, e.g. "+14035550123".
 const phoneNumberSchema = z
 	.string()
 	.trim()
-	.min(1, "Phone number is required")
+	.min(1, "Enter your phone number")
 	.refine(isValidPhoneNumber, "Enter a valid phone number");
 
 const requiredChoice = (message: string) => ({
@@ -80,8 +77,8 @@ const requiredChoice = (message: string) => ({
 });
 
 const detailsSchema = z.object({
-	firstName: nameSchema("First name"),
-	lastName: nameSchema("Last name"),
+	firstName: nameSchema("first name"),
+	lastName: nameSchema("last name"),
 	// The age field gives a number, or null while it's empty.
 	age: z.preprocess(
 		(age) => (age === "" || age == null ? undefined : Number(age)),

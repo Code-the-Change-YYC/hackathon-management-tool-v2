@@ -33,9 +33,14 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 interface AuthHeadingProps {
 	title: ReactNode;
 	description?: ReactNode;
+	children?: ReactNode;
 }
 
-export function AuthHeading({ title, description }: AuthHeadingProps) {
+export function AuthHeading({
+	title,
+	description,
+	children
+}: AuthHeadingProps) {
 	return (
 		<div>
 			<h1 className="text-balance font-semibold text-[28px] leading-9">
@@ -44,6 +49,7 @@ export function AuthHeading({ title, description }: AuthHeadingProps) {
 			{description && (
 				<p className="mt-2 text-muted-foreground">{description}</p>
 			)}
+			{children}
 		</div>
 	);
 }
