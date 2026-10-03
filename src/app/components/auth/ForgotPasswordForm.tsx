@@ -58,10 +58,7 @@ export function ForgotPasswordForm({ email }: { email: string }) {
 				</Button>
 				<p className="text-center font-medium text-sm">
 					Remembered it?{" "}
-					<Link
-						className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
-						href={AUTH_ROUTES.login}
-					>
+					<Link className="link text-sm" href={AUTH_ROUTES.login}>
 						Log in
 					</Link>
 				</p>

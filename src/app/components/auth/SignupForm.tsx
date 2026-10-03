@@ -100,10 +100,7 @@ export function SignupForm({ googleFailed }: { googleFailed: boolean }) {
 					</Button>
 					<p className="text-center font-medium text-sm">
 						Already have an account?{" "}
-						<Link
-							className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
-							href={AUTH_ROUTES.login}
-						>
+						<Link className="link text-sm" href={AUTH_ROUTES.login}>
 							Log in
 						</Link>
 					</p>

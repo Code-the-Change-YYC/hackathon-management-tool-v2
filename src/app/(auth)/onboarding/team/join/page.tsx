@@ -28,7 +28,7 @@ export default async function JoinTeamPage() {
 					<>
 						Ask whoever registered your team for its invite code.{" "}
 						<Popover>
-							<PopoverTrigger className="cursor-pointer font-medium text-purple-800 underline-offset-4 hover:underline">
+							<PopoverTrigger className="link">
 								Where is this code?
 							</PopoverTrigger>
 							<PopoverContent align="start">

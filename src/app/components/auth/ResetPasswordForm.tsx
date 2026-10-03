@@ -131,7 +131,7 @@ export function ResetPasswordForm({ email }: { email: string }) {
 					Reset password
 				</Button>
 				<button
-					className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-purple-800 text-sm underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
+					className="link inline-flex items-center gap-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
 					disabled={resendCode.isPending || isBusy}
 					onClick={() => resendCode.mutate()}
 					type="button"

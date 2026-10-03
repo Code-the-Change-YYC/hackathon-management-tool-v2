@@ -158,6 +158,11 @@
 	filter: drop-shadow(0 3px 0 var(--color-awesomer-purple));
 }
 
+/* Inline purple text link that underlines on hover */
+@utility link {
+	@apply cursor-pointer font-medium text-purple-800 underline-offset-4 hover:underline;
+}
+
 /* Figma elevation/200 token: layered drop shadow used on cards and modals */
 @utility shadow-elevation-200 {
 	box-shadow:

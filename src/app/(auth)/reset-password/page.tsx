@@ -32,10 +32,7 @@ export default async function ResetPasswordPage({
 					<>
 						If <span className="font-medium">{email.data}</span> has an account,
 						we sent it an email with a one-time code.{" "}
-						<Link
-							className="font-medium text-purple-800 underline-offset-4 hover:underline"
-							href={getForgotPasswordHref(email.data)}
-						>
+						<Link className="link" href={getForgotPasswordHref(email.data)}>
 							Use a different email
 						</Link>
 					</>

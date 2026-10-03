@@ -11,11 +11,7 @@ export function TeamCodeDisplay({ code }: { code: string }) {
 
 	return (
 		<div className="flex flex-col items-center gap-2 py-4">
-			<button
-				className="cursor-pointer font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
-				onClick={() => copy(code)}
-				type="button"
-			>
+			<button className="link text-sm" onClick={() => copy(code)} type="button">
 				{copied ? "Copied!" : "Copy to clipboard"}
 			</button>
 			<p className="sr-only">Your team invite code is {code}</p>

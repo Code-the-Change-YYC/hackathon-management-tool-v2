@@ -89,10 +89,7 @@ export function LoginForm({ googleFailed }: { googleFailed: boolean }) {
 							name="password"
 							placeholder="Password"
 						/>
-						<Link
-							className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
-							href={getForgotPasswordHref(email)}
-						>
+						<Link className="link text-sm" href={getForgotPasswordHref(email)}>
 							Forgot password?
 						</Link>
 					</div>
@@ -104,10 +101,7 @@ export function LoginForm({ googleFailed }: { googleFailed: boolean }) {
 					</Button>
 					<p className="text-center font-medium text-sm">
 						Don’t have an account yet?{" "}
-						<Link
-							className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
-							href={AUTH_ROUTES.signup}
-						>
+						<Link className="link text-sm" href={AUTH_ROUTES.signup}>
 							Sign up
 						</Link>
 					</p>
