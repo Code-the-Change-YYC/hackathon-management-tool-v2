@@ -21,11 +21,11 @@ export function TeamCodeDisplay({ code }: { code: string }) {
 			<p className="sr-only">Your team invite code is {code}</p>
 			<div
 				aria-hidden="true"
-				className="flex w-full justify-between sm:justify-center sm:gap-4"
+				className="flex w-full justify-between gap-1.5 sm:justify-center sm:gap-4"
 			>
 				{characters.map(({ character, position }) => (
 					<span
-						className="flex h-13 w-12 items-center justify-center rounded-lg border border-input font-medium text-[22px]"
+						className="flex h-13 min-w-0 max-w-12 flex-1 items-center justify-center rounded-lg border border-input font-medium text-[22px]"
 						key={position}
 					>
 						{character}
