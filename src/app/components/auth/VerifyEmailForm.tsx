@@ -22,9 +22,11 @@ import {
 	isCodeError,
 	unwrapAuthResponse
 } from "./auth-errors";
+import { useCodeAttempts } from "./use-code-attempts";
 
 export function VerifyEmailForm({ email }: { email: string }) {
 	const router = useRouter();
+	const codeAttempts = useCodeAttempts();
 	const form = useForm<VerifyEmailValues>({
 		defaultValues: { code: "" },
 		resolver: zodResolver(verifyEmailSchema)
@@ -44,7 +46,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
 			if (isCodeError(error)) {
 				form.setError(
 					"code",
-					{ message: getAuthErrorMessage(error) },
+					{ message: codeAttempts.getCodeErrorMessage(error) },
 					{ shouldFocus: true }
 				);
 			} else {
@@ -63,6 +65,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
 			),
 		onSuccess: () => {
 			form.reset({ code: "" });
+			codeAttempts.onCodeResent();
 			toast.success("We sent you a new code");
 		},
 		onError: (error) => toast.error(getAuthErrorMessage(error))
@@ -81,7 +84,18 @@ export function VerifyEmailForm({ email }: { email: string }) {
 			<form
 				className="flex flex-col gap-6"
 				noValidate
-				onSubmit={form.handleSubmit((values) => verify.mutate(values))}
+				onSubmit={form.handleSubmit((values) => {
+					// A used-up code can't work, so don't send it.
+					if (codeAttempts.spentCodeMessage) {
+						form.setError(
+							"code",
+							{ message: codeAttempts.spentCodeMessage },
+							{ shouldFocus: true }
+						);
+						return;
+					}
+					verify.mutate(values);
+				})}
 			>
 				<CodeField
 					autoComplete="one-time-code"

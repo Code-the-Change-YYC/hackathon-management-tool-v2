@@ -1,5 +1,5 @@
 import { auth } from "auth.test";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { verification } from "@/server/db/auth-schema";
 import { Role, type User } from "@/types/types";
@@ -63,8 +63,10 @@ export async function getVerificationCode(
 	type: "email-verification" | "forget-password" = "email-verification"
 ) {
 	assertE2EDatabaseSafety();
+	// Resending can leave the old code's row behind until one is used.
 	const stored = await db.query.verification.findFirst({
-		where: eq(verification.identifier, `${type}-otp-${email}`)
+		where: eq(verification.identifier, `${type}-otp-${email}`),
+		orderBy: desc(verification.createdAt)
 	});
 	// Stored as "<code>:<failed attempts>".
 	return stored?.value.split(":")[0];

@@ -19,6 +19,8 @@ export const PASSWORD_REQUIREMENTS = [
 ] as const;
 
 export const VERIFICATION_CODE_LENGTH = 6;
+// Wrong guesses allowed before a code stops working.
+export const VERIFICATION_CODE_MAX_ATTEMPTS = 3;
 
 const emailSchema = z
 	.string()

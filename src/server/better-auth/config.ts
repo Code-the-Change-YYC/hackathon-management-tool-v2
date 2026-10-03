@@ -3,7 +3,10 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, emailOTP, organization } from "better-auth/plugins";
 
 import { env } from "@/env";
-import { VERIFICATION_CODE_LENGTH } from "@/lib/validation/auth";
+import {
+	VERIFICATION_CODE_LENGTH,
+	VERIFICATION_CODE_MAX_ATTEMPTS
+} from "@/lib/validation/auth";
 import { db } from "@/server/db";
 import { LEVELS_OF_STUDY, PROGRAMS } from "@/server/db/auth-schema";
 import { sendEmail } from "@/server/email";
@@ -89,6 +92,7 @@ export const betterAuthDefaultConfig = {
 		admin(),
 		emailOTP({
 			otpLength: VERIFICATION_CODE_LENGTH,
+			allowedAttempts: VERIFICATION_CODE_MAX_ATTEMPTS,
 			expiresIn: VERIFICATION_CODE_TTL_MINUTES * 60,
 			disableSignUp: true,
 			overrideDefaultEmailVerification: true,

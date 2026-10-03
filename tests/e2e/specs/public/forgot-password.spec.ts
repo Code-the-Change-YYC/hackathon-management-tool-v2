@@ -68,3 +68,72 @@ test("a wrong reset code is shown on the code field", async ({ page }) => {
 	).toBeVisible();
 	await expect(page).toHaveURL(/\/reset-password\?email=/);
 });
+
+test("a used-up reset code says so until a new one is sent", async ({
+	page
+}) => {
+	const { cleanup, user } = await createTestUserWithPassword("Password123!", {
+		completedRegistration: false,
+		name: "",
+		role: "user"
+	});
+	const codeField = page.getByLabel("One-time code");
+	const submit = page.getByRole("button", {
+		name: "Reset Password",
+		exact: true
+	});
+	const resetRequests: string[] = [];
+	page.on("request", (request) => {
+		if (request.url().endsWith("/email-otp/reset-password")) {
+			resetRequests.push(request.url());
+		}
+	});
+
+	try {
+		await page.goto(
+			`/forgot-password?${new URLSearchParams({ email: user.email })}`
+		);
+		await page.getByRole("button", { name: "Send Code", exact: true }).click();
+		await expect(page).toHaveURL(/\/reset-password\?email=/);
+		let code: string | undefined;
+		await expect
+			.poll(async () => {
+				code = await getVerificationCode(user.email, "forget-password");
+				return code;
+			})
+			.toMatch(/^\d+$/);
+		const wrongCode = code === "000000" ? "111111" : "000000";
+		await page
+			.getByRole("textbox", { name: "New password" })
+			.fill("NewPassword456!");
+
+		for (const message of [
+			"That code isn't right. Check your email and try again.",
+			"That code isn't right. Check your email and try again.",
+			"Too many incorrect attempts. Resend the code to get a new one."
+		]) {
+			await codeField.fill(wrongCode);
+			await submit.click();
+			await expect(page.getByText(message)).toBeVisible();
+		}
+
+		// The right code can't work any more either, so it isn't even sent.
+		await codeField.fill(code ?? "");
+		await submit.click();
+		await expect(
+			page.getByText(
+				"This code no longer works. Resend the code to get a new one."
+			)
+		).toBeVisible();
+		expect(resetRequests).toHaveLength(3);
+
+		await page.getByRole("button", { name: "Resend one-time code" }).click();
+		await expect(page.getByText("We sent you a new code")).toBeVisible();
+		const newCode = await getVerificationCode(user.email, "forget-password");
+		await codeField.fill(newCode ?? "");
+		await submit.click();
+		await expect(page).toHaveURL(/\/onboarding\/personal-details$/);
+	} finally {
+		await cleanup();
+	}
+});

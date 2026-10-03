@@ -28,9 +28,11 @@ import {
 	unwrapAuthResponse
 } from "./auth-errors";
 import { PasswordRequirements } from "./PasswordRequirements";
+import { useCodeAttempts } from "./use-code-attempts";
 
 export function ResetPasswordForm({ email }: { email: string }) {
 	const router = useRouter();
+	const codeAttempts = useCodeAttempts();
 	const form = useForm<ResetPasswordValues>({
 		defaultValues: { code: "", password: "" },
 		resolver: zodResolver(resetPasswordSchema)
@@ -55,7 +57,7 @@ export function ResetPasswordForm({ email }: { email: string }) {
 			if (isCodeError(error)) {
 				form.setError(
 					"code",
-					{ message: getAuthErrorMessage(error) },
+					{ message: codeAttempts.getCodeErrorMessage(error) },
 					{ shouldFocus: true }
 				);
 			} else if (
@@ -79,6 +81,7 @@ export function ResetPasswordForm({ email }: { email: string }) {
 			),
 		onSuccess: () => {
 			form.resetField("code");
+			codeAttempts.onCodeResent();
 			toast.success("We sent you a new code");
 		},
 		onError: (error) => toast.error(getAuthErrorMessage(error))
@@ -101,7 +104,18 @@ export function ResetPasswordForm({ email }: { email: string }) {
 			<form
 				className="flex flex-col gap-6"
 				noValidate
-				onSubmit={form.handleSubmit((values) => resetPassword.mutate(values))}
+				onSubmit={form.handleSubmit((values) => {
+					// A used-up code can't work, so don't send it.
+					if (codeAttempts.spentCodeMessage) {
+						form.setError(
+							"code",
+							{ message: codeAttempts.spentCodeMessage },
+							{ shouldFocus: true }
+						);
+						return;
+					}
+					resetPassword.mutate(values);
+				})}
 			>
 				<FieldGroup className="gap-6">
 					<CodeField
