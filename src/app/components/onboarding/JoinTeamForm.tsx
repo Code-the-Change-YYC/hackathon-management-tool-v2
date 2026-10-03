@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { AuthActions } from "@/app/components/auth/AuthShell";
 import { CodeField } from "@/app/components/forms/CodeField";
 import { Button, buttonVariants } from "@/app/components/ui/button";
 import {
@@ -97,7 +98,7 @@ export function JoinTeamForm() {
 					name="teamCode"
 					pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
 				/>
-				<div className="flex flex-col gap-4">
+				<AuthActions>
 					<Button
 						className="w-full"
 						disabled={teamCode.length < TEAM_CODE_LENGTH || isBusy}
@@ -112,7 +113,7 @@ export function JoinTeamForm() {
 					>
 						Go back
 					</Link>
-				</div>
+				</AuthActions>
 			</form>
 		</>
 	);

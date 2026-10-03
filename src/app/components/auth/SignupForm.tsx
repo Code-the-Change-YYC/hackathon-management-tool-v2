@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { AuthActions } from "@/app/components/auth/AuthShell";
 import { PasswordField } from "@/app/components/forms/PasswordField";
 import { TextField } from "@/app/components/forms/TextField";
 import { Button } from "@/app/components/ui/button";
@@ -92,7 +93,7 @@ export function SignupForm({ googleFailed }: { googleFailed: boolean }) {
 						placeholder="Password"
 					/>
 				</FieldGroup>
-				<div className="flex flex-col gap-4">
+				<AuthActions>
 					<Button
 						className="w-full"
 						disabled={!form.formState.isValid || isBusy}
@@ -110,7 +111,7 @@ export function SignupForm({ googleFailed }: { googleFailed: boolean }) {
 							Log In
 						</Link>
 					</p>
-				</div>
+				</AuthActions>
 			</form>
 		</>
 	);

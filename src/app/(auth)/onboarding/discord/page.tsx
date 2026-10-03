@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { AuthHeading } from "@/app/components/auth/AuthShell";
+import { AuthActions, AuthHeading } from "@/app/components/auth/AuthShell";
 import { DiscordLinkButton } from "@/app/components/onboarding/DiscordLinkButton";
 import { buttonVariants } from "@/app/components/ui/button";
 import { ONBOARDING_ROUTES } from "@/lib/routes";
@@ -23,7 +23,7 @@ export default async function DiscordPage() {
 				src="/images/mascot-discord.png"
 				width={250}
 			/>
-			<div className="flex flex-col gap-4">
+			<AuthActions>
 				<DiscordLinkButton>Join the server</DiscordLinkButton>
 				<Link
 					className={cn(buttonVariants({ variant: "outline" }), "w-full")}
@@ -31,7 +31,7 @@ export default async function DiscordPage() {
 				>
 					I’ve already joined, continue
 				</Link>
-			</div>
+			</AuthActions>
 		</>
 	);
 }

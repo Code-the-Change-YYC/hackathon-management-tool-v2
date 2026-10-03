@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { AuthActions } from "@/app/components/auth/AuthShell";
 import { CheckboxField } from "@/app/components/forms/CheckboxField";
 import { Button } from "@/app/components/ui/button";
 import { FieldGroup } from "@/app/components/ui/field";
@@ -51,10 +52,12 @@ export function FoodPreferencesForm({
 				</CheckboxField>
 				<DietaryRestrictionsField control={form.control} disabled={isBusy} />
 			</FieldGroup>
-			<Button className="w-full" disabled={isBusy} type="submit">
-				{isBusy && <Spinner data-icon="inline-start" />}
-				Continue
-			</Button>
+			<AuthActions>
+				<Button className="w-full" disabled={isBusy} type="submit">
+					{isBusy && <Spinner data-icon="inline-start" />}
+					Continue
+				</Button>
+			</AuthActions>
 		</form>
 	);
 }

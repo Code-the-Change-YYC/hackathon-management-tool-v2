@@ -1,4 +1,4 @@
-import { AuthHeading } from "@/app/components/auth/AuthShell";
+import { AuthActions, AuthHeading } from "@/app/components/auth/AuthShell";
 import { CompleteRegistrationButton } from "@/app/components/onboarding/CompleteRegistrationButton";
 import { TeamCodeDisplay } from "@/app/components/onboarding/TeamCodeDisplay";
 import { requireOnboardingStep } from "@/server/better-auth/auth-helpers/helpers";
@@ -16,7 +16,9 @@ export default async function TeamRegisteredPage() {
 				always find this code by inviting teammates on the “My Team” page.
 			</p>
 			{team.teamCode && <TeamCodeDisplay code={team.teamCode} />}
-			<CompleteRegistrationButton />
+			<AuthActions>
+				<CompleteRegistrationButton />
+			</AuthActions>
 		</>
 	);
 }

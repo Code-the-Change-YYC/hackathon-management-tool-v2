@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { AuthHeading } from "@/app/components/auth/AuthShell";
+import { AuthActions, AuthHeading } from "@/app/components/auth/AuthShell";
 import { CompleteRegistrationButton } from "@/app/components/onboarding/CompleteRegistrationButton";
 import { DiscordLinkButton } from "@/app/components/onboarding/DiscordLinkButton";
 import { requireOnboardingStep } from "@/server/better-auth/auth-helpers/helpers";
@@ -27,12 +27,12 @@ export default async function FindTeamPage() {
 				src="/images/mascot-discord.png"
 				width={250}
 			/>
-			<div className="flex flex-col gap-4">
+			<AuthActions>
 				<DiscordLinkButton>
 					Visit the #looking-for-a-team channel
 				</DiscordLinkButton>
 				<CompleteRegistrationButton variant="outline" />
-			</div>
+			</AuthActions>
 		</>
 	);
 }

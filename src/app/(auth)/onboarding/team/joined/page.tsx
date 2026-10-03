@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { AuthHeading } from "@/app/components/auth/AuthShell";
+import { AuthActions, AuthHeading } from "@/app/components/auth/AuthShell";
 import { CompleteRegistrationButton } from "@/app/components/onboarding/CompleteRegistrationButton";
 import { requireOnboardingStep } from "@/server/better-auth/auth-helpers/helpers";
 import { requireTeam } from "../team-guards";
@@ -19,7 +19,9 @@ export default async function TeamJoinedPage() {
 				src="/team/mascot-celebrate.png"
 				width={244}
 			/>
-			<CompleteRegistrationButton />
+			<AuthActions>
+				<CompleteRegistrationButton />
+			</AuthActions>
 		</>
 	);
 }

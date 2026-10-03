@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import { AuthActions } from "@/app/components/auth/AuthShell";
 import { Button, buttonVariants } from "@/app/components/ui/button";
 import {
 	Field,
@@ -108,7 +109,7 @@ export function TeamSituationForm() {
 					</FieldSet>
 				)}
 			/>
-			<div className="flex flex-col gap-4">
+			<AuthActions>
 				<Button className="w-full" disabled={isNavigating} type="submit">
 					{isNavigating && <Spinner data-icon="inline-start" />}
 					Continue
@@ -119,7 +120,7 @@ export function TeamSituationForm() {
 				>
 					Go back
 				</Link>
-			</div>
+			</AuthActions>
 		</form>
 	);
 }

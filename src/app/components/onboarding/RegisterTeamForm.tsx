@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { AuthActions } from "@/app/components/auth/AuthShell";
 import { TextField } from "@/app/components/forms/TextField";
 import { Button, buttonVariants } from "@/app/components/ui/button";
 import { Spinner } from "@/app/components/ui/spinner";
@@ -57,7 +58,7 @@ export function RegisterTeamForm() {
 				name="name"
 				placeholder="Team name"
 			/>
-			<div className="flex flex-col gap-4">
+			<AuthActions>
 				<Button className="w-full" disabled={isBusy} type="submit">
 					{isBusy && <Spinner data-icon="inline-start" />}
 					Continue
@@ -68,7 +69,7 @@ export function RegisterTeamForm() {
 				>
 					Go back
 				</Link>
-			</div>
+			</AuthActions>
 		</form>
 	);
 }

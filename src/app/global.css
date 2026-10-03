@@ -113,6 +113,38 @@
 	}
 }
 
+/* Hides the scrollbar while keeping the element scrollable */
+@utility no-scrollbar {
+	scrollbar-width: none;
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+/*
+ * Fades out over the last stretch of its scroll container, so a hint that more
+ * content sits below goes away once there's nothing left to scroll to. Stays
+ * hidden when the container doesn't scroll, or when the browser can't tie
+ * animations to scrolling.
+ */
+@utility fade-at-scroll-end {
+	opacity: 0;
+	@supports (animation-timeline: scroll()) {
+		animation: fade-at-scroll-end linear both;
+		animation-timeline: scroll();
+		animation-range: calc(100% - 4rem) 100%;
+	}
+}
+
+@keyframes fade-at-scroll-end {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
 @utility no-details-marker {
 	&::-webkit-details-marker {
 		display: none;

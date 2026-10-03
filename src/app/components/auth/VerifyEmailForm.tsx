@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { AuthActions } from "@/app/components/auth/AuthShell";
 import { CodeField } from "@/app/components/forms/CodeField";
 import { Button } from "@/app/components/ui/button";
 import { Spinner } from "@/app/components/ui/spinner";
@@ -112,7 +113,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
 					name="code"
 					pattern={REGEXP_ONLY_DIGITS}
 				/>
-				<div className="flex flex-col items-center gap-4">
+				<AuthActions className="items-center">
 					<Button
 						className="w-full"
 						disabled={code.length < VERIFICATION_CODE_LENGTH || isBusy}
@@ -127,7 +128,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
 					>
 						Return to Sign Up
 					</Link>
-				</div>
+				</AuthActions>
 			</form>
 		</>
 	);

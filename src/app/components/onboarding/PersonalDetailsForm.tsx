@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { AuthActions } from "@/app/components/auth/AuthShell";
 import { ComboboxField } from "@/app/components/forms/ComboboxField";
 import { NumberField } from "@/app/components/forms/NumberField";
 import { PhoneField } from "@/app/components/forms/PhoneField";
@@ -129,10 +130,12 @@ export function PersonalDetailsForm({
 					/>
 				)}
 			</FieldGroup>
-			<Button className="w-full" disabled={isBusy} type="submit">
-				{isBusy && <Spinner data-icon="inline-start" />}
-				Continue
-			</Button>
+			<AuthActions>
+				<Button className="w-full" disabled={isBusy} type="submit">
+					{isBusy && <Spinner data-icon="inline-start" />}
+					Continue
+				</Button>
+			</AuthActions>
 		</form>
 	);
 }
