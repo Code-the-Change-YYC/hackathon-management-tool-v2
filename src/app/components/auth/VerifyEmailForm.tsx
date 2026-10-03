@@ -88,15 +88,6 @@ export function VerifyEmailForm({ email }: { email: string }) {
 					We sent an email with a one-time code to{" "}
 					<span className="font-medium">{email}</span>
 				</p>
-				<button
-					className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-purple-800 text-sm underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
-					disabled={resendCode.isPending || isBusy}
-					onClick={() => resendCode.mutate()}
-					type="button"
-				>
-					{resendCode.isPending && <Spinner />}
-					Resend one-time code
-				</button>
 			</div>
 			<form
 				className="flex flex-col gap-6"
@@ -122,12 +113,15 @@ export function VerifyEmailForm({ email }: { email: string }) {
 						{isBusy && <Spinner data-icon="inline-start" />}
 						Verify
 					</Button>
-					<Link
-						className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
-						href={AUTH_ROUTES.signup}
+					<button
+						className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-purple-800 text-sm underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
+						disabled={resendCode.isPending || isBusy}
+						onClick={() => resendCode.mutate()}
+						type="button"
 					>
-						Return to Sign Up
-					</Link>
+						{resendCode.isPending && <Spinner />}
+						Resend one-time code
+					</button>
 				</AuthActions>
 			</form>
 		</>
