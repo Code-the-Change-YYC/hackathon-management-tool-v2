@@ -15,16 +15,16 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 					src="/images/auth-background.webp"
 				/>
 			</div>
-			<main className="theme-auth lg:no-scrollbar wrap-anywhere flex w-full max-w-150 flex-col gap-6 rounded-2xl bg-background px-6 pt-6 pb-12 text-foreground shadow-elevation-500 sm:px-24 lg:m-4 lg:w-160 lg:max-w-none lg:scroll-pb-48 lg:overflow-y-auto">
+			<main className="theme-auth lg:no-scrollbar wrap-anywhere flex w-full max-w-150 flex-col gap-6 rounded-2xl bg-background px-6 pt-6 pb-12 text-foreground shadow-elevation-500 sm:px-24 lg:grid lg:w-160 lg:max-w-none lg:scroll-pb-48 lg:grid-cols-[minmax(0,1fr)] lg:grid-rows-[1fr_auto_1fr] lg:gap-0 lg:overflow-y-auto lg:rounded-l-none">
 				<Image
 					alt="Code the Change YYC"
-					className="h-18 w-auto self-center sm:h-22.5"
+					className="h-18 w-auto self-center sm:h-22.5 lg:self-start lg:justify-self-center"
 					height={90}
 					preload
 					src="/svgs/CTCLogoWithText.svg"
 					width={173}
 				/>
-				{children}
+				<div className="flex flex-col gap-6 lg:pt-6">{children}</div>
 			</main>
 		</div>
 	);
