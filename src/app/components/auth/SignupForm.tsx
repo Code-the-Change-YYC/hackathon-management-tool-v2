@@ -65,9 +65,7 @@ export function SignupForm({ googleFailed }: { googleFailed: boolean }) {
 			<GoogleSignInButton
 				errorCallbackURL={AUTH_ROUTES.signup}
 				failed={googleFailed}
-			>
-				Sign up with Google
-			</GoogleSignInButton>
+			/>
 			<FieldSeparator className="my-0">OR</FieldSeparator>
 			<form
 				className="flex flex-col gap-6"

@@ -12,11 +12,9 @@ import { getAuthErrorMessage, unwrapAuthResponse } from "./auth-errors";
 import { GoogleLogo } from "./GoogleLogo";
 
 export function GoogleSignInButton({
-	children,
 	errorCallbackURL,
 	failed = false
 }: {
-	children: React.ReactNode;
 	errorCallbackURL: string;
 	failed?: boolean;
 }) {
@@ -59,7 +57,7 @@ export function GoogleSignInButton({
 				) : (
 					<GoogleLogo data-icon="inline-start" />
 				)}
-				{children}
+				Continue with Google
 			</Button>
 			{failed && (
 				<FieldError className="text-center">

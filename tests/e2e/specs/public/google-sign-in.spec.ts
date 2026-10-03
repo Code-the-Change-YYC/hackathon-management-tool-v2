@@ -3,12 +3,12 @@ import { expect, test } from "playwright/test";
 test("login and sign-up pages offer Google sign-in", async ({ page }) => {
 	await page.goto("/login");
 	await expect(
-		page.getByRole("button", { name: "Log in with Google" })
+		page.getByRole("button", { name: "Continue with Google" })
 	).toBeVisible();
 
 	await page.goto("/signup");
 	await expect(
-		page.getByRole("button", { name: "Sign up with Google" })
+		page.getByRole("button", { name: "Continue with Google" })
 	).toBeVisible();
 });
 
@@ -29,7 +29,7 @@ test("Google sign-in starts the Better Auth social flow", async ({ page }) => {
 			request.url().includes("/api/auth/sign-in/social")
 	);
 
-	await page.getByRole("button", { name: "Log in with Google" }).click();
+	await page.getByRole("button", { name: "Continue with Google" }).click();
 
 	const request = await requestPromise;
 	// Onboarding sends each user on to their next step or their dashboard.
