@@ -70,7 +70,7 @@ export function CodeField<
 			</FieldLabel>
 			<InputOTP
 				autoComplete={autoComplete}
-				containerClassName="justify-between sm:justify-center sm:gap-4"
+				containerClassName="justify-between gap-1.5 sm:justify-center sm:gap-4"
 				disabled={disabled}
 				id={id}
 				inputMode={inputMode}
@@ -83,10 +83,11 @@ export function CodeField<
 				value={field.value}
 			>
 				{slots.map((slot) => (
-					<InputOTPGroup key={slot}>
+					// Boxes shrink to share narrow screens instead of overflowing them.
+					<InputOTPGroup className="min-w-0 max-w-12 flex-1" key={slot}>
 						<InputOTPSlot
 							aria-invalid={fieldState.invalid}
-							className="h-13 w-12 font-medium text-[22px] uppercase"
+							className="h-13 w-full font-medium text-[22px] uppercase"
 							index={slot}
 						/>
 					</InputOTPGroup>

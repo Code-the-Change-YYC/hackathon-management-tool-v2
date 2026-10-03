@@ -31,29 +31,44 @@ export const loginSchema = z.object({
 	password: z.string().min(1, "Enter your password")
 });
 
+const newPasswordSchema = z
+	.string()
+	// The requirements list only shows once something is typed.
+	.min(1, "Enter a password")
+	.max(PASSWORD_MAX_LENGTH, `Use ${PASSWORD_MAX_LENGTH} characters or fewer`)
+	.refine(
+		(password) =>
+			PASSWORD_REQUIREMENTS.every((requirement) => requirement.isMet(password)),
+		"Your password doesn't meet the requirements below"
+	);
+
+const verificationCodeSchema = z
+	.string()
+	.regex(
+		new RegExp(`^\\d{${VERIFICATION_CODE_LENGTH}}$`),
+		`Enter the ${VERIFICATION_CODE_LENGTH}-digit code from your email`
+	);
+
 export const signupSchema = z.object({
 	email: emailSchema,
-	password: z
-		.string()
-		.max(PASSWORD_MAX_LENGTH, `Use ${PASSWORD_MAX_LENGTH} characters or fewer`)
-		.refine(
-			(password) =>
-				PASSWORD_REQUIREMENTS.every((requirement) =>
-					requirement.isMet(password)
-				),
-			"Your password doesn't meet the requirements below"
-		)
+	password: newPasswordSchema
 });
 
 export const verifyEmailSchema = z.object({
-	code: z
-		.string()
-		.regex(
-			new RegExp(`^\\d{${VERIFICATION_CODE_LENGTH}}$`),
-			`Enter the ${VERIFICATION_CODE_LENGTH}-digit code from your email`
-		)
+	code: verificationCodeSchema
+});
+
+export const forgotPasswordSchema = z.object({
+	email: emailSchema
+});
+
+export const resetPasswordSchema = z.object({
+	code: verificationCodeSchema,
+	password: newPasswordSchema
 });
 
 export type LoginValues = z.infer<typeof loginSchema>;
 export type SignupValues = z.infer<typeof signupSchema>;
 export type VerifyEmailValues = z.infer<typeof verifyEmailSchema>;
+export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;

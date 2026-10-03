@@ -4,7 +4,9 @@ import { Role } from "@/types/types";
 export const AUTH_ROUTES = {
 	login: "/login",
 	signup: "/signup",
-	verifyEmail: "/verify-email"
+	verifyEmail: "/verify-email",
+	forgotPassword: "/forgot-password",
+	resetPassword: "/reset-password"
 } as const;
 
 export const ONBOARDING_ROUTES = {
@@ -23,6 +25,18 @@ export const ONBOARDING_ROUTES = {
 
 export function getVerifyEmailHref(email: string) {
 	return `${AUTH_ROUTES.verifyEmail}?${new URLSearchParams({ email })}`;
+}
+
+/** Carries over whatever was typed in the login form's email field. */
+export function getForgotPasswordHref(email: string) {
+	const trimmed = email.trim();
+	return trimmed
+		? `${AUTH_ROUTES.forgotPassword}?${new URLSearchParams({ email: trimmed })}`
+		: AUTH_ROUTES.forgotPassword;
+}
+
+export function getResetPasswordHref(email: string) {
+	return `${AUTH_ROUTES.resetPassword}?${new URLSearchParams({ email })}`;
 }
 
 /** Users without an app role yet (mid-registration) land on the participant dashboard. */

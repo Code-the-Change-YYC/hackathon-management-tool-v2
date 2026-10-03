@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { AuthActions } from "@/app/components/auth/AuthShell";
 import { PasswordField } from "@/app/components/forms/PasswordField";
@@ -13,7 +13,11 @@ import { Button } from "@/app/components/ui/button";
 import { FieldGroup, FieldSeparator } from "@/app/components/ui/field";
 import { Spinner } from "@/app/components/ui/spinner";
 import { getSignedInHref } from "@/lib/onboarding";
-import { AUTH_ROUTES, getVerifyEmailHref } from "@/lib/routes";
+import {
+	AUTH_ROUTES,
+	getForgotPasswordHref,
+	getVerifyEmailHref
+} from "@/lib/routes";
 import { type LoginValues, loginSchema } from "@/lib/validation/auth";
 import { authClient } from "@/server/better-auth/client";
 import {
@@ -29,6 +33,7 @@ export function LoginForm({ googleFailed }: { googleFailed: boolean }) {
 		defaultValues: { email: "", password: "" },
 		resolver: zodResolver(loginSchema)
 	});
+	const email = useWatch({ control: form.control, name: "email" });
 
 	const logIn = useMutation({
 		mutationFn: async (values: LoginValues) =>
@@ -75,14 +80,22 @@ export function LoginForm({ googleFailed }: { googleFailed: boolean }) {
 						placeholder="Email"
 						type="email"
 					/>
-					<PasswordField
-						autoComplete="current-password"
-						control={form.control}
-						disabled={isBusy}
-						label="Password"
-						name="password"
-						placeholder="Password"
-					/>
+					<div className="flex flex-col items-end gap-2">
+						<PasswordField
+							autoComplete="current-password"
+							control={form.control}
+							disabled={isBusy}
+							label="Password"
+							name="password"
+							placeholder="Password"
+						/>
+						<Link
+							className="font-medium text-purple-800 text-sm underline-offset-4 hover:underline"
+							href={getForgotPasswordHref(email)}
+						>
+							Forgot password?
+						</Link>
+					</div>
 				</FieldGroup>
 				<AuthActions>
 					<Button className="w-full" disabled={isBusy} type="submit">

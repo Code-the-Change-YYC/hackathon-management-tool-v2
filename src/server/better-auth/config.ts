@@ -9,6 +9,8 @@ import { LEVELS_OF_STUDY, PROGRAMS } from "@/server/db/auth-schema";
 import { sendEmail } from "@/server/email";
 import {
 	existingAccountEmail,
+	passwordChangedEmail,
+	passwordResetCodeEmail,
 	verificationCodeEmail
 } from "@/server/email/templates";
 
@@ -45,6 +47,24 @@ export const betterAuthDefaultConfig = {
 				to: user.email,
 				...existingAccountEmail({ loginUrl: `${env.BETTER_AUTH_URL}/login` })
 			});
+		},
+		// Forgotten passwords are reset with an emailed code (see emailOTP
+		// below). Resetting logs the account out everywhere, in case someone
+		// else knew the old password, and tells the owner it happened.
+		revokeSessionsOnPasswordReset: true,
+		async onPasswordReset({ user }) {
+			// The password has already changed, so a failed notice shouldn't
+			// make the reset look like it failed.
+			try {
+				await sendEmail({
+					to: user.email,
+					...passwordChangedEmail({
+						forgotPasswordUrl: `${env.BETTER_AUTH_URL}/forgot-password`
+					})
+				});
+			} catch (error) {
+				console.error("Couldn't send the password changed email", error);
+			}
 		}
 	},
 	emailVerification: {
@@ -53,12 +73,13 @@ export const betterAuthDefaultConfig = {
 		sendOnSignIn: true,
 		autoSignInAfterVerification: true
 	},
-	// Email OTP endpoints the app doesn't use: codes only verify emails.
+	// Email OTP endpoints the app doesn't use: codes only verify emails and
+	// reset passwords. Checking a code on its own would reveal which emails
+	// have accounts, so a reset code is only checked along with the new password.
 	disabledPaths: [
 		"/sign-in/email-otp",
 		"/email-otp/check-verification-otp",
-		"/email-otp/request-password-reset",
-		"/email-otp/reset-password",
+		// Deprecated alias of /email-otp/request-password-reset.
 		"/forget-password/email-otp",
 		"/email-otp/request-email-change",
 		"/email-otp/change-email"
@@ -72,15 +93,15 @@ export const betterAuthDefaultConfig = {
 			disableSignUp: true,
 			overrideDefaultEmailVerification: true,
 			async sendVerificationOTP({ email, otp, type }) {
-				if (type !== "email-verification") return;
-
-				await sendEmail({
-					to: email,
-					...verificationCodeEmail({
-						code: otp,
-						expiresInMinutes: VERIFICATION_CODE_TTL_MINUTES
-					})
-				});
+				const content = {
+					code: otp,
+					expiresInMinutes: VERIFICATION_CODE_TTL_MINUTES
+				};
+				if (type === "email-verification") {
+					await sendEmail({ to: email, ...verificationCodeEmail(content) });
+				} else if (type === "forget-password") {
+					await sendEmail({ to: email, ...passwordResetCodeEmail(content) });
+				}
 			}
 		})
 	],

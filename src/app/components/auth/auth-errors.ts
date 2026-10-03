@@ -33,6 +33,19 @@ export function hasAuthErrorCode(error: unknown, ...codes: string[]) {
 	);
 }
 
+/** Errors that belong on a one-time code field rather than in a toast. */
+export function isCodeError(error: unknown) {
+	return (
+		hasAuthErrorCode(
+			error,
+			"INVALID_OTP",
+			"OTP_EXPIRED",
+			"TOO_MANY_ATTEMPTS"
+		) ||
+		(error instanceof AuthClientError && error.status === 429)
+	);
+}
+
 const MESSAGES: Record<string, string> = {
 	INVALID_EMAIL: "Enter a valid email address",
 	INVALID_EMAIL_OR_PASSWORD: "Incorrect email or password",

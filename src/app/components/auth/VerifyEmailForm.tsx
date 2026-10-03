@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -12,7 +11,6 @@ import { CodeField } from "@/app/components/forms/CodeField";
 import { Button } from "@/app/components/ui/button";
 import { Spinner } from "@/app/components/ui/spinner";
 import { getSignedInHref } from "@/lib/onboarding";
-import { AUTH_ROUTES } from "@/lib/routes";
 import {
 	VERIFICATION_CODE_LENGTH,
 	type VerifyEmailValues,
@@ -20,9 +18,8 @@ import {
 } from "@/lib/validation/auth";
 import { authClient } from "@/server/better-auth/client";
 import {
-	AuthClientError,
 	getAuthErrorMessage,
-	hasAuthErrorCode,
+	isCodeError,
 	unwrapAuthResponse
 } from "./auth-errors";
 
@@ -44,15 +41,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
 			router.replace(getSignedInHref(user));
 		},
 		onError: (error) => {
-			const isCodeError =
-				hasAuthErrorCode(
-					error,
-					"INVALID_OTP",
-					"OTP_EXPIRED",
-					"TOO_MANY_ATTEMPTS"
-				) ||
-				(error instanceof AuthClientError && error.status === 429);
-			if (isCodeError) {
+			if (isCodeError(error)) {
 				form.setError(
 					"code",
 					{ message: getAuthErrorMessage(error) },

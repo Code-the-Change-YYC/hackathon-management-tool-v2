@@ -57,11 +57,14 @@ export async function createTestUserWithPassword(
 	return testUser;
 }
 
-/** The latest email verification code sent to an address, read from the database. */
-export async function getVerificationCode(email: string) {
+/** The latest one-time code emailed to an address, read from the database. */
+export async function getVerificationCode(
+	email: string,
+	type: "email-verification" | "forget-password" = "email-verification"
+) {
 	assertE2EDatabaseSafety();
 	const stored = await db.query.verification.findFirst({
-		where: eq(verification.identifier, `email-verification-otp-${email}`)
+		where: eq(verification.identifier, `${type}-otp-${email}`)
 	});
 	// Stored as "<code>:<failed attempts>".
 	return stored?.value.split(":")[0];

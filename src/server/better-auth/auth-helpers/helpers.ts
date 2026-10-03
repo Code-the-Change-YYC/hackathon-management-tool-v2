@@ -33,8 +33,9 @@ export async function requireRole(allowedRoles: Role[]) {
 	return session;
 }
 
-// For the login, sign-up, and verify-email pages: signed-in users are sent on
-// to their dashboard, or to wherever they left off in onboarding.
+// For the login, sign-up, verify-email, and password reset pages: signed-in
+// users are sent on to their dashboard, or to wherever they left off in
+// onboarding.
 export async function redirectSignedInUser() {
 	const session = await getSession();
 	if (session) {
