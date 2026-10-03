@@ -28,7 +28,7 @@ test("an incomplete user completes onboarding and registers", async ({
 		"Undergraduate University (3+ year)"
 	);
 	await onboardingPage.selectOption(
-		"What is your major?*",
+		"What is your major?",
 		"Software Engineering"
 	);
 	await onboardingPage.continue();
