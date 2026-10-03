@@ -13,7 +13,7 @@ const personalDetails = {
 	firstName: "Maria Anne",
 	lastName: "De La Cruz",
 	age: 17,
-	phoneNumber: "403-555-0123",
+	phoneNumber: "+14035550123",
 	countryOfResidence: "CA",
 	school: "Western Canada High School",
 	levelOfStudy: "secondary",

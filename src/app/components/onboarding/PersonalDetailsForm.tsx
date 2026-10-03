@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { ComboboxField } from "@/app/components/forms/ComboboxField";
+import { PhoneField } from "@/app/components/forms/PhoneField";
 import { SchoolField } from "@/app/components/forms/SchoolField";
 import { SelectField } from "@/app/components/forms/SelectField";
 import { TextField } from "@/app/components/forms/TextField";
 import { Button } from "@/app/components/ui/button";
 import { FieldGroup } from "@/app/components/ui/field";
+import { getCountryFlag } from "@/app/components/ui/phone-input";
 import { Spinner } from "@/app/components/ui/spinner";
 import { COUNTRY_CODES, getCountryName } from "@/lib/countries";
 import { ONBOARDING_ROUTES } from "@/lib/routes";
@@ -19,7 +21,6 @@ import {
 	getSchoolName,
 	LEVEL_OF_STUDY_OPTIONS,
 	NAME_MAX_LENGTH,
-	PHONE_NUMBER_MAX_LENGTH,
 	PROGRAM_OPTIONS,
 	type ProfileInput,
 	type ProfileValues,
@@ -57,22 +58,24 @@ export function PersonalDetailsForm({
 			onSubmit={form.handleSubmit((values) => saveDetails.mutate(values))}
 		>
 			<FieldGroup className="gap-6">
-				<TextField
-					autoComplete="given-name"
-					control={form.control}
-					disabled={isBusy}
-					label="First name"
-					maxLength={NAME_MAX_LENGTH}
-					name="firstName"
-				/>
-				<TextField
-					autoComplete="family-name"
-					control={form.control}
-					disabled={isBusy}
-					label="Last name"
-					maxLength={NAME_MAX_LENGTH}
-					name="lastName"
-				/>
+				<div className="grid @sm/field-group:grid-cols-2 gap-6 @sm/field-group:gap-x-4">
+					<TextField
+						autoComplete="given-name"
+						control={form.control}
+						disabled={isBusy}
+						label="First name"
+						maxLength={NAME_MAX_LENGTH}
+						name="firstName"
+					/>
+					<TextField
+						autoComplete="family-name"
+						control={form.control}
+						disabled={isBusy}
+						label="Last name"
+						maxLength={NAME_MAX_LENGTH}
+						name="lastName"
+					/>
+				</div>
 				<SelectField
 					control={form.control}
 					disabled={isBusy}
@@ -81,19 +84,18 @@ export function PersonalDetailsForm({
 					options={AGE_OPTIONS}
 					placeholder="Select your age"
 				/>
-				<TextField
-					autoComplete="tel"
+				<PhoneField
 					control={form.control}
 					disabled={isBusy}
 					label="Phone number"
-					maxLength={PHONE_NUMBER_MAX_LENGTH}
 					name="phoneNumber"
-					type="tel"
+					placeholder="Enter your phone number"
 				/>
 				<ComboboxField
 					control={form.control}
 					disabled={isBusy}
 					emptyMessage="No countries found"
+					itemIcon={getCountryFlag}
 					items={COUNTRY_CODES}
 					itemToLabel={getCountryName}
 					label="Country of residence"

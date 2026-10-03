@@ -126,7 +126,7 @@ export async function seedUsers(): Promise<SeedUsersResult> {
 			firstName,
 			lastName,
 			age: 20,
-			phoneNumber: "403-555-0100",
+			phoneNumber: "+14035550100",
 			countryOfResidence: "CA",
 			dietaryRestrictions: ["halal", "gluten_free"],
 			school: "University of Calgary",

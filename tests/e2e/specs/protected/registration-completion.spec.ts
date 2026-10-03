@@ -71,7 +71,8 @@ test("an incomplete user completes onboarding and registers", async ({
 		firstName: "Maria Anne",
 		lastName: "De La Cruz",
 		age: 19,
-		phoneNumber: "403-555-0123",
+		// Canada is preselected, so the number is saved with its +1.
+		phoneNumber: "+14035550123",
 		countryOfResidence: "CA",
 		school: "University of Calgary",
 		levelOfStudy: "undergraduate_three_plus_year",

@@ -11,7 +11,7 @@ const userWithDetails = {
 	firstName: "E2E",
 	lastName: "Participant",
 	age: 20,
-	phoneNumber: "403-555-0100",
+	phoneNumber: "+14035550100",
 	countryOfResidence: "CA",
 	school: "University of Calgary",
 	levelOfStudy: "undergraduate_three_plus_year",

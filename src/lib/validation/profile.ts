@@ -1,3 +1,7 @@
+import {
+	isValidPhoneNumber,
+	parsePhoneNumberFromString
+} from "libphonenumber-js";
 import { z } from "zod";
 import { isCountryCode } from "@/lib/countries";
 import { getNameParts } from "@/lib/names";
@@ -45,7 +49,6 @@ export const AGE_OPTIONS = Array.from(
 );
 
 export const NAME_MAX_LENGTH = 50;
-export const PHONE_NUMBER_MAX_LENGTH = 30;
 
 /** We only collect a major from University of Calgary students. */
 export function asksForMajor(school: string | null | undefined) {
@@ -72,23 +75,12 @@ const nameSchema = (label: string) =>
 			`${label} must be ${NAME_MAX_LENGTH} characters or fewer`
 		);
 
-const PHONE_NUMBER_CHARACTERS = /^\+?[\d\s().-]+$/;
-
-// Allows common formatting, like "+1 (403) 555-0123", with room for
-// international numbers.
+// The phone input gives numbers in E.164 format, e.g. "+14035550123".
 const phoneNumberSchema = z
 	.string()
 	.trim()
 	.min(1, "Phone number is required")
-	.max(PHONE_NUMBER_MAX_LENGTH, "Enter a valid phone number")
-	.refine((phoneNumber) => {
-		const digitCount = phoneNumber.replace(/\D/g, "").length;
-		return (
-			PHONE_NUMBER_CHARACTERS.test(phoneNumber) &&
-			digitCount >= 10 &&
-			digitCount <= 15
-		);
-	}, "Enter a valid phone number, including the area code");
+	.refine(isValidPhoneNumber, "Enter a valid phone number");
 
 const requiredChoice = (message: string) => ({
 	required_error: message,
@@ -210,11 +202,18 @@ export function getProfileDefaults(user: ProfileUser): Partial<ProfileInput> {
 		firstName: user.firstName ?? nameParts.firstName,
 		lastName: user.lastName ?? nameParts.lastName,
 		age: user.age ?? undefined,
-		phoneNumber: user.phoneNumber ?? "",
+		phoneNumber: toPhoneInputValue(user.phoneNumber),
 		countryOfResidence: user.countryOfResidence ?? undefined,
 		school: typedSchool ? SCHOOL_NOT_LISTED : (user.school ?? undefined),
 		otherSchool: typedSchool ?? "",
 		levelOfStudy: user.levelOfStudy ?? undefined,
 		program: user.program ?? null
 	};
+}
+
+/** A saved phone number in the E.164 format the phone input expects. */
+function toPhoneInputValue(phoneNumber: string | null | undefined) {
+	if (!phoneNumber) return "";
+	// Numbers saved without a country code are Canadian.
+	return parsePhoneNumberFromString(phoneNumber, "CA")?.number ?? "";
 }

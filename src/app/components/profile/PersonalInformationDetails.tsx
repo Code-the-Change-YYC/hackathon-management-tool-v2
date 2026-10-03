@@ -1,5 +1,6 @@
 "use client";
 
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { EditIcon } from "@/app/components/layout/icons";
 import { Button } from "@/app/components/ui/button";
 import { getCountryName } from "@/lib/countries";
@@ -20,7 +21,15 @@ function getDetails(profile: Profile): Detail[] {
 		{ label: "First name", value: profile.firstName ?? nameParts.firstName },
 		{ label: "Last name", value: profile.lastName ?? nameParts.lastName },
 		{ label: "Age", value: profile.age == null ? null : String(profile.age) },
-		{ label: "Phone number", value: profile.phoneNumber },
+		{
+			label: "Phone number",
+			value:
+				profile.phoneNumber &&
+				(parsePhoneNumberFromString(
+					profile.phoneNumber
+				)?.formatInternational() ??
+					profile.phoneNumber)
+		},
 		{
 			label: "Country of residence",
 			value:

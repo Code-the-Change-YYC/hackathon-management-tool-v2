@@ -11,7 +11,7 @@ const validForm: ProfileInput = {
 	firstName: "Maria Anne",
 	lastName: "De La Cruz",
 	age: 19,
-	phoneNumber: "+1 (403) 555-0123",
+	phoneNumber: "+14035550123",
 	countryOfResidence: "CA",
 	school: "Mount Royal University",
 	otherSchool: "",
@@ -72,22 +72,14 @@ describe("profile form", () => {
 		).toBeNull();
 	});
 
-	it("accepts phone numbers with an area code in common formats", () => {
-		for (const phoneNumber of [
-			"4035550123",
-			"403-555-0123",
-			"(403) 555.0123",
-			"+44 20 7946 0958"
-		]) {
+	it("accepts real phone numbers from the phone input", () => {
+		for (const phoneNumber of ["+14035550123", "+442079460958"]) {
 			expect(
 				profileFormSchema.safeParse({ ...validForm, phoneNumber }).success
 			).toBe(true);
 		}
-		for (const phoneNumber of [
-			"555-0123",
-			"call me",
-			"+1 403 555 0123 ext 4"
-		]) {
+		// Too short, an area code that doesn't exist, and no country code.
+		for (const phoneNumber of ["+1403555", "+15555550123", "4035550123"]) {
 			expect(
 				getErrorPaths(
 					profileFormSchema.safeParse({ ...validForm, phoneNumber })
@@ -134,6 +126,15 @@ describe("profile form defaults", () => {
 		expect(
 			getProfileDefaults({ ...user, firstName: null, lastName: null })
 		).toMatchObject({ firstName: "Maria", lastName: "Anne De La Cruz" });
+	});
+
+	it("gives the phone input saved numbers in E.164 format", () => {
+		expect(
+			getProfileDefaults({ ...user, phoneNumber: "+14035550123" })
+		).toMatchObject({ phoneNumber: "+14035550123" });
+		expect(
+			getProfileDefaults({ ...user, phoneNumber: "(403) 555-0123" })
+		).toMatchObject({ phoneNumber: "+14035550123" });
 	});
 
 	it("shows a school that isn't on MLH's list as typed in", () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { type ReactNode, useId, useMemo, useState } from "react";
 import {
 	type Control,
 	type FieldPath,
@@ -13,9 +13,11 @@ import {
 	ComboboxEmpty,
 	ComboboxInput,
 	ComboboxItem,
-	ComboboxList
+	ComboboxList,
+	useComboboxAnchor
 } from "@/app/components/ui/combobox";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { InputGroupAddon } from "@/app/components/ui/input-group";
 import { Spinner } from "@/app/components/ui/spinner";
 
 /** Lowercase, without accents or punctuation, so "quebec" finds "Québec". */
@@ -42,6 +44,7 @@ type ComboboxFieldProps<
 	fallbackItem?: string;
 	limit?: number;
 	itemToLabel?: (item: string) => string;
+	itemIcon?: (item: string) => ReactNode;
 	placeholder?: string;
 	emptyMessage?: string;
 	loading?: boolean;
@@ -62,6 +65,7 @@ export function ComboboxField<
 	fallbackItem,
 	limit,
 	itemToLabel = toLabel,
+	itemIcon,
 	placeholder,
 	emptyMessage = "No results found",
 	loading,
@@ -69,6 +73,8 @@ export function ComboboxField<
 }: ComboboxFieldProps<TFieldValues, TName, TTransformedValues>) {
 	const { field, fieldState } = useController({ control, name });
 	const id = useId();
+	// The list lines up with the whole field, not just the text input inside it.
+	const anchor = useComboboxAnchor();
 	const [query, setQuery] = useState("");
 
 	const searchIndex = useMemo(
@@ -111,15 +117,23 @@ export function ComboboxField<
 				onValueChange={field.onChange}
 				value={field.value ?? null}
 			>
-				<ComboboxInput
-					aria-invalid={fieldState.invalid}
-					disabled={disabled}
-					id={id}
-					onBlur={field.onBlur}
-					placeholder={placeholder}
-					ref={field.ref}
-				/>
-				<ComboboxContent>
+				<div ref={anchor}>
+					<ComboboxInput
+						aria-invalid={fieldState.invalid}
+						disabled={disabled}
+						id={id}
+						onBlur={field.onBlur}
+						placeholder={placeholder}
+						ref={field.ref}
+					>
+						{itemIcon && field.value && (
+							<InputGroupAddon align="inline-start">
+								{itemIcon(field.value)}
+							</InputGroupAddon>
+						)}
+					</ComboboxInput>
+				</div>
+				<ComboboxContent anchor={anchor}>
 					{loading && (
 						<div className="flex items-center gap-2 px-3 pt-2 text-muted-foreground text-sm">
 							<Spinner />
@@ -130,6 +144,7 @@ export function ComboboxField<
 					<ComboboxList>
 						{(item: string) => (
 							<ComboboxItem key={item} value={item}>
+								{itemIcon?.(item)}
 								{itemToLabel(item)}
 							</ComboboxItem>
 						)}
