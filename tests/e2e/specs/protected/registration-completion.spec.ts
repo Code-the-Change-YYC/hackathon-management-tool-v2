@@ -34,10 +34,6 @@ test("an incomplete user completes onboarding and registers", async ({
 	await onboardingPage.continue();
 
 	await expect(page).toHaveURL(/\/onboarding\/food-preferences$/);
-	await onboardingPage.selectOption(
-		"Do you want to be provided free meals at the hackathon?",
-		"No"
-	);
 	await onboardingPage.continue();
 
 	await expect(page).toHaveURL(/\/onboarding\/mlh-policies$/);

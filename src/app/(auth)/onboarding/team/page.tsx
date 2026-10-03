@@ -10,7 +10,7 @@ export default async function TeamPage() {
 	return (
 		<>
 			<AuthHeading>
-				Select the statement that describes your situation best:
+				Select the statement that describes your situation best
 			</AuthHeading>
 			<TeamSituationForm />
 		</>

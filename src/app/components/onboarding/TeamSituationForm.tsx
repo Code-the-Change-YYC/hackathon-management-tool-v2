@@ -86,7 +86,10 @@ export function TeamSituationForm() {
 									htmlFor={`situation-${situation}`}
 									key={situation}
 								>
-									<Field orientation="horizontal">
+									<Field
+										className="has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-1"
+										orientation="horizontal"
+									>
 										<RadioGroupItem
 											aria-invalid={fieldState.invalid}
 											id={`situation-${situation}`}

@@ -11,7 +11,7 @@ export default async function FoodPreferencesPage() {
 			<AuthHeading>Fill out your food preferences</AuthHeading>
 			<FoodPreferencesForm
 				defaultValues={{
-					wantsFood: user.wantsFood ?? undefined,
+					wantsFood: user.wantsFood ?? false,
 					dietaryRestrictions: toDietaryRestrictions(user.dietaryRestrictions)
 				}}
 			/>

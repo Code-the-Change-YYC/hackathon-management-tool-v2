@@ -1,4 +1,4 @@
-import { CheckLine, CloseLine } from "@mingcute/react";
+import { CheckCircleFill, CloseCircleFill } from "@mingcute/react";
 import { cn } from "@/lib/utils";
 import { PASSWORD_REQUIREMENTS } from "@/lib/validation/auth";
 
@@ -8,7 +8,7 @@ export function PasswordRequirements({ password }: { password: string }) {
 		<ul className="flex flex-col gap-1 pt-0.5">
 			{PASSWORD_REQUIREMENTS.map(({ label, isMet }) => {
 				const met = isMet(password);
-				const Icon = met ? CheckLine : CloseLine;
+				const Icon = met ? CheckCircleFill : CloseCircleFill;
 
 				return (
 					<li

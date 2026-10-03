@@ -1,10 +1,9 @@
 "use client";
 
-import { AddLine, CloseLine } from "@mingcute/react";
 import { type Control, useController } from "react-hook-form";
 import { Badge } from "@/app/components/ui/badge";
-import { Button } from "@/app/components/ui/button";
 import { FieldLegend, FieldSet } from "@/app/components/ui/field";
+import { cn } from "@/lib/utils";
 import {
 	DIETARY_RESTRICTION_LABELS,
 	DIETARY_RESTRICTIONS,
@@ -21,72 +20,40 @@ export function DietaryRestrictionsField({
 }) {
 	const { field } = useController({ control, name: "dietaryRestrictions" });
 	const selected = field.value;
-	const available = DIETARY_RESTRICTIONS.filter(
-		(restriction) => !selected.includes(restriction)
-	);
 
-	function add(restriction: DietaryRestriction) {
-		field.onChange([...selected, restriction]);
-	}
-
-	function remove(restriction: DietaryRestriction) {
-		field.onChange(selected.filter((value) => value !== restriction));
+	function toggle(restriction: DietaryRestriction) {
+		field.onChange(
+			selected.includes(restriction)
+				? selected.filter((value) => value !== restriction)
+				: [...selected, restriction]
+		);
 	}
 
 	return (
-		<FieldSet className="gap-4" disabled={disabled}>
-			<FieldLegend
-				className="mb-0 font-normal text-muted-foreground text-xs"
-				variant="label"
-			>
-				Please indicate any dietary restrictions you may have:
-			</FieldLegend>
-			<FieldSet className="gap-2">
-				<FieldLegend className="mb-0" variant="label">
-					Your dietary restrictions:
-				</FieldLegend>
-				<div className="flex flex-wrap gap-2">
-					{selected.length > 0 ? (
-						selected.map((restriction) => (
-							<Badge
-								aria-label={`Remove ${DIETARY_RESTRICTION_LABELS[restriction]}`}
-								className="h-8 cursor-pointer px-3"
-								key={restriction}
-								onClick={() => remove(restriction)}
-								render={<button type="button" />}
-								variant="accent"
-							>
-								{DIETARY_RESTRICTION_LABELS[restriction]}
-								<CloseLine data-icon="inline-end" />
-							</Badge>
-						))
-					) : (
-						<p className="text-muted-foreground text-sm">None selected</p>
-					)}
-				</div>
-			</FieldSet>
-			{available.length > 0 && (
-				<FieldSet className="gap-2">
-					<FieldLegend className="mb-0" variant="label">
-						Add a restriction:
-					</FieldLegend>
-					<div className="flex flex-wrap gap-2">
-						{available.map((restriction) => (
-							<Button
-								aria-label={`Add ${DIETARY_RESTRICTION_LABELS[restriction]}`}
-								key={restriction}
-								onClick={() => add(restriction)}
-								size="sm"
-								type="button"
-								variant="outline"
-							>
-								{DIETARY_RESTRICTION_LABELS[restriction]}
-								<AddLine data-icon="inline-end" />
-							</Button>
-						))}
-					</div>
-				</FieldSet>
-			)}
+		<FieldSet className="gap-2" disabled={disabled}>
+			<FieldLegend variant="label">Your dietary restrictions</FieldLegend>
+			<div className="mt-2 flex flex-wrap gap-2">
+				{DIETARY_RESTRICTIONS.map((restriction) => {
+					const isSelected = selected.includes(restriction);
+
+					return (
+						<Badge
+							aria-pressed={isSelected}
+							className={cn(
+								"h-8 cursor-pointer px-3",
+								!isSelected && "border-muted bg-muted text-muted-foreground"
+							)}
+							key={restriction}
+							render={
+								<button onClick={() => toggle(restriction)} type="button" />
+							}
+							variant={isSelected ? "default" : "outline"}
+						>
+							{DIETARY_RESTRICTION_LABELS[restriction]}
+						</Badge>
+					);
+				})}
+			</div>
 		</FieldSet>
 	);
 }

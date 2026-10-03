@@ -4,10 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import {
-	SelectField,
-	type SelectOption
-} from "@/app/components/forms/SelectField";
+import { CheckboxField } from "@/app/components/forms/CheckboxField";
 import { Button } from "@/app/components/ui/button";
 import { FieldGroup } from "@/app/components/ui/field";
 import { Spinner } from "@/app/components/ui/spinner";
@@ -18,11 +15,6 @@ import {
 } from "@/lib/validation/signup";
 import { api } from "@/trpc/react";
 import { DietaryRestrictionsField } from "./DietaryRestrictionsField";
-
-const MEAL_OPTIONS: SelectOption<boolean>[] = [
-	{ value: true, label: "Yes" },
-	{ value: false, label: "No" }
-];
 
 export function FoodPreferencesForm({
 	defaultValues
@@ -50,14 +42,13 @@ export function FoodPreferencesForm({
 			onSubmit={form.handleSubmit((values) => savePreferences.mutate(values))}
 		>
 			<FieldGroup className="gap-6">
-				<SelectField
+				<CheckboxField
 					control={form.control}
 					disabled={isBusy}
-					label="Do you want to be provided free meals at the hackathon?"
 					name="wantsFood"
-					options={MEAL_OPTIONS}
-					placeholder="Please select an option"
-				/>
+				>
+					I want to be provided free meals at the hackathon
+				</CheckboxField>
 				<DietaryRestrictionsField control={form.control} disabled={isBusy} />
 			</FieldGroup>
 			<Button className="w-full" disabled={isBusy} type="submit">

@@ -78,13 +78,8 @@ export const dietaryRestrictionsSchema = z
 		{ message: "Duplicate dietary restrictions are not allowed" }
 	);
 
-const WANTS_FOOD_REQUIRED = "Let us know if you'd like free meals";
-
 export const foodPreferencesSchema = z.object({
-	wantsFood: z.boolean({
-		invalid_type_error: WANTS_FOOD_REQUIRED,
-		required_error: WANTS_FOOD_REQUIRED
-	}),
+	wantsFood: z.boolean(),
 	dietaryRestrictions: dietaryRestrictionsSchema
 });
 
