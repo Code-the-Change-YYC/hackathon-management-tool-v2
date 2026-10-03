@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { DASHBOARD_HREFS, LOGIN_HREF, SIGNUP_HREF } from "@/lib/constants";
+import { DASHBOARD_HREFS } from "@/lib/constants";
 import { authClient } from "@/server/better-auth/client";
 import { Role } from "@/types/types";
 
@@ -34,7 +34,7 @@ export default function Header() {
 		<header className="fixed inset-x-0 top-0 z-10 flex h-16 w-full items-center justify-between bg-white px-6 py-6 md:h-22 md:px-16 md:py-8">
 			<div className="text-center">
 				{!isSignedIn && (
-					<Link className={LINK_STYLES} href={SIGNUP_HREF}>
+					<Link className={LINK_STYLES} href="/signup">
 						<span className="hidden sm:block">Join Hackathon</span>
 						<span className="sm:hidden">Join</span>
 					</Link>
@@ -58,8 +58,8 @@ export default function Header() {
 
 			<div className="flex min-w-25 justify-end">
 				{!isSignedIn && (
-					<Link className={LINK_STYLES} href={LOGIN_HREF}>
-						Sign In
+					<Link className={LINK_STYLES} href="/login">
+						Log in
 					</Link>
 				)}
 				{isSignedIn && (
@@ -68,7 +68,7 @@ export default function Header() {
 						onClick={handleSignOut}
 						type="button"
 					>
-						Sign Out
+						Log out
 					</button>
 				)}
 			</div>

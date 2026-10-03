@@ -27,7 +27,10 @@ export default defineConfig({
 			? "pnpm exec next dev --port 3000"
 			: "pnpm dev --port 3000",
 		env: {
-			DATABASE_URL: env.DATABASE_URL
+			DATABASE_URL: env.DATABASE_URL,
+			// Tests sign up throwaway addresses, so print emails to the console
+			// rather than sending them, even when .env has a Resend key.
+			RESEND_API_KEY: ""
 		},
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,

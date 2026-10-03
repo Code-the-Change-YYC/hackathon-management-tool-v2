@@ -115,7 +115,7 @@ test("join flow accepts a valid code and shows success modal", async ({
 	await page.getByRole("button", { name: "Continue" }).click();
 
 	await expect(
-		page.getByText("Enter your team's Invite Code to join")
+		page.getByText("Enter your team’s invite code to join")
 	).toBeVisible();
 	const code = team.teamCode ?? "";
 	for (let i = 0; i < code.length; i++) {
@@ -142,7 +142,7 @@ test("join modal shows an error for an unknown code", async ({
 	await page.getByRole("button", { name: "Continue" }).click();
 
 	await expect(
-		page.getByText("Enter your team's Invite Code to join")
+		page.getByText("Enter your team’s invite code to join")
 	).toBeVisible();
 	const bogus = "ZZZZZZ";
 	for (let i = 0; i < bogus.length; i++) {
