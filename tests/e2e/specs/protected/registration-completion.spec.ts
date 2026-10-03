@@ -15,7 +15,7 @@ test("an incomplete user completes onboarding and registers", async ({
 
 	await page.getByLabel("First name", { exact: true }).fill("Maria Anne");
 	await page.getByLabel("Last name", { exact: true }).fill("De La Cruz");
-	await onboardingPage.selectOption("Age", "19");
+	await page.getByLabel("Age", { exact: true }).fill("19");
 	await page.getByLabel("Phone number", { exact: true }).fill("403-555-0123");
 	await onboardingPage.searchAndChoose("Country of residence", "can", "Canada");
 	await onboardingPage.searchAndChoose(

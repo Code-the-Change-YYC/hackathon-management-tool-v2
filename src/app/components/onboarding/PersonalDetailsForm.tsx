@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { ComboboxField } from "@/app/components/forms/ComboboxField";
+import { NumberField } from "@/app/components/forms/NumberField";
 import { PhoneField } from "@/app/components/forms/PhoneField";
 import { SchoolField } from "@/app/components/forms/SchoolField";
 import { SelectField } from "@/app/components/forms/SelectField";
@@ -16,10 +17,11 @@ import { Spinner } from "@/app/components/ui/spinner";
 import { COUNTRY_CODES, getCountryName } from "@/lib/countries";
 import { ONBOARDING_ROUTES } from "@/lib/routes";
 import {
-	AGE_OPTIONS,
 	asksForMajor,
 	getSchoolName,
 	LEVEL_OF_STUDY_OPTIONS,
+	MAX_AGE,
+	MIN_AGE,
 	NAME_MAX_LENGTH,
 	PROGRAM_OPTIONS,
 	type ProfileInput,
@@ -76,13 +78,14 @@ export function PersonalDetailsForm({
 						name="lastName"
 					/>
 				</div>
-				<SelectField
+				<NumberField
 					control={form.control}
 					disabled={isBusy}
 					label="Age"
+					max={MAX_AGE}
+					min={MIN_AGE}
 					name="age"
-					options={AGE_OPTIONS}
-					placeholder="Select your age"
+					placeholder="Enter your age"
 				/>
 				<PhoneField
 					control={form.control}
@@ -119,7 +122,7 @@ export function PersonalDetailsForm({
 					<SelectField
 						control={form.control}
 						disabled={isBusy}
-						label="What is your major?*"
+						label="What is your major?"
 						name="program"
 						options={PROGRAM_OPTIONS}
 						placeholder="Select a major"

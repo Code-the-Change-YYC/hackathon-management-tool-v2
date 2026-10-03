@@ -36,17 +36,9 @@ export const LEVEL_OF_STUDY_OPTIONS = LEVELS_OF_STUDY.map((level) => ({
 }));
 
 // MLH asks for an age rather than a date of birth. High school students can
-// take part, so the youngest option is 13.
+// take part, so the youngest allowed is 13.
 export const MIN_AGE = 13;
 export const MAX_AGE = 99;
-
-export const AGE_OPTIONS = Array.from(
-	{ length: MAX_AGE - MIN_AGE + 1 },
-	(_, index) => {
-		const age = MIN_AGE + index;
-		return { value: age, label: String(age) };
-	}
-);
 
 export const NAME_MAX_LENGTH = 50;
 
@@ -90,11 +82,18 @@ const requiredChoice = (message: string) => ({
 const detailsSchema = z.object({
 	firstName: nameSchema("First name"),
 	lastName: nameSchema("Last name"),
-	age: z
-		.number(requiredChoice("Select your age"))
-		.int()
-		.min(MIN_AGE, "Select your age")
-		.max(MAX_AGE, "Select your age"),
+	// The age field gives a number, or null while it's empty.
+	age: z.preprocess(
+		(age) => (age === "" || age == null ? undefined : Number(age)),
+		z
+			.number({
+				required_error: "Enter your age",
+				invalid_type_error: "Enter your age as a number"
+			})
+			.int("Enter your age as a whole number")
+			.min(MIN_AGE, `Participants must be at least ${MIN_AGE}`)
+			.max(MAX_AGE, `Enter an age of ${MAX_AGE} or under`)
+	),
 	phoneNumber: phoneNumberSchema,
 	countryOfResidence: z
 		.string(requiredChoice("Select your country of residence"))
@@ -201,7 +200,7 @@ export function getProfileDefaults(user: ProfileUser): Partial<ProfileInput> {
 	return {
 		firstName: user.firstName ?? nameParts.firstName,
 		lastName: user.lastName ?? nameParts.lastName,
-		age: user.age ?? undefined,
+		age: user.age ?? null,
 		phoneNumber: toPhoneInputValue(user.phoneNumber),
 		countryOfResidence: user.countryOfResidence ?? undefined,
 		school: typedSchool ? SCHOOL_NOT_LISTED : (user.school ?? undefined),

@@ -6,6 +6,7 @@ import { useTransition } from "react";
 import { useForm, useFormState, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { ComboboxField } from "@/app/components/forms/ComboboxField";
+import { NumberField } from "@/app/components/forms/NumberField";
 import { PhoneField } from "@/app/components/forms/PhoneField";
 import { SchoolField } from "@/app/components/forms/SchoolField";
 import { SelectField } from "@/app/components/forms/SelectField";
@@ -16,11 +17,12 @@ import { getCountryFlag } from "@/app/components/ui/phone-input";
 import { Spinner } from "@/app/components/ui/spinner";
 import { COUNTRY_CODES, getCountryName } from "@/lib/countries";
 import {
-	AGE_OPTIONS,
 	asksForMajor,
 	getProfileDefaults,
 	getSchoolName,
 	LEVEL_OF_STUDY_OPTIONS,
+	MAX_AGE,
+	MIN_AGE,
 	NAME_MAX_LENGTH,
 	PROGRAM_OPTIONS,
 	type ProfileInput,
@@ -118,13 +120,14 @@ export function PersonalInformationForm({
 						maxLength={NAME_MAX_LENGTH}
 						name="lastName"
 					/>
-					<SelectField
+					<NumberField
 						control={form.control}
 						disabled={isSaving}
 						label="Age"
+						max={MAX_AGE}
+						min={MIN_AGE}
 						name="age"
-						options={AGE_OPTIONS}
-						placeholder="Select your age"
+						placeholder="Enter your age"
 					/>
 					<PhoneField
 						control={form.control}

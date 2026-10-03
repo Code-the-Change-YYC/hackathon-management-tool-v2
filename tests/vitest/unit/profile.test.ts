@@ -88,10 +88,24 @@ describe("profile form", () => {
 		}
 	});
 
-	it("requires an age from the list and an ISO country code", () => {
-		expect(
-			getErrorPaths(profileFormSchema.safeParse({ ...validForm, age: 12 }))
-		).toEqual(["age"]);
+	it("turns the typed age into a whole number between 13 and 99", () => {
+		expect(profileFormSchema.parse({ ...validForm, age: "19" }).age).toBe(19);
+
+		for (const [age, message] of [
+			["", "Enter your age"],
+			["abc", "Enter your age as a number"],
+			["19.5", "Enter your age as a whole number"],
+			["12", "Participants must be at least 13"],
+			["100", "Enter an age of 99 or under"]
+		]) {
+			const result = profileFormSchema.safeParse({ ...validForm, age });
+			expect(result.error?.issues).toEqual([
+				expect.objectContaining({ message, path: ["age"] })
+			]);
+		}
+	});
+
+	it("requires an ISO country code", () => {
 		expect(
 			getErrorPaths(
 				profileFormSchema.safeParse({
