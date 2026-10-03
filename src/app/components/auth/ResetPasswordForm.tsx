@@ -92,8 +92,8 @@ export function ResetPasswordForm({ email }: { email: string }) {
 	return (
 		<>
 			<p>
-				If <span className="break-all font-medium">{email}</span> has an
-				account, we sent it an email with a one-time code.{" "}
+				If <span className="font-medium">{email}</span> has an account, we sent
+				it an email with a one-time code.{" "}
 				<Link
 					className="font-medium text-purple-800 underline-offset-4 hover:underline"
 					href={getForgotPasswordHref(email)}

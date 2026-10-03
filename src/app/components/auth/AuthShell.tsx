@@ -14,7 +14,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 					src="/images/auth-background.webp"
 				/>
 			</div>
-			<main className="theme-auth lg:no-scrollbar flex w-full max-w-160 flex-col gap-6 rounded-2xl bg-background px-6 py-12 text-foreground shadow-elevation-500 sm:px-20 lg:m-4 lg:w-160 lg:max-w-none lg:scroll-pb-48 lg:overflow-y-auto">
+			<main className="theme-auth lg:no-scrollbar wrap-anywhere flex w-full max-w-160 flex-col gap-6 rounded-2xl bg-background px-6 py-12 text-foreground shadow-elevation-500 sm:px-20 lg:m-4 lg:w-160 lg:max-w-none lg:scroll-pb-48 lg:overflow-y-auto">
 				<Image
 					alt="Code the Change YYC"
 					className="self-center"
