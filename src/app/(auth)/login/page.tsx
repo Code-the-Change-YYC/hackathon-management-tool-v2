@@ -19,7 +19,7 @@ export default async function LoginPage({
 	return (
 		<>
 			<AuthHeading title="Welcome back to Hack the Change 2026!" />
-			<LoginForm googleFailed={Boolean(error)} />
+			<LoginForm googleError={Array.isArray(error) ? error[0] : error} />
 		</>
 	);
 }

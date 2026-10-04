@@ -19,7 +19,7 @@ export default async function SignupPage({
 	return (
 		<>
 			<AuthHeading title="Welcome to Hack the Change 2026!" />
-			<SignupForm googleFailed={Boolean(error)} />
+			<SignupForm googleError={Array.isArray(error) ? error[0] : error} />
 		</>
 	);
 }

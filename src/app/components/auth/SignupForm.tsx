@@ -23,7 +23,7 @@ import {
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { PasswordRequirements } from "./PasswordRequirements";
 
-export function SignupForm({ googleFailed }: { googleFailed: boolean }) {
+export function SignupForm({ googleError }: { googleError?: string }) {
 	const router = useRouter();
 	const form = useForm<SignupValues>({
 		defaultValues: { email: "", password: "" },
@@ -64,8 +64,8 @@ export function SignupForm({ googleFailed }: { googleFailed: boolean }) {
 	return (
 		<>
 			<GoogleSignInButton
+				error={googleError}
 				errorCallbackURL={AUTH_ROUTES.signup}
-				failed={googleFailed}
 			/>
 			<FieldSeparator className="my-0">OR</FieldSeparator>
 			<form
