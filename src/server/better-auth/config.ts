@@ -14,6 +14,7 @@ import {
 	existingAccountEmail,
 	passwordChangedEmail,
 	passwordResetCodeEmail,
+	unfinishedSignUpEmail,
 	verificationCodeEmail
 } from "@/server/email/templates";
 
@@ -45,7 +46,23 @@ export const betterAuthDefaultConfig = {
 		// get a session. Signing up with a taken email looks the same as a new
 		// sign-up (so accounts can't be enumerated); the owner gets a heads-up.
 		requireEmailVerification: true,
-		async onExistingUserSignUp({ user }) {
+		async onExistingUserSignUp({ user }): Promise<void> {
+			// Someone who never verified is most likely signing up again, and is
+			// now on the verify page waiting for a code, so send them one.
+			if (!user.emailVerified) {
+				const code = await auth.api.createVerificationOTP({
+					body: { email: user.email, type: "email-verification" }
+				});
+				await sendEmail({
+					to: user.email,
+					...unfinishedSignUpEmail({
+						code,
+						expiresInMinutes: VERIFICATION_CODE_TTL_MINUTES,
+						forgotPasswordUrl: `${env.BETTER_AUTH_URL}/forgot-password`
+					})
+				});
+				return;
+			}
 			await sendEmail({
 				to: user.email,
 				...existingAccountEmail({ loginUrl: `${env.BETTER_AUTH_URL}/login` })

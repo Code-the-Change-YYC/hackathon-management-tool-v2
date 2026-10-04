@@ -22,6 +22,28 @@ export function verificationCodeEmail({
 	};
 }
 
+/**
+ * For someone who signs up again before verifying their first sign-up. The
+ * account keeps the password from that first sign-up.
+ */
+export function unfinishedSignUpEmail({
+	code,
+	expiresInMinutes,
+	forgotPasswordUrl
+}: {
+	code: string;
+	expiresInMinutes: number;
+	forgotPasswordUrl: string;
+}): EmailContent {
+	return {
+		subject: `${code} is your Hack the Change verification code`,
+		text: `Your Hack the Change verification code is ${code}. It expires in ${expiresInMinutes} minutes.\n\nYou’ve signed up with this email before, so your password is the one you chose the first time. If you don’t remember it, reset it after verifying: ${forgotPasswordUrl}\n\nIf you didn’t create an account, you can ignore this email.`,
+		html: layout(
+			`<p>Enter this code to verify your email and finish creating your Hack the Change account:</p><p style="font-size: 32px; line-height: 40px; font-weight: 600; letter-spacing: 8px;">${code}</p><p>It expires in ${expiresInMinutes} minutes.</p><p>You’ve signed up with this email before, so your password is the one you chose the first time. If you don’t remember it, <a href="${forgotPasswordUrl}" style="color: #2911a7;">reset it</a> after verifying.</p><p>If you didn’t create an account, you can ignore this email.</p>`
+		)
+	};
+}
+
 export function passwordResetCodeEmail({
 	code,
 	expiresInMinutes
