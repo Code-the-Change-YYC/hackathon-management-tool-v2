@@ -47,7 +47,11 @@ export function PersonalDetailsForm({
 	});
 
 	const saveDetails = api.users.updateProfile.useMutation({
-		onSuccess: () => router.push(ONBOARDING_ROUTES.foodPreferences),
+		onSuccess: () => {
+			router.push(ONBOARDING_ROUTES.foodPreferences);
+			// Drops cached pages, so going back shows the saved answers.
+			router.refresh();
+		},
 		onError: () =>
 			toast.error("We couldn’t save your details. Please try again.")
 	});

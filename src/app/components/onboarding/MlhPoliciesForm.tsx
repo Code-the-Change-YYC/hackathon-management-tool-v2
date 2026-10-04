@@ -48,7 +48,11 @@ export function MlhPoliciesForm({
 	});
 
 	const acceptPolicies = api.users.acceptMlhPolicies.useMutation({
-		onSuccess: () => router.push(ONBOARDING_ROUTES.discord),
+		onSuccess: () => {
+			router.push(ONBOARDING_ROUTES.discord);
+			// Drops cached pages, so going back shows the saved answers.
+			router.refresh();
+		},
 		onError: () =>
 			toast.error("We couldn’t save your answers. Please try again.")
 	});

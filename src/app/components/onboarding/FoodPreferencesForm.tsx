@@ -29,7 +29,11 @@ export function FoodPreferencesForm({
 	});
 
 	const savePreferences = api.users.updateFoodPreferences.useMutation({
-		onSuccess: () => router.push(ONBOARDING_ROUTES.mlhPolicies),
+		onSuccess: () => {
+			router.push(ONBOARDING_ROUTES.mlhPolicies);
+			// Drops cached pages, so going back shows the saved answers.
+			router.refresh();
+		},
 		onError: () =>
 			toast.error("We couldn’t save your food preferences. Please try again.")
 	});

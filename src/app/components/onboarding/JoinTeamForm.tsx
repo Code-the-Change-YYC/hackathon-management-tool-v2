@@ -28,7 +28,11 @@ export function JoinTeamForm() {
 	const teamCode = useWatch({ control: form.control, name: "teamCode" });
 
 	const joinTeam = api.teams.join.useMutation({
-		onSuccess: () => router.push(ONBOARDING_ROUTES.teamJoined),
+		onSuccess: () => {
+			router.push(ONBOARDING_ROUTES.teamJoined);
+			// Drops cached pages, so going back shows the saved answers.
+			router.refresh();
+		},
 		onError: (error) => {
 			if (error.data?.code === "NOT_FOUND") {
 				form.setError(

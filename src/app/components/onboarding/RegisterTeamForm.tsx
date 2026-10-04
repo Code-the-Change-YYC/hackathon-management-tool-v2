@@ -25,7 +25,11 @@ export function RegisterTeamForm() {
 	});
 
 	const registerTeam = api.teams.create.useMutation({
-		onSuccess: () => router.push(ONBOARDING_ROUTES.teamRegistered),
+		onSuccess: () => {
+			router.push(ONBOARDING_ROUTES.teamRegistered);
+			// Drops cached pages, so going back shows the saved answers.
+			router.refresh();
+		},
 		onError: (error) => {
 			if (error.data?.code === "BAD_REQUEST") {
 				form.setError(
