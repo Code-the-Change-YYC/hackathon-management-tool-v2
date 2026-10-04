@@ -34,6 +34,10 @@ export function JoinTeamForm() {
 			router.refresh();
 		},
 		onError: (error) => {
+			const isCodeError =
+				error.data?.code === "NOT_FOUND" || error.data?.code === "BAD_REQUEST";
+			if (isCodeError) form.setValue("teamCode", ""); // Clear the failed code for the next try.
+
 			if (error.data?.code === "NOT_FOUND") {
 				form.setError(
 					"teamCode",
@@ -58,12 +62,10 @@ export function JoinTeamForm() {
 	// Stay busy after success while the next step loads.
 	const isBusy = joinTeam.isPending || joinTeam.isSuccess;
 
+	const submit = form.handleSubmit((values) => joinTeam.mutate(values));
+
 	return (
-		<form
-			className="flex flex-col gap-6"
-			noValidate
-			onSubmit={form.handleSubmit((values) => joinTeam.mutate(values))}
-		>
+		<form className="flex flex-col gap-6" noValidate onSubmit={submit}>
 			<CodeField
 				control={form.control}
 				disabled={isBusy}
@@ -71,6 +73,7 @@ export function JoinTeamForm() {
 				label="Team invite code"
 				length={TEAM_CODE_LENGTH}
 				name="teamCode"
+				onPasteComplete={submit}
 				pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
 			/>
 			<AuthActions>

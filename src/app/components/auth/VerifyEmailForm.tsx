@@ -44,6 +44,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
 		},
 		onError: (error) => {
 			if (isCodeError(error)) {
+				form.setValue("code", ""); // Clear the failed code for the next try.
 				form.setError(
 					"code",
 					{ message: codeAttempts.getCodeErrorMessage(error) },
@@ -73,23 +74,21 @@ export function VerifyEmailForm({ email }: { email: string }) {
 	// Stay busy after success while the next page loads.
 	const isBusy = verify.isPending || verify.isSuccess;
 
+	const submit = form.handleSubmit((values) => {
+		// A used-up code can't work, so don't send it.
+		if (codeAttempts.spentCodeMessage) {
+			form.setError(
+				"code",
+				{ message: codeAttempts.spentCodeMessage },
+				{ shouldFocus: true }
+			);
+			return;
+		}
+		verify.mutate(values);
+	});
+
 	return (
-		<form
-			className="flex flex-col gap-6"
-			noValidate
-			onSubmit={form.handleSubmit((values) => {
-				// A used-up code can't work, so don't send it.
-				if (codeAttempts.spentCodeMessage) {
-					form.setError(
-						"code",
-						{ message: codeAttempts.spentCodeMessage },
-						{ shouldFocus: true }
-					);
-					return;
-				}
-				verify.mutate(values);
-			})}
-		>
+		<form className="flex flex-col gap-6" noValidate onSubmit={submit}>
 			<CodeField
 				autoComplete="one-time-code"
 				control={form.control}
@@ -98,6 +97,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
 				label="One-time code"
 				length={VERIFICATION_CODE_LENGTH}
 				name="code"
+				onPasteComplete={submit}
 				pattern={REGEXP_ONLY_DIGITS}
 			/>
 			<AuthActions className="items-center">

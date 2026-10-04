@@ -54,6 +54,7 @@ export function ResetPasswordForm({ email }: { email: string }) {
 		},
 		onError: (error) => {
 			if (isCodeError(error)) {
+				form.setValue("code", ""); // Clear the failed code for the next try.
 				form.setError(
 					"code",
 					{ message: codeAttempts.getCodeErrorMessage(error) },

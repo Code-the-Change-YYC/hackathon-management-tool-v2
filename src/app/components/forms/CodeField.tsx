@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { type ClipboardEvent, useId } from "react";
 import {
 	type Control,
 	type FieldPath,
@@ -31,6 +31,7 @@ type CodeFieldProps<
 	inputMode?: "numeric" | "text";
 	autoComplete?: string;
 	disabled?: boolean;
+	onPasteComplete?: () => void;
 };
 
 /** A code input with one box per character, like verification codes. */
@@ -47,11 +48,25 @@ export function CodeField<
 	pattern,
 	inputMode = "numeric",
 	autoComplete,
-	disabled
+	disabled,
+	onPasteComplete
 }: CodeFieldProps<TFieldValues, TName, TTransformedValues>) {
 	const { field, fieldState } = useController({ control, name });
 	const id = useId();
 	const slots = Array.from({ length }, (_, index) => index);
+
+	// A whole pasted code replaces whatever is in the boxes, ignoring the
+	// spaces or dashes it was copied with. Anything else pastes as usual.
+	function handlePaste(event: ClipboardEvent<HTMLInputElement>) {
+		const code = event.clipboardData
+			.getData("text/plain")
+			.replace(/[\s-]/g, "");
+		if (code.length !== length || !new RegExp(pattern).test(code)) return;
+
+		event.preventDefault();
+		field.onChange(code);
+		onPasteComplete?.();
+	}
 
 	return (
 		<Field
@@ -78,6 +93,7 @@ export function CodeField<
 				name={field.name}
 				onBlur={field.onBlur}
 				onChange={field.onChange}
+				onPaste={handlePaste}
 				pattern={pattern}
 				ref={field.ref}
 				value={field.value}
