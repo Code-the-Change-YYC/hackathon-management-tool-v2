@@ -33,7 +33,7 @@ export default async function FindTeamPage() {
 			<AuthActions>
 				<CompleteRegistrationButton />
 				<DiscordLinkButton variant="outline">
-					Visit the #looking-for-a-team channel
+					Visit #looking-for-a-team
 				</DiscordLinkButton>
 			</AuthActions>
 		</>
