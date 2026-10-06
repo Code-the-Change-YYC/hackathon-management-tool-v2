@@ -8,8 +8,6 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
-				event:
-					"rounded-xl bg-red-50 text-red-900 shadow-elevation-200 hover:bg-red-200",
 				default: "bg-primary text-primary-foreground hover:bg-primary/80",
 				outline:
 					"border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
@@ -24,8 +22,6 @@ const buttonVariants = cva(
 				link: "text-primary underline-offset-4 hover:underline"
 			},
 			size: {
-				dashboard:
-					"h-8 gap-1 rounded-full px-1 text-sm [&_svg:not([class*='size-'])]:size-5",
 				default:
 					"h-11 gap-2 px-5 text-base has-data-[icon=inline-end]:pr-4 has-data-[icon=inline-start]:pl-4 [&_svg:not([class*='size-'])]:size-5",
 				xs: "h-7 gap-1 in-data-[slot=button-group]:rounded-lg rounded-[min(var(--radius-md),10px)] px-2.5 text-xs has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3.5",

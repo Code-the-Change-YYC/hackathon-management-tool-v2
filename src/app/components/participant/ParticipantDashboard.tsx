@@ -14,12 +14,13 @@ import {
 	EmptyTitle
 } from "@/app/components/ui/empty";
 import { useCurrentTime } from "@/hooks/use-current-time";
+import type { JudgingPhase } from "@/lib/judging";
 import {
 	type DashboardEvent,
 	formatDashboardDate,
-	type JudgingPhase,
 	selectDashboardEvents
 } from "@/lib/participant-events";
+import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { DataState } from "./DataState";
 import { EventBanner } from "./EventBanner";
@@ -94,7 +95,7 @@ export function DashboardView({
 			: "Your hackathon at a glance. Happy hacking!"
 		: "Your events, submission deadline, and judging updates in one place.";
 	return (
-		<main className="relative isolate min-h-svh overflow-hidden bg-grey-50 px-4 py-6 text-grey-800 md:px-8 lg:px-6">
+		<div className="relative isolate min-h-svh overflow-hidden bg-grey-50 px-4 py-6 text-grey-800 md:px-8 lg:px-6">
 			<Image
 				alt=""
 				aria-hidden
@@ -107,22 +108,23 @@ export function DashboardView({
 			<div className="mx-auto flex max-w-7xl flex-col gap-6">
 				<PageHeader
 					description={description}
+					descriptionClassName="text-grey-600 text-sm/5 sm:text-base/6"
 					title={`Welcome, ${firstName}!`}
-					variant="dashboard"
+					titleClassName="text-[32px]/10"
 				/>
 				{!eventsError && !eventsLoading && (
 					<EventBanner event={current} timeZone={timeZone} />
 				)}
 				<div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-					<Card variant="dashboard">
+					<Card className="rounded-2xl ring-0">
 						<CardHeader>
 							<div className="flex flex-wrap items-center justify-between gap-1">
 								<h2 className="font-medium text-[22px]/7">Upcoming Events</h2>
 								<Link
-									className={buttonVariants({
-										variant: "ghost",
-										size: "dashboard"
-									})}
+									className={cn(
+										buttonVariants({ variant: "ghost" }),
+										"h-8 gap-1 rounded-full px-1 text-sm has-data-[icon=inline-end]:pr-1 [&_svg:not([class*='size-'])]:size-5"
+									)}
 									href="/participant/schedule"
 								>
 									View full schedule
@@ -161,7 +163,7 @@ export function DashboardView({
 							</DataState>
 						</CardContent>
 					</Card>
-					<Card variant="dashboard">
+					<Card className="rounded-2xl ring-0">
 						<CardContent>
 							<DataState
 								error={settingsError}
@@ -184,6 +186,6 @@ export function DashboardView({
 					</Card>
 				</div>
 			</div>
-		</main>
+		</div>
 	);
 }

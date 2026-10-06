@@ -145,7 +145,19 @@ export function ScheduleItem({
 		return (
 			<li className="flex min-w-0 flex-col gap-2 rounded-lg bg-grey-50 px-2 py-4 sm:flex-row sm:items-stretch">
 				<div className="flex shrink-0 items-center gap-2 sm:w-17 sm:flex-col sm:items-end sm:py-1">
-					<Badge variant={item.eventType}>{badgeLabel}</Badge>
+					<Badge
+						className={cn(
+							"h-4 px-2 py-0 text-[11px] text-white",
+							{
+								food: "bg-red-700",
+								activity: "bg-emerald-green",
+								project: "bg-grapefruit",
+								ceremony: "bg-purple-500"
+							}[item.eventType]
+						)}
+					>
+						{badgeLabel}
+					</Badge>
 					<span className="text-[11px]/4 text-grey-600">{status}</span>
 				</div>
 				<div

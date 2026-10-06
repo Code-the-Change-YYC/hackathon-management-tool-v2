@@ -66,6 +66,7 @@ export function EventBanner({
 					alt=""
 					className="absolute top-0 left-0 size-48 rotate-[-4deg] sm:size-[314px]"
 					height={314}
+					loading="eager"
 					src="/images/participant-shared/trophy.png"
 					width={314}
 				/>
@@ -80,7 +81,10 @@ export function EventBanner({
 			{href.success && (
 				<a
 					className={cn(
-						buttonVariants({ variant: "event" }),
+						buttonVariants({
+							className:
+								"rounded-xl bg-red-50 text-red-900 shadow-elevation-200 hover:bg-red-200"
+						}),
 						"relative z-10 mt-12 sm:mt-0"
 					)}
 					href={href.data}

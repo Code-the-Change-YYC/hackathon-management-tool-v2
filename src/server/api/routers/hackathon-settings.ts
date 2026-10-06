@@ -1,7 +1,7 @@
 import { and, eq, isNull, ne, or } from "drizzle-orm";
 import { z } from "zod";
 import { RESET_CONFIRMATION_PHRASE } from "@/lib/constants";
-import { JUDGING_PHASES } from "@/lib/participant-events";
+import { JUDGING_PHASES } from "@/lib/judging";
 import {
 	adminProcedure,
 	createTRPCRouter,

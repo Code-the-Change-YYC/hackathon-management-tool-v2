@@ -8,7 +8,7 @@ import {
 	uniqueIndex,
 	uuid
 } from "drizzle-orm/pg-core";
-import { JUDGING_PHASES } from "@/lib/participant-events";
+import { JUDGING_PHASES } from "@/lib/judging";
 import { organization, user } from "./auth-schema";
 import { scores } from "./scores-schema";
 

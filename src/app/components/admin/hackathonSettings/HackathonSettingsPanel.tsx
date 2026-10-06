@@ -7,7 +7,7 @@ import {
 	JUDGING_PHASE_LABELS,
 	JUDGING_PHASES,
 	type JudgingPhase
-} from "@/lib/participant-events";
+} from "@/lib/judging";
 import { api } from "@/trpc/react";
 
 function toDateTimeLocal(value: Date | null | undefined): string {

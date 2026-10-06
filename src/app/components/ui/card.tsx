@@ -5,17 +5,12 @@ import { cn } from "@/lib/utils";
 function Card({
 	className,
 	size = "default",
-	variant = "default",
 	...props
-}: React.ComponentProps<"div"> & {
-	size?: "default" | "sm";
-	variant?: "default" | "dashboard";
-}) {
+}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
 	return (
 		<div
 			className={cn(
 				"group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-card-foreground text-sm ring-1 ring-foreground/10 [--card-spacing:--spacing(4)] has-[>img:first-child]:pt-0 has-data-[slot=card-footer]:pb-0 data-[size=sm]:has-data-[slot=card-footer]:pb-0 data-[size=sm]:[--card-spacing:--spacing(3)] *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
-				variant === "dashboard" && "rounded-2xl ring-0",
 				className
 			)}
 			data-size={size}

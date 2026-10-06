@@ -1,34 +1,34 @@
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
 	title: ReactNode;
 	description?: string;
-	variant?: "default" | "dashboard";
+	className?: string;
+	titleClassName?: string;
+	descriptionClassName?: string;
 }
 
 export default function PageHeader({
 	title,
 	description,
-	variant = "default"
+	className,
+	titleClassName,
+	descriptionClassName
 }: PageHeaderProps) {
 	return (
-		<div className="flex flex-col gap-1">
+		<div className={cn("flex flex-col gap-1", className)}>
 			<h1
-				className={
-					variant === "dashboard"
-						? "font-semibold text-[32px]/10"
-						: "font-semibold text-2xl md:text-3xl"
-				}
+				className={cn(
+					"font-semibold",
+					titleClassName ?? "text-2xl md:text-3xl"
+				)}
 			>
 				{title}
 			</h1>
 			{description && (
 				<p
-					className={
-						variant === "dashboard"
-							? "text-grey-600 text-sm/5 sm:text-base/6"
-							: "text-muted-foreground text-sm"
-					}
+					className={cn("text-muted-foreground text-sm", descriptionClassName)}
 				>
 					{description}
 				</p>

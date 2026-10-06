@@ -16,21 +16,29 @@ import type { NavGroup } from "./sidebar-nav";
 
 export type { NavGroup, NavIconKey, NavItem } from "./sidebar-nav";
 
-interface AppSidebarProps {
+export interface AppSidebarProps {
 	navGroups: NavGroup[];
 	userName: string;
 	avatarUrl?: string;
 	profileHref?: string;
 }
 
-export function AppSidebar({
+export function AppSidebar(props: AppSidebarProps) {
+	return (
+		<Sidebar className="border-none" collapsible="offcanvas">
+			<AppSidebarContent {...props} />
+		</Sidebar>
+	);
+}
+
+export function AppSidebarContent({
 	navGroups,
 	userName,
 	avatarUrl,
 	profileHref
 }: AppSidebarProps) {
 	return (
-		<Sidebar className="border-none" collapsible="offcanvas">
+		<>
 			<SidebarHeader className="p-4">
 				<div className="flex items-center gap-2">
 					<SidebarUserMenu
@@ -59,25 +67,13 @@ export function AppSidebar({
 					</SidebarGroup>
 				))}
 			</SidebarContent>
-		</Sidebar>
+		</>
 	);
 }
 
-export function AppSidebarTriggerHeader({
-	desktopBreakpoint = "md"
-}: {
-	desktopBreakpoint?: "md" | "lg" | "xl";
-}) {
+export function AppSidebarTriggerHeader() {
 	return (
-		<header
-			className={
-				desktopBreakpoint === "xl"
-					? "flex items-center justify-between gap-2 border-b px-8 py-5 xl:hidden"
-					: desktopBreakpoint === "lg"
-						? "flex items-center justify-between gap-2 px-4 py-3 lg:hidden"
-						: "flex items-center justify-between gap-2 border-b px-4 py-3 md:hidden"
-			}
-		>
+		<header className="flex items-center justify-between gap-2 border-b px-4 py-3 md:hidden">
 			<SidebarTrigger />
 			<Button aria-label="Notifications" size="icon-sm" variant="ghost">
 				<NotificationLine />

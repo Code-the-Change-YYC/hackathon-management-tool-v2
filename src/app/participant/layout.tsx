@@ -1,14 +1,10 @@
-import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { resolveAvatarSrc } from "@/lib/avatars";
 import { DEVPOST_URL, DISCORD_URL } from "@/lib/constants";
 import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 import type { NavGroup } from "../components/layout/AppSidebar";
-import {
-	AppSidebar,
-	AppSidebarTriggerHeader
-} from "../components/layout/AppSidebar";
+import { ParticipantShell } from "../components/participant/ParticipantShell";
 
 export default async function ParticipantLayout({
 	children
@@ -72,22 +68,15 @@ export default async function ParticipantLayout({
 	];
 
 	return (
-		<SidebarProvider
-			desktopBreakpoint="xl"
-			style={{ "--sidebar-width": "209px" } as React.CSSProperties}
+		<ParticipantShell
+			avatarUrl={resolveAvatarSrc(user.image)}
+			navGroups={PARTICPANT_NAV_GROUPS}
+			profileHref="/participant/profile"
+			userName={
+				user.firstName || getNameParts(user.name).firstName || "Participant"
+			}
 		>
-			<AppSidebar
-				avatarUrl={resolveAvatarSrc(user.image)}
-				navGroups={PARTICPANT_NAV_GROUPS}
-				profileHref="/participant/profile"
-				userName={
-					user.firstName || getNameParts(user.name).firstName || "Participant"
-				}
-			/>
-			<SidebarInset>
-				<AppSidebarTriggerHeader desktopBreakpoint="xl" />
-				{children}
-			</SidebarInset>
-		</SidebarProvider>
+			{children}
+		</ParticipantShell>
 	);
 }

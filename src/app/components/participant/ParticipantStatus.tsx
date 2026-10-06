@@ -5,12 +5,11 @@ import Link from "next/link";
 import { buttonVariants } from "@/app/components/ui/button";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import {
-	countdownParts,
-	formatDashboardDate,
 	JUDGING_PHASE_LABELS,
 	JUDGING_PHASES,
 	type JudgingPhase
-} from "@/lib/participant-events";
+} from "@/lib/judging";
+import { countdownParts, formatDashboardDate } from "@/lib/participant-events";
 import { cn } from "@/lib/utils";
 
 export function SubmissionCountdown({
@@ -104,7 +103,10 @@ export function JudgingStatus({
 						Judging Status
 					</h2>
 					<Link
-						className={buttonVariants({ variant: "ghost", size: "dashboard" })}
+						className={cn(
+							buttonVariants({ variant: "ghost" }),
+							"h-8 gap-1 rounded-full px-1 text-sm has-data-[icon=inline-end]:pr-1 [&_svg:not([class*='size-'])]:size-5"
+						)}
 						href="/participant/judging"
 					>
 						View judging info
