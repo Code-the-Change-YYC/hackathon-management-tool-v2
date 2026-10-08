@@ -1,23 +1,16 @@
 "use client";
 
-import { AddLine } from "@mingcute/react";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
-import {
-	ConfirmAlertDialog,
-	useConfirmDialog
-} from "@/app/components/ConfirmAlertDialog";
 import { Button } from "@/app/components/ui/button";
-import { Checkbox } from "@/app/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { RESET_CONFIRMATION_PHRASE } from "@/lib/constants";
-import { api, type RouterOutputs } from "@/trpc/react";
+import { api } from "@/trpc/react";
 import PageHeader from "../../PageHeader";
 import { Field, FieldLabel } from "../../ui/field";
 import { Input } from "../../ui/input";
-
-type Criterion = RouterOutputs["criteria"]["getAll"][number];
+import { HackathonDatesSection } from "./HackathonDatesSection";
+import { HackathonResetSection } from "./HackathonResetSection";
+import { ScoringSection } from "./ScoringSection";
 
 function formatDateInput(value: Date | string | null | undefined) {
 	if (!value) return "";
@@ -52,116 +45,6 @@ function parseDateInput(value: string) {
 	}
 
 	return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function ScoringSection({
-	name,
-	placeholder,
-	items = [],
-	sidepot,
-	handleCreate,
-	handleDelete
-}: {
-	name: string;
-	placeholder: string;
-	items?: Criterion[];
-	sidepot: boolean;
-	handleCreate: (name: string, isSidepot: boolean) => Promise<Criterion | null>;
-	handleDelete: (id: string) => Promise<{ success: boolean }>;
-}) {
-	const [addText, setAddText] = useState("");
-	const { confirm, dialogProps } = useConfirmDialog();
-
-	const createItem = useCallback(async () => {
-		const name = addText.trim();
-
-		if (!name) return;
-
-		const result = await handleCreate(name, sidepot);
-
-		if (result) {
-			setAddText("");
-		}
-	}, [addText, handleCreate, sidepot]);
-
-	const deleteItem = useCallback(
-		async (item: Criterion) => {
-			if (
-				!(await confirm({
-					title: `Delete "${item.name}"?`,
-					description:
-						"This will also remove all scores recorded for this criterion.",
-					confirmLabel: "Delete",
-					destructive: true
-				}))
-			)
-				return;
-
-			try {
-				await handleDelete(item.id);
-				toast.success("Deleted");
-			} catch (error) {
-				console.error(error);
-				toast.error("Failed to delete");
-			}
-		},
-		[confirm, handleDelete]
-	);
-
-	return (
-		<div className="flex w-full flex-col gap-7">
-			<div className="grid w-full grid-cols-[1fr_max-content] grid-rows-[max-content_max-content] items-center gap-x-4 gap-y-2 pr-4">
-				<p className="pl-4 font-regular text-[14px] leading-5">{name}</p>
-
-				<textarea
-					className="field-sizing-content row-start-2 w-full resize-none rounded-[12px] border py-3 pr-3 pl-4 text-4 leading-6"
-					onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
-						setAddText(event.target.value);
-					}}
-					onKeyDown={(event) => {
-						if (event.key === "Enter" && !event.shiftKey) {
-							event.preventDefault();
-							void createItem();
-						}
-					}}
-					placeholder={placeholder}
-					rows={1}
-					value={addText}
-				/>
-
-				<Button
-					className="row-start-2"
-					onClick={() => void createItem()}
-					type="button"
-				>
-					<AddLine aria-label="Add" className="size-5" />
-					<p className="font-medium text-4 text-white leading-6">Add</p>
-				</Button>
-			</div>
-
-			<div className="grid grid-cols-[1fr_max-content] justify-center gap-4">
-				{items.map((item) => (
-					<Fragment key={item.id}>
-						<div className="field-sizing-content w-full resize-none rounded-[12px] border bg-muted py-3 pr-3 pl-4 text-4 leading-6">
-							{item.name}
-						</div>
-
-						<Button
-							className="bg-strawberry-red text-white hover:bg-strawberry-red/90"
-							onClick={() => void deleteItem(item)}
-							type="button"
-							variant="destructive"
-						>
-							<AddLine aria-label="Remove" className="size-5 rotate-45" />
-							<p className="font-medium text-4 text-white leading-6">Remove</p>
-						</Button>
-					</Fragment>
-				))}
-			</div>
-
-			<ConfirmAlertDialog {...dialogProps} />
-		</div>
-	);
 }
 
 export default function AdminControlsView() {
@@ -370,175 +253,36 @@ export default function AdminControlsView() {
 					</div>
 				</div>
 
-				<div
-					className={twMerge(
-						"flex flex-col gap-4",
-						selectedAction === "create" ? "opacity-100" : "opacity-50"
-					)}
-				>
-					<p className="font-medium text-[22px] leading-7">
-						Set Hackathon Dates
-					</p>
+				<HackathonDatesSection
+					endDate={endDate}
+					onEndDateChange={setEndDate}
+					onStartDateChange={setStartDate}
+					selectedAction={selectedAction}
+					startDate={startDate}
+				/>
 
-					<div className="flex w-full flex-col gap-4 md:flex-row md:gap-16">
-						<div className="flex w-full flex-col gap-2">
-							<Field>
-								<FieldLabel className="pl-4 font-regular text-[14px] leading-5">
-									Start Date
-								</FieldLabel>
-
-								<Input
-									className="row-start-2 w-full rounded-[12px] border py-3 pr-3 pl-4 text-4 leading-6"
-									disabled={selectedAction !== "create"}
-									onChange={(event) => setStartDate(event.target.value)}
-									type="date"
-									value={startDate}
-								/>
-							</Field>
-						</div>
-
-						<div className="flex w-full flex-col gap-2">
-							<Field>
-								<FieldLabel className="pl-4 font-regular text-[14px] leading-5">
-									End Date
-								</FieldLabel>
-
-								<Input
-									className="row-start-2 w-full rounded-[12px] border py-3 pr-3 pl-4 text-4 leading-6"
-									disabled={selectedAction !== "create"}
-									onChange={(event) => setEndDate(event.target.value)}
-									type="date"
-									value={endDate}
-								/>
-							</Field>
-						</div>
-					</div>
-				</div>
-
-				<div className="flex w-full flex-col gap-16 md:flex-row">
-					<div className="flex w-full flex-col gap-4">
-						<p className="font-medium text-[22px] leading-7">Action</p>
-
-						<RadioGroup
-							className="flex flex-col gap-2"
-							onValueChange={(value) => {
-								if (value === "create" || value === "reset") {
-									setSelectedAction(value);
-									if (value === "create") {
-										setResetUsers(false);
-										setResetTeams(false);
-										setResetRooms(false);
-										setResetScores(false);
-										setConfirmation("");
-									}
-								}
-							}}
-							value={selectedAction}
-						>
-							<label
-								className="flex h-12 flex-row items-center gap-4"
-								htmlFor="create_hackathon"
-							>
-								<RadioGroupItem
-									className="h-5 w-5 p-2"
-									id="create_hackathon"
-									value="create"
-								/>
-								<p className="font-regular text-4 leading-6">
-									Create hackathon
-								</p>
-							</label>
-
-							<label
-								className="flex h-12 flex-row items-center gap-4"
-								htmlFor="reset_hackathon"
-							>
-								<RadioGroupItem
-									className="h-5 w-5 p-2"
-									id="reset_hackathon"
-									value="reset"
-								/>
-								<p className="font-regular text-4 leading-6">Reset hackathon</p>
-							</label>
-						</RadioGroup>
-					</div>
-
-					<div
-						className={twMerge(
-							"flex w-full flex-col gap-4",
-							selectedAction === "reset" ? "opacity-100" : "opacity-50"
-						)}
-					>
-						<p className="font-medium text-[22px] leading-7">Reset Fields</p>
-
-						<div className="flex flex-col gap-2">
-							<label
-								className="flex h-12 flex-row items-center gap-4 p-2"
-								htmlFor="reset_users"
-							>
-								<Checkbox
-									checked={resetUsers}
-									disabled={selectedAction !== "reset"}
-									id="reset_users"
-									onCheckedChange={(checked) => setResetUsers(checked === true)}
-								/>
-								<p className="font-regular text-4 leading-6">Reset Users</p>
-							</label>
-
-							<label
-								className="flex h-12 flex-row items-center gap-4 p-2"
-								htmlFor="reset_teams"
-							>
-								<Checkbox
-									checked={resetTeams}
-									disabled={selectedAction !== "reset"}
-									id="reset_teams"
-									onCheckedChange={(checked) => setResetTeams(checked === true)}
-								/>
-								<p className="font-regular text-4 leading-6">Reset Teams</p>
-							</label>
-
-							<label
-								className="flex h-12 flex-row items-center gap-4 p-2"
-								htmlFor="reset_rooms"
-							>
-								<Checkbox
-									checked={resetRooms}
-									disabled={selectedAction !== "reset"}
-									id="reset_rooms"
-									onCheckedChange={(checked) => setResetRooms(checked === true)}
-								/>
-								<p className="font-regular text-4 leading-6">Reset Rooms</p>
-							</label>
-
-							<label
-								className="flex h-12 flex-row items-center gap-4 p-2"
-								htmlFor="reset_scores"
-							>
-								<Checkbox
-									checked={willResetScores}
-									disabled={
-										selectedAction !== "reset" || scoresAreImplicitlyReset
-									}
-									id="reset_scores"
-									onCheckedChange={(checked) =>
-										setResetScores(checked === true)
-									}
-								/>
-								<span className="flex flex-col">
-									<span className="font-regular text-4 leading-6">
-										Reset Scores
-									</span>
-									{scoresAreImplicitlyReset ? (
-										<span className="text-muted-foreground text-sm">
-											Included with teams or rooms
-										</span>
-									) : null}
-								</span>
-							</label>
-						</div>
-					</div>
-				</div>
+				<HackathonResetSection
+					onActionChange={(value) => {
+						setSelectedAction(value);
+						if (value === "create") {
+							setResetUsers(false);
+							setResetTeams(false);
+							setResetRooms(false);
+							setResetScores(false);
+							setConfirmation("");
+						}
+					}}
+					onResetRoomsChange={setResetRooms}
+					onResetScoresChange={setResetScores}
+					onResetTeamsChange={setResetTeams}
+					onResetUsersChange={setResetUsers}
+					resetRooms={resetRooms}
+					resetTeams={resetTeams}
+					resetUsers={resetUsers}
+					scoresAreImplicitlyReset={scoresAreImplicitlyReset}
+					selectedAction={selectedAction}
+					willResetScores={willResetScores}
+				/>
 
 				<div className="grid w-full grid-cols-[100%] grid-rows-[max-content_max-content_max-content] justify-end gap-x-4 gap-y-2 pr-4 md:grid-cols-[max-content]">
 					<Field>
