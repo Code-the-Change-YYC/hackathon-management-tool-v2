@@ -79,7 +79,7 @@ export default function JoinCodeModal({
 
 	return (
 		<ActionModal
-			description={`Your teammates can share a join code with you to invite members on their "My Team" page.`}
+			description="Ask whoever registered your team for its 6‑character invite code. They’ll find it under Invite on their “My Team” page."
 			error={error}
 			errorClassName="text-center"
 			onClose={onClose}
@@ -91,7 +91,7 @@ export default function JoinCodeModal({
 				disabled: !complete,
 				onClick: () => onSubmit(code)
 			}}
-			title="Enter your team's Invite Code to join"
+			title="Enter your team’s invite code to join"
 		>
 			<div className="flex flex-col items-center gap-2">
 				<p className="font-medium text-[14px] text-grey-600">

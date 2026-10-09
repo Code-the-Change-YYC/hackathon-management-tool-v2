@@ -1,12 +1,13 @@
 /**
  * tRPC router for user management.
  *
- * `completeRegistrationByEmail` upgrades `role` to PARTICIPANT when it
- * isn't already a real app role: better-auth's `signUpEmail` sets a
- * generic default role ("user") that isn't one of this app's roles, so
- * left as-is, new self-service signups would get redirected out of every
- * role-gated page (e.g. `/participant`, `/team`). The SQL `case` guards
- * against downgrading an existing admin/judge.
+ * Onboarding saves each step as the user goes (`updateProfile`,
+ * `updateFoodPreferences`, `acceptMlhPolicies`), then `completeRegistration`
+ * marks the account registered. It also upgrades `role` to PARTICIPANT when it isn't already a
+ * real app role: better-auth gives new sign-ups a generic default role
+ * ("user") that isn't one of this app's roles, so left as-is, they would get
+ * redirected out of every role-gated page (e.g. `/participant`). The SQL
+ * `case` guards against downgrading an existing admin/judge.
  */
 
 import { TRPCError } from "@trpc/server";
@@ -14,13 +15,15 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { AVATAR_IDS, getAvatarSrc } from "@/lib/avatars";
 import { getFullName } from "@/lib/names";
+import { hasRegistrationDetails } from "@/lib/onboarding";
+import { mlhPoliciesSchema } from "@/lib/validation/mlh";
 import { profileSchema } from "@/lib/validation/profile";
 import {
 	DIETARY_RESTRICTIONS,
 	type DietaryRestriction,
 	dietaryRestrictionsSchema,
-	PROGRAMS,
-	signupEventDetailsSchema
+	foodPreferencesSchema,
+	PROGRAMS
 } from "@/lib/validation/signup";
 import {
 	adminProcedure,
@@ -31,7 +34,7 @@ import { user } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
 
 export const usersRouter = createTRPCRouter({
-	getAll: protectedProcedure.query(async ({ ctx }) => {
+	getAll: adminProcedure.query(async ({ ctx }) => {
 		const users = await ctx.db.query.user.findMany({
 			orderBy: [desc(user.createdAt)]
 		});
@@ -66,8 +69,59 @@ export const usersRouter = createTRPCRouter({
 				.update(user)
 				.set({
 					name: getFullName(input.firstName, input.lastName),
+					firstName: input.firstName,
+					lastName: input.lastName,
+					age: input.age,
+					phoneNumber: input.phoneNumber,
+					countryOfResidence: input.countryOfResidence,
 					school: input.school,
+					levelOfStudy: input.levelOfStudy,
 					program: input.program
+				})
+				.where(eq(user.id, ctx.session.user.id))
+				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
+			return updated;
+		}),
+	updateFoodPreferences: protectedProcedure
+		.input(foodPreferencesSchema)
+		.mutation(async ({ ctx, input }) => {
+			const [updated] = await ctx.db
+				.update(user)
+				.set({
+					wantsFood: input.wantsFood,
+					dietaryRestrictions: input.dietaryRestrictions
+				})
+				.where(eq(user.id, ctx.session.user.id))
+				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
+			return updated;
+		}),
+	acceptMlhPolicies: protectedProcedure
+		.input(mlhPoliciesSchema)
+		.mutation(async ({ ctx, input }) => {
+			// The schema only lets this through once both required boxes are ticked.
+			const acceptedAt = new Date();
+			const [updated] = await ctx.db
+				.update(user)
+				.set({
+					mlhCodeOfConductAcceptedAt: acceptedAt,
+					mlhDataSharingAcceptedAt: acceptedAt,
+					mlhEmailOptIn: input.emailOptIn
 				})
 				.where(eq(user.id, ctx.session.user.id))
 				.returning();
@@ -122,34 +176,32 @@ export const usersRouter = createTRPCRouter({
 				.returning();
 			return updated;
 		}),
-	completeRegistration: protectedProcedure
-		.input(signupEventDetailsSchema)
-		.mutation(async ({ ctx, input }) => {
-			const [updated] = await ctx.db
-				.update(user)
-				.set({
-					school: input.school?.trim() ? input.school.trim() : null,
-					program: input.program ?? null,
-					dietaryRestrictions: input.dietaryRestrictions ?? [],
-					completedRegistration: true,
-					role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
-				})
-				.where(eq(user.id, ctx.session.user.id))
-				.returning();
+	completeRegistration: protectedProcedure.mutation(async ({ ctx }) => {
+		if (!hasRegistrationDetails(ctx.session.user)) {
+			throw new TRPCError({
+				code: "PRECONDITION_FAILED",
+				message: "Finish the earlier registration steps first"
+			});
+		}
 
-			if (!updated) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Authenticated user not found"
-				});
-			}
+		const [updated] = await ctx.db
+			.update(user)
+			.set({
+				completedRegistration: true,
+				role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
+			})
+			.where(eq(user.id, ctx.session.user.id))
+			.returning({ role: user.role });
 
-			return {
-				user: updated,
-				wantsFood: input.wantsFood,
-				wantsFoodStored: false
-			};
-		}),
+		if (!updated) {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message: "Authenticated user not found"
+			});
+		}
+
+		return updated;
+	}),
 	getDietaryAnalytics: adminProcedure.query(async ({ ctx }) => {
 		const users = await ctx.db.query.user.findMany({
 			columns: {
