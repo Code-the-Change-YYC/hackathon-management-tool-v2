@@ -6,8 +6,16 @@ import {
 	useRef,
 	useState
 } from "react";
+import { Button } from "@/app/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
-import { ActionModal } from "./Modal";
 
 const CODE_LENGTH = 6;
 const CELL_IDS = Array.from(
@@ -78,45 +86,57 @@ export default function JoinCodeModal({
 	const complete = code.length === CODE_LENGTH;
 
 	return (
-		<ActionModal
-			description="Ask whoever registered your team for its 6‑character invite code. They’ll find it under Invite on their “My Team” page."
-			error={error}
-			errorClassName="text-center"
-			onClose={onClose}
-			open={open}
-			primary={{
-				label: "Continue",
-				loadingLabel: "Checking...",
-				loading,
-				disabled: !complete,
-				onClick: () => onSubmit(code)
-			}}
-			title="Enter your team’s invite code to join"
-		>
-			<div className="flex flex-col items-center gap-2">
-				<p className="font-medium text-[14px] text-grey-600">
-					Team invite code
-				</p>
-				<div className="flex justify-center gap-2 sm:gap-3">
-					{CELL_IDS.map((id, index) => (
-						<Input
-							aria-invalid={Boolean(error)}
-							aria-label={`Invite code character ${index + 1}`}
-							className="h-12 w-12 rounded-xl text-center font-medium text-[20px] sm:h-14 sm:w-14"
-							inputMode="text"
-							key={id}
-							maxLength={1}
-							onChange={(e) => handleChange(index, e.target.value)}
-							onKeyDown={(e) => handleKeyDown(index, e)}
-							onPaste={handlePaste}
-							ref={(el) => {
-								inputs.current[index] = el;
-							}}
-							value={values[index]}
-						/>
-					))}
+		<Dialog onOpenChange={(next) => !next && onClose()} open={open}>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Enter your team’s invite code to join</DialogTitle>
+					<DialogDescription>
+						Ask whoever registered your team for its 6‑character invite code.
+						They’ll find it under Invite on their “My Team” page.
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="flex flex-col items-center gap-2">
+					<p className="font-medium text-[14px] text-grey-600">
+						Team invite code
+					</p>
+					<div className="flex justify-center gap-2 sm:gap-3">
+						{CELL_IDS.map((id, index) => (
+							<Input
+								aria-invalid={Boolean(error)}
+								aria-label={`Invite code character ${index + 1}`}
+								className="h-12 w-12 rounded-xl text-center font-medium text-[20px] sm:h-14 sm:w-14"
+								inputMode="text"
+								key={id}
+								maxLength={1}
+								onChange={(e) => handleChange(index, e.target.value)}
+								onKeyDown={(e) => handleKeyDown(index, e)}
+								onPaste={handlePaste}
+								ref={(el) => {
+									inputs.current[index] = el;
+								}}
+								value={values[index]}
+							/>
+						))}
+					</div>
 				</div>
-			</div>
-		</ActionModal>
+
+				{error && (
+					<p className="text-center font-medium text-red-700 text-sm">
+						{error}
+					</p>
+				)}
+
+				<DialogFooter>
+					<Button
+						disabled={!complete || loading}
+						onClick={() => onSubmit(code)}
+						type="button"
+					>
+						{loading ? "Checking..." : "Continue"}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }
