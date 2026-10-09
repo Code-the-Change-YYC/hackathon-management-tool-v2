@@ -15,7 +15,8 @@ import {
 	hackathonSettings,
 	judgingAssignments,
 	judgingRoomStaff,
-	judgingRooms
+	judgingRooms,
+	scores
 } from "@/server/db/schema";
 
 async function attachRoomNames<T extends { room: { id: string } }>(
@@ -138,7 +139,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 							round: true
 						}
 					},
-					scores: true
+					scores: { where: eq(scores.judgeId, input.judgeId) }
 				},
 				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
 			});
