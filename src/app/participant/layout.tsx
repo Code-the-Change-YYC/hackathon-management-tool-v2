@@ -9,6 +9,7 @@ import {
 	AppSidebar,
 	AppSidebarTriggerHeader
 } from "../components/layout/AppSidebar";
+import PageContainer from "../components/PageContainer";
 
 export default async function ParticipantLayout({
 	children
@@ -83,7 +84,7 @@ export default async function ParticipantLayout({
 			/>
 			<SidebarInset>
 				<AppSidebarTriggerHeader />
-				{children}
+				<PageContainer>{children}</PageContainer>
 			</SidebarInset>
 		</SidebarProvider>
 	);
