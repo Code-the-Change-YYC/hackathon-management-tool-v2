@@ -21,11 +21,11 @@ export default function InviteCodeModal({
 
 	return (
 		<ActionModal
-			description="Share this code with your teammates so they can join your team!"
+			description="Share this code with your teammates so they can join your team."
 			onClose={onClose}
 			open={open}
 			primary={{
-				label: copied ? "Copied!" : "Copy code to clipboard",
+				label: copied ? "Copied!" : "Copy to clipboard",
 				onClick: () => copy(code)
 			}}
 			title="Invite others to join your team!"

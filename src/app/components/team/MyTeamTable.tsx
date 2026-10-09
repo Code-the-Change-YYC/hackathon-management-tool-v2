@@ -1,29 +1,70 @@
+import { AddFill, Edit2Fill, ExitLine, Group3Line } from "@mingcute/react";
 import {
-	EditIcon,
-	LeaveIcon,
-	MailIcon,
-	PlusIcon,
-	TeamIcon
-} from "@/app/components/layout/icons";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+	Avatar,
+	AvatarFallback,
+	AvatarImage
+} from "@/app/components/ui/avatar";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
+import { getInitials } from "@/lib/names";
 
 export type TeamMember = {
 	id: string;
 	name: string;
 	email: string;
+	avatarSrc: string;
 	isYou: boolean;
 };
 
-function MemberAvatar({ name }: { name: string }) {
-	const initial = name.trim().charAt(0).toUpperCase() || "?";
+function MemberAvatar({ name, src }: { name: string; src: string }) {
 	return (
 		<Avatar className="size-12" size="lg">
+			<AvatarImage alt={`${name}'s avatar`} src={src} />
 			<AvatarFallback className="bg-grey-200 text-grey-600">
-				{initial}
+				{getInitials(name)}
 			</AvatarFallback>
 		</Avatar>
+	);
+}
+
+function MemberRow({
+	member,
+	onLeave
+}: {
+	member: TeamMember;
+	onLeave: () => void;
+}) {
+	return (
+		<div className="flex gap-4 border-t-2 px-5 py-5 sm:items-center">
+			<MemberAvatar name={member.name} src={member.avatarSrc} />
+			<div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+				<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+					<div className="flex items-center gap-2">
+						<p className="truncate font-medium">{member.name}</p>
+						{member.isYou && (
+							<Badge className="shrink-0 text-xs uppercase">YOU</Badge>
+						)}
+					</div>
+					<p className="truncate text-muted-foreground text-xs">
+						{member.email}
+					</p>
+				</div>
+
+				<div className="flex justify-end sm:block sm:shrink-0">
+					{member.isYou && (
+						<Button
+							className="hover:bg-destructive/10 hover:text-destructive"
+							onClick={onLeave}
+							size="sm"
+							variant="ghost"
+						>
+							<ExitLine data-icon="inline-start" />
+							Leave team
+						</Button>
+					)}
+				</div>
+			</div>
+		</div>
 	);
 }
 
@@ -37,43 +78,32 @@ function InviteRow({
 	onInvite: () => void;
 }) {
 	const isFull = memberCount >= maxMembers;
-	const isAlone = memberCount <= 1;
-
-	let iconBg = "bg-purple-50 text-purple-800";
-	let titleColor = "text-purple-800";
-	let subtitleColor = "text-grey-600";
-	if (isFull) {
-		iconBg = "bg-grey-100 text-grey-300";
-		titleColor = "text-grey-300";
-		subtitleColor = "text-grey-200";
-	} else if (isAlone) {
-		iconBg = "bg-orange-50 text-orange-800";
-		titleColor = "text-orange-800";
-	}
 
 	return (
-		<Button
-			className="h-auto w-full justify-start gap-4 whitespace-normal rounded-none border-0 border-grey-300 border-t bg-grey-00 px-5 py-5 text-left hover:bg-grey-50"
+		<button
+			className="flex h-auto w-full cursor-pointer items-center justify-start gap-4 border-t-2 px-5 py-5 transition-color duration-150 ease-out hover:bg-muted"
 			disabled={isFull}
 			onClick={onInvite}
 			type="button"
-			variant="ghost"
 		>
-			<span
-				className={`grid size-12 shrink-0 place-items-center rounded-lg ${iconBg}`}
-			>
-				<PlusIcon className="size-6" />
+			<span className="grid size-10 shrink-0 place-items-center rounded-lg bg-purple-100 text-purple-800">
+				<AddFill className="size-4" />
 			</span>
-			<span className="flex flex-col gap-1">
-				<span className={`font-medium text-[16px] leading-6 ${titleColor}`}>
-					Invite Team Member
-				</span>
-				<span className={`text-[12px] leading-4 ${subtitleColor}`}>
-					Invite someone to join your team
-				</span>
+			<span className="text-left font-medium text-purple-800">
+				Invite team member
 			</span>
-		</Button>
+		</button>
 	);
+}
+
+interface MyTeamTableProps {
+	teamName: string;
+	members: TeamMember[];
+	maxMembers: number;
+	canEditName: boolean;
+	onEditName: () => void;
+	onInvite: () => void;
+	onLeave: () => void;
 }
 
 export default function MyTeamTable({
@@ -84,88 +114,40 @@ export default function MyTeamTable({
 	onEditName,
 	onInvite,
 	onLeave
-}: {
-	teamName: string;
-	members: TeamMember[];
-	maxMembers: number;
-	canEditName: boolean;
-	onEditName: () => void;
-	onInvite: () => void;
-	onLeave: () => void;
-}) {
+}: MyTeamTableProps) {
 	return (
-		<div className="w-full overflow-clip rounded-[12px] border-2 border-grey-300 p-[2px]">
+		<div className="w-full overflow-hidden rounded-xl border-2">
 			<div className="flex flex-col gap-4 bg-purple-50 p-6 sm:flex-row sm:items-start sm:justify-between">
 				<div className="flex items-center gap-3">
-					<span className="grid size-12 shrink-0 place-items-center rounded-[10px] bg-purple-500 text-white">
-						<TeamIcon className="size-6" />
+					<span className="grid size-14 shrink-0 place-items-center rounded-lg bg-purple-500 text-white">
+						<Group3Line className="size-7" />
 					</span>
-					<div className="flex flex-col">
-						<p className="font-medium text-[11px] text-purple-500 uppercase tracking-[0.55px]">
-							Your Team
-						</p>
-						<p className="font-semibold text-[28px] text-grey-800 leading-9 tracking-[-0.7px]">
+					<div className="flex flex-col gap-0.5">
+						<h2 className="font-medium text-3xl text-grey-800 leading-9">
 							{teamName}
-						</p>
-						<p className="font-medium text-[11px] text-grey-600 uppercase tracking-[0.55px]">
+						</h2>
+						<p className="font-medium text-muted-foreground text-xs uppercase">
 							{members.length}/{maxMembers} Members
 						</p>
 					</div>
 				</div>
 
 				{canEditName && (
-					<button
-						className="flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 font-medium text-[14px] text-grey-800 transition hover:bg-purple-100"
+					<Button
+						className="hover:bg-purple-100"
 						onClick={onEditName}
-						type="button"
+						size="sm"
+						variant="ghost"
 					>
 						Edit team name
-						<EditIcon className="size-5" />
-					</button>
+						<Edit2Fill data-icon="inline-end" />
+					</Button>
 				)}
 			</div>
 
-			<div className="border-grey-300 border-t bg-grey-50">
-				{members.map((m) => (
-					<div
-						className="flex gap-4 border-grey-300 border-b bg-grey-00 px-5 py-5 sm:items-center"
-						key={m.id}
-					>
-						<MemberAvatar name={m.name} />
-						<div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-							<div className="flex min-w-0 flex-1 flex-col gap-1">
-								<div className="flex items-center gap-2">
-									<p className="truncate font-medium text-[16px] text-grey-800 leading-6">
-										{m.name}
-									</p>
-									{m.isYou && (
-										<Badge className="shrink-0 text-[11px]">YOU</Badge>
-									)}
-								</div>
-								<div className="flex items-center gap-1 text-grey-600">
-									<MailIcon className="size-4 shrink-0" />
-									<p className="truncate text-[12px] leading-4">{m.email}</p>
-								</div>
-							</div>
-
-							<div className="flex justify-end sm:block sm:shrink-0">
-								{m.isYou ? (
-									<button
-										className="flex items-center gap-1 rounded-full px-3 py-1.5 font-medium text-[14px] text-orange-800 transition hover:bg-orange-50"
-										onClick={onLeave}
-										type="button"
-									>
-										<LeaveIcon className="size-5" />
-										Leave team
-									</button>
-								) : (
-									<span className="px-3 py-1.5 font-medium text-[14px] text-grey-400">
-										Member
-									</span>
-								)}
-							</div>
-						</div>
-					</div>
+			<div>
+				{members.map((member) => (
+					<MemberRow key={member.id} member={member} onLeave={onLeave} />
 				))}
 
 				<InviteRow

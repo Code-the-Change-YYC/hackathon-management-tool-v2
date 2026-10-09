@@ -34,6 +34,7 @@ export function useMyTeam() {
 					id: m.id,
 					name: m.name,
 					email: m.email,
+					avatarSrc: m.avatarSrc,
 					isYou: m.isYou
 				}))
 			}

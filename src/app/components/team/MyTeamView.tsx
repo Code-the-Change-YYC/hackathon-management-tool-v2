@@ -121,7 +121,7 @@ export default function MyTeamView() {
 			>
 				<div className="flex flex-col items-center gap-1 rounded-xl bg-purple-50 py-4">
 					<p className="font-medium text-[14px] text-grey-600">Your Team ID</p>
-					<p className="font-semibold text-[28px] text-grey-800 leading-9 tracking-[0.1em]">
+					<p className="font-semibold text-[28px] text-grey-800 leading-9 tracking-widest">
 						{formatTeamId(create.data?.teamCode ?? "")}
 					</p>
 				</div>
