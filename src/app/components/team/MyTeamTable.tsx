@@ -119,7 +119,7 @@ export default function MyTeamTable({
 		<div className="w-full overflow-hidden rounded-xl border-2">
 			<div className="flex flex-col gap-4 bg-purple-50 p-6 sm:flex-row sm:items-start sm:justify-between">
 				<div className="flex items-center gap-3">
-					<span className="grid size-14 shrink-0 place-items-center rounded-lg bg-purple-500 text-white">
+					<span className="grid size-14 shrink-0 place-items-center rounded-xl bg-purple-500 text-white">
 						<Group3Line className="size-7" />
 					</span>
 					<div className="flex flex-col gap-0.5">
