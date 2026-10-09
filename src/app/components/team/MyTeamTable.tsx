@@ -1,4 +1,4 @@
-import { AddFill, Edit2Fill, ExitLine, Group3Line } from "@mingcute/react";
+import { AddFill, Edit2Line, ExitLine, Group3Line } from "@mingcute/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -134,13 +134,13 @@ export default function MyTeamTable({
 
 				{canEditName && (
 					<Button
+						aria-label="Edit team name"
 						className="hover:bg-purple-100"
 						onClick={onEditName}
-						size="sm"
+						size="icon-lg"
 						variant="ghost"
 					>
-						Edit team name
-						<Edit2Fill data-icon="inline-end" />
+						<Edit2Line />
 					</Button>
 				)}
 			</div>
