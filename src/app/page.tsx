@@ -1,5 +1,6 @@
 import AboutChallenge from "@/app/components/landing-page/AboutChallenge";
 import EventDetails from "@/app/components/landing-page/EventDetails";
+import FAQ from "@/app/components/landing-page/FAQ";
 import Footer from "@/app/components/landing-page/Footer";
 import Header from "@/app/components/landing-page/Header";
 import Hero from "@/app/components/landing-page/Hero";
@@ -30,6 +31,7 @@ export default async function Home() {
 				<Judges />
 				<Winners />
 				<Sponsors />
+				<FAQ />
 			</main>
 			<Footer />
 		</HydrateClient>
