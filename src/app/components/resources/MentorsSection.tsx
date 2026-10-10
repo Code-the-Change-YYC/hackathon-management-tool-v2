@@ -147,7 +147,7 @@ export default function MentorsSection() {
 				))}
 				{techMembers.map((member) => (
 					<MentorEntry
-						background="bg-primary"
+						background="bg-fuzzy-peach"
 						discord={member.discord}
 						key={member.name + member.discord}
 						name={member.name}
@@ -156,7 +156,7 @@ export default function MentorsSection() {
 				))}
 				{generalMembers.map((member) => (
 					<MentorEntry
-						background="bg-primary"
+						background="bg-pastel-pink"
 						discord={member.discord}
 						key={member.name + member.discord}
 						name={member.name}
@@ -165,7 +165,7 @@ export default function MentorsSection() {
 				))}
 				{industryMembers.map((member) => (
 					<MentorEntry
-						background="bg-primary"
+						background="bg-medium-grey"
 						discord={member.discord}
 						key={member.name + member.discord}
 						name={member.name}
