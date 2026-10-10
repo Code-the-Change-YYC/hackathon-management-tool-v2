@@ -2,6 +2,7 @@ import type { ScheduleItemData } from "@/app/components/ScheduleItem";
 import { ScheduleSection } from "@/app/components/ScheduleSection";
 import { api } from "@/trpc/server";
 import PageHeader from "../../PageHeader";
+import { EventDetailsForm } from "./EventDetailsForm";
 
 export default async function ScheduleView() {
 	const events = await api.events.getAllEvents();
@@ -30,6 +31,14 @@ export default async function ScheduleView() {
 					now={now}
 					title="Event Schedule"
 				/>
+				<section
+					aria-label="Event locations and directions"
+					className="flex flex-col gap-3"
+				>
+					{events.map((event) => (
+						<EventDetailsForm event={event} key={event.id} />
+					))}
+				</section>
 			</div>
 		</div>
 	);

@@ -8,6 +8,7 @@ import {
 	uniqueIndex,
 	uuid
 } from "drizzle-orm/pg-core";
+import { JUDGING_PHASES } from "@/lib/judging";
 import { organization, user } from "./auth-schema";
 import { scores } from "./scores-schema";
 
@@ -88,6 +89,11 @@ export const hackathonSettings = createTable("hackathon_settings", {
 	id: integer("id").primaryKey().default(1), // Enforce singleton by always using ID 1
 	startDate: timestamp("start_date", { withTimezone: true }),
 	endDate: timestamp("end_date", { withTimezone: true }),
+	submissionDeadline: timestamp("submission_deadline", { withTimezone: true }),
+	judgingPhase: text("judging_phase", { enum: JUDGING_PHASES })
+		.default("not_started")
+		.notNull(),
+	timeZone: text("time_zone").default("America/Edmonton").notNull(),
 	isActive: boolean("is_active").default(true).notNull(),
 	currentRoundId: uuid("current_round_id").references(() => judgingRounds.id, {
 		onDelete: "set null"

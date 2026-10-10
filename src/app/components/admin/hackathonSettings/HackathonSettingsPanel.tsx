@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Field, FieldGroup, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import {
+	JUDGING_PHASE_LABELS,
+	JUDGING_PHASES,
+	type JudgingPhase
+} from "@/lib/judging";
 import { api } from "@/trpc/react";
 
 function toDateTimeLocal(value: Date | null | undefined): string {
@@ -18,15 +25,24 @@ export default function HackathonSettingsPanel() {
 
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
+	const [submissionDeadline, setSubmissionDeadline] = useState("");
+	const [judgingPhase, setJudgingPhase] = useState<JudgingPhase>("not_started");
+	const [timeZone, setTimeZone] = useState("America/Edmonton");
 	const [isActive, setIsActive] = useState(true);
 	const [currentRoundId, setCurrentRoundId] = useState("");
 
 	useEffect(() => {
+		setSubmissionDeadline(toDateTimeLocal(settings?.submissionDeadline));
+		setJudgingPhase(settings?.judgingPhase ?? "not_started");
+		setTimeZone(settings?.timeZone ?? "America/Edmonton");
 		setStartDate(toDateTimeLocal(settings?.startDate ?? null));
 		setEndDate(toDateTimeLocal(settings?.endDate ?? null));
 		setIsActive(settings?.isActive ?? true);
 		setCurrentRoundId(settings?.currentRoundId ?? "");
 	}, [
+		settings?.submissionDeadline,
+		settings?.judgingPhase,
+		settings?.timeZone,
 		settings?.currentRoundId,
 		settings?.endDate,
 		settings?.isActive,
@@ -68,6 +84,47 @@ export default function HackathonSettingsPanel() {
 						value={endDate}
 					/>
 				</label>
+				<FieldGroup className="max-w-sm">
+					<Field>
+						<FieldLabel htmlFor="submission-deadline">
+							Submission deadline (your local time)
+						</FieldLabel>
+						<Input
+							id="submission-deadline"
+							onChange={(e) => setSubmissionDeadline(e.target.value)}
+							type="datetime-local"
+							value={submissionDeadline}
+						/>
+					</Field>
+					<Field>
+						<FieldLabel htmlFor="dashboard-time-zone">
+							Participant time zone
+						</FieldLabel>
+						<Input
+							id="dashboard-time-zone"
+							onChange={(e) => setTimeZone(e.target.value)}
+							placeholder="America/Edmonton"
+							value={timeZone}
+						/>
+					</Field>
+					<Field>
+						<FieldLabel htmlFor="dashboard-judging-phase">
+							Participant judging phase
+						</FieldLabel>
+						<select
+							id="dashboard-judging-phase"
+							onChange={(e) => setJudgingPhase(e.target.value as JudgingPhase)}
+							value={judgingPhase}
+						>
+							{JUDGING_PHASES.map((phase) => (
+								<option key={phase} value={phase}>
+									{JUDGING_PHASE_LABELS[phase]}
+								</option>
+							))}
+						</select>
+					</Field>
+				</FieldGroup>
+
 				<label style={{ display: "flex", alignItems: "center", gap: 6 }}>
 					<input
 						checked={isActive}
@@ -99,6 +156,11 @@ export default function HackathonSettingsPanel() {
 						update.mutate({
 							startDate: startDate ? new Date(startDate) : undefined,
 							endDate: endDate ? new Date(endDate) : undefined,
+							submissionDeadline: submissionDeadline
+								? new Date(submissionDeadline)
+								: null,
+							judgingPhase,
+							timeZone,
 							isActive,
 							currentRoundId: currentRoundId || null
 						});
