@@ -87,3 +87,20 @@ export function existingAccountEmail({
 		)
 	};
 }
+
+export function roleInvitationEmail({
+	roleLabel,
+	signupUrl
+}: {
+	roleLabel: string;
+	signupUrl: string;
+}): EmailContent {
+	const withArticle = `${/^[aeiou]/i.test(roleLabel) ? "an" : "a"} ${roleLabel}`;
+	return {
+		subject: `You’re invited to Hack the Change 2026 as ${withArticle}`,
+		text: `You’ve been invited to join Hack the Change 2026 as ${withArticle}. To accept, create your account using this email address, and your ${roleLabel} access will be applied automatically: ${signupUrl}\n\nIf you weren’t expecting this invitation, you can ignore this email.`,
+		html: layout(
+			`<p>You’ve been invited to join <strong>Hack the Change 2026</strong> as ${withArticle}.</p><p>To accept, <a href="${signupUrl}" style="color: #2911a7;">create your account</a> using this email address, and your ${roleLabel} access will be applied automatically.</p><p>If you weren’t expecting this invitation, you can ignore this email.</p>`
+		)
+	};
+}
