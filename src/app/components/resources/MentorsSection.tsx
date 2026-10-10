@@ -2,117 +2,133 @@
 
 import MentorEntry from "./MentorEntry";
 
+// TODO: Populate with actual people
 const eventsMembers = [
 	{
-		name: "Simar Kandola",
-		discord: "_the_real_ninja",
-		role: "VP Events"
-	},
-	{ name: "Tanvi Mahal", discord: "tm.88", role: "Jr VP Events" },
-	{
-		name: "May Liu",
-		discord: "pickupmay",
-		role: "Event Coordinator"
+		name: "Events Person",
+		discord: "test_handle1",
+		role: "Events"
 	},
 	{
-		name: "Adithya Sagar",
-		discord: "adithyasagar778",
-		role: "Event Coordinator"
+		name: "Events Person",
+		discord: "test_handle2",
+		role: "Events"
 	},
 	{
-		name: "Anthony Chan",
-		discord: "anthonyych4n",
-		role: "Event Coordinator"
+		name: "Events Person",
+		discord: "test_handle3",
+		role: "Events"
 	},
 	{
-		name: "Hira Asad",
-		discord: "purplebarney84",
-		role: "Event Coordinator"
+		name: "Events Person",
+		discord: "test_handle4",
+		role: "Events"
 	},
 	{
-		name: "Abudllah Yousaf",
-		discord: "nicetrylilbro",
-		role: "Event Coordinator"
+		name: "Events Person",
+		discord: "test_handle5",
+		role: "Events"
+	},
+	{
+		name: "Events Person",
+		discord: "test_handle6",
+		role: "Events"
 	}
 ];
 
 const techMembers = [
-	{ name: "Burton Jong", discord: "j05ng", role: "VP Tech" },
-	{
-		name: "Simar Kandola",
-		discord: "_the_real_ninja",
-		role: "HTC Developer"
-	},
-	{
-		name: "Fiona Truong",
-		discord: ".fionaaa",
-		role: "HTC Developer"
-	},
-	{ name: "Matthew Liu", discord: "degr8sid", role: "Tech Lead" },
-	{ name: "Yahya Asmara", discord: "aphva", role: "Developer" },
-	{ name: "Jason Duong", discord: "plehhelp", role: "Developer" }
+	{ name: "Tech Person", discord: "test_handle7", role: "Tech" },
+	{ name: "Tech Person", discord: "test_handle8", role: "Tech" },
+	{ name: "Tech Person", discord: "test_handle9", role: "Tech" },
+	{ name: "Tech Person", discord: "test_handle10", role: "Tech" },
+	{ name: "Tech Person", discord: "test_handle11", role: "Tech" },
+	{ name: "Tech Person", discord: "test_handle12", role: "Tech" }
 ];
 
 const generalMembers = [
 	{
-		name: "Fiona Truong",
-		discord: ".fionaaa",
-		role: "Co-President"
+		name: "Person",
+		discord: "test_handle13",
+		role: "President"
 	},
 	{
-		name: "Nathan Phan",
-		discord: "natphaan",
-		role: "Co-President"
+		name: "Person",
+		discord: "test_handle14",
+		role: "President"
 	},
-	{ name: "Victoria Wong", discord: "shib3", role: "VP Design" },
-	{ name: "Ryan Obiar", discord: "", role: "VP Marketing" },
-	{ name: "Grace Ilori", discord: "g542_542", role: "VP External" },
 	{
-		name: "Hanna Cho",
-		discord: "hannagracec",
-		role: "Marketing Commissioner"
+		name: "Person",
+		discord: "test_handle15",
+		role: "President"
+	},
+	{
+		name: "Person",
+		discord: "test_handle16",
+		role: "President"
+	},
+	{
+		name: "Person",
+		discord: "test_handle17",
+		role: "President"
+	},
+	{
+		name: "Person",
+		discord: "test_handle18",
+		role: "President"
 	}
 ];
 
 const industryMembers = [
 	{
-		name: "Alexandru Parcioaga",
-		discord: "alexandrumentor_87981_83719",
-		role: "Arcurve"
+		name: "Industry Person",
+		discord: "test_handle19",
+		role: "Some Company"
 	},
 	{
-		name: "Karam Baroud",
-		discord: "yeezy.yeezus",
-		role: "ZeroKey"
+		name: "Industry Person",
+		discord: "test_handle20",
+		role: "Some Company"
 	},
 	{
-		name: "Sankar Achary Jankoti",
-		discord: "sankarjankoti_38615",
-		role: "Infosys Limited"
+		name: "Industry Person",
+		discord: "test_handle21",
+		role: "Some Company"
 	},
 	{
-		name: "Anthony Dam",
-		discord: "anthony.cs",
-		role: "Prev @ IBM"
+		name: "Industry Person",
+		discord: "test_handle22",
+		role: "Some Company"
 	},
 	{
-		name: "Sidrah Abdullah",
-		discord: "degr8sid",
-		role: "University of Calgary"
+		name: "Industry Person",
+		discord: "test_handle23",
+		role: "Some Company"
 	},
 	{
-		name: "Farnaz Sheikhi",
-		discord: "",
-		role: "University of Calgary"
+		name: "Industry Person",
+		discord: "test_handle24",
+		role: "Some Company"
 	},
 	{
-		name: "Miti Mazmudar",
-		discord: "dettanym",
-		role: "University of Calgary"
+		name: "Industry Person",
+		discord: "test_handle25",
+		role: "Some Company"
 	},
-	{ name: "Burton Jong", discord: "j05ng", role: "Pason" },
-	{ name: "Anthony Chan", discord: "anthonyych4n", role: "Cisco" },
-	{ name: "Matthew Liu", discord: "degr8sid", role: "Enbridge" }
+	{
+		name: "Industry Person",
+		discord: "test_handle26",
+		role: "Some Company"
+	},
+	{
+		name: "Industry Person",
+		discord: "test_handle27",
+		role: "Some Company"
+	},
+	{
+		name: "Industry Person",
+		discord: "test_handle28",
+		role: "Some Company"
+	}
 ];
 
 export default function MentorsSection() {
@@ -124,7 +140,7 @@ export default function MentorsSection() {
 					<MentorEntry
 						background="bg-primary"
 						discord={member.discord}
-						key={member.name}
+						key={member.name + member.discord}
 						name={member.name}
 						role={member.role}
 					/>
@@ -133,7 +149,7 @@ export default function MentorsSection() {
 					<MentorEntry
 						background="bg-primary"
 						discord={member.discord}
-						key={member.name}
+						key={member.name + member.discord}
 						name={member.name}
 						role={member.role}
 					/>
@@ -142,7 +158,7 @@ export default function MentorsSection() {
 					<MentorEntry
 						background="bg-primary"
 						discord={member.discord}
-						key={member.name}
+						key={member.name + member.discord}
 						name={member.name}
 						role={member.role}
 					/>
@@ -151,7 +167,7 @@ export default function MentorsSection() {
 					<MentorEntry
 						background="bg-primary"
 						discord={member.discord}
-						key={member.name}
+						key={member.name + member.discord}
 						name={member.name}
 						role={member.role}
 					/>
