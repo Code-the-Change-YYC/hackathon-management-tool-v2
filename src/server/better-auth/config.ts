@@ -1,10 +1,24 @@
 import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { admin, organization } from "better-auth/plugins";
+import { admin, emailOTP, organization } from "better-auth/plugins";
 
 import { env } from "@/env";
+import {
+	VERIFICATION_CODE_LENGTH,
+	VERIFICATION_CODE_MAX_ATTEMPTS
+} from "@/lib/validation/auth";
 import { db } from "@/server/db";
-import { PROGRAMS } from "@/server/db/auth-schema";
+import { LEVELS_OF_STUDY, PROGRAMS } from "@/server/db/auth-schema";
+import { sendEmail } from "@/server/email";
+import {
+	existingAccountEmail,
+	passwordChangedEmail,
+	passwordResetCodeEmail,
+	unfinishedSignUpEmail,
+	verificationCodeEmail
+} from "@/server/email/templates";
+
+const VERIFICATION_CODE_TTL_MINUTES = 10;
 
 const trustedOrigins = env.BETTER_AUTH_TRUSTED_ORIGINS
 	? env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
@@ -27,9 +41,91 @@ export const betterAuthDefaultConfig = {
 	}),
 	trustedOrigins,
 	emailAndPassword: {
-		enabled: true
+		enabled: true,
+		// Email sign-ups confirm their address with a one-time code before they
+		// get a session. Signing up with a taken email looks the same as a new
+		// sign-up (so accounts can't be enumerated); the owner gets a heads-up.
+		requireEmailVerification: true,
+		async onExistingUserSignUp({ user }): Promise<void> {
+			// Someone who never verified is most likely signing up again, and is
+			// now on the verify page waiting for a code, so send them one.
+			if (!user.emailVerified) {
+				const code = await auth.api.createVerificationOTP({
+					body: { email: user.email, type: "email-verification" }
+				});
+				await sendEmail({
+					to: user.email,
+					...unfinishedSignUpEmail({
+						code,
+						expiresInMinutes: VERIFICATION_CODE_TTL_MINUTES,
+						forgotPasswordUrl: `${env.BETTER_AUTH_URL}/forgot-password`
+					})
+				});
+				return;
+			}
+			await sendEmail({
+				to: user.email,
+				...existingAccountEmail({ loginUrl: `${env.BETTER_AUTH_URL}/login` })
+			});
+		},
+		// Forgotten passwords are reset with an emailed code (see emailOTP
+		// below). Resetting logs the account out everywhere, in case someone
+		// else knew the old password, and tells the owner it happened.
+		revokeSessionsOnPasswordReset: true,
+		async onPasswordReset({ user }) {
+			// The password has already changed, so a failed notice shouldn't
+			// make the reset look like it failed.
+			try {
+				await sendEmail({
+					to: user.email,
+					...passwordChangedEmail({
+						forgotPasswordUrl: `${env.BETTER_AUTH_URL}/forgot-password`
+					})
+				});
+			} catch (error) {
+				console.error("Couldn't send the password changed email", error);
+			}
+		}
 	},
-	plugins: [organization(), admin()],
+	emailVerification: {
+		sendOnSignUp: true,
+		// Unverified users who try to log in get a fresh code.
+		sendOnSignIn: true,
+		autoSignInAfterVerification: true
+	},
+	// Email OTP endpoints the app doesn't use: codes only verify emails and
+	// reset passwords. Checking a code on its own would reveal which emails
+	// have accounts, so a reset code is only checked along with the new password.
+	disabledPaths: [
+		"/sign-in/email-otp",
+		"/email-otp/check-verification-otp",
+		// Deprecated alias of /email-otp/request-password-reset.
+		"/forget-password/email-otp",
+		"/email-otp/request-email-change",
+		"/email-otp/change-email"
+	],
+	plugins: [
+		organization(),
+		admin(),
+		emailOTP({
+			otpLength: VERIFICATION_CODE_LENGTH,
+			allowedAttempts: VERIFICATION_CODE_MAX_ATTEMPTS,
+			expiresIn: VERIFICATION_CODE_TTL_MINUTES * 60,
+			disableSignUp: true,
+			overrideDefaultEmailVerification: true,
+			async sendVerificationOTP({ email, otp, type }) {
+				const content = {
+					code: otp,
+					expiresInMinutes: VERIFICATION_CODE_TTL_MINUTES
+				};
+				if (type === "email-verification") {
+					await sendEmail({ to: email, ...verificationCodeEmail(content) });
+				} else if (type === "forget-password") {
+					await sendEmail({ to: email, ...passwordResetCodeEmail(content) });
+				}
+			}
+		})
+	],
 	user: {
 		additionalFields: {
 			dietaryRestrictions: {
@@ -38,14 +134,65 @@ export const betterAuthDefaultConfig = {
 				defaultValue: [],
 				input: false
 			},
+			firstName: {
+				type: "string",
+				required: false,
+				input: false
+			},
+			lastName: {
+				type: "string",
+				required: false,
+				input: false
+			},
+			age: {
+				type: "number",
+				required: false,
+				input: false
+			},
+			phoneNumber: {
+				type: "string",
+				required: false,
+				input: false
+			},
+			countryOfResidence: {
+				type: "string",
+				required: false,
+				input: false
+			},
 			school: {
 				type: "string",
+				required: false,
+				input: false
+			},
+			levelOfStudy: {
+				type: [...LEVELS_OF_STUDY],
 				required: false,
 				input: false
 			},
 			program: {
 				type: [...PROGRAMS],
 				required: false,
+				input: false
+			},
+			wantsFood: {
+				type: "boolean",
+				required: false,
+				input: false
+			},
+			mlhCodeOfConductAcceptedAt: {
+				type: "date",
+				required: false,
+				input: false
+			},
+			mlhDataSharingAcceptedAt: {
+				type: "date",
+				required: false,
+				input: false
+			},
+			mlhEmailOptIn: {
+				type: "boolean",
+				required: false,
+				defaultValue: false,
 				input: false
 			},
 			completedRegistration: {

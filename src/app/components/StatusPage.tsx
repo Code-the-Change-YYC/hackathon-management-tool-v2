@@ -9,23 +9,57 @@ import {
 
 type StatusPageProps =
 	| { variant: "not-found" }
+	| { variant: "under-construction" }
 	| { variant: "error"; retry: () => void };
 
+const NOT_FOUND_MASCOT = {
+	alt: "Our mascot searching for the missing page with a map and magnifying glass",
+	height: 912,
+	src: "/images/mascot-404.png",
+	width: 923
+};
+
+const ERROR_MASCOT = {
+	alt: "Our mascot puzzling over two disconnected computer cables",
+	height: 1215,
+	src: "/images/mascot-error.png",
+	width: 1215
+};
+
+const CONTENT = {
+	"not-found": {
+		mascot: NOT_FOUND_MASCOT,
+		title: "Page Not Found",
+		description: "The link may have changed, or the page may no longer exist."
+	},
+	"under-construction": {
+		mascot: ERROR_MASCOT,
+		title: "Under Construction",
+		description: (
+			<>
+				We're still building this page. Check back soon to join Hack the Change
+				2026! In the meantime, sign up to our{" "}
+				<a
+					className="font-bold underline underline-offset-4"
+					href="https://forms.gle/YchkoZGSyXehhK5E7"
+					rel="noopener noreferrer"
+					target="_blank"
+				>
+					waiting list
+				</a>
+				.
+			</>
+		)
+	},
+	error: {
+		mascot: ERROR_MASCOT,
+		title: "Unexpected Error",
+		description: "Give it another try, or head home and start fresh."
+	}
+} as const;
+
 export default function StatusPage(props: StatusPageProps) {
-	const isNotFound = props.variant === "not-found";
-	const mascot = isNotFound
-		? {
-				alt: "Our mascot searching for the missing page with a map and magnifying glass",
-				height: 912,
-				src: "/images/mascot-404.png",
-				width: 923
-			}
-		: {
-				alt: "Our mascot puzzling over two disconnected computer cables",
-				height: 1215,
-				src: "/images/mascot-error.png",
-				width: 1215
-			};
+	const { mascot, title, description } = CONTENT[props.variant];
 
 	return (
 		<div className="flex min-h-svh flex-col bg-background text-foreground">
@@ -41,14 +75,8 @@ export default function StatusPage(props: StatusPageProps) {
 						width={mascot.width}
 					/>
 					<EmptyHeader className="max-w-md gap-3">
-						<h1 className="font-semibold text-4xl tracking-tight">
-							{isNotFound ? "Page Not Found" : "Unexpected Error"}
-						</h1>
-						<EmptyDescription>
-							{isNotFound
-								? "The link may have changed, or the page may no longer exist."
-								: "Give it another try, or head home and start fresh."}
-						</EmptyDescription>
+						<h1 className="font-semibold text-4xl tracking-tight">{title}</h1>
+						<EmptyDescription>{description}</EmptyDescription>
 					</EmptyHeader>
 					<EmptyContent className="gap-3 sm:flex-row sm:justify-center">
 						{props.variant === "error" && (
@@ -62,7 +90,7 @@ export default function StatusPage(props: StatusPageProps) {
 						)}
 						<a
 							className={buttonVariants({
-								variant: isNotFound ? "default" : "outline",
+								variant: props.variant === "error" ? "outline" : "default",
 								className: "w-full sm:w-auto"
 							})}
 							href="/"

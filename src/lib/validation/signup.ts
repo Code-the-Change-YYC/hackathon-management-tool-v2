@@ -7,18 +7,45 @@ export const PROGRAMS = [
 	"other"
 ] as const;
 
-export const SCHOOLS = [
-	"University of Calgary",
-	"Mount Royal University",
-	"SAIT",
-	"Other"
+export const LEVELS_OF_STUDY = [
+	"less_than_secondary",
+	"secondary",
+	"undergraduate_two_year",
+	"undergraduate_three_plus_year",
+	"graduate",
+	"code_school",
+	"vocational",
+	"post_doctorate",
+	"other",
+	"not_a_student",
+	"prefer_not_to_answer"
 ] as const;
+
+export type LevelOfStudy = (typeof LEVELS_OF_STUDY)[number];
+
+// MLH's wording, which member events are required to use.
+export const LEVEL_OF_STUDY_LABELS = {
+	less_than_secondary: "Less than Secondary / High School",
+	secondary: "Secondary / High School",
+	undergraduate_two_year:
+		"Undergraduate University (2 year - community college or similar)",
+	undergraduate_three_plus_year: "Undergraduate University (3+ year)",
+	graduate: "Graduate University (Masters, Professional, Doctoral, etc)",
+	code_school: "Code School / Bootcamp",
+	vocational: "Other Vocational / Trade Program or Apprenticeship",
+	post_doctorate: "Post Doctorate",
+	other: "Other",
+	not_a_student: "I’m not currently a student",
+	prefer_not_to_answer: "Prefer not to answer"
+} satisfies Record<LevelOfStudy, string>;
 
 export const DIETARY_RESTRICTIONS = [
 	"halal",
 	"vegetarian",
 	"vegan",
 	"gluten_free",
+	"dairy_free",
+	"nut_allergy",
 	"other"
 ] as const;
 
@@ -29,26 +56,19 @@ export const DIETARY_RESTRICTION_LABELS = {
 	vegetarian: "Vegetarian",
 	vegan: "Vegan",
 	gluten_free: "Gluten-free",
+	dairy_free: "Dairy-free",
+	nut_allergy: "Nut allergy",
 	other: "Other"
 } satisfies Record<DietaryRestriction, string>;
 
-export const signupCredentialsSchema = z.object({
-	email: z
-		.string()
-		.min(1, "Email is required")
-		.regex(/^\S+@\S+\.\S+$/, "Enter a valid email address"),
-	password: z
-		.string()
-		.min(8, "Use at least 8 characters")
-		.regex(/[0-9]/, "Include at least one number")
-		.regex(/[^A-Za-z0-9]/, "Include at least one special character")
-});
-
-export const signupPersonalDetailsSchema = z.object({
-	firstName: z.string().min(1, "First name is required"),
-	lastName: z.string().min(1, "Last name is required"),
-	school: z.string().min(1, "Select your institution")
-});
+/** Keeps the known restrictions from a stored list, in display order. */
+export function toDietaryRestrictions(
+	values: readonly string[]
+): DietaryRestriction[] {
+	return DIETARY_RESTRICTIONS.filter((restriction) =>
+		values.includes(restriction)
+	);
+}
 
 export const dietaryRestrictionsSchema = z
 	.array(z.enum(DIETARY_RESTRICTIONS))
@@ -58,37 +78,9 @@ export const dietaryRestrictionsSchema = z
 		{ message: "Duplicate dietary restrictions are not allowed" }
 	);
 
-export function createSignupIdentitySchema(requiresPassword: boolean) {
-	return z.object({
-		firstName: z.string().min(1, "First name is required"),
-		lastName: z.string().min(1, "Last name is required"),
-		email: z
-			.string()
-			.min(1, "Email is required")
-			.regex(/^\S+@\S+\.\S+$/, "Enter a valid email address"),
-		password: requiresPassword
-			? z.string().min(1, "Password is required")
-			: z.string()
-	});
-}
-
-const wantsFoodSchema = z
-	.union([z.literal(""), z.enum(["yes", "no"])])
-	.refine((value): value is "yes" | "no" => value !== "", {
-		message: "Select whether you want provided food"
-	});
-
-const programSchema = z
-	.union([z.literal(""), z.enum(PROGRAMS)])
-	.optional()
-	.transform((value) => (value === "" ? undefined : value));
-
-export const signupEventDetailsSchema = z.object({
-	school: z.string(),
-	program: programSchema,
-	dietaryRestrictions: dietaryRestrictionsSchema,
-	wantsFood: wantsFoodSchema
+export const foodPreferencesSchema = z.object({
+	wantsFood: z.boolean(),
+	dietaryRestrictions: dietaryRestrictionsSchema
 });
 
-export type SignupEventDetails = z.output<typeof signupEventDetailsSchema>;
-export type SignupEventDetailsInput = z.input<typeof signupEventDetailsSchema>;
+export type FoodPreferences = z.infer<typeof foodPreferencesSchema>;

@@ -3,51 +3,37 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import {
-	type DefaultValues,
-	useForm,
-	useFormState,
-	useWatch
-} from "react-hook-form";
+import { useForm, useFormState, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { ComboboxField } from "@/app/components/forms/ComboboxField";
+import { NumberField } from "@/app/components/forms/NumberField";
+import { PhoneField } from "@/app/components/forms/PhoneField";
+import { SchoolField } from "@/app/components/forms/SchoolField";
 import { SelectField } from "@/app/components/forms/SelectField";
 import { TextField } from "@/app/components/forms/TextField";
 import { Button } from "@/app/components/ui/button";
 import { FieldGroup } from "@/app/components/ui/field";
+import { getCountryFlag } from "@/app/components/ui/phone-input";
 import { Spinner } from "@/app/components/ui/spinner";
-import { getNameParts } from "@/lib/names";
+import { COUNTRY_CODES, getCountryName } from "@/lib/countries";
 import {
 	asksForMajor,
-	isSchool,
+	getProfileDefaults,
+	getSchoolName,
+	LEVEL_OF_STUDY_OPTIONS,
+	MAX_AGE,
+	MIN_AGE,
 	NAME_MAX_LENGTH,
-	PROGRAM_LABELS,
+	PROGRAM_OPTIONS,
 	type ProfileInput,
 	type ProfileValues,
-	profileSchema
+	profileFormSchema
 } from "@/lib/validation/profile";
-import { PROGRAMS, SCHOOLS } from "@/lib/validation/signup";
 import { api } from "@/trpc/react";
 import { PersonalInformationCard } from "./PersonalInformationCard";
 import type { Profile } from "./types";
 
 const FORM_ID = "personal-information-form";
-
-const SCHOOL_OPTIONS = SCHOOLS.map((school) => ({
-	value: school,
-	label: school
-}));
-const PROGRAM_OPTIONS = PROGRAMS.map((program) => ({
-	value: program,
-	label: PROGRAM_LABELS[program]
-}));
-
-function getDefaultValues(profile: Profile): DefaultValues<ProfileInput> {
-	return {
-		...getNameParts(profile.name),
-		school: isSchool(profile.school) ? profile.school : undefined,
-		program: profile.program
-	};
-}
 
 export function PersonalInformationForm({
 	profile,
@@ -60,11 +46,14 @@ export function PersonalInformationForm({
 	const [isRefreshing, startTransition] = useTransition();
 	const updateProfile = api.users.updateProfile.useMutation();
 	const form = useForm<ProfileInput, unknown, ProfileValues>({
-		defaultValues: getDefaultValues(profile),
-		resolver: zodResolver(profileSchema)
+		defaultValues: getProfileDefaults(profile),
+		resolver: zodResolver(profileFormSchema)
 	});
 	const { isDirty } = useFormState({ control: form.control });
-	const school = useWatch({ control: form.control, name: "school" });
+	const [school, otherSchool] = useWatch({
+		control: form.control,
+		name: ["school", "otherSchool"]
+	});
 	const isSaving = updateProfile.isPending || isRefreshing;
 
 	function cancel() {
@@ -131,15 +120,47 @@ export function PersonalInformationForm({
 						maxLength={NAME_MAX_LENGTH}
 						name="lastName"
 					/>
-					<SelectField
+					<NumberField
+						control={form.control}
+						disabled={isSaving}
+						label="Age"
+						max={MAX_AGE}
+						min={MIN_AGE}
+						name="age"
+						placeholder="Enter your age"
+					/>
+					<PhoneField
+						control={form.control}
+						disabled={isSaving}
+						label="Phone number"
+						name="phoneNumber"
+						placeholder="Enter your phone number"
+					/>
+					<ComboboxField
+						control={form.control}
+						disabled={isSaving}
+						emptyMessage="No countries found"
+						itemIcon={getCountryFlag}
+						items={COUNTRY_CODES}
+						itemToLabel={getCountryName}
+						label="Country of residence"
+						name="countryOfResidence"
+						placeholder="Search for your country"
+					/>
+					<SchoolField
 						control={form.control}
 						disabled={isSaving}
 						label="Institution"
-						name="school"
-						options={SCHOOL_OPTIONS}
-						placeholder="Select an institution"
 					/>
-					{asksForMajor(school) && (
+					<SelectField
+						control={form.control}
+						disabled={isSaving}
+						label="Level of study"
+						name="levelOfStudy"
+						options={LEVEL_OF_STUDY_OPTIONS}
+						placeholder="Select your level of study"
+					/>
+					{asksForMajor(getSchoolName(school, otherSchool)) && (
 						<SelectField
 							control={form.control}
 							disabled={isSaving}

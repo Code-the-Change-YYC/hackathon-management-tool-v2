@@ -1,7 +1,7 @@
 import type { Page } from "playwright/test";
 
 const LOGIN_PAGE = "/login";
-const SUBMIT_BUTTON_NAME = "Sign in";
+const SUBMIT_BUTTON_NAME = "Log in";
 
 export type LoginCredentials = {
 	email: string;

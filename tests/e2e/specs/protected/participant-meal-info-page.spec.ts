@@ -64,7 +64,9 @@ test.describe("admin access", () => {
 });
 
 test.describe("judge access", () => {
-	test.use({ authUserOptions: { role: Role.JUDGE } });
+	test.use({
+		authUserOptions: { completedRegistration: true, role: Role.JUDGE }
+	});
 
 	// Given I am signed in as a judge
 	// When I navigate to /participant/meals
