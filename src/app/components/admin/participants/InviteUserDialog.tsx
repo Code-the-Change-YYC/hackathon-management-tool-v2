@@ -61,7 +61,7 @@ export function InviteUserDialog({
 		<Dialog onOpenChange={handleOpenChange} open={open}>
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
-					<DialogTitle className="text-lg">Invite a user</DialogTitle>
+					<DialogTitle>Invite a user</DialogTitle>
 				</DialogHeader>
 				<FieldGroup>
 					<Field>

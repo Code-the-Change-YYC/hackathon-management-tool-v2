@@ -1,4 +1,7 @@
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
+import { resolveAvatarSrc } from "@/lib/avatars";
+import { DEVPOST_URL, DISCORD_URL } from "@/lib/constants";
+import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 import type { NavGroup } from "../components/layout/AppSidebar";
@@ -6,15 +9,14 @@ import {
 	AppSidebar,
 	AppSidebarTriggerHeader
 } from "../components/layout/AppSidebar";
+import PageContainer from "../components/PageContainer";
 
 export default async function ParticipantLayout({
 	children
 }: {
 	children: React.ReactNode;
 }) {
-	await requireRole([Role.PARTICIPANT, Role.ADMIN]);
-
-	const DISCORD_URL = "https://discord.com/"; // TODO: Change to actual discord URL
+	const { user } = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
 
 	const PARTICPANT_NAV_GROUPS: NavGroup[] = [
 		{
@@ -22,7 +24,7 @@ export default async function ParticipantLayout({
 			items: [
 				{ title: "Dashboard", href: "/participant", icon: "home" },
 				{ title: "Schedule", href: "/participant/schedule", icon: "calendar" },
-				{ title: "My Team", href: "/participant/team", icon: "group" },
+				{ title: "Team", href: "/participant/team", icon: "group" },
 				{
 					title: "Meal Information",
 					href: "/participant/meals",
@@ -49,15 +51,21 @@ export default async function ParticipantLayout({
 			groupLabel: "Quick Links",
 			items: [
 				{
+					title: "Hackathon Home",
+					href: "/",
+					icon: "link",
+					external: true
+				},
+				{
 					title: "Discord Join Link",
 					href: DISCORD_URL,
 					icon: "discord",
 					external: true
 				},
 				{
-					title: "Hackathon Home",
-					href: "/",
-					icon: "link",
+					title: "Devpost",
+					href: DEVPOST_URL,
+					icon: "code",
 					external: true
 				}
 			]
@@ -66,10 +74,17 @@ export default async function ParticipantLayout({
 
 	return (
 		<SidebarProvider>
-			<AppSidebar navGroups={PARTICPANT_NAV_GROUPS} userName="Participant" />
+			<AppSidebar
+				avatarUrl={resolveAvatarSrc(user.image)}
+				navGroups={PARTICPANT_NAV_GROUPS}
+				profileHref="/participant/profile"
+				userName={
+					user.firstName || getNameParts(user.name).firstName || "Participant"
+				}
+			/>
 			<SidebarInset>
 				<AppSidebarTriggerHeader />
-				{children}
+				<PageContainer>{children}</PageContainer>
 			</SidebarInset>
 		</SidebarProvider>
 	);

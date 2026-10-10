@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { getNameParts } from "@/lib/names";
 import { auth } from "@/server/better-auth";
 import { db } from "@/server/db";
 import { user } from "@/server/db/auth-schema";
@@ -11,7 +12,15 @@ type CreateUserInput = {
 	role?: User["role"];
 };
 
-async function createOrGetUser({
+// Seeded accounts skip email verification so they can log in right away.
+async function markEmailVerified(email: string) {
+	await db
+		.update(user)
+		.set({ emailVerified: true })
+		.where(eq(user.email, email));
+}
+
+export async function createOrGetUser({
 	email,
 	password,
 	name,
@@ -23,6 +32,7 @@ async function createOrGetUser({
 
 	if (existingUser) {
 		console.log(`User already exists: ${email}`);
+		await markEmailVerified(email);
 		return existingUser as User;
 	}
 
@@ -34,6 +44,7 @@ async function createOrGetUser({
 			password
 		}
 	});
+	await markEmailVerified(email);
 
 	console.log(`User created: ${email}`);
 
@@ -106,13 +117,24 @@ export async function seedUsers(): Promise<SeedUsersResult> {
 	});
 
 	// Complete the sample participant profile for registration-dependent flows.
+	const { firstName, lastName } = getNameParts(participantName);
+	const acceptedMlhPoliciesAt = new Date();
 	await db
 		.update(user)
 		.set({
 			role: Role.PARTICIPANT,
+			firstName,
+			lastName,
+			age: 20,
+			phoneNumber: "+14035550100",
+			countryOfResidence: "CA",
 			dietaryRestrictions: ["halal", "gluten_free"],
-			school: "Hackathon University",
+			school: "University of Calgary",
+			levelOfStudy: "undergraduate_three_plus_year",
 			program: "computer_science",
+			wantsFood: true,
+			mlhCodeOfConductAcceptedAt: acceptedMlhPoliciesAt,
+			mlhDataSharingAcceptedAt: acceptedMlhPoliciesAt,
 			completedRegistration: true
 		})
 		.where(eq(user.id, participantUser.id));

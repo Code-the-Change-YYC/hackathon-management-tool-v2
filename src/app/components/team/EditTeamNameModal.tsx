@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/app/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
-import { Modal, ModalTitle, PrimaryButton, SecondaryButton } from "./Modal";
 
 export default function EditTeamNameModal({
 	open,
@@ -20,46 +28,45 @@ export default function EditTeamNameModal({
 	error?: string | null;
 }) {
 	const [name, setName] = useState(currentName);
-
-	useEffect(() => {
-		if (open) {
-			setName(currentName);
-		}
-	}, [open, currentName]);
-
 	const trimmed = name.trim();
 
+	useEffect(() => {
+		if (open) setName(currentName);
+	}, [open, currentName]);
+
 	return (
-		<Modal onClose={onClose} open={open}>
-			<div className="flex flex-col gap-2">
-				<ModalTitle>Edit team name</ModalTitle>
-				<p className="text-[16px] text-grey-600 leading-6">
-					Choose a new name for your team.
-				</p>
-			</div>
+		<Dialog onOpenChange={(next) => !next && onClose()} open={open}>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Edit team name</DialogTitle>
+					<DialogDescription>
+						Choose a new name for your team.
+					</DialogDescription>
+				</DialogHeader>
 
-			<Input
-				aria-label="Team name"
-				className="h-auto rounded-xl px-4 py-3 font-medium text-[16px]"
-				maxLength={50}
-				onChange={(e) => setName(e.target.value)}
-				value={name}
-			/>
+				<Input
+					aria-label="Team name"
+					className="h-auto rounded-xl px-4 py-3 font-medium text-[16px]"
+					maxLength={50}
+					onChange={(e) => setName(e.target.value)}
+					value={name}
+				/>
 
-			{error && <p className="font-medium text-[14px] text-red-700">{error}</p>}
+				{error && <p className="font-medium text-red-700 text-sm">{error}</p>}
 
-			<div className="flex flex-col gap-3">
-				<PrimaryButton
-					disabled={!trimmed || loading}
-					onClick={() => onSave(trimmed)}
-					type="button"
-				>
-					{loading ? "Saving..." : "Save"}
-				</PrimaryButton>
-				<SecondaryButton onClick={onClose} type="button">
-					Cancel
-				</SecondaryButton>
-			</div>
-		</Modal>
+				<DialogFooter>
+					<Button
+						disabled={!trimmed || loading}
+						onClick={() => onSave(trimmed)}
+						type="button"
+					>
+						{loading ? "Saving..." : "Save"}
+					</Button>
+					<Button onClick={onClose} type="button" variant="outline">
+						Cancel
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

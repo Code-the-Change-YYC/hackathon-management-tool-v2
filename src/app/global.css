@@ -18,6 +18,7 @@
 	--color-purple-50: #f7f5ff;
 	--color-purple-100: #eae6ff;
 	--color-purple-500: #7054fd;
+	--color-purple-600: #4a28f6;
 	--color-purple-800: #2911a7;
 
 	--color-grey-00: #ffffff;
@@ -26,14 +27,19 @@
 	--color-grey-200: #e6e6e6;
 	--color-grey-300: #d6d6d6;
 	--color-grey-400: #a5a5a5;
+	--color-grey-500: #767676;
 	--color-grey-600: #575757;
 	--color-grey-800: #292929;
+
+	--color-green-100: #d9fced;
+	--color-green-800: #02644f;
 
 	--color-orange-50: #fff1ec;
 	--color-orange-400: #fe957b;
 	--color-orange-800: #b71801;
 
 	--color-red-50: #fff0f3;
+	--color-red-200: #ffd2dc;
 	--color-red-700: #c7093a;
 	--color-red-900: #8e0d37;
 
@@ -60,22 +66,38 @@
 	--color-medium-grey: #d9d9d9;
 	--color-ehhh-grey: #c5c5c5;
 	--color-dark-grey: #333333;
-	--color-auth-surface: #fcfcfc;
-	--color-auth-text: #292929;
-	--color-auth-muted: #575757;
 	--color-auth-placeholder: #767676;
-	--color-auth-border: #a5a5a5;
-	--color-auth-divider: #d6d6d6;
-	--color-auth-primary: #7054fd;
 	--color-auth-focus: #4a28f6;
-	--color-auth-link: #2911a7;
-	--color-auth-success: #02644f;
 
 	--background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
 	--background-image-gradient-conic: conic-gradient(
 		from 180deg at 50% 50%,
 		var(--tw-gradient-stops)
 	);
+
+	/* Split-flap countdown: the old top half falls, then the new bottom half lands */
+	--animate-flip-top: flip-top 300ms ease-in both;
+	--animate-flip-bottom: flip-bottom 300ms ease-out 300ms both;
+
+	@keyframes flip-top {
+		from {
+			transform: rotateX(0deg);
+		}
+		to {
+			transform: rotateX(-90deg);
+			filter: brightness(0.8);
+		}
+	}
+
+	@keyframes flip-bottom {
+		from {
+			transform: rotateX(90deg);
+			filter: brightness(0.8);
+		}
+		to {
+			transform: rotateX(0deg);
+		}
+	}
 }
 
 @utility custom-scrollbar {
@@ -91,10 +113,54 @@
 	}
 }
 
+/* Hides the scrollbar while keeping the element scrollable */
+@utility no-scrollbar {
+	scrollbar-width: none;
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+/*
+ * Fades out over the last stretch of its scroll container, so a hint that more
+ * content sits below goes away once there's nothing left to scroll to. Stays
+ * hidden when the container doesn't scroll, or when the browser can't tie
+ * animations to scrolling.
+ */
+@utility fade-at-scroll-end {
+	opacity: 0;
+	@supports (animation-timeline: scroll()) {
+		animation: fade-at-scroll-end linear both;
+		animation-timeline: scroll();
+		animation-range: calc(100% - 4rem) 100%;
+	}
+}
+
+@keyframes fade-at-scroll-end {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
 @utility no-details-marker {
 	&::-webkit-details-marker {
 		display: none;
 	}
+}
+
+/* Even purple outline drawn behind the glyphs, with a small drop shadow for depth */
+@utility text-outline-purple {
+	-webkit-text-stroke: 6px var(--color-awesomer-purple);
+	paint-order: stroke fill;
+	filter: drop-shadow(0 3px 0 var(--color-awesomer-purple));
+}
+
+/* Inline purple text link that underlines on hover */
+@utility link {
+	@apply cursor-pointer font-medium text-purple-800 underline-offset-4 hover:underline;
 }
 
 /* Figma elevation/200 token: layered drop shadow used on cards and modals */
@@ -103,6 +169,14 @@
 		0 3px 8px 0 rgba(0, 0, 0, 0.1),
 		0 1px 3px 0 rgba(0, 0, 0, 0.1),
 		0 0 0.5px 0 rgba(0, 0, 0, 0.18);
+}
+
+/* Figma elevation/500 token: the floating sign-up panel on smaller screens */
+@utility shadow-elevation-500 {
+	box-shadow:
+		0 10px 24px 0 rgba(0, 0, 0, 0.18),
+		0 2px 5px 0 rgba(0, 0, 0, 0.15),
+		0 0 0.5px 0 rgba(0, 0, 0, 0.08);
 }
 
 @theme inline {
@@ -173,7 +247,7 @@
 	/* Lines & focus */
 	--border: var(--color-dashboard-grey);
 	--input: var(--color-medium-grey);
-	--ring: var(--color-awesome-purple);
+	--ring: var(--color-awesomer-purple);
 
 	/* Charts */
 	--chart-1: var(--color-awesomer-purple);
@@ -238,6 +312,23 @@
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: var(--color-awesome-purple);
+}
+
+/*
+ * The auth and onboarding panel follows the Figma sign-up screens: 12px
+ * corners, grey/400 control borders, a purple/600 focus colour and the
+ * orange/800 error colour. Scoping the tokens restyles the shadcn components
+ * inside the panel without overriding them one by one.
+ */
+.theme-auth {
+	--radius: 0.75rem;
+	--background: var(--color-grey-50);
+	--foreground: var(--color-grey-800);
+	--muted-foreground: var(--color-grey-600);
+	--border: var(--color-grey-400);
+	--input: var(--color-grey-400);
+	--ring: var(--color-purple-600);
+	--destructive: var(--color-orange-800);
 }
 
 @layer base {

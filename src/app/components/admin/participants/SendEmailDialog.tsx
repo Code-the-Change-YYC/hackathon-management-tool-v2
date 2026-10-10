@@ -60,7 +60,7 @@ export function SendEmailDialog({ open, onOpenChange }: SendEmailDialogProps) {
 		<Dialog onOpenChange={onOpenChange} open={open}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle className="text-lg">Send an email</DialogTitle>
+					<DialogTitle>Send an email</DialogTitle>
 				</DialogHeader>
 				<FieldGroup>
 					<Field>

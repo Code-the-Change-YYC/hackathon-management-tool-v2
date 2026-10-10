@@ -1,6 +1,5 @@
-import { createHash, randomBytes } from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
@@ -10,12 +9,16 @@ import {
 import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
+	createEventTicketToken,
+	hashEventTicketToken
+} from "@/server/lib/event-tickets";
+import {
 	EVENT_STATUSES,
 	EVENT_TICKET_TOKEN_PATTERN,
 	EVENT_TYPES,
 	EventStatus,
 	EventTicketStatus,
-	type EventType,
+	EventType,
 	QR_EVENT_TYPES,
 	Role
 } from "@/types/types";
@@ -35,14 +38,6 @@ const eventTimeRangeSchema = z
 const ticketTokenSchema = z
 	.string()
 	.regex(EVENT_TICKET_TOKEN_PATTERN, "Invalid event ticket format.");
-
-function hashTicketToken(token: string) {
-	return createHash("sha256").update(token).digest("hex");
-}
-
-function createTicketToken() {
-	return `evt1_${randomBytes(32).toString("base64url")}`;
-}
 
 function supportsQrTickets(type: EventType) {
 	return QR_EVENT_TYPES.some((qrType) => qrType === type);
@@ -185,19 +180,19 @@ export const eventsRouter = createTRPCRouter({
 					} as const;
 				}
 
-				const token = createTicketToken();
+				const token = createEventTicketToken();
 				await tx
 					.insert(eventTicket)
 					.values({
 						userId: ctx.session.user.id,
 						eventId: input.eventId,
-						tokenHash: hashTicketToken(token),
+						tokenHash: hashEventTicketToken(token),
 						expiresAt: ticketEvent.endTime
 					})
 					.onConflictDoUpdate({
 						target: [eventTicket.userId, eventTicket.eventId],
 						set: {
-							tokenHash: hashTicketToken(token),
+							tokenHash: hashEventTicketToken(token),
 							expiresAt: ticketEvent.endTime,
 							updatedAt: now
 						}
@@ -238,7 +233,7 @@ export const eventsRouter = createTRPCRouter({
 					.from(eventTicket)
 					.innerJoin(user, eq(eventTicket.userId, user.id))
 					.innerJoin(event, eq(eventTicket.eventId, event.id))
-					.where(eq(eventTicket.tokenHash, hashTicketToken(input.token)))
+					.where(eq(eventTicket.tokenHash, hashEventTicketToken(input.token)))
 					.limit(1)
 					.for("update");
 
@@ -343,5 +338,17 @@ export const eventsRouter = createTRPCRouter({
 				.innerJoin(user, eq(eventAttendance.userId, user.id))
 				.where(eq(eventAttendance.eventId, input.eventId))
 				.orderBy(eventAttendance.updatedAt);
-		})
+		}),
+
+	getMealAttendanceCount: adminProcedure.query(async ({ ctx }) => {
+		const [result] = await ctx.db
+			.select({
+				count: count(eventAttendance.id)
+			})
+			.from(eventAttendance)
+			.innerJoin(event, eq(eventAttendance.eventId, event.id))
+			.where(eq(event.type, EventType.FOOD));
+
+		return result?.count ?? 0;
+	})
 });

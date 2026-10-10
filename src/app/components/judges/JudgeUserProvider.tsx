@@ -1,7 +1,15 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { JudgeUserContext } from "./useJudgePortalData";
+import { createContext, type ReactNode, useContext } from "react";
+
+type JudgeUser = { userId: string; userName: string };
+const JudgeUserContext = createContext<JudgeUser | null>(null);
+
+export function useJudgeUser() {
+	const user = useContext(JudgeUserContext);
+	if (!user) throw new Error("Judge portal user context is missing.");
+	return user;
+}
 
 export function JudgeUserProvider({
 	children,

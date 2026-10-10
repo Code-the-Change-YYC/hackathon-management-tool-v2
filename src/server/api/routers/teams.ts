@@ -1,6 +1,7 @@
 /**
- * Teams router (backed by the organization table). Team names are validated
- * against teamNameSchema, mirrored client-side in teamName.ts.
+ * Teams router (backed by the organization table). Team names and invite
+ * codes are validated with the schemas in lib/validation/team.ts, which the
+ * client forms share.
  *
  * Team codes and one-team-per-user are both race-prone under concurrent
  * requests, so both lean on DB constraints instead of check-then-act:
@@ -21,7 +22,13 @@ import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
+import { resolveAvatarSrc } from "@/lib/avatars";
 import { tryCatch } from "@/lib/utils";
+import {
+	joinTeamSchema,
+	registerTeamSchema,
+	TEAM_CODE_LENGTH
+} from "@/lib/validation/team";
 import {
 	adminProcedure,
 	createTRPCRouter,
@@ -45,18 +52,8 @@ type HackathonMetadata = {
 	devpostSubmissionCloseAt?: string | null;
 };
 
-const teamNameSchema = z
-	.string()
-	.min(1, "Team name is required")
-	.max(50, "Team name must be 50 characters or less")
-	.regex(
-		/^[a-zA-Z0-9 _-]+$/,
-		"Team name can only contain letters, numbers, spaces, hyphens, and underscores"
-	);
-
 const MAX_TEAM_SIZE = 5;
 
-const TEAM_CODE_LENGTH = 6;
 const TEAM_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 const MAX_TEAM_CODE_ATTEMPTS = 5;
@@ -207,7 +204,7 @@ export const teamsRouter = createTRPCRouter({
 		};
 	}),
 
-	getAll: protectedProcedure.query(async ({ ctx }) => {
+	getAll: adminProcedure.query(async ({ ctx }) => {
 		const teams = await ctx.db.query.organization.findMany({
 			orderBy: [desc(organization.createdAt)]
 		});
@@ -329,6 +326,7 @@ export const teamsRouter = createTRPCRouter({
 				userId: m.userId,
 				name: m.user.name,
 				email: m.user.email,
+				avatarSrc: resolveAvatarSrc(m.user.image),
 				role: m.role,
 				isYou: m.userId === userId
 			}))
@@ -336,11 +334,7 @@ export const teamsRouter = createTRPCRouter({
 	}),
 
 	create: protectedProcedure
-		.input(
-			z.object({
-				name: teamNameSchema
-			})
-		)
+		.input(registerTeamSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
 			await ensureNotInTeam(ctx.db, userId);
@@ -396,17 +390,7 @@ export const teamsRouter = createTRPCRouter({
 		}),
 
 	join: protectedProcedure
-		.input(
-			z.object({
-				teamCode: z
-					.string()
-					.length(
-						TEAM_CODE_LENGTH,
-						`Team code must be exactly ${TEAM_CODE_LENGTH} characters`
-					)
-					.toUpperCase()
-			})
-		)
+		.input(joinTeamSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
 			await ensureNotInTeam(ctx.db, userId);

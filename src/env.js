@@ -15,11 +15,18 @@ export const env = createEnv({
 		BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
 		GOOGLE_CLIENT_ID: z.string().min(1),
 		GOOGLE_CLIENT_SECRET: z.string().min(1),
+		// Without an API key, emails are printed to the server console instead.
+		RESEND_API_KEY:
+			process.env.NODE_ENV === "production"
+				? z.string().min(1)
+				: z.string().optional(),
+		EMAIL_FROM: z
+			.string()
+			.min(1)
+			.default("Hack the Change <no-reply@codethechangeyyc.ca>"),
 		DATABASE_URL: z.string().url(),
 		CONTENTFUL_SPACE_ID: z.string().min(1),
 		CONTENTFUL_ACCESS_TOKEN: z.string().min(1),
-		RESEND_API_KEY: z.string().optional(),
-		EMAIL_FROM: z.string().default("Hackathon <onboarding@resend.dev>"),
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development")
@@ -44,11 +51,11 @@ export const env = createEnv({
 		BETTER_AUTH_TRUSTED_ORIGINS: process.env.BETTER_AUTH_TRUSTED_ORIGINS,
 		GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 		GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+		RESEND_API_KEY: process.env.RESEND_API_KEY,
+		EMAIL_FROM: process.env.EMAIL_FROM,
 		DATABASE_URL: process.env.DATABASE_URL,
 		CONTENTFUL_SPACE_ID: process.env.CONTENTFUL_SPACE_ID,
 		CONTENTFUL_ACCESS_TOKEN: process.env.CONTENTFUL_ACCESS_TOKEN,
-		RESEND_API_KEY: process.env.RESEND_API_KEY,
-		EMAIL_FROM: process.env.EMAIL_FROM,
 		NODE_ENV: process.env.NODE_ENV
 	},
 	/**

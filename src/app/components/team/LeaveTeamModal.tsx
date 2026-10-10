@@ -1,6 +1,14 @@
 "use client";
 
-import { DangerButton, Modal, ModalTitle, SecondaryButton } from "./Modal";
+import { Button } from "@/app/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@/app/components/ui/dialog";
 
 export default function LeaveTeamModal({
 	open,
@@ -18,24 +26,29 @@ export default function LeaveTeamModal({
 	error?: string | null;
 }) {
 	return (
-		<Modal onClose={onCancel} open={open} showClose={false}>
-			<div className="flex flex-col gap-2">
-				<ModalTitle>Are you sure you want to leave {teamName}?</ModalTitle>
-				<p className="text-[16px] text-grey-600 leading-6">
-					This action can't be undone!
-				</p>
-			</div>
+		<Dialog onOpenChange={(next) => !next && onCancel()} open={open}>
+			<DialogContent showCloseButton={false}>
+				<DialogHeader>
+					<DialogTitle>Are you sure you want to leave {teamName}?</DialogTitle>
+					<DialogDescription>This action can't be undone!</DialogDescription>
+				</DialogHeader>
 
-			{error && <p className="font-medium text-[14px] text-red-700">{error}</p>}
+				{error && <p className="font-medium text-red-700 text-sm">{error}</p>}
 
-			<div className="flex flex-col gap-3">
-				<DangerButton disabled={loading} onClick={onConfirm} type="button">
-					{loading ? "Leaving..." : "Yes, leave team"}
-				</DangerButton>
-				<SecondaryButton onClick={onCancel} type="button">
-					Cancel
-				</SecondaryButton>
-			</div>
-		</Modal>
+				<DialogFooter>
+					<Button
+						disabled={loading}
+						onClick={onConfirm}
+						type="button"
+						variant="destructive-solid"
+					>
+						{loading ? "Leaving..." : "Yes, leave team"}
+					</Button>
+					<Button onClick={onCancel} type="button" variant="outline">
+						Cancel
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

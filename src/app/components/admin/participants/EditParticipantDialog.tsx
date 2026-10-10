@@ -108,7 +108,7 @@ export function EditParticipantDialog({
 			<Dialog onOpenChange={requestClose} open={!confirmingDiscard}>
 				<DialogContent className="sm:max-w-sm">
 					<DialogHeader>
-						<DialogTitle className="text-lg">Edit user information</DialogTitle>
+						<DialogTitle>Edit user information</DialogTitle>
 					</DialogHeader>
 					<FieldGroup>
 						<Field>
