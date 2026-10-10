@@ -60,7 +60,10 @@ export default function TeamView() {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<PageHeader description="Your team name and members" title="Team" />
+			<PageHeader
+				description="Team up, invite teammates, and manage your members."
+				title="Team"
+			/>
 
 			{query.isLoading ? (
 				<div className="h-40 w-full animate-pulse rounded-[12px] bg-grey-100" />
