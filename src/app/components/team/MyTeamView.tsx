@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Banner from "@/app/components/Banner";
 import PageHeader from "@/app/components/PageHeader";
 import { DISCORD_URL } from "@/lib/constants";
 import EditTeamNameModal from "./EditTeamNameModal";
@@ -8,7 +9,7 @@ import InviteCodeModal from "./InviteCodeModal";
 import JoinCodeModal from "./JoinCodeModal";
 import LeaveTeamModal from "./LeaveTeamModal";
 import MyTeamTable from "./MyTeamTable";
-import NoTeamBanner from "./NoTeamBanner";
+import NoTeamImages from "./NoTeamImages";
 import RegisterTeamModal from "./RegisterTeamModal";
 import SituationModal, { type Situation } from "./SituationModal";
 import SuccessModal from "./SuccessModal";
@@ -87,7 +88,14 @@ export default function MyTeamView() {
 					teamName={viewTeam.name}
 				/>
 			) : (
-				<NoTeamBanner onAction={() => open("situation")} />
+				<Banner
+					buttonText="Join or register a team"
+					colour="red"
+					description="Form a team of 2-5 members (including yourself!) and register or join your team!"
+					image={<NoTeamImages />}
+					onClick={() => open("situation")}
+					title="You aren't part of a team yet!"
+				/>
 			)}
 
 			<SituationModal
