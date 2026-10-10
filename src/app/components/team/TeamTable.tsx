@@ -96,7 +96,7 @@ function InviteRow({
 	);
 }
 
-interface MyTeamTableProps {
+interface TeamTableProps {
 	teamName: string;
 	members: TeamMember[];
 	maxMembers: number;
@@ -106,7 +106,7 @@ interface MyTeamTableProps {
 	onLeave: () => void;
 }
 
-export default function MyTeamTable({
+export default function TeamTable({
 	teamName,
 	members,
 	maxMembers,
@@ -114,7 +114,7 @@ export default function MyTeamTable({
 	onEditName,
 	onInvite,
 	onLeave
-}: MyTeamTableProps) {
+}: TeamTableProps) {
 	return (
 		<div className="w-full overflow-hidden rounded-xl border-2">
 			<div className="flex flex-col gap-4 bg-purple-50 p-6 sm:flex-row sm:items-start sm:justify-between">

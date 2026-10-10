@@ -92,7 +92,7 @@ export default function JoinCodeModal({
 					<DialogTitle>Enter your team’s invite code to join</DialogTitle>
 					<DialogDescription>
 						Ask whoever registered your team for its 6‑character invite code.
-						They’ll find it under Invite on their “My Team” page.
+						They’ll find it under Invite on their “Team” page.
 					</DialogDescription>
 				</DialogHeader>
 

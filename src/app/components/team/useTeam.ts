@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/trpc/react";
-import type { TeamMember } from "./MyTeamTable";
+import type { TeamMember } from "./TeamTable";
 
 export type ViewTeam = {
 	id: string;
@@ -12,7 +12,7 @@ export type ViewTeam = {
 	members: TeamMember[];
 };
 
-export function useMyTeam() {
+export function useTeam() {
 	const utils = api.useUtils();
 	const invalidate = () => utils.teams.getMyTeam.invalidate();
 

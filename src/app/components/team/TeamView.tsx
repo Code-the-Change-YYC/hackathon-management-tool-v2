@@ -8,12 +8,12 @@ import EditTeamNameModal from "./EditTeamNameModal";
 import InviteCodeModal from "./InviteCodeModal";
 import JoinCodeModal from "./JoinCodeModal";
 import LeaveTeamModal from "./LeaveTeamModal";
-import MyTeamTable from "./MyTeamTable";
 import NoTeamImages from "./NoTeamImages";
 import RegisterTeamModal from "./RegisterTeamModal";
 import SituationModal, { type Situation } from "./SituationModal";
 import SuccessModal from "./SuccessModal";
-import { useMyTeam } from "./useMyTeam";
+import TeamTable from "./TeamTable";
+import { useTeam } from "./useTeam";
 
 function formatTeamId(teamCode: string) {
 	return teamCode.toUpperCase().split("").join("-");
@@ -39,8 +39,8 @@ function joinErrorMessage(
 		: error.message;
 }
 
-export default function MyTeamView() {
-	const { query, viewTeam, join, create, leave, update } = useMyTeam();
+export default function TeamView() {
+	const { query, viewTeam, join, create, leave, update } = useTeam();
 	const [modal, setModal] = useState<ModalKind>(null);
 
 	function open(next: ModalKind) {
@@ -60,7 +60,7 @@ export default function MyTeamView() {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<PageHeader description="Your team name and members" title="My Team" />
+			<PageHeader description="Your team name and members" title="Team" />
 
 			{query.isLoading ? (
 				<div className="h-40 w-full animate-pulse rounded-[12px] bg-grey-100" />
@@ -78,7 +78,7 @@ export default function MyTeamView() {
 					</button>
 				</div>
 			) : viewTeam ? (
-				<MyTeamTable
+				<TeamTable
 					canEditName={viewTeam.isOwner}
 					maxMembers={viewTeam.maxMembers}
 					members={viewTeam.members}
