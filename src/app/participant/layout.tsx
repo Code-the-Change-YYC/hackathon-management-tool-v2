@@ -39,12 +39,12 @@ export default async function ParticipantLayout({
 					title: "Judging Information",
 					href: "/participant/judging",
 					icon: "task"
-				},
-				{
-					title: "Resources and Help",
-					href: "/participant/resources",
-					icon: "question"
 				}
+				// {
+				// 	title: "Resources and Help",
+				// 	href: "/participant/resources",
+				// 	icon: "question"
+				// }
 			]
 		},
 		{
