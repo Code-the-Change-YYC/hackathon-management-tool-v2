@@ -143,6 +143,7 @@ export default function MentorsSection() {
 						key={member.name + member.discord}
 						name={member.name}
 						role={member.role}
+						text="text-white"
 					/>
 				))}
 				{techMembers.map((member) => (
@@ -152,6 +153,7 @@ export default function MentorsSection() {
 						key={member.name + member.discord}
 						name={member.name}
 						role={member.role}
+						text="text-black"
 					/>
 				))}
 				{generalMembers.map((member) => (
@@ -161,6 +163,7 @@ export default function MentorsSection() {
 						key={member.name + member.discord}
 						name={member.name}
 						role={member.role}
+						text="text-black"
 					/>
 				))}
 				{industryMembers.map((member) => (
@@ -170,6 +173,7 @@ export default function MentorsSection() {
 						key={member.name + member.discord}
 						name={member.name}
 						role={member.role}
+						text="text-black"
 					/>
 				))}
 			</div>
