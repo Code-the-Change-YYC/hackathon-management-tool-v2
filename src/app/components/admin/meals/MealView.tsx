@@ -4,6 +4,7 @@ import { api } from "@/trpc/server";
 import Banner from "../../Banner";
 import PageHeader from "../../PageHeader";
 import MealAnalytics from "./MealAnalytics";
+import ScanMealTicketsImages from "./ScanMealTicketsImages";
 
 export default async function MealView() {
 	const events = await api.meals.getAllMeals();
@@ -26,27 +27,13 @@ export default async function MealView() {
 					title="Meal Information"
 				/>
 				<div className="flex flex-col gap-16">
-					{/* Mobile vertical layout */}
 					<Banner
 						buttonText="Open scanner"
-						className="flex md:hidden"
 						colour="purple"
 						description="(Recommended for mobile) open this to scan participant meal tickets!"
 						href="/meal"
-						layout="vertical"
+						image={<ScanMealTicketsImages />}
 						title="Scan meal tickets"
-						type="ScanMealTickets"
-					/>
-					{/* Desktop/Tablet horizontal layout */}
-					<Banner
-						buttonText="Open scanner"
-						className="hidden md:flex"
-						colour="purple"
-						description="(Recommended for mobile) open this to scan participant meal tickets!"
-						href="/meal"
-						layout="horizontal"
-						title="Scan meal tickets"
-						type="ScanMealTickets"
 					/>
 					<ScheduleSection
 						emptyDescription="Check back soon for event times."

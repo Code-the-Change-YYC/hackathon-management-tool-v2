@@ -26,19 +26,23 @@ async function registerTeam(page: Page, name: string) {
 	await page.goto("/participant/team");
 	await page.getByRole("button", { name: "Join or register a team" }).click();
 	await expect(
-		page.getByText("Select the statement that describes your situation best:")
+		page.getByText("Select the statement that describes your situation best.")
 	).toBeVisible();
 	await page.getByText("but our team is not registered yet.").click();
 	await page.getByRole("button", { name: "Continue" }).click();
 
-	await expect(page.getByText("Register your team")).toBeVisible();
-	await page.getByLabel("Team name", { exact: true }).fill(name);
-	await page.getByRole("button", { name: "Register" }).click();
-	await expect(page.getByText(`${name} is registered!`)).toBeVisible();
-	await page.getByRole("button", { name: "Finish" }).click();
+	await expect(
+		page.getByRole("heading", { name: "Register your team" })
+	).toBeVisible();
+	await page.getByLabel("Enter your team’s name").fill(name);
+	await page.getByRole("button", { name: "Continue" }).click();
+	await expect(
+		page.getByText("Invite others to join your team!")
+	).toBeVisible();
+	await page.getByRole("button", { name: "Done" }).click();
 }
 
-test("register flow walks situation, register and success modals", async ({
+test("register flow walks situation, register and invite modals", async ({
 	authenticatedPage: page
 }) => {
 	const name = `Reg Team ${Date.now()}`;
@@ -47,22 +51,25 @@ test("register flow walks situation, register and success modals", async ({
 	await page.goto("/participant/team");
 	await page.getByRole("button", { name: "Join or register a team" }).click();
 	await expect(
-		page.getByText("Select the statement that describes your situation best:")
+		page.getByText("Select the statement that describes your situation best.")
 	).toBeVisible();
 
 	await page.getByText("but our team is not registered yet.").click();
 	await page.getByRole("button", { name: "Continue" }).click();
 
-	await expect(page.getByText("Register your team")).toBeVisible();
-	await page.getByLabel("Team name", { exact: true }).fill(name);
-	await page.getByRole("button", { name: "Register" }).click();
-
-	await expect(page.getByText(`${name} is registered!`)).toBeVisible();
-	await expect(page.getByText("Your Team ID", { exact: true })).toBeVisible();
-
-	await page.getByRole("button", { name: "Finish" }).click();
 	await expect(
-		page.getByRole("heading", { name: `${name} is registered!` })
+		page.getByRole("heading", { name: "Register your team" })
+	).toBeVisible();
+	await page.getByLabel("Enter your team’s name").fill(name);
+	await page.getByRole("button", { name: "Continue" }).click();
+
+	await expect(
+		page.getByRole("heading", { name: "Invite others to join your team!" })
+	).toBeVisible();
+
+	await page.getByRole("button", { name: "Done" }).click();
+	await expect(
+		page.getByRole("heading", { name: "Invite others to join your team!" })
 	).toBeHidden();
 	await expect(page.getByText(name, { exact: true })).toBeVisible();
 });
@@ -75,11 +82,11 @@ test("owner can open invite, edit name and leave modals", async ({
 	await registerTeam(page, name);
 
 	// Invite code modal
-	await page.getByRole("button", { name: /Invite Team Member/ }).click();
+	await page.getByRole("button", { name: /Invite team member/i }).click();
 	await expect(
 		page.getByText("Invite others to join your team!")
 	).toBeVisible();
-	await page.getByRole("button", { name: "Copy code to clipboard" }).click();
+	await page.getByRole("button", { name: "Copy to clipboard" }).click();
 	await page.keyboard.press("Escape");
 
 	// Edit team name modal
@@ -115,14 +122,9 @@ test("join flow accepts a valid code and shows success modal", async ({
 	await page.getByRole("button", { name: "Continue" }).click();
 
 	await expect(
-		page.getByText("Enter your team's Invite Code to join")
+		page.getByText("Enter your team’s invite code to join")
 	).toBeVisible();
-	const code = team.teamCode ?? "";
-	for (let i = 0; i < code.length; i++) {
-		await page
-			.getByLabel(`Invite code character ${i + 1}`)
-			.fill(code.charAt(i));
-	}
+	await page.getByLabel("Team invite code").fill(team.teamCode ?? "");
 	await page.getByRole("button", { name: "Continue" }).click();
 
 	await expect(page.getByText(`You've joined ${team.name}!`)).toBeVisible();
@@ -142,17 +144,12 @@ test("join modal shows an error for an unknown code", async ({
 	await page.getByRole("button", { name: "Continue" }).click();
 
 	await expect(
-		page.getByText("Enter your team's Invite Code to join")
+		page.getByText("Enter your team’s invite code to join")
 	).toBeVisible();
-	const bogus = "ZZZZZZ";
-	for (let i = 0; i < bogus.length; i++) {
-		await page
-			.getByLabel(`Invite code character ${i + 1}`)
-			.fill(bogus.charAt(i));
-	}
+	await page.getByLabel("Team invite code").fill("ZZZZZZ");
 	await page.getByRole("button", { name: "Continue" }).click();
 
 	await expect(
-		page.getByText("No team was found. Please check the code and try again.")
+		page.getByText("No team uses that code. Check it with your teammates.")
 	).toBeVisible();
 });
