@@ -69,21 +69,10 @@ function MemberRow({
 	);
 }
 
-function InviteRow({
-	memberCount,
-	maxMembers,
-	onInvite
-}: {
-	memberCount: number;
-	maxMembers: number;
-	onInvite: () => void;
-}) {
-	const isFull = memberCount >= maxMembers;
-
+function InviteRow({ onInvite }: { onInvite: () => void }) {
 	return (
 		<button
 			className="flex h-auto w-full cursor-pointer items-center justify-start @md:gap-4 gap-3 border-t-2 p-4 @md:px-5 @md:py-5 transition-color duration-150 ease-out hover:bg-muted"
-			disabled={isFull}
 			onClick={onInvite}
 			type="button"
 		>
@@ -151,12 +140,7 @@ export default function TeamTable({
 				{members.map((member) => (
 					<MemberRow key={member.id} member={member} onLeave={onLeave} />
 				))}
-
-				<InviteRow
-					maxMembers={maxMembers}
-					memberCount={members.length}
-					onInvite={onInvite}
-				/>
+				{members.length < maxMembers && <InviteRow onInvite={onInvite} />}
 			</div>
 		</div>
 	);
