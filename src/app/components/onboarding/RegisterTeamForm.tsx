@@ -1,23 +1,31 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { AuthActions } from "@/app/components/auth/AuthShell";
 import { TextField } from "@/app/components/forms/TextField";
-import { Button, buttonVariants } from "@/app/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { Spinner } from "@/app/components/ui/spinner";
 import { ONBOARDING_ROUTES } from "@/lib/routes";
-import { cn, TEAM_NAME_MAX } from "@/lib/utils";
+import { TEAM_NAME_MAX } from "@/lib/utils";
 import {
 	type RegisterTeamValues,
 	registerTeamSchema
 } from "@/lib/validation/team";
 import { api } from "@/trpc/react";
+import { TeamGoBackButton } from "./TeamGoBackButton";
 
-export function RegisterTeamForm() {
+export function RegisterTeamForm({
+	onRegistered,
+	onBack,
+	Actions = AuthActions
+}: {
+	onRegistered?: () => Promise<void> | void;
+	onBack?: () => void;
+	Actions?: typeof AuthActions;
+}) {
 	const router = useRouter();
 	const form = useForm<RegisterTeamValues>({
 		defaultValues: { name: "" },
@@ -26,6 +34,7 @@ export function RegisterTeamForm() {
 
 	const registerTeam = api.teams.create.useMutation({
 		onSuccess: () => {
+			if (onRegistered) return onRegistered();
 			router.push(ONBOARDING_ROUTES.teamRegistered);
 			// Drops cached pages, so going back shows the saved answers.
 			router.refresh();
@@ -62,18 +71,13 @@ export function RegisterTeamForm() {
 				name="name"
 				placeholder="Team name"
 			/>
-			<AuthActions>
+			<Actions>
 				<Button className="w-full" disabled={isBusy} type="submit">
 					{isBusy && <Spinner data-icon="inline-start" />}
 					Continue
 				</Button>
-				<Link
-					className={cn(buttonVariants({ variant: "outline" }), "w-full")}
-					href={ONBOARDING_ROUTES.team}
-				>
-					Go back
-				</Link>
-			</AuthActions>
+				<TeamGoBackButton onBack={onBack} />
+			</Actions>
 		</form>
 	);
 }

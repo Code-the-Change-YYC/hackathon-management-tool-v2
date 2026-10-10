@@ -17,9 +17,7 @@ export default function SuccessModal({
 	title,
 	description,
 	image,
-	imageAlt,
-	imageSize = 180,
-	children
+	imageAlt
 }: {
 	open: boolean;
 	onFinish: () => void;
@@ -27,8 +25,6 @@ export default function SuccessModal({
 	description: React.ReactNode;
 	image: string;
 	imageAlt: string;
-	imageSize?: number;
-	children?: React.ReactNode;
 }) {
 	return (
 		<Dialog onOpenChange={(next) => !next && onFinish()} open={open}>
@@ -39,15 +35,8 @@ export default function SuccessModal({
 				</DialogHeader>
 
 				<div className="flex justify-center py-2">
-					<Image
-						alt={imageAlt}
-						height={imageSize}
-						src={image}
-						width={imageSize}
-					/>
+					<Image alt={imageAlt} height={180} src={image} width={180} />
 				</div>
-
-				{children}
 
 				<DialogFooter>
 					<Button onClick={onFinish} type="button">

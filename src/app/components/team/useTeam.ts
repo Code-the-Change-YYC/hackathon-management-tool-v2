@@ -14,13 +14,11 @@ export type ViewTeam = {
 
 export function useTeam() {
 	const utils = api.useUtils();
-	const invalidate = () => utils.teams.getMyTeam.invalidate();
+	const refresh = () => utils.teams.getMyTeam.invalidate();
 
 	const query = api.teams.getMyTeam.useQuery();
-	const join = api.teams.join.useMutation({ onSuccess: invalidate });
-	const create = api.teams.create.useMutation({ onSuccess: invalidate });
-	const leave = api.teams.leave.useMutation({ onSuccess: invalidate });
-	const update = api.teams.update.useMutation({ onSuccess: invalidate });
+	const leave = api.teams.leave.useMutation({ onSuccess: refresh });
+	const update = api.teams.update.useMutation({ onSuccess: refresh });
 
 	const team = query.data;
 	const viewTeam: ViewTeam | null = team
@@ -40,5 +38,5 @@ export function useTeam() {
 			}
 		: null;
 
-	return { query, viewTeam, join, create, leave, update };
+	return { query, viewTeam, refresh, leave, update };
 }
