@@ -15,6 +15,7 @@ export default defineConfig({
 		["list"]
 	],
 	testDir: "./tests/e2e/specs",
+	snapshotPathTemplate: "{testDir}/../figma/{arg}{ext}",
 	timeout: 30_000,
 	use: {
 		baseURL,
