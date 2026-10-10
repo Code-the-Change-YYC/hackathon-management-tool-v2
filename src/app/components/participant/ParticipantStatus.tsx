@@ -1,6 +1,11 @@
 "use client";
 
-import { ArrowRightLine, FileCheckLine, XlsLine } from "@mingcute/react";
+import {
+	ArrowRightLine,
+	CheckLine,
+	FileCheckLine,
+	XlsLine
+} from "@mingcute/react";
 import Link from "next/link";
 import { buttonVariants } from "@/app/components/ui/button";
 import { useCurrentTime } from "@/hooks/use-current-time";
@@ -10,6 +15,7 @@ import {
 	type JudgingPhase
 } from "@/lib/judging";
 import { countdownParts, formatDashboardDate } from "@/lib/participant-events";
+import { type JudgingRound, judgingStages } from "@/lib/participant-judging";
 import { cn } from "@/lib/utils";
 
 export function SubmissionCountdown({
@@ -81,11 +87,104 @@ export function SubmissionCountdown({
 
 export function JudgingStatus({
 	phase,
-	roundName
+	roundName,
+	variant = "compact",
+	rounds = [],
+	currentRoundId = null
 }: {
 	phase: JudgingPhase;
 	roundName?: string;
+	variant?: "compact" | "detailed";
+	rounds?: JudgingRound[];
+	currentRoundId?: string | null;
 }) {
+	if (variant === "detailed")
+		return (
+			<section
+				aria-labelledby="judging-title"
+				className="flex min-w-0 flex-col gap-6"
+			>
+				<h2 className="font-medium text-[22px]/7" id="judging-title">
+					Judging Status
+				</h2>
+				{!["judging", "review", "winners_announced"].includes(phase) && (
+					<p aria-live="polite" className="text-grey-600 text-sm/5">
+						{JUDGING_PHASE_LABELS[phase]}
+					</p>
+				)}
+				<ol
+					aria-label="Judging phases"
+					className="relative flex flex-col gap-4"
+				>
+					{judgingStages(phase, rounds, currentRoundId).map(
+						(stage, index, stages) => (
+							<li
+								aria-current={stage.state === "current" ? "step" : undefined}
+								className="relative flex min-h-20 items-start gap-6 px-4 py-3"
+								key={stage.id}
+							>
+								{index < stages.length - 1 && (
+									<span
+										aria-hidden
+										className="absolute top-9 bottom-[-28px] left-[27.5px] w-px bg-grey-300"
+									/>
+								)}
+								<span
+									className={cn(
+										"relative flex size-6 shrink-0 items-center justify-center rounded-full",
+										stage.state === "completed"
+											? "bg-[#04b38f]"
+											: cn(
+													"border-2 bg-white",
+													stage.state === "current"
+														? "border-purple-500"
+														: "border-grey-300"
+												)
+									)}
+								>
+									{stage.state === "completed" ? (
+										<CheckLine aria-hidden className="size-4 text-white" />
+									) : stage.state === "current" ? (
+										<span
+											aria-hidden
+											className="size-3 rounded-full bg-purple-500"
+										/>
+									) : null}
+								</span>
+								<div className="flex min-w-0 flex-1 flex-col gap-2">
+									<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+										<span className="font-medium text-base/6">
+											{stage.name}
+										</span>
+										<span
+											className={cn(
+												"rounded px-2 font-medium text-[11px]/4 uppercase",
+												stage.state === "completed"
+													? "bg-[#d1fff2] text-[#006c53]"
+													: stage.state === "current"
+														? "bg-purple-100 text-purple-800"
+														: "bg-grey-100 text-grey-600"
+											)}
+										>
+											{stage.state === "current" ? "Ongoing" : stage.state}
+										</span>
+									</div>
+									<p className="font-medium text-grey-600 text-xs/4">
+										{stage.id === "submissions"
+											? "Submit your project before the configured deadline to take part in judging."
+											: stage.id === "review"
+												? "Projects are reviewed before proceeding to live judging."
+												: stage.id === "winners"
+													? "Results will be published once judging and deliberation are complete."
+													: "Prepare a short project demonstration for your team’s assigned judging time."}
+									</p>
+								</div>
+							</li>
+						)
+					)}
+				</ol>
+			</section>
+		);
 	const milestones = JUDGING_PHASES.filter((value) => value !== "not_started");
 	const current = JUDGING_PHASES.indexOf(phase) - 1;
 	const label =

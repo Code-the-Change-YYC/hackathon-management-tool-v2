@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import {
 	type Criterion,
 	formatTime,
+	getAssignmentCriteria,
 	getAssignmentRoomName,
 	getAssignmentTotal,
 	getCriteriaScore,
@@ -31,6 +32,7 @@ export function JudgeTeamCard({
 	criteria: Criterion[];
 	currentTime: Date;
 }) {
+	const applicableCriteria = getAssignmentCriteria(assignment, criteria);
 	const scored = isAssignmentScored(assignment, criteria);
 	const canScore = !assignment.timeSlot || assignment.timeSlot <= currentTime;
 	const scoreHref = `/judge/score/${assignment.id}`;
@@ -71,7 +73,7 @@ export function JudgeTeamCard({
 				{scored ? (
 					<>
 						<div className="flex flex-wrap gap-2">
-							{criteria
+							{applicableCriteria
 								.filter((criterion) => criterion.isSidepot)
 								.map((criterion) => {
 									const value = getCriteriaScore(assignment, criterion.id);
@@ -87,7 +89,7 @@ export function JudgeTeamCard({
 								})}
 						</div>
 						<dl className="grid grid-cols-[repeat(auto-fit,minmax(3.5rem,1fr))] gap-2 text-center">
-							{criteria
+							{applicableCriteria
 								.filter((criterion) => !criterion.isSidepot)
 								.map((criterion) => {
 									const value = getCriteriaScore(assignment, criterion.id) ?? 0;

@@ -1,4 +1,10 @@
-import { Alarm1Line, ArrowRightLine, LocationLine } from "@mingcute/react";
+import {
+	Alarm1Line,
+	ArrowRightLine,
+	ExternalLinkLine,
+	LocationLine,
+	VideoLine
+} from "@mingcute/react";
 import Image from "next/image";
 import { buttonVariants } from "@/app/components/ui/button";
 import {
@@ -10,13 +16,22 @@ import { cn } from "@/lib/utils";
 export function EventBanner({
 	event,
 	timeZone,
-	tone = "red"
+	tone = "red",
+	title,
+	actionLabel = "Navigate there",
+	judging = false,
+	timeLabel
 }: {
 	event?: DashboardEvent;
 	timeZone: string;
 	tone?: "red" | "purple";
+	title?: string;
+	actionLabel?: string;
+	judging?: boolean;
+	timeLabel?: string;
 }) {
 	const isPlaceholder = !event;
+	const preciseArt = tone === "purple" || judging;
 	const format = new Intl.DateTimeFormat("en-US", {
 		hour: "numeric",
 		minute: "2-digit",
@@ -36,14 +51,17 @@ export function EventBanner({
 			<div
 				className={cn(
 					"relative z-10 flex w-full flex-col gap-4 sm:max-w-100",
-					tone === "purple" ? "rounded-lg bg-purple-500" : "sm:bg-red-700"
+					tone === "purple"
+						? "rounded-lg bg-purple-500"
+						: "rounded-lg bg-red-700"
 				)}
 			>
 				<div className="flex flex-col gap-1">
 					<h2 className="wrap-break-word font-semibold text-[28px]/9">
-						{isPlaceholder
-							? "Hackathon updates coming soon"
-							: `${event.title} ongoing now!`}
+						{title ??
+							(isPlaceholder
+								? "Hackathon updates coming soon"
+								: `${event.title} ongoing now!`)}
 					</h2>
 					{event ? (
 						<div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
@@ -53,8 +71,8 @@ export function EventBanner({
 							</span>
 							<span className="flex items-center gap-2">
 								<Alarm1Line aria-hidden className="size-6 shrink-0" />
-								{format.format(event.startTime)} –{" "}
-								{format.format(event.endTime)}
+								{timeLabel ??
+									`${format.format(event.startTime)} – ${format.format(event.endTime)}`}
 							</span>
 						</div>
 					) : (
@@ -72,7 +90,7 @@ export function EventBanner({
 				aria-hidden
 				className={cn(
 					"pointer-events-none absolute sm:top-[-76px] sm:right-auto sm:bottom-auto sm:left-[427px]",
-					tone === "purple"
+					preciseArt
 						? "bottom-[-34.2px] left-[20.75px] h-[216.29px] w-[350.54px] sm:h-[334.598px] sm:w-[539.482px]"
 						: "right-0 bottom-[-25px] h-46 w-80 sm:h-84 sm:w-135"
 				)}
@@ -81,7 +99,7 @@ export function EventBanner({
 					alt=""
 					className={cn(
 						"absolute",
-						tone === "purple"
+						preciseArt
 							? "top-[6.479px] left-[6.479px] size-[195.274px] rotate-[-3.94deg] sm:top-[10.411px] sm:left-[10.411px] sm:size-[313.777px]"
 							: "top-0 left-0 size-48 rotate-[-4deg] sm:size-[314px]"
 					)}
@@ -94,7 +112,7 @@ export function EventBanner({
 					alt=""
 					className={cn(
 						"absolute",
-						tone === "purple"
+						preciseArt
 							? "top-[42.787px] left-[177.037px] size-[161.881px] rotate-[8.97deg] sm:top-[56.682px] sm:left-[260.682px] sm:size-[260.118px]"
 							: "top-5 right-0 size-40 rotate-[9deg] sm:top-10 sm:size-65"
 					)}
@@ -118,8 +136,13 @@ export function EventBanner({
 					)}
 					href={href.data}
 				>
-					Navigate there
-					<ArrowRightLine data-icon="inline-end" />
+					{judging && <VideoLine aria-hidden className="size-5" />}
+					{actionLabel}
+					{judging ? (
+						<ExternalLinkLine aria-hidden className="size-5" />
+					) : (
+						<ArrowRightLine data-icon="inline-end" />
+					)}
 				</a>
 			)}
 		</section>
