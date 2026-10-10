@@ -18,7 +18,7 @@ export type TeamMember = {
 
 function MemberAvatar({ name, src }: { name: string; src: string }) {
 	return (
-		<Avatar className="size-12" size="lg">
+		<Avatar size="lg">
 			<AvatarImage alt={`${name}'s avatar`} src={src} />
 			<AvatarFallback className="bg-grey-200 text-grey-600">
 				{getInitials(name)}
@@ -35,34 +35,35 @@ function MemberRow({
 	onLeave: () => void;
 }) {
 	return (
-		<div className="flex gap-4 border-t-2 px-5 py-5 sm:items-center">
+		<div className="flex @md:items-center @md:gap-4 gap-3 border-t-2 p-4 @md:px-5 @md:py-5">
 			<MemberAvatar name={member.name} src={member.avatarSrc} />
-			<div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+			<div className="flex min-w-0 flex-1 @md:flex-row flex-col @md:items-center @md:gap-4 gap-2">
 				<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-					<div className="flex items-center gap-2">
-						<p className="truncate font-medium">{member.name}</p>
+					<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+						<p className="wrap-break-word min-w-0 font-medium">{member.name}</p>
 						{member.isYou && (
 							<Badge className="shrink-0 text-xs uppercase">YOU</Badge>
 						)}
 					</div>
-					<p className="truncate text-muted-foreground text-xs">
+					<p
+						className="truncate text-muted-foreground text-xs"
+						title={member.email}
+					>
 						{member.email}
 					</p>
 				</div>
 
-				<div className="flex justify-end sm:block sm:shrink-0">
-					{member.isYou && (
-						<Button
-							className="hover:bg-destructive/10 hover:text-destructive"
-							onClick={onLeave}
-							size="sm"
-							variant="ghost"
-						>
-							<ExitLine data-icon="inline-start" />
-							Leave team
-						</Button>
-					)}
-				</div>
+				{member.isYou && (
+					<Button
+						className="-ml-3 @md:ml-0 @md:self-auto self-start hover:bg-destructive/10 hover:text-destructive"
+						onClick={onLeave}
+						size="sm"
+						variant="ghost"
+					>
+						<ExitLine data-icon="inline-start" />
+						Leave team
+					</Button>
+				)}
 			</div>
 		</div>
 	);
@@ -81,7 +82,7 @@ function InviteRow({
 
 	return (
 		<button
-			className="flex h-auto w-full cursor-pointer items-center justify-start gap-4 border-t-2 px-5 py-5 transition-color duration-150 ease-out hover:bg-muted"
+			className="flex h-auto w-full cursor-pointer items-center justify-start @md:gap-4 gap-3 border-t-2 p-4 @md:px-5 @md:py-5 transition-color duration-150 ease-out hover:bg-muted"
 			disabled={isFull}
 			onClick={onInvite}
 			type="button"
@@ -116,14 +117,15 @@ export default function TeamTable({
 	onLeave
 }: TeamTableProps) {
 	return (
-		<div className="w-full overflow-hidden rounded-xl border-2">
-			<div className="flex flex-col gap-4 bg-purple-50 p-6 sm:flex-row sm:items-start sm:justify-between">
-				<div className="flex items-center gap-3">
-					<span className="grid size-14 shrink-0 place-items-center rounded-xl bg-purple-500 text-white">
-						<Group3Line className="size-7" />
+		// The grid's minmax(0, 1fr) column stops long emails from widening the page.
+		<div className="@container grid w-full grid-cols-1 overflow-hidden rounded-xl border-2">
+			<div className="flex items-start justify-between @md:gap-4 gap-3 bg-purple-50 @md:p-6 p-4">
+				<div className="flex min-w-0 items-center gap-3">
+					<span className="grid @md:size-14 size-11 shrink-0 place-items-center @md:rounded-xl rounded-lg bg-purple-500 text-white">
+						<Group3Line className="@md:size-7 size-6" />
 					</span>
-					<div className="flex flex-col gap-0.5">
-						<h2 className="font-medium text-3xl text-grey-800 leading-9">
+					<div className="flex min-w-0 flex-col gap-0.5">
+						<h2 className="wrap-break-word font-medium @md:text-2xl @xl:text-3xl text-grey-800 text-xl @md:leading-8 @xl:leading-9 leading-7">
 							{teamName}
 						</h2>
 						<p className="font-medium text-muted-foreground text-xs uppercase">
@@ -135,7 +137,7 @@ export default function TeamTable({
 				{canEditName && (
 					<Button
 						aria-label="Edit team name"
-						className="hover:bg-purple-100"
+						className="shrink-0 hover:bg-purple-100"
 						onClick={onEditName}
 						size="icon-lg"
 						variant="ghost"
