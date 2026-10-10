@@ -17,7 +17,7 @@ export default async function TeamRegisteredPage() {
 	return (
 		<>
 			<AuthHeading
-				description="Share this code with your teammates so they can join your team! You can always find this code by inviting teammates on the “My Team” page."
+				description="Share this code with your teammates so they can join your team! You can always find this code by inviting teammates on the “Team” page."
 				title="Invite others to join your team!"
 			>
 				<OnboardingSteps current="team" />

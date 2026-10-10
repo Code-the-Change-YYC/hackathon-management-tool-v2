@@ -123,12 +123,10 @@ export function DietaryRestrictionDialogue({
 	return (
 		<Dialog onOpenChange={handleDialogueOpenChange} open>
 			{dialogueMode === "edit" ? (
-				<DialogContent className="gap-6 p-6 sm:p-8">
-					<DialogHeader className="gap-3 pr-6">
-						<DialogTitle className="font-semibold text-xl leading-tight">
-							Edit your dietary restrictions
-						</DialogTitle>
-						<DialogDescription className="font-normal text-sm">
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Edit your dietary restrictions</DialogTitle>
+						<DialogDescription>
 							Update your dietary restrictions so we can accommodate your needs!
 						</DialogDescription>
 					</DialogHeader>
@@ -203,7 +201,7 @@ export function DietaryRestrictionDialogue({
 							</FieldSet>
 						</FieldGroup>
 
-						<DialogFooter className="mx-0 mb-0 flex-col border-0 bg-transparent p-0 sm:flex-col">
+						<DialogFooter>
 							<Button
 								disabled={
 									updateDietaryRestrictions.isPending || !hasUnsavedChanges
@@ -228,16 +226,16 @@ export function DietaryRestrictionDialogue({
 					</form>
 				</DialogContent>
 			) : (
-				<DialogContent className="gap-6 p-6 sm:p-8">
-					<DialogHeader className="gap-3 pr-6">
-						<DialogTitle className="font-semibold text-xl leading-tight">
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>
 							Are you sure you want to discard your changes?
 						</DialogTitle>
-						<DialogDescription className="font-normal text-sm">
+						<DialogDescription>
 							You’ve made edits to your dietary restrictions without saving.
 						</DialogDescription>
 					</DialogHeader>
-					<DialogFooter className="mx-0 mb-0 flex-col border-0 bg-transparent p-0 sm:flex-col">
+					<DialogFooter>
 						<Button
 							onClick={discardChanges}
 							size="sm"

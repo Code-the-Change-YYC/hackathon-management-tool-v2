@@ -9,6 +9,7 @@ import {
 	AppSidebar,
 	AppSidebarTriggerHeader
 } from "../components/layout/AppSidebar";
+import PageContainer from "../components/PageContainer";
 
 export default async function ParticipantLayout({
 	children
@@ -23,7 +24,7 @@ export default async function ParticipantLayout({
 			items: [
 				{ title: "Dashboard", href: "/participant", icon: "home" },
 				{ title: "Schedule", href: "/participant/schedule", icon: "calendar" },
-				{ title: "My Team", href: "/participant/team", icon: "group" },
+				{ title: "Team", href: "/participant/team", icon: "group" },
 				{
 					title: "Meal Information",
 					href: "/participant/meals",
@@ -83,7 +84,7 @@ export default async function ParticipantLayout({
 			/>
 			<SidebarInset>
 				<AppSidebarTriggerHeader />
-				{children}
+				<PageContainer>{children}</PageContainer>
 			</SidebarInset>
 		</SidebarProvider>
 	);

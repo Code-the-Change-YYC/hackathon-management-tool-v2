@@ -1,22 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import Banner from "@/app/components/Banner";
+import type { Situation } from "@/app/components/onboarding/TeamSituationForm";
 import PageHeader from "@/app/components/PageHeader";
 import { DISCORD_URL } from "@/lib/constants";
 import EditTeamNameModal from "./EditTeamNameModal";
 import InviteCodeModal from "./InviteCodeModal";
 import JoinCodeModal from "./JoinCodeModal";
 import LeaveTeamModal from "./LeaveTeamModal";
-import MyTeamTable from "./MyTeamTable";
-import NoTeamBanner from "./NoTeamBanner";
+import NoTeamImages from "./NoTeamImages";
 import RegisterTeamModal from "./RegisterTeamModal";
-import SituationModal, { type Situation } from "./SituationModal";
+import SituationModal from "./SituationModal";
 import SuccessModal from "./SuccessModal";
-import { useMyTeam } from "./useMyTeam";
-
-function formatTeamId(teamCode: string) {
-	return teamCode.toUpperCase().split("").join("-");
-}
+import TeamTable from "./TeamTable";
+import { useTeam } from "./useTeam";
 
 type ModalKind =
 	| null
@@ -26,25 +24,13 @@ type ModalKind =
 	| "joined"
 	| "leave"
 	| "edit"
-	| "register"
-	| "registered";
+	| "register";
 
-function joinErrorMessage(
-	error: { data?: { code?: string } | null; message: string } | null
-) {
-	if (!error) return null;
-	return error.data?.code === "NOT_FOUND"
-		? "No team was found. Please check the code and try again."
-		: error.message;
-}
-
-export default function MyTeamView() {
-	const { query, viewTeam, join, create, leave, update } = useMyTeam();
+export default function TeamView() {
+	const { query, viewTeam, refresh, leave, update } = useTeam();
 	const [modal, setModal] = useState<ModalKind>(null);
 
 	function open(next: ModalKind) {
-		join.reset();
-		create.reset();
 		leave.reset();
 		update.reset();
 		setModal(next);
@@ -58,8 +44,11 @@ export default function MyTeamView() {
 	}
 
 	return (
-		<div className="flex flex-col gap-6 p-6">
-			<PageHeader description="Your team name and members" title="My Team" />
+		<div className="flex flex-col gap-6">
+			<PageHeader
+				description="Team up, invite teammates, and manage your members."
+				title="Team"
+			/>
 
 			{query.isLoading ? (
 				<div className="h-40 w-full animate-pulse rounded-[12px] bg-grey-100" />
@@ -77,7 +66,7 @@ export default function MyTeamView() {
 					</button>
 				</div>
 			) : viewTeam ? (
-				<MyTeamTable
+				<TeamTable
 					canEditName={viewTeam.isOwner}
 					maxMembers={viewTeam.maxMembers}
 					members={viewTeam.members}
@@ -87,7 +76,14 @@ export default function MyTeamView() {
 					teamName={viewTeam.name}
 				/>
 			) : (
-				<NoTeamBanner onAction={() => open("situation")} />
+				<Banner
+					buttonText="Join or register a team"
+					colour="red"
+					description="Form a team of 2-5 members (including yourself!) and register or join your team!"
+					image={<NoTeamImages />}
+					onClick={() => open("situation")}
+					title="You aren't part of a team yet!"
+				/>
 			)}
 
 			<SituationModal
@@ -96,36 +92,15 @@ export default function MyTeamView() {
 				open={modal === "situation"}
 			/>
 			<RegisterTeamModal
-				error={create.error?.message ?? null}
-				loading={create.isPending}
+				onBack={() => setModal("situation")}
 				onClose={() => setModal(null)}
-				onSubmit={(name) =>
-					create.mutate({ name }, { onSuccess: () => setModal("registered") })
-				}
+				onRegistered={async () => {
+					// Loads the new team first, so the invite modal has its code.
+					await refresh();
+					setModal("invite");
+				}}
 				open={modal === "register"}
 			/>
-			<SuccessModal
-				description={
-					<>
-						Share your Team ID with your teammates. Each member must enter it
-						under
-						<strong> Join Existing Team</strong> to officially join.
-					</>
-				}
-				image="/team/mascot-flag.png"
-				imageAlt="Team registered"
-				imageSize={160}
-				onFinish={() => setModal(null)}
-				open={modal === "registered"}
-				title={`${create.data?.name ?? ""} is registered!`}
-			>
-				<div className="flex flex-col items-center gap-1 rounded-xl bg-purple-50 py-4">
-					<p className="font-medium text-[14px] text-grey-600">Your Team ID</p>
-					<p className="font-semibold text-[28px] text-grey-800 leading-9 tracking-[0.1em]">
-						{formatTeamId(create.data?.teamCode ?? "")}
-					</p>
-				</div>
-			</SuccessModal>
 			{viewTeam && (
 				<InviteCodeModal
 					code={viewTeam.teamCode}
@@ -134,24 +109,22 @@ export default function MyTeamView() {
 				/>
 			)}
 			<JoinCodeModal
-				error={joinErrorMessage(join.error)}
-				loading={join.isPending}
+				onBack={() => setModal("situation")}
 				onClose={() => setModal(null)}
-				onSubmit={(code) =>
-					join.mutate(
-						{ teamCode: code },
-						{ onSuccess: () => setModal("joined") }
-					)
-				}
+				onJoined={async () => {
+					// Loads the new team first, so the success modal has its name.
+					await refresh();
+					setModal("joined");
+				}}
 				open={modal === "join"}
 			/>
 			<SuccessModal
-				description={`Congrats! You've joined your teammates at ${join.data?.name ?? viewTeam?.name ?? ""} as a registered member!`}
+				description={`Congrats! You've joined your teammates at ${viewTeam?.name ?? ""} as a registered member!`}
 				image="/team/mascot-celebrate.png"
 				imageAlt="Teammates celebrating"
 				onFinish={() => setModal(null)}
 				open={modal === "joined"}
-				title={`You've joined ${join.data?.name ?? viewTeam?.name ?? ""}!`}
+				title={`You've joined ${viewTeam?.name ?? ""}!`}
 			/>
 			{viewTeam && (
 				<LeaveTeamModal
