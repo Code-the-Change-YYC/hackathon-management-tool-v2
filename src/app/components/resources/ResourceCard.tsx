@@ -19,7 +19,7 @@ export default function ResourceCard({
 			<CardContent className="flex size-full flex-row gap-2">
 				<Image
 					alt={`${name} image`}
-					className="pointer-events-none shrink-0"
+					className="pointer-events-none aspect-square size-24 shrink-0"
 					height={100}
 					src={imgSrc}
 					width={100}
