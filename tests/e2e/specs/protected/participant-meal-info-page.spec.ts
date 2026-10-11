@@ -19,7 +19,7 @@ test.use({
 
 // Given I am signed in as a participant
 // When I navigate to /participant/meals
-// Then I see Meal Information, Your Meal Ticket, Dietary Restrictions, and Meal Schedule.
+// Then I see Meals, Your Meal Ticket, Dietary Restrictions, and Meal Schedule.
 test(
 	"participant can access all meal information sections",
 	{ tag: "@smoke" },
@@ -27,7 +27,7 @@ test(
 		await page.goto(path);
 		await expect(page).toHaveURL(path);
 		for (const name of [
-			"Meal Information",
+			"Meals",
 			"Your Meal Ticket",
 			"Dietary Restrictions",
 			"Meal Schedule"
@@ -51,7 +51,7 @@ test.describe("admin access", () => {
 		await page.goto(path);
 		await expect(page).toHaveURL(path);
 		for (const name of [
-			"Meal Information",
+			"Meals",
 			"Your Meal Ticket",
 			"Dietary Restrictions",
 			"Meal Schedule"
