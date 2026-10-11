@@ -10,28 +10,24 @@ export default async function MealInfoPage() {
 	const session = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
 	const displayName = session.user.name?.trim() || "Participant";
 	const nextMeal = await api.meals.getNextMeal();
-	const ticket = nextMeal
-		? await api.events.rotateParticipantEventTicket({ eventId: nextMeal.id })
-		: null;
+	const ticket =
+		nextMeal && session.user.role === Role.PARTICIPANT
+			? await api.events.rotateParticipantEventTicket({ eventId: nextMeal.id })
+			: null; // Admin users do not have meal tickets. They should still be able to view this page.
 
 	return (
-		<main className="min-h-screen">
-			<div className="mx-auto flex w-full max-w-6xl flex-col gap-16">
-				<div className="flex flex-col gap-6">
-					<PageHeader
-						description="Your meal tickets, dietary restrictions, and upcoming meal times"
-						title="Meal Information"
-					/>
-
-					<MealTicket displayName={displayName} ticket={ticket} />
-				</div>
-
+		<div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+			<PageHeader
+				description="Your meal tickets, dietary restrictions, and upcoming meal times."
+				title="Meal Information"
+			/>
+			<div className="flex flex-col gap-12">
+				<MealTicket displayName={displayName} ticket={ticket} />
 				<DietaryRestriction
 					dietaryRestrictions={session.user.dietaryRestrictions}
 				/>
-
 				<MealScheduleSection />
 			</div>
-		</main>
+		</div>
 	);
 }
