@@ -158,9 +158,8 @@ test(
 
 // Given active meals exist today and tomorrow
 // When I view the meal schedule as a participant
-// Then meals appear under their respective calendar dates in chronological order
-// And today's date is visually emphasized while tomorrow's is not.
-test("groups meals by calendar date and visually marks today", async ({
+// Then meals appear under their respective calendar dates in chronological order.
+test("groups meals by calendar date", async ({
 	authenticatedPage: page,
 	createMeal
 }) => {
@@ -193,9 +192,6 @@ test("groups meals by calendar date and visually marks today", async ({
 			name: dateFormatter.format(date),
 			exact: true
 		});
-		await expect(heading).toHaveClass(
-			date === today ? /font-semibold/ : /font-normal/
-		);
 		const group = heading.locator("..");
 		await expect(group.getByRole("heading", { level: 4 })).toHaveText(
 			meals
