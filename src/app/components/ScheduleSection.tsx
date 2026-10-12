@@ -71,7 +71,7 @@ export function ScheduleSection({
 				</div>
 			) : (
 				<div className="rounded-lg border border-medium-grey border-dashed bg-white px-6 py-10 text-center">
-					<p className="font-semibold text-dark-grey">{emptyTitle}</p>
+					<p className="font-medium text-dark-grey">{emptyTitle}</p>
 					<p className="mt-2 text-dark-grey/60 text-sm">{emptyDescription}</p>
 				</div>
 			)}
