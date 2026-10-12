@@ -248,8 +248,8 @@ for (const timing of [
 
 // Given there are no active meals, only a draft meal
 // When I view the meal schedule as a participant
-// Then I see "No meals have been scheduled yet." and the check-back guidance
-// And no meal entries are displayed.
+// Then I see "No meals have been scheduled yet."
+// And I see "Check back soon for updated meal times." with no meal entries displayed.
 test("shows an empty schedule when there are no active meals", async ({
 	authenticatedPage: page,
 	createMeal
@@ -268,10 +268,9 @@ test("shows an empty schedule when there are no active meals", async ({
 		})
 	).toBeVisible();
 	await expect(
-		schedule(page).getByText(
-			"Check back soon for meal times and ticket scanning windows.",
-			{ exact: true }
-		)
+		schedule(page).getByText("Check back soon for updated meal times.", {
+			exact: true
+		})
 	).toBeVisible();
 	await expect(schedule(page).getByRole("listitem")).toHaveCount(0);
 });
