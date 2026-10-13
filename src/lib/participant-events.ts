@@ -18,17 +18,22 @@ export type DashboardEvent = {
 	navigationUrl?: string | null;
 };
 
-export function selectDashboardEvents(events: DashboardEvent[], now: Date) {
-	const sorted = [...events].sort(
-		(a, b) =>
-			a.startTime.getTime() - b.startTime.getTime() || a.id.localeCompare(b.id)
+export function getCurrentEvent(events: DashboardEvent[], now: Date) {
+	return events.find((event) => event.startTime <= now && now < event.endTime);
+}
+
+export function getTodayFutureEvents(events: DashboardEvent[], now: Date) {
+	const todayStart = new Date(now);
+	todayStart.setHours(0, 0, 0, 0);
+	const todayEnd = new Date(todayStart);
+	todayEnd.setDate(todayEnd.getDate() + 1);
+
+	return events.filter(
+		(event) =>
+			event.endTime >= now &&
+			event.startTime >= todayStart &&
+			event.startTime < todayEnd
 	);
-	return {
-		current: sorted.find(
-			(event) => event.startTime <= now && now < event.endTime
-		),
-		upcoming: sorted.filter((event) => event.startTime > now).slice(0, 3)
-	};
 }
 
 export function countdownParts(deadline: Date, now: Date) {

@@ -1,5 +1,5 @@
+import { Schedule } from "@/app/components/Schedule";
 import type { ScheduleItemData } from "@/app/components/ScheduleItem";
-import { ScheduleSection } from "@/app/components/ScheduleSection";
 import { api } from "@/trpc/server";
 import { EventType } from "@/types/types";
 
@@ -17,12 +17,14 @@ export async function MealScheduleSection() {
 	}));
 
 	return (
-		<ScheduleSection
-			emptyDescription="Check back soon for updated meal times."
-			emptyTitle="No meals have been scheduled yet."
-			items={scheduleItems}
-			now={now}
-			title="Meal Schedule"
-		/>
+		<section className="flex flex-col gap-5">
+			<h2 className="font-medium text-dark-grey text-lg">Meal Schedule</h2>
+			<Schedule
+				emptyDescription="Check back soon for updated meal times."
+				emptyTitle="No meals have been scheduled yet."
+				items={scheduleItems}
+				now={now}
+			/>
+		</section>
 	);
 }

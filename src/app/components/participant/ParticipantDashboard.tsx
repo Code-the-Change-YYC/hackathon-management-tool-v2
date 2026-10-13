@@ -3,21 +3,16 @@
 import { ArrowRightLine } from "@mingcute/react";
 import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
-import { ScheduleItem } from "@/app/components/ScheduleItem";
+import { Schedule } from "@/app/components/Schedule";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
-import {
-	Empty,
-	EmptyDescription,
-	EmptyHeader,
-	EmptyTitle
-} from "@/app/components/ui/empty";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import type { JudgingPhase } from "@/lib/judging";
 import {
 	type DashboardEvent,
 	formatDashboardDate,
-	selectDashboardEvents
+	getCurrentEvent,
+	getTodayFutureEvents
 } from "@/lib/participant-events";
 import { api } from "@/trpc/react";
 import { DataState } from "./DataState";
@@ -60,6 +55,20 @@ export function ParticipantDashboard({ firstName }: { firstName: string }) {
 	);
 }
 
+function getDashboardDescription(
+	startDate: Date | null,
+	now: Date,
+	timeZone: string
+) {
+	if (!startDate) {
+		return "Your events, submission deadline, and judging updates in one place.";
+	}
+	if (now < startDate) {
+		return `Get ready to hack, starting on ${formatDashboardDate(startDate, timeZone)}!`;
+	}
+	return "Your hackathon at a glance. Happy hacking!";
+}
+
 // Separate view keeps data fetching out of reusable presentation components.
 export function DashboardView({
 	firstName,
@@ -85,18 +94,19 @@ export function DashboardView({
 	retrySettings?: () => void;
 }) {
 	const now = useCurrentTime();
-	const { current, upcoming } = selectDashboardEvents(events, now);
+	const currentEvent = getCurrentEvent(events, now);
+	const upcomingEvents = getTodayFutureEvents(events, now);
 	const timeZone = settings?.timeZone ?? "America/Edmonton";
-	const description = settings?.startDate
-		? now < settings.startDate
-			? `Get ready to hack, starting on ${formatDashboardDate(settings.startDate, timeZone)}!`
-			: "Your hackathon at a glance. Happy hacking!"
-		: "Your events, submission deadline, and judging updates in one place.";
+	const description = getDashboardDescription(
+		settings?.startDate ?? null,
+		now,
+		timeZone
+	);
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader description={description} title={`Welcome, ${firstName}!`} />
 			{!eventsError && !eventsLoading && (
-				<EventBanner event={current} timeZone={timeZone} />
+				<EventBanner event={currentEvent} timeZone={timeZone} />
 			)}
 			<div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
 				<Card className="rounded-2xl ring-0">
@@ -123,28 +133,17 @@ export function DashboardView({
 							loading={eventsLoading}
 							retry={retryEvents}
 						>
-							{upcoming.length ? (
-								<ol className="flex flex-col gap-6 rounded-sm border-grey-400 border-l-4 pl-3">
-									{upcoming.map((event) => (
-										<ScheduleItem
-											item={{ ...event, eventType: event.type }}
-											key={event.id}
-											now={now}
-											timeZone={timeZone}
-											variant="compact"
-										/>
-									))}
-								</ol>
-							) : (
-								<Empty>
-									<EmptyHeader>
-										<EmptyTitle>No upcoming events</EmptyTitle>
-										<EmptyDescription>
-											Check back here for new events and activities.
-										</EmptyDescription>
-									</EmptyHeader>
-								</Empty>
-							)}
+							<Schedule
+								emptyDescription="Check back here for new events and activities."
+								emptyTitle="No upcoming events"
+								items={upcomingEvents.map((event) => ({
+									...event,
+									eventType: event.type
+								}))}
+								now={now}
+								showGroupLabels={false}
+								timeZone={timeZone}
+							/>
 						</DataState>
 					</CardContent>
 				</Card>

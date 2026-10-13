@@ -40,15 +40,15 @@ describe("shared participant event and status components", () => {
 			event("fourth", 50, 60)
 		];
 		const result = selectDashboardEvents(events, now);
-		expect(result.current?.id).toBe("current");
-		expect(result.upcoming.map((item) => item.id)).toEqual([
+		expect(result.currentEvents?.id).toBe("current");
+		expect(result.upcomingEvents.map((item) => item.id)).toEqual([
 			"next",
 			"later",
 			"third"
 		]);
 		expect(events[0]?.id).toBe("later");
 		expect(
-			selectDashboardEvents([event("starts", 0, 10)], now).current?.id
+			selectDashboardEvents([event("starts", 0, 10)], now).currentEvents?.id
 		).toBe("starts");
 		expect(selectDashboardEvents([], now)).toEqual({
 			current: undefined,
