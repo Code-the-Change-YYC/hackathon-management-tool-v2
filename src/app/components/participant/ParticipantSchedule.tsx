@@ -54,14 +54,11 @@ export function ScheduleView({
 				title="Schedule"
 			/>
 			{!error && !loading && (
-				<section className="flex flex-col gap-4">
-					<h2 className="font-medium text-[22px]/7">Happening now</h2>
-					<CurrentEventBanner
-						colour="purple"
-						event={currentEvent}
-						timeZone={timeZone}
-					/>
-				</section>
+				<CurrentEventBanner
+					colour="purple"
+					event={currentEvent}
+					timeZone={timeZone}
+				/>
 			)}
 			<Card className="rounded-2xl ring-0">
 				<CardHeader>
