@@ -3,9 +3,9 @@
 import Image from "next/image";
 import { Fragment, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
+import { HACKATHON_DATE } from "@/lib/constants";
 import type { TimeLeft } from "@/types/landingPage";
 
-const HACKATHON_DATE = new Date("2026-11-07T09:00:00-07:00");
 const ZERO_TIME: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
