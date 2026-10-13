@@ -35,7 +35,7 @@ function MemberRow({
 	onLeave: () => void;
 }) {
 	return (
-		<div className="flex @md:items-center @md:gap-4 gap-3 border-t-2 p-4 @md:px-5 @md:py-5">
+		<div className="flex @md:items-center @md:gap-4 gap-3 border-t p-4 @md:px-5 @md:py-5">
 			<MemberAvatar name={member.name} src={member.avatarSrc} />
 			<div className="flex min-w-0 flex-1 @md:flex-row flex-col @md:items-center @md:gap-4 gap-2">
 				<div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -72,7 +72,7 @@ function MemberRow({
 function InviteRow({ onInvite }: { onInvite: () => void }) {
 	return (
 		<button
-			className="flex h-auto w-full cursor-pointer items-center justify-start @md:gap-4 gap-3 border-t-2 p-4 @md:px-5 @md:py-5 transition-color duration-150 ease-out hover:bg-muted"
+			className="flex h-auto w-full cursor-pointer items-center justify-start @md:gap-4 gap-3 border-t p-4 @md:px-5 @md:py-5 transition-color duration-150 ease-out hover:bg-muted"
 			onClick={onInvite}
 			type="button"
 		>
@@ -107,8 +107,8 @@ export default function TeamTable({
 }: TeamTableProps) {
 	return (
 		// The grid's minmax(0, 1fr) column stops long emails from widening the page.
-		<div className="@container grid w-full grid-cols-1 overflow-hidden rounded-xl border-2">
-			<div className="flex items-start justify-between @md:gap-4 gap-3 bg-purple-50 @md:p-6 p-4">
+		<div className="@container grid w-full grid-cols-1 overflow-hidden rounded-xl bg-card">
+			<div className="flex items-start justify-between @md:gap-4 gap-3 bg-accent @md:p-6 p-4">
 				<div className="flex min-w-0 items-center gap-3">
 					<span className="grid @md:size-14 size-11 shrink-0 place-items-center @md:rounded-xl rounded-lg bg-purple-500 text-white">
 						<Group3Line className="@md:size-7 size-6" />
