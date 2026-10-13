@@ -108,9 +108,7 @@ export function DashboardView({
 			<div className="mx-auto flex max-w-7xl flex-col gap-6">
 				<PageHeader
 					description={description}
-					descriptionClassName="text-grey-600 text-sm/5 sm:text-base/6"
 					title={`Welcome, ${firstName}!`}
-					titleClassName="text-[32px]/10"
 				/>
 				{!eventsError && !eventsLoading && (
 					<EventBanner event={current} timeZone={timeZone} />
