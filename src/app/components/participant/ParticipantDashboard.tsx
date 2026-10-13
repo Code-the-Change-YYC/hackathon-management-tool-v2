@@ -106,7 +106,7 @@ export function DashboardView({
 				/>
 			)}
 			<div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-				<Card className="rounded-2xl ring-0">
+				<Card>
 					<CardHeader>
 						<div className="flex flex-wrap items-center justify-between gap-1">
 							<h2 className="font-medium text-[22px]/7">Upcoming Events</h2>
@@ -144,7 +144,7 @@ export function DashboardView({
 						</DataState>
 					</CardContent>
 				</Card>
-				<Card className="rounded-2xl ring-0">
+				<Card>
 					<CardContent>
 						<DataState
 							error={settingsError}

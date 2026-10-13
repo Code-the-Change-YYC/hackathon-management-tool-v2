@@ -2,7 +2,12 @@
 
 import PageHeader from "@/app/components/PageHeader";
 import { Schedule } from "@/app/components/Schedule";
-import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle
+} from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { type DashboardEvent, getCurrentEvent } from "@/lib/participant-events";
 import { api } from "@/trpc/react";
@@ -60,10 +65,7 @@ export function ScheduleView({
 					timeZone={timeZone}
 				/>
 			)}
-			<Card className="rounded-2xl ring-0">
-				<CardHeader>
-					<h2 className="font-medium text-[22px]/7">Full Schedule</h2>
-				</CardHeader>
+			<Card>
 				<CardContent>
 					<DataState
 						error={error}

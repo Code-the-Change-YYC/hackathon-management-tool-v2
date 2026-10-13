@@ -15,7 +15,7 @@ export default function ResourceCard({
 	link
 }: ResourceCardProps) {
 	return (
-		<Card className="w-full p-4">
+		<Card className="w-full">
 			<CardContent className="flex size-full flex-row gap-2">
 				<Image
 					alt={`${name} image`}

@@ -18,7 +18,7 @@ export function PersonalInformationCard({
 				</h2>
 				<div className="ml-auto flex items-center gap-2">{actions}</div>
 			</div>
-			<Card className="py-6">
+			<Card>
 				<CardContent className="px-6">{children}</CardContent>
 			</Card>
 		</section>
