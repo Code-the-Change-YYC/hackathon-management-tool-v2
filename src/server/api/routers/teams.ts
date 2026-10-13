@@ -22,6 +22,7 @@ import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
+import { resolveAvatarSrc } from "@/lib/avatars";
 import { tryCatch } from "@/lib/utils";
 import {
 	joinTeamSchema,
@@ -325,6 +326,7 @@ export const teamsRouter = createTRPCRouter({
 				userId: m.userId,
 				name: m.user.name,
 				email: m.user.email,
+				avatarSrc: resolveAvatarSrc(m.user.image),
 				role: m.role,
 				isYou: m.userId === userId
 			}))

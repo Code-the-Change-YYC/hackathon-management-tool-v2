@@ -1,9 +1,21 @@
+export const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+	hour: "numeric",
+	hour12: true,
+	minute: "2-digit"
+});
+
+export const LONG_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+	weekday: "long",
+	month: "long",
+	day: "numeric"
+});
+
 export function formatTime(value: Date | string | number) {
-	return new Intl.DateTimeFormat("en-US", {
-		hour: "numeric",
-		hour12: true,
-		minute: "2-digit"
-	}).format(new Date(value));
+	return TIME_FORMATTER.format(new Date(value));
+}
+
+export function formatLongDate(value: Date | string | number) {
+	return LONG_DATE_FORMATTER.format(new Date(value));
 }
 
 export function formatDateTime(value: Date | string | number) {

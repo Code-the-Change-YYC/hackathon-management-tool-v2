@@ -7,13 +7,9 @@ import {
 	TrophyLine
 } from "@mingcute/react";
 import { Badge } from "@/app/components/ui/badge";
+import { formatTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import { EventType } from "@/types/types";
-
-const timeFormatter = new Intl.DateTimeFormat("en-US", {
-	hour: "numeric",
-	minute: "2-digit"
-});
 
 export type ScheduleItemData = {
 	id: string;
@@ -33,7 +29,7 @@ type ScheduleItemTheme = {
 };
 
 function formatTimeRange(startTime: Date, endTime: Date) {
-	return `${timeFormatter.format(startTime)} - ${timeFormatter.format(endTime)}`;
+	return `${formatTime(startTime)} - ${formatTime(endTime)}`;
 }
 
 function getScheduleItemTheme(eventType: EventType): ScheduleItemTheme {

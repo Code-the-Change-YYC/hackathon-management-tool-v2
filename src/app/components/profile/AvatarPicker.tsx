@@ -5,17 +5,18 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { EditIcon } from "@/app/components/layout/icons";
 import {
-	Modal,
-	ModalHeader,
-	PrimaryButton,
-	SecondaryButton
-} from "@/app/components/team/Modal";
-import {
 	Avatar,
 	AvatarFallback,
 	AvatarImage
 } from "@/app/components/ui/avatar";
 import { Button } from "@/app/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@/app/components/ui/dialog";
 import { FieldLabel } from "@/app/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Spinner } from "@/app/components/ui/spinner";
@@ -90,48 +91,57 @@ export function AvatarPicker({
 				<EditIcon />
 			</Button>
 
-			<Modal onClose={cancel} open={open}>
-				<ModalHeader title="Choose your avatar" />
+			<Dialog onOpenChange={(next) => !next && cancel()} open={open}>
+				<DialogContent className="gap-6 p-6 sm:max-w-120 sm:p-8">
+					<DialogHeader>
+						<DialogTitle>Choose your avatar</DialogTitle>
+					</DialogHeader>
 
-				<div className="flex flex-col">
-					<div className="flex flex-col items-center gap-2 rounded-xl bg-grey-00 bg-linear-to-b from-green-100/25 via-60% via-purple-100/25 to-red-200/25 py-6">
-						<Avatar className="size-22">
-							<AvatarImage alt="Selected avatar" src={previewSrc} />
-							<AvatarFallback />
-						</Avatar>
-						<p className="font-medium text-[13px] text-grey-600 leading-4.5">
-							Preview
-						</p>
+					<div className="flex flex-col">
+						<div className="flex flex-col items-center gap-2 rounded-xl bg-grey-00 bg-linear-to-b from-green-100/25 via-60% via-purple-100/25 to-red-200/25 py-6">
+							<Avatar className="size-22">
+								<AvatarImage alt="Selected avatar" src={previewSrc} />
+								<AvatarFallback />
+							</Avatar>
+							<p className="font-medium text-[13px] text-grey-600 leading-4.5">
+								Preview
+							</p>
+						</div>
+
+						<RadioGroup
+							aria-label="Avatars"
+							className="flex flex-wrap justify-center gap-3 py-5 sm:px-5"
+							onValueChange={(value) => {
+								if (isAvatarId(value)) setSelectedAvatarId(value);
+							}}
+							value={selectedAvatarId ?? null}
+						>
+							{AVATAR_IDS.map((avatarId) => (
+								<AvatarOption avatarId={avatarId} key={avatarId} />
+							))}
+						</RadioGroup>
 					</div>
 
-					<RadioGroup
-						aria-label="Avatars"
-						className="flex flex-wrap justify-center gap-3 py-5 sm:px-5"
-						onValueChange={(value) => {
-							if (isAvatarId(value)) setSelectedAvatarId(value);
-						}}
-						value={selectedAvatarId ?? null}
-					>
-						{AVATAR_IDS.map((avatarId) => (
-							<AvatarOption avatarId={avatarId} key={avatarId} />
-						))}
-					</RadioGroup>
-				</div>
-
-				<div className="flex flex-col gap-4">
-					<PrimaryButton
-						disabled={!hasChanges || isSaving}
-						onClick={save}
-						type="button"
-					>
-						{isSaving && <Spinner data-icon="inline-start" />}
-						Save changes
-					</PrimaryButton>
-					<SecondaryButton disabled={isSaving} onClick={cancel} type="button">
-						Cancel
-					</SecondaryButton>
-				</div>
-			</Modal>
+					<DialogFooter>
+						<Button
+							disabled={!hasChanges || isSaving}
+							onClick={save}
+							type="button"
+						>
+							{isSaving && <Spinner data-icon="inline-start" />}
+							Save changes
+						</Button>
+						<Button
+							disabled={isSaving}
+							onClick={cancel}
+							type="button"
+							variant="outline"
+						>
+							Cancel
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }

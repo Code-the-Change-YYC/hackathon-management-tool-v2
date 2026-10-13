@@ -95,7 +95,7 @@ export function DashboardView({
 			: "Your hackathon at a glance. Happy hacking!"
 		: "Your events, submission deadline, and judging updates in one place.";
 	return (
-		<div className="relative isolate min-h-svh overflow-hidden bg-grey-50 px-4 py-6 text-grey-800 md:px-8 lg:px-6">
+		<div className="relative isolate overflow-hidden text-grey-800">
 			<Image
 				alt=""
 				aria-hidden

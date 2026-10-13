@@ -1,5 +1,5 @@
-import MyTeamView from "@/app/components/team/MyTeamView";
+import TeamView from "@/app/components/team/TeamView";
 
-export default function MyTeamPage() {
-	return <MyTeamView />;
+export default function TeamPage() {
+	return <TeamView />;
 }

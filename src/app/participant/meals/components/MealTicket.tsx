@@ -1,15 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { formatTime } from "@/lib/datetime";
 import type { RouterOutputs } from "@/trpc/react";
 import { EventTicketStatus } from "@/types/types";
 import { StyledQRCode } from "./StyledQRCode";
 import { TicketTeeth } from "./TicketTeeth";
-
-const timeFormatter = new Intl.DateTimeFormat("en-US", {
-	hour: "numeric",
-	minute: "2-digit"
-});
 
 type EventTicket = RouterOutputs["events"]["rotateParticipantEventTicket"];
 type TicketEvent = EventTicket["event"];
@@ -53,7 +49,7 @@ function getTicketDescription(ticket: EventTicket | null, now: Date) {
 	}
 
 	if (ticket.status === EventTicketStatus.ALREADY_CHECKED_IN) {
-		return `You checked in at ${timeFormatter.format(new Date(ticket.checkedInAt))}.`;
+		return `You checked in at ${formatTime(ticket.checkedInAt)}.`;
 	}
 
 	return `${ticket.event.title} is ${getMealTicketStatus(
@@ -62,7 +58,7 @@ function getTicketDescription(ticket: EventTicket | null, now: Date) {
 			endTime: ticket.event.endTime
 		},
 		now
-	)} until ${timeFormatter.format(new Date(ticket.event.endTime))}.`;
+	)} until ${formatTime(ticket.event.endTime)}.`;
 }
 
 export function MealTicket({ displayName, ticket }: MealTicketProps) {

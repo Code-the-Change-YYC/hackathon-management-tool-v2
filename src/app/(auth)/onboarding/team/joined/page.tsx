@@ -17,7 +17,7 @@ export default async function TeamJoinedPage() {
 	return (
 		<>
 			<AuthHeading
-				description="Your team details will appear on your “My Team” page."
+				description="Your team details will appear on your “Team” page."
 				title={<>You have joined team {team.name}!</>}
 			>
 				<OnboardingSteps current="team" />

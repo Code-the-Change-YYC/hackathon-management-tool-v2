@@ -2,24 +2,31 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { AuthActions } from "@/app/components/auth/AuthShell";
 import { CodeField } from "@/app/components/forms/CodeField";
-import { Button, buttonVariants } from "@/app/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { Spinner } from "@/app/components/ui/spinner";
 import { ONBOARDING_ROUTES } from "@/lib/routes";
-import { cn } from "@/lib/utils";
 import {
 	type JoinTeamValues,
 	joinTeamSchema,
 	TEAM_CODE_LENGTH
 } from "@/lib/validation/team";
 import { api } from "@/trpc/react";
+import { TeamGoBackButton } from "./TeamGoBackButton";
 
-export function JoinTeamForm() {
+export function JoinTeamForm({
+	onJoined,
+	onBack,
+	Actions = AuthActions
+}: {
+	onJoined?: () => Promise<void> | void;
+	onBack?: () => void;
+	Actions?: typeof AuthActions;
+}) {
 	const router = useRouter();
 	const form = useForm<JoinTeamValues>({
 		defaultValues: { teamCode: "" },
@@ -29,6 +36,7 @@ export function JoinTeamForm() {
 
 	const joinTeam = api.teams.join.useMutation({
 		onSuccess: () => {
+			if (onJoined) return onJoined();
 			router.push(ONBOARDING_ROUTES.teamJoined);
 			// Drops cached pages, so going back shows the saved answers.
 			router.refresh();
@@ -76,7 +84,7 @@ export function JoinTeamForm() {
 				onPasteComplete={submit}
 				pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
 			/>
-			<AuthActions>
+			<Actions>
 				<Button
 					className="w-full"
 					disabled={teamCode.length < TEAM_CODE_LENGTH || isBusy}
@@ -85,13 +93,8 @@ export function JoinTeamForm() {
 					{isBusy && <Spinner data-icon="inline-start" />}
 					Continue
 				</Button>
-				<Link
-					className={cn(buttonVariants({ variant: "outline" }), "w-full")}
-					href={ONBOARDING_ROUTES.team}
-				>
-					Go back
-				</Link>
-			</AuthActions>
+				<TeamGoBackButton onBack={onBack} />
+			</Actions>
 		</form>
 	);
 }

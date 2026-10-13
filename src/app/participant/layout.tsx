@@ -4,6 +4,7 @@ import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 import type { NavGroup } from "../components/layout/AppSidebar";
+import PageContainer from "../components/PageContainer";
 import { ParticipantShell } from "../components/participant/ParticipantShell";
 
 export default async function ParticipantLayout({
@@ -19,9 +20,9 @@ export default async function ParticipantLayout({
 			items: [
 				{ title: "Dashboard", href: "/participant", icon: "home" },
 				{ title: "Schedule", href: "/participant/schedule", icon: "calendar" },
-				{ title: "My Team", href: "/participant/team", icon: "group" },
+				{ title: "Team", href: "/participant/team", icon: "group" },
 				{
-					title: "Meal Information",
+					title: "Meals",
 					href: "/participant/meals",
 					icon: "hamburger"
 				}
@@ -76,7 +77,7 @@ export default async function ParticipantLayout({
 				user.firstName || getNameParts(user.name).firstName || "Participant"
 			}
 		>
-			{children}
+			<PageContainer>{children}</PageContainer>
 		</ParticipantShell>
 	);
 }
