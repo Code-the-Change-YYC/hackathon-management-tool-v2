@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowRightLine } from "@mingcute/react";
-import Image from "next/image";
 import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
 import { ScheduleItem } from "@/app/components/ScheduleItem";
@@ -94,99 +93,82 @@ export function DashboardView({
 			: "Your hackathon at a glance. Happy hacking!"
 		: "Your events, submission deadline, and judging updates in one place.";
 	return (
-		<div className="relative isolate overflow-hidden text-grey-800">
-			<Image
-				alt=""
-				aria-hidden
-				className="-z-10 pointer-events-none absolute top-[-72px] right-[-340px] max-w-none sm:right-[-140px] lg:right-0"
-				height={248.691}
-				loading="eager"
-				src="/images/participant-dashboard/decoration.svg"
-				width={561.009}
-			/>
-			<div className="mx-auto flex max-w-7xl flex-col gap-6">
-				<PageHeader
-					description={description}
-					title={`Welcome, ${firstName}!`}
-				/>
-				{!eventsError && !eventsLoading && (
-					<EventBanner event={current} timeZone={timeZone} />
-				)}
-				<div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-					<Card className="rounded-2xl ring-0">
-						<CardHeader>
-							<div className="flex flex-wrap items-center justify-between gap-1">
-								<h2 className="font-medium text-[22px]/7">Upcoming Events</h2>
-								<Button
-									className="active:not-aria-[haspopup]:translate-y-0" // Stops button from moving down when clicked
-									nativeButton={false}
-									render={
-										<Link href="/participant/schedule">
-											View full schedule
-											<ArrowRightLine
-												className="size-5"
-												data-icon="inline-end"
-											/>
-										</Link>
-									}
-									size="sm"
-									variant="ghost"
+		<div className="flex flex-col gap-6">
+			<PageHeader description={description} title={`Welcome, ${firstName}!`} />
+			{!eventsError && !eventsLoading && (
+				<EventBanner event={current} timeZone={timeZone} />
+			)}
+			<div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+				<Card className="rounded-2xl ring-0">
+					<CardHeader>
+						<div className="flex flex-wrap items-center justify-between gap-1">
+							<h2 className="font-medium text-[22px]/7">Upcoming Events</h2>
+							<Button
+								className="active:not-aria-[haspopup]:translate-y-0" // Stops button from moving down when clicked
+								nativeButton={false}
+								render={
+									<Link href="/participant/schedule">
+										View full schedule
+										<ArrowRightLine className="size-5" data-icon="inline-end" />
+									</Link>
+								}
+								size="sm"
+								variant="ghost"
+							/>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<DataState
+							error={eventsError}
+							loading={eventsLoading}
+							retry={retryEvents}
+						>
+							{upcoming.length ? (
+								<ol className="flex flex-col gap-6 rounded-sm border-grey-400 border-l-4 pl-3">
+									{upcoming.map((event) => (
+										<ScheduleItem
+											item={{ ...event, eventType: event.type }}
+											key={event.id}
+											now={now}
+											timeZone={timeZone}
+											variant="compact"
+										/>
+									))}
+								</ol>
+							) : (
+								<Empty>
+									<EmptyHeader>
+										<EmptyTitle>No upcoming events</EmptyTitle>
+										<EmptyDescription>
+											Check back here for new events and activities.
+										</EmptyDescription>
+									</EmptyHeader>
+								</Empty>
+							)}
+						</DataState>
+					</CardContent>
+				</Card>
+				<Card className="rounded-2xl ring-0">
+					<CardContent>
+						<DataState
+							error={settingsError}
+							loading={settingsLoading}
+							retry={retrySettings}
+						>
+							<div className="grid gap-12 sm:grid-cols-2 lg:min-h-89 lg:grid-cols-1 lg:content-between lg:gap-10">
+								<SubmissionCountdown
+									deadline={settings?.submissionDeadline ?? null}
+									startDate={settings?.startDate ?? null}
+									timeZone={timeZone}
+								/>
+								<JudgingStatus
+									phase={settings?.judgingPhase ?? "not_started"}
+									roundName={roundName}
 								/>
 							</div>
-						</CardHeader>
-						<CardContent>
-							<DataState
-								error={eventsError}
-								loading={eventsLoading}
-								retry={retryEvents}
-							>
-								{upcoming.length ? (
-									<ol className="flex flex-col gap-6 rounded-sm border-grey-400 border-l-4 pl-3">
-										{upcoming.map((event) => (
-											<ScheduleItem
-												item={{ ...event, eventType: event.type }}
-												key={event.id}
-												now={now}
-												timeZone={timeZone}
-												variant="compact"
-											/>
-										))}
-									</ol>
-								) : (
-									<Empty>
-										<EmptyHeader>
-											<EmptyTitle>No upcoming events</EmptyTitle>
-											<EmptyDescription>
-												Check back here for new events and activities.
-											</EmptyDescription>
-										</EmptyHeader>
-									</Empty>
-								)}
-							</DataState>
-						</CardContent>
-					</Card>
-					<Card className="rounded-2xl ring-0">
-						<CardContent>
-							<DataState
-								error={settingsError}
-								loading={settingsLoading}
-								retry={retrySettings}
-							>
-								<div className="grid gap-12 sm:grid-cols-2 lg:min-h-89 lg:grid-cols-1 lg:content-between lg:gap-10">
-									<SubmissionCountdown
-										deadline={settings?.submissionDeadline ?? null}
-										startDate={settings?.startDate ?? null}
-										timeZone={timeZone}
-									/>
-									<JudgingStatus
-										phase={settings?.judgingPhase ?? "not_started"}
-										roundName={roundName}
-									/>
-								</div>
-							</DataState>
-						</CardContent>
-					</Card>
-				</div>
+						</DataState>
+					</CardContent>
+				</Card>
 			</div>
 		</div>
 	);
