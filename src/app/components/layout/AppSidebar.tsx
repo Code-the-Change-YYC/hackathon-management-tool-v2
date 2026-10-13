@@ -38,9 +38,6 @@ export function AppSidebar({
 						profileHref={profileHref}
 						userName={userName}
 					/>
-					<Button aria-label="Notifications" size="icon-sm" variant="ghost">
-						<NotificationLine />
-					</Button>
 				</div>
 			</SidebarHeader>
 			<SidebarContent className="px-2">
