@@ -2,8 +2,8 @@
 
 import { ArrowRightLine, FileCheckLine, XlsLine } from "@mingcute/react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { useCurrentTime } from "@/hooks/use-current-time";
 import {
 	JUDGING_PHASE_LABELS,
 	JUDGING_PHASES,
@@ -11,6 +11,16 @@ import {
 } from "@/lib/judging";
 import { countdownParts, formatDashboardDate } from "@/lib/participant-events";
 import { cn } from "@/lib/utils";
+
+// Ticks every second, unlike the shared useCurrentTime, so the seconds tile stays live.
+function useSecondTick() {
+	const [now, setNow] = useState(() => new Date());
+	useEffect(() => {
+		const interval = window.setInterval(() => setNow(new Date()), 1000);
+		return () => window.clearInterval(interval);
+	}, []);
+	return now;
+}
 
 export function SubmissionCountdown({
 	deadline,
@@ -21,7 +31,7 @@ export function SubmissionCountdown({
 	startDate: Date | null;
 	timeZone: string;
 }) {
-	const now = useCurrentTime(1000);
+	const now = useSecondTick();
 	const beforeStart = !!startDate && now < startDate;
 	const target = beforeStart ? startDate : deadline;
 	const expired = !!target && now >= target;
