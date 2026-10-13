@@ -28,7 +28,7 @@ describe("participant dashboard page", () => {
 			screen.getByText("The submission deadline will be announced soon.")
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("link", { name: "View full schedule" })
+			screen.getByRole("button", { name: "View full schedule" })
 		).toHaveAttribute("href", "/participant/schedule");
 		rerender(
 			<DashboardView

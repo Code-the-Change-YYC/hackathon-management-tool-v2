@@ -8,7 +8,8 @@ import {
 	countdownParts,
 	type DashboardEvent,
 	eventNavigationUrlSchema,
-	selectDashboardEvents
+	getCurrentEvent,
+	getTodayFutureEvents
 } from "@/lib/participant-events";
 import { EventType } from "@/types/types";
 
@@ -28,31 +29,23 @@ function event(id: string, start: number, end: number): DashboardEvent {
 afterEach(() => vi.useRealTimers());
 
 describe("shared participant event and status components", () => {
-	it("chooses an ongoing event deterministically, excludes ended events, and sorts at most three upcoming events without mutating data", () => {
+	it("picks the first ongoing event and keeps today's unfinished events", () => {
 		const events = [
-			event("later", 30, 60),
-			event("ended", -60, 0),
-			event("overlap", -10, 10),
+			event("ended", -60, -30),
 			event("current", -20, 20),
+			event("overlap", -10, 10),
 			event("next", 10, 20),
-			event("third", 40, 50),
-			event("fourth", 50, 60)
+			event("tomorrow", 24 * 60, 24 * 60 + 30)
 		];
-		const result = selectDashboardEvents(events, now);
-		expect(result.currentEvents?.id).toBe("current");
-		expect(result.upcomingEvents.map((item) => item.id)).toEqual([
-			"next",
-			"later",
-			"third"
+		expect(getCurrentEvent(events, now)?.id).toBe("current");
+		expect(getCurrentEvent([event("starts", 0, 10)], now)?.id).toBe("starts");
+		expect(getCurrentEvent([event("ends", -10, 0)], now)).toBeUndefined();
+		expect(getCurrentEvent([], now)).toBeUndefined();
+		expect(getTodayFutureEvents(events, now).map((item) => item.id)).toEqual([
+			"current",
+			"overlap",
+			"next"
 		]);
-		expect(events[0]?.id).toBe("later");
-		expect(
-			selectDashboardEvents([event("starts", 0, 10)], now).currentEvents?.id
-		).toBe("starts");
-		expect(selectDashboardEvents([], now)).toEqual({
-			current: undefined,
-			upcoming: []
-		});
 	});
 	it("calculates a multi-day countdown and clamps elapsed deadlines", () => {
 		expect(countdownParts(new Date(now.getTime() + 90_061_000), now)).toEqual([

@@ -146,7 +146,7 @@ test(
 				});
 			await expect(
 				row.getByText(
-					`${formatTime(meal.startTime)} - ${formatTime(meal.endTime)}`,
+					`${formatTime(meal.startTime)} – ${formatTime(meal.endTime)}`,
 					{ exact: true }
 				)
 			).toBeVisible();
@@ -205,9 +205,9 @@ for (const timing of [
 		condition: "currently in progress",
 		start: -15,
 		end: 45,
-		status: "Ongoing"
+		status: "Happening now!"
 	},
-	{ condition: "already finished", start: -120, end: -60, status: "Completed" },
+	{ condition: "already finished", start: -120, end: -60, status: null },
 	{
 		condition: "starting within 60 min",
 		start: 30,
@@ -218,12 +218,12 @@ for (const timing of [
 		condition: "starting later than 60 min",
 		start: 120,
 		end: 180,
-		status: "Scheduled"
+		status: null
 	}
 ]) {
 	// Given an active meal has the time condition in this example
 	// When I view its schedule entry as a participant
-	// Then its status is Ongoing, Completed, In <n> min, or Scheduled as appropriate.
+	// Then it shows a Happening now! or In <n> min status badge, or no badge if finished or more than 60 min away.
 	test(`schedule status: ${timing.condition}`, async ({
 		authenticatedPage: page,
 		createMeal
@@ -241,7 +241,12 @@ for (const timing of [
 			.filter({
 				has: page.getByRole("heading", { name: meal.title, exact: true })
 			});
-		await expect(row.getByText(timing.status, { exact: true })).toBeVisible();
+		if (timing.status) {
+			await expect(row.getByText(timing.status, { exact: true })).toBeVisible();
+		} else {
+			await expect(row).toBeVisible();
+			await expect(row.locator('[data-slot="badge"]')).toHaveCount(0);
+		}
 	});
 }
 
