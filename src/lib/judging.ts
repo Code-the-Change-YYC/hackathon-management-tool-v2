@@ -51,3 +51,10 @@ export function getRubricBands(maxScore: number, includeZero = false) {
 		};
 	});
 }
+
+export function criterionAppliesToRound(
+	criterion: { roundIds?: string[] },
+	roundId: string
+) {
+	return !criterion.roundIds?.length || criterion.roundIds.includes(roundId);
+}

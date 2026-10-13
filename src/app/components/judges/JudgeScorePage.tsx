@@ -10,7 +10,7 @@ import {
 } from "@/app/components/ConfirmAlertDialog";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
-import { getRubricBands } from "@/lib/judging";
+import { criterionAppliesToRound, getRubricBands } from "@/lib/judging";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { useJudgeUser } from "./JudgeUserProvider";
@@ -658,7 +658,15 @@ export function JudgeScorePage({ assignmentId }: { assignmentId: string }) {
 	const [draftDirty, setDraftDirty] = useState(false);
 	const [message, setMessage] = useState("");
 
-	const criteria = data.criteria;
+	const criteria = useMemo(
+		() =>
+			data.criteria.filter(
+				(criterion) =>
+					!assignment ||
+					criterionAppliesToRound(criterion, assignment.room.roundId)
+			),
+		[data.criteria, assignment]
+	);
 	const mainCriteria = useMemo(
 		() => criteria.filter((criterion) => !criterion.isSidepot),
 		[criteria]
