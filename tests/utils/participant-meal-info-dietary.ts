@@ -55,20 +55,15 @@ export async function expectRegistered(page: Page, labels: string[]) {
 
 export async function expectDraft(page: Page, labels: string[]) {
 	const dialog = editor(page);
-	await expect(dialog.getByRole("button", { name: /^Remove / })).toHaveText(
-		labels
-	);
 	for (const label of restrictionLabels) {
 		await expect(
 			dialog.getByRole("button", { name: label, exact: true })
-		).toHaveCount(labels.includes(label) ? 0 : 1);
+		).toHaveAttribute("aria-pressed", String(labels.includes(label)));
 	}
-	await expect(dialog.getByText("None selected", { exact: true })).toHaveCount(
-		labels.length === 0 ? 1 : 0
-	);
-	await expect(
-		dialog.getByRole("button", { name: "None", exact: true })
-	).toHaveCount(labels.length === 0 ? 0 : 1);
+}
+
+export async function toggleRestriction(page: Page, label: string) {
+	await editor(page).getByRole("button", { name: label, exact: true }).click();
 }
 
 export async function saveAndExpectRegistered(page: Page, labels: string[]) {
@@ -79,10 +74,8 @@ export async function saveAndExpectRegistered(page: Page, labels: string[]) {
 	await expect(
 		page.getByText("Dietary restrictions updated", { exact: true })
 	).toBeVisible();
-	await expectRegistered(page, labels);
+	const ordered = restrictionLabels.filter((label) => labels.includes(label));
+	await expectRegistered(page, ordered);
 	await page.reload();
-	await expectRegistered(
-		page,
-		restrictionLabels.filter((label) => labels.includes(label))
-	);
+	await expectRegistered(page, ordered);
 }

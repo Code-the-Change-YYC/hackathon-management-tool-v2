@@ -1,5 +1,4 @@
 import { formatLongDate } from "@/lib/datetime";
-import { cn } from "@/lib/utils";
 import { ScheduleItem, type ScheduleItemData } from "./ScheduleItem";
 
 export type ScheduleGroup = {
@@ -49,7 +48,6 @@ export function ScheduleSection({
 	emptyDescription
 }: ScheduleSectionProps) {
 	const groupedItems = groupScheduleItemsByDate(items);
-	const todayKey = formatDateKey(now);
 
 	return (
 		<section className="flex flex-col gap-5">
@@ -59,25 +57,21 @@ export function ScheduleSection({
 				<div className="grid gap-8 xl:grid-cols-2">
 					{groupedItems.map((group) => (
 						<div className="flex flex-col gap-4" key={group.key}>
-							<h3
-								className={cn(
-									"text-dark-grey text-sm",
-									group.key === todayKey ? "font-semibold" : "font-normal"
-								)}
-							>
-								{group.label}
-							</h3>
-							<ol className="flex flex-col gap-10 border-medium-grey border-l-4 py-1 pl-4 md:gap-8">
-								{group.items.map((item) => (
-									<ScheduleItem item={item} key={item.id} now={now} />
-								))}
-							</ol>
+							<h3 className="font-medium">{group.label}</h3>
+							<div className="flex gap-4">
+								<span className="h-full w-1 rounded-full bg-medium-grey" />
+								<ol className="flex flex-col gap-10 md:gap-8">
+									{group.items.map((item) => (
+										<ScheduleItem item={item} key={item.id} now={now} />
+									))}
+								</ol>
+							</div>
 						</div>
 					))}
 				</div>
 			) : (
 				<div className="rounded-lg border border-medium-grey border-dashed bg-white px-6 py-10 text-center">
-					<p className="font-semibold text-dark-grey">{emptyTitle}</p>
+					<p className="font-medium text-dark-grey">{emptyTitle}</p>
 					<p className="mt-2 text-dark-grey/60 text-sm">{emptyDescription}</p>
 				</div>
 			)}

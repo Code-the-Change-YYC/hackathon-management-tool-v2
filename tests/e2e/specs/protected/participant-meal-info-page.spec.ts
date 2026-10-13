@@ -19,7 +19,7 @@ test.use({
 
 // Given I am signed in as a participant
 // When I navigate to /participant/meals
-// Then I see Meal Information, Your Meal Ticket, Dietary Restrictions, and Meal Schedule.
+// Then I see Meals, Your Meal Ticket, Dietary Restrictions, and Meal Schedule.
 test(
 	"participant can access all meal information sections",
 	{ tag: "@smoke" },
@@ -27,7 +27,7 @@ test(
 		await page.goto(path);
 		await expect(page).toHaveURL(path);
 		for (const name of [
-			"Meal Information",
+			"Meals",
 			"Your Meal Ticket",
 			"Dietary Restrictions",
 			"Meal Schedule"
@@ -51,7 +51,7 @@ test.describe("admin access", () => {
 		await page.goto(path);
 		await expect(page).toHaveURL(path);
 		for (const name of [
-			"Meal Information",
+			"Meals",
 			"Your Meal Ticket",
 			"Dietary Restrictions",
 			"Meal Schedule"
@@ -158,9 +158,8 @@ test(
 
 // Given active meals exist today and tomorrow
 // When I view the meal schedule as a participant
-// Then meals appear under their respective calendar dates in chronological order
-// And today's date is visually emphasized while tomorrow's is not.
-test("groups meals by calendar date and visually marks today", async ({
+// Then meals appear under their respective calendar dates in chronological order.
+test("groups meals by calendar date", async ({
 	authenticatedPage: page,
 	createMeal
 }) => {
@@ -193,9 +192,6 @@ test("groups meals by calendar date and visually marks today", async ({
 			name: dateFormatter.format(date),
 			exact: true
 		});
-		await expect(heading).toHaveClass(
-			date === today ? /font-semibold/ : /font-normal/
-		);
 		const group = heading.locator("..");
 		await expect(group.getByRole("heading", { level: 4 })).toHaveText(
 			meals
@@ -252,8 +248,8 @@ for (const timing of [
 
 // Given there are no active meals, only a draft meal
 // When I view the meal schedule as a participant
-// Then I see "No meals have been scheduled yet." and the check-back guidance
-// And no meal entries are displayed.
+// Then I see "No meals have been scheduled yet."
+// And I see "Check back soon for updated meal times." with no meal entries displayed.
 test("shows an empty schedule when there are no active meals", async ({
 	authenticatedPage: page,
 	createMeal
@@ -272,10 +268,9 @@ test("shows an empty schedule when there are no active meals", async ({
 		})
 	).toBeVisible();
 	await expect(
-		schedule(page).getByText(
-			"Check back soon for meal times and ticket scanning windows.",
-			{ exact: true }
-		)
+		schedule(page).getByText("Check back soon for updated meal times.", {
+			exact: true
+		})
 	).toBeVisible();
 	await expect(schedule(page).getByRole("listitem")).toHaveCount(0);
 });

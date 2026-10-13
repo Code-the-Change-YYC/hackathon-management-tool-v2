@@ -18,7 +18,7 @@ export async function MealScheduleSection() {
 
 	return (
 		<ScheduleSection
-			emptyDescription="Check back soon for meal times and ticket scanning windows."
+			emptyDescription="Check back soon for updated meal times."
 			emptyTitle="No meals have been scheduled yet."
 			items={scheduleItems}
 			now={now}

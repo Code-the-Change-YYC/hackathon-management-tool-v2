@@ -6,7 +6,8 @@ import {
 	expectDraft,
 	expectRegistered,
 	openEditor,
-	saveAndExpectRegistered
+	saveAndExpectRegistered,
+	toggleRestriction
 } from "../../../utils/participant-meal-info-dietary";
 import { mealInfoPath } from "../../../utils/participant-meal-info-page";
 import { expect, test } from "../../fixtures/auth.fixture";
@@ -26,7 +27,7 @@ test.beforeEach(async ({ authenticatedPage }) => {
 // Given I am a participant with Halal and Gluten-free registered
 // When I view meal information and click Edit
 // Then the page shows both badges rather than "None registered"
-// And the editor shows my selections, offers unselected restrictions, and disables Save changes.
+// And the editor shows my selections and disables Save changes.
 test("shows registered Halal and Gluten-free badges and an unchanged editor", async ({
 	authenticatedPage: page
 }) => {
@@ -51,9 +52,9 @@ test.describe("without registered restrictions", () => {
 
 	// Given I am a participant with no registered dietary restrictions
 	// When I view meal information and open the editor
-	// Then I see "None registered" on the page and "None selected" in the editor
-	// And every restriction is available while Save changes remains disabled.
-	test("shows the empty state and offers every restriction in the editor", async ({
+	// Then I see "None registered" on the page and nothing selected in the editor
+	// And Save changes remains disabled.
+	test("shows the empty state and nothing selected in the editor", async ({
 		authenticatedPage: page
 	}) => {
 		await expectRegistered(page, []);
@@ -67,16 +68,14 @@ test.describe("without registered restrictions", () => {
 
 // Given the dietary editor is open and Vegetarian is not selected
 // When I click Vegetarian
-// Then it becomes selected, is no longer available, and enables Save changes
+// Then it becomes selected and enables Save changes
 // When I save and reload the page
 // Then the updated restrictions remain registered.
 test("adds Vegetarian and persists it after reload", async ({
 	authenticatedPage: page
 }) => {
 	await openEditor(page);
-	await editor(page)
-		.getByRole("button", { name: "Vegetarian", exact: true })
-		.click();
+	await toggleRestriction(page, "Vegetarian");
 	await expectDraft(page, ["Halal", "Gluten-free", "Vegetarian"]);
 	await expect(
 		editor(page).getByRole("button", { name: "Save changes" })
@@ -85,31 +84,30 @@ test("adds Vegetarian and persists it after reload", async ({
 });
 
 // Given the dietary editor contains Halal and Gluten-free
-// When I click Remove Halal
-// Then Halal is available again and only Gluten-free remains selected
+// When I click Halal
+// Then Halal is deselected and only Gluten-free remains selected
 // When I save and reload the page
 // Then only Gluten-free remains registered.
 test("removes Halal and persists the remaining restriction", async ({
 	authenticatedPage: page
 }) => {
 	await openEditor(page);
-	await editor(page)
-		.getByRole("button", { name: "Remove Halal", exact: true })
-		.click();
+	await toggleRestriction(page, "Halal");
 	await expectDraft(page, ["Gluten-free"]);
 	await saveAndExpectRegistered(page, ["Gluten-free"]);
 });
 
-// Given the dietary editor has selected restrictions
-// When I click None
-// Then all selections are removed, "None selected" appears, and Save changes is enabled
+// Given the dietary editor has Halal and Gluten-free selected
+// When I deselect both
+// Then nothing is selected and Save changes is enabled
 // When I save and reload the page
 // Then the page still shows "None registered".
-test("None clears all restrictions and persists the empty state", async ({
+test("deselecting every restriction persists the empty state", async ({
 	authenticatedPage: page
 }) => {
 	await openEditor(page);
-	await editor(page).getByRole("button", { name: "None", exact: true }).click();
+	await toggleRestriction(page, "Halal");
+	await toggleRestriction(page, "Gluten-free");
 	await expectDraft(page, []);
 	await expect(
 		editor(page).getByRole("button", { name: "Save changes" })
@@ -141,9 +139,7 @@ test("disables save and cancel while saving, then updates the page on success", 
 
 	try {
 		await openEditor(page);
-		await editor(page)
-			.getByRole("button", { name: "Vegetarian", exact: true })
-			.click();
+		await toggleRestriction(page, "Vegetarian");
 		const request = page.waitForRequest(
 			(request) =>
 				request.method() === "POST" && dietaryMutation.test(request.url())
@@ -166,7 +162,7 @@ test("disables save and cancel while saving, then updates the page on success", 
 	await expect(
 		page.getByText("Dietary restrictions updated", { exact: true })
 	).toBeVisible();
-	await expectRegistered(page, ["Halal", "Gluten-free", "Vegetarian"]);
+	await expectRegistered(page, ["Halal", "Vegetarian", "Gluten-free"]);
 	await page.reload();
 	await expectRegistered(page, ["Halal", "Vegetarian", "Gluten-free"]);
 });
@@ -202,12 +198,8 @@ test("changed cancel asks for confirmation and review retains the draft", async 
 	authenticatedPage: page
 }) => {
 	await openEditor(page);
-	await editor(page)
-		.getByRole("button", { name: "Remove Halal", exact: true })
-		.click();
-	await editor(page)
-		.getByRole("button", { name: "Vegetarian", exact: true })
-		.click();
+	await toggleRestriction(page, "Halal");
+	await toggleRestriction(page, "Vegetarian");
 	await editor(page)
 		.getByRole("button", { name: "Cancel", exact: true })
 		.click();
@@ -232,10 +224,8 @@ test("discard closes with a toast and restores the original on reopen and reload
 	authenticatedPage: page
 }) => {
 	await openEditor(page);
-	await editor(page).getByRole("button", { name: "None", exact: true }).click();
-	await editor(page)
-		.getByRole("button", { name: "Vegetarian", exact: true })
-		.click();
+	await toggleRestriction(page, "Halal");
+	await toggleRestriction(page, "Vegetarian");
 	await editor(page)
 		.getByRole("button", { name: "Cancel", exact: true })
 		.click();
@@ -274,12 +264,8 @@ test("failed save keeps the editor open and the draft available to retry", async
 		await route.abort("failed");
 	});
 	await openEditor(page);
-	await editor(page)
-		.getByRole("button", { name: "Remove Halal", exact: true })
-		.click();
-	await editor(page)
-		.getByRole("button", { name: "Vegetarian", exact: true })
-		.click();
+	await toggleRestriction(page, "Halal");
+	await toggleRestriction(page, "Vegetarian");
 	await editor(page).getByRole("button", { name: "Save changes" }).click();
 	await expect(
 		page.getByText("Unable to update dietary restrictions", { exact: true })
