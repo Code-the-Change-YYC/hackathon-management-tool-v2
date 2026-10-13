@@ -8,7 +8,6 @@ import { Schedule } from "@/app/components/Schedule";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
-import type { JudgingPhase } from "@/lib/judging";
 import {
 	type DashboardEvent,
 	eventNavigationUrlSchema,
@@ -16,20 +15,14 @@ import {
 	getCurrentEvent,
 	getTodayFutureEvents
 } from "@/lib/participant-events";
-import { api } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import CurrentEventImages from "./CurrentEventImages";
 import { DataState } from "./DataState";
 import { JudgingStatus, SubmissionCountdown } from "./ParticipantStatus";
 
 const refreshOptions = { refetchInterval: 30_000, refetchOnWindowFocus: true };
 
-type DashboardSettings = {
-	startDate: Date | null;
-	submissionDeadline: Date | null;
-	judgingPhase: JudgingPhase;
-	timeZone: string;
-	currentRoundId: string | null;
-};
+type DashboardSettings = NonNullable<RouterOutputs["hackathonSettings"]["get"]>;
 
 export function ParticipantDashboard({ firstName }: { firstName: string }) {
 	const events = api.events.getActiveEvents.useQuery(undefined, refreshOptions);
