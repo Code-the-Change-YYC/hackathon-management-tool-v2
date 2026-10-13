@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-export function useCurrentTime(intervalMs = 30_000) {
+export function useCurrentTime() {
 	const [currentTime, setCurrentTime] = useState(() => new Date());
 	useEffect(() => {
 		const interval = window.setInterval(
 			() => setCurrentTime(new Date()),
-			intervalMs
+			30_000
 		);
 		return () => window.clearInterval(interval);
-	}, [intervalMs]);
+	}, []);
 	return currentTime;
 }
