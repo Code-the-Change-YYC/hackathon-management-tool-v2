@@ -36,10 +36,12 @@ export function AppSidebar({
 			</SidebarHeader>
 			<SidebarContent className="px-2">
 				{navGroups.map((group) => (
-					<SidebarGroup key={group.groupLabel}>
-						<SidebarGroupLabel className="uppercase tracking-wide">
-							{group.groupLabel}
-						</SidebarGroupLabel>
+					<SidebarGroup key={group.groupLabel ?? group.items[0]?.href}>
+						{group.groupLabel && (
+							<SidebarGroupLabel className="uppercase tracking-wide">
+								{group.groupLabel}
+							</SidebarGroupLabel>
+						)}
 						<SidebarGroupContent>
 							<SidebarMenu>
 								{group.items.map((item) => (

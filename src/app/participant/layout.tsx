@@ -20,7 +20,6 @@ export default async function ParticipantLayout({
 
 	const PARTICPANT_NAV_GROUPS: NavGroup[] = [
 		{
-			groupLabel: "Event Information",
 			items: [
 				{ title: "Dashboard", href: "/participant", icon: "home" },
 				{ title: "Schedule", href: "/participant/schedule", icon: "calendar" },
@@ -29,12 +28,7 @@ export default async function ParticipantLayout({
 					title: "Meals",
 					href: "/participant/meals",
 					icon: "hamburger"
-				}
-			]
-		},
-		{
-			groupLabel: "Project Resources",
-			items: [
+				},
 				{
 					title: "Judging",
 					href: "/participant/judging",

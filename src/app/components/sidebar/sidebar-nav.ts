@@ -47,6 +47,6 @@ export interface NavItem {
 }
 
 export interface NavGroup {
-	groupLabel: string;
+	groupLabel?: string;
 	items: NavItem[];
 }
