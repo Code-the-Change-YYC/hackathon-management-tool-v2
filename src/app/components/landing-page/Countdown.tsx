@@ -3,11 +3,10 @@
 import Image from "next/image";
 import { Fragment, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
+import { countdownParts } from "@/lib/participant-events";
 import type { TimeLeft } from "@/types/landingPage";
 
 const HACKATHON_DATE = new Date("2026-11-07T09:00:00-07:00");
-const ZERO_TIME: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 // Null until mounted, so the tiles first render with the real time instead of
 // flipping over from 00 on page load.
@@ -16,14 +15,11 @@ function useCountdown(targetDate: Date): TimeLeft | null {
 
 	useEffect(() => {
 		const calculate = (): TimeLeft => {
-			const diff = targetDate.getTime() - Date.now();
-			if (diff <= 0) return ZERO_TIME;
-			return {
-				days: Math.floor(diff / MS_PER_DAY),
-				hours: new Date(diff).getUTCHours(),
-				minutes: new Date(diff).getUTCMinutes(),
-				seconds: new Date(diff).getUTCSeconds()
-			};
+			const [days, hours, minutes, seconds] = countdownParts(
+				targetDate,
+				new Date()
+			);
+			return { days, hours, minutes, seconds };
 		};
 
 		setTimeLeft(calculate());

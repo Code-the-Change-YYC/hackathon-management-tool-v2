@@ -1,5 +1,6 @@
 "use client";
 
+import { format, isValid, parse } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
@@ -12,39 +13,13 @@ import { HackathonDatesSection } from "./HackathonDatesSection";
 import { HackathonResetSection } from "./HackathonResetSection";
 import { ScoringSection } from "./ScoringSection";
 
-function formatDateInput(value: Date | string | null | undefined) {
-	if (!value) return "";
-
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return "";
-
-	const pad = (part: number) => String(part).padStart(2, "0");
-	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+function formatDateInput(value: Date | null) {
+	return value ? format(value, "yyyy-MM-dd") : "";
 }
 
 function parseDateInput(value: string) {
-	if (!value) return null;
-
-	const parts = value.split("-").map(Number);
-	if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) {
-		return null;
-	}
-
-	const [year, month, day] = parts;
-	if (year === undefined || month === undefined || day === undefined) {
-		return null;
-	}
-
-	const parsed = new Date(year, month - 1, day);
-	if (
-		parsed.getFullYear() !== year ||
-		parsed.getMonth() !== month - 1 ||
-		parsed.getDate() !== day
-	) {
-		return null;
-	}
-
-	return Number.isNaN(parsed.getTime()) ? null : parsed;
+	const date = parse(value, "yyyy-MM-dd", new Date());
+	return isValid(date) ? date : null;
 }
 
 export default function AdminControlsView() {

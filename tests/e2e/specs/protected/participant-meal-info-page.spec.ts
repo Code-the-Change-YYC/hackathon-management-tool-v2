@@ -1,15 +1,14 @@
 import { eq } from "drizzle-orm";
 
+import { formatLongDate, formatTime } from "@/lib/datetime";
 import { db } from "@/server/db";
 import { event } from "@/server/db/event-schema";
 import { EventStatus, EventType, Role } from "@/types/types";
 import {
-	dateFormatter,
 	description,
 	minute,
 	mealInfoPath as path,
-	schedule,
-	timeFormatter
+	schedule
 } from "../../../utils/participant-meal-info-page";
 import { expect, test } from "../../fixtures/meal-info.fixture";
 
@@ -147,7 +146,7 @@ test(
 				});
 			await expect(
 				row.getByText(
-					`${timeFormatter.format(meal.startTime)} - ${timeFormatter.format(meal.endTime)}`,
+					`${formatTime(meal.startTime)} – ${formatTime(meal.endTime)}`,
 					{ exact: true }
 				)
 			).toBeVisible();
@@ -184,12 +183,12 @@ test("groups meals by calendar date", async ({
 	}
 	await page.goto(path);
 	await expect(schedule(page).getByRole("heading", { level: 3 })).toHaveText([
-		dateFormatter.format(today),
-		dateFormatter.format(tomorrow)
+		formatLongDate(today),
+		formatLongDate(tomorrow)
 	]);
 	for (const date of [today, tomorrow]) {
 		const heading = schedule(page).getByRole("heading", {
-			name: dateFormatter.format(date),
+			name: formatLongDate(date),
 			exact: true
 		});
 		const group = heading.locator("..");
@@ -206,9 +205,9 @@ for (const timing of [
 		condition: "currently in progress",
 		start: -15,
 		end: 45,
-		status: "Ongoing"
+		status: "Happening now!"
 	},
-	{ condition: "already finished", start: -120, end: -60, status: "Completed" },
+	{ condition: "already finished", start: -120, end: -60, status: null },
 	{
 		condition: "starting within 60 min",
 		start: 30,
@@ -219,12 +218,12 @@ for (const timing of [
 		condition: "starting later than 60 min",
 		start: 120,
 		end: 180,
-		status: "Scheduled"
+		status: null
 	}
 ]) {
 	// Given an active meal has the time condition in this example
 	// When I view its schedule entry as a participant
-	// Then its status is Ongoing, Completed, In <n> min, or Scheduled as appropriate.
+	// Then it shows a Happening now! or In <n> min status badge, or no badge if finished or more than 60 min away.
 	test(`schedule status: ${timing.condition}`, async ({
 		authenticatedPage: page,
 		createMeal
@@ -242,7 +241,12 @@ for (const timing of [
 			.filter({
 				has: page.getByRole("heading", { name: meal.title, exact: true })
 			});
-		await expect(row.getByText(timing.status, { exact: true })).toBeVisible();
+		if (timing.status) {
+			await expect(row.getByText(timing.status, { exact: true })).toBeVisible();
+		} else {
+			await expect(row).toBeVisible();
+			await expect(row.locator('[data-slot="badge"]')).toHaveCount(0);
+		}
 	});
 }
 
