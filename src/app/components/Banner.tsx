@@ -1,8 +1,8 @@
 import { Alarm2Line, ArrowRightLine, LocationLine } from "@mingcute/react";
-import { format } from "date-fns";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/app/components/ui/button";
+import { formatTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 
 interface BannerProps {
@@ -14,6 +14,7 @@ interface BannerProps {
 	location?: string;
 	startTime?: Date;
 	endTime?: Date;
+	timeZone?: string;
 	href?: string;
 	onClick?: () => void;
 	className?: string;
@@ -28,6 +29,7 @@ export default function Banner({
 	location,
 	startTime,
 	endTime,
+	timeZone,
 	href,
 	onClick,
 	className
@@ -42,38 +44,43 @@ export default function Banner({
 			button: "bg-red-50 text-red-900 hover:bg-red-50/90"
 		}
 	};
-	const startTimeStr = startTime ? format(startTime, "hh:mm a") : "";
-	const endTimeStr = endTime ? format(endTime, "hh:mm a") : "";
+	const startTimeStr = startTime ? formatTime(startTime, timeZone) : "";
+	const endTimeStr = endTime ? formatTime(endTime, timeZone) : "";
+	const hasAction = Boolean(href || onClick);
 
 	return (
 		<div className={cn("@container w-full", className)}>
 			<div
 				className={cn(
 					"relative flex @4xl:flex-row flex-col items-start justify-between @4xl:gap-6 gap-32 overflow-hidden rounded-[16px] p-6",
-					colors[colour].background
+					colors[colour].background,
+					// Without a button, keeps the stacked layout's room for the image
+					image && !hasAction && "@4xl:pb-6 pb-49"
 				)}
 			>
-				<div className="z-1 flex w-full max-w-100 flex-col gap-4">
-					<div className="flex flex-col gap-1">
-						<h1 className="font-semibold text-3xl text-white">{title}</h1>
-						<div className="flex flex-row flex-wrap gap-x-6 gap-y-1">
-							{location && (
-								<div className="flex flex-row items-center gap-2 text-white">
-									<LocationLine className="size-6" />
-									<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
-										{location}
-									</p>
-								</div>
-							)}
-							{(startTime || endTime) && (
-								<div className="flex flex-row items-center gap-2 text-white">
-									<Alarm2Line className="size-6" />
-									<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
-										{startTimeStr} - {endTimeStr}
-									</p>
-								</div>
-							)}
-						</div>
+				<div className="z-1 flex w-full max-w-100 flex-col gap-8">
+					<div className="flex flex-col gap-4">
+						<h2 className="font-medium text-3xl text-white">{title}</h2>
+						{location && (startTime || endTime) && (
+							<div className="flex flex-row flex-wrap gap-x-6 gap-y-2">
+								{location && (
+									<div className="flex flex-row items-center gap-2 text-white opacity-80">
+										<LocationLine className="size-6" />
+										<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
+											{location}
+										</p>
+									</div>
+								)}
+								{(startTime || endTime) && (
+									<div className="flex flex-row items-center gap-2 text-white opacity-80">
+										<Alarm2Line className="size-6" />
+										<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
+											{startTimeStr} - {endTimeStr}
+										</p>
+									</div>
+								)}
+							</div>
+						)}
 					</div>
 					<p className="text-white">{description}</p>
 				</div>

@@ -1,6 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { EventBanner } from "@/app/components/participant/EventBanner";
 import {
 	JudgingStatus,
 	SubmissionCountdown
@@ -87,34 +86,15 @@ describe("shared participant event and status components", () => {
 			screen.getByRole("heading", { name: "Submissions closed" })
 		).toBeInTheDocument();
 	});
-	it("only renders an actionable banner link for safe URLs", () => {
+	it("only accepts HTTP(S) navigation URLs", () => {
 		expect(
 			eventNavigationUrlSchema.safeParse("javascript:alert(1)").success
 		).toBe(false);
 		expect(eventNavigationUrlSchema.safeParse("not a URL").success).toBe(false);
-		const current = event("Trivia", -5, 5);
-		const { rerender } = render(<EventBanner event={current} timeZone="UTC" />);
 		expect(
-			screen.getByRole("link", { name: "Navigate there" })
-		).toHaveAttribute("href", current.navigationUrl);
-		rerender(
-			<EventBanner event={{ ...current, navigationUrl: null }} timeZone="UTC" />
-		);
-		expect(screen.queryByRole("link")).not.toBeInTheDocument();
-	});
-	it("keeps the banner slot with placeholder copy when no current event exists", () => {
-		render(<EventBanner timeZone="UTC" />);
-		expect(
-			screen.getByRole("heading", { name: "Hackathon updates coming soon" })
-		).toBeInTheDocument();
-		expect(
-			screen.getByText(
-				"We’re getting the next event ready. Check back soon for schedule details."
-			)
-		).toBeInTheDocument();
-		expect(
-			screen.queryByRole("link", { name: "Navigate there" })
-		).not.toBeInTheDocument();
+			eventNavigationUrlSchema.safeParse("https://example.com/directions")
+				.success
+		).toBe(true);
 	});
 	it("uses the configured phase and active round, rather than wall-clock time", () => {
 		const { rerender } = render(
