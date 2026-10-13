@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface BannerProps {
 	title: string;
-	description: string;
+	description?: string;
 	buttonText: string;
 	colour: "purple" | "red";
 	image?: ReactNode;
@@ -84,7 +84,12 @@ export default function Banner({
 							</div>
 						)}
 					</div>
-					<p className="text-white">{description}</p>
+					{description && <p className="text-white">{description}</p>}
+					{
+						!description && (
+							<div />
+						) /* This ensures some spacing from the parent div's flexbox gap when there is no description. */
+					}
 				</div>
 				{href ? (
 					<Button

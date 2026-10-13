@@ -4,7 +4,6 @@ import { useState } from "react";
 import Banner from "@/app/components/Banner";
 import type { Criterion } from "@/app/components/judges/judgePortal";
 import PageHeader from "@/app/components/PageHeader";
-import { Card, CardContent } from "@/app/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/app/components/ui/toggle-group";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { criterionAppliesToRound } from "@/lib/judging";
@@ -19,7 +18,7 @@ import { CurrentEventBanner } from "./CurrentEventBanner";
 import CurrentEventImages from "./CurrentEventImages";
 import { DataState } from "./DataState";
 import { ParticipantRubric } from "./ParticipantRubric";
-import { JudgingStatus, SubmissionCountdown } from "./ParticipantStatus";
+import { JudgingStatus } from "./ParticipantStatus";
 
 type Settings = RouterOutputs["hackathonSettings"]["get"];
 type Assignment = RouterOutputs["judgingAssignments"]["getMineForActiveRound"];
@@ -210,21 +209,16 @@ export function JudgingView({
 		assignment?.room.roomLink
 	);
 	return (
-		<div className="flex flex-col gap-16 text-grey-800">
-			<div className="flex flex-col gap-6">
-				<PageHeader
-					description="Information about judging rounds, rubrics, judging criteria, and more."
-					title="Judging Information"
-				/>
+		<div className="flex flex-col gap-6">
+			<PageHeader
+				description="Understand the scoring so you know where to focus."
+				title="Judging Information"
+			/>
+			<div className="flex flex-col gap-12">
 				{assignment ? (
 					<Banner
 						buttonText="Join meeting"
 						colour="red"
-						description={
-							assignment.timeSlot
-								? `Your team is scheduled for ${new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit", timeZone }).format(assignment.timeSlot)}. Please be ready to present your project.`
-								: "Your judging time will be announced soon. Please check back for updates."
-						}
 						endTime={
 							assignment.timeSlot ? undefined : assignment.room.round.endTime
 						}
@@ -242,70 +236,59 @@ export function JudgingView({
 						timeZone={timeZone}
 					/>
 				)}
-				<div className="grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-					<JudgingStatus
-						currentRoundId={settings?.currentRoundId ?? null}
-						phase={phase}
-						rounds={ordered}
-						variant="detailed"
-					/>
-					<Card className="rounded-2xl ring-0 [--card-spacing:--spacing(6)]">
-						<CardContent>
-							<SubmissionCountdown
-								deadline={settings?.submissionDeadline ?? null}
-								startDate={null}
-								timeZone={timeZone}
-							/>
-						</CardContent>
-					</Card>
-				</div>
-			</div>
-			<section
-				aria-labelledby="rubric-title"
-				className="flex min-w-0 flex-col gap-6"
-			>
-				<div>
-					<h2 className="font-medium text-[22px]/7" id="rubric-title">
-						Judging Rubric
-					</h2>
-				</div>
-				<RoundRubric
-					available={available}
-					criteria={criteria}
+				<JudgingStatus
+					currentRoundId={settings?.currentRoundId ?? null}
+					phase={phase}
 					rounds={ordered}
+					variant="detailed"
 				/>
-			</section>
-			{phase === "winners_announced" && (
 				<section
-					aria-labelledby="team-scores-title"
+					aria-labelledby="rubric-title"
 					className="flex min-w-0 flex-col gap-6"
 				>
 					<div>
-						<h2 className="font-medium text-[22px]/7" id="team-scores-title">
-							Team Scores
+						<h2 className="font-medium text-[22px]/7" id="rubric-title">
+							Judging Rubric
 						</h2>
 					</div>
-					<DataState
-						error={scoresError}
-						label="Loading team scores"
-						loading={scoresLoading}
-						retry={retryScores}
-					>
-						<RoundRubric
-							available={
-								new Set(
-									results?.released
-										? results.rounds.map((score) => score.roundId)
-										: []
-								)
-							}
-							criteria={criteria}
-							rounds={ordered}
-							scores={results?.released ? results.rounds : []}
-						/>
-					</DataState>
+					<RoundRubric
+						available={available}
+						criteria={criteria}
+						rounds={ordered}
+					/>
 				</section>
-			)}
+				{phase === "winners_announced" && (
+					<section
+						aria-labelledby="team-scores-title"
+						className="flex min-w-0 flex-col gap-6"
+					>
+						<div>
+							<h2 className="font-medium text-[22px]/7" id="team-scores-title">
+								Team Scores
+							</h2>
+						</div>
+						<DataState
+							error={scoresError}
+							label="Loading team scores"
+							loading={scoresLoading}
+							retry={retryScores}
+						>
+							<RoundRubric
+								available={
+									new Set(
+										results?.released
+											? results.rounds.map((score) => score.roundId)
+											: []
+									)
+								}
+								criteria={criteria}
+								rounds={ordered}
+								scores={results?.released ? results.rounds : []}
+							/>
+						</DataState>
+					</section>
+				)}
+			</div>
 		</div>
 	);
 }
