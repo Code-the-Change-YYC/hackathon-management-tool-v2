@@ -36,7 +36,7 @@ export default async function JoinTeamPage() {
 									<PopoverTitle>Finding your invite code</PopoverTitle>
 									<PopoverDescription>
 										Whoever registered your team can find its 6‑character invite
-										code by selecting Invite on their “My Team” page.
+										code by selecting Invite on their “Team” page.
 									</PopoverDescription>
 								</PopoverHeader>
 							</PopoverContent>

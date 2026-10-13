@@ -1,9 +1,10 @@
+import { Schedule } from "@/app/components/Schedule";
 import type { ScheduleItemData } from "@/app/components/ScheduleItem";
-import { ScheduleSection } from "@/app/components/ScheduleSection";
 import { api } from "@/trpc/server";
 import Banner from "../../Banner";
 import PageHeader from "../../PageHeader";
 import MealAnalytics from "./MealAnalytics";
+import ScanMealTicketsImages from "./ScanMealTicketsImages";
 
 export default async function MealView() {
 	const events = await api.meals.getAllMeals();
@@ -26,35 +27,25 @@ export default async function MealView() {
 					title="Meal Information"
 				/>
 				<div className="flex flex-col gap-16">
-					{/* Mobile vertical layout */}
 					<Banner
 						buttonText="Open scanner"
-						className="flex md:hidden"
 						colour="purple"
 						description="(Recommended for mobile) open this to scan participant meal tickets!"
 						href="/meal"
-						layout="vertical"
+						image={<ScanMealTicketsImages />}
 						title="Scan meal tickets"
-						type="ScanMealTickets"
 					/>
-					{/* Desktop/Tablet horizontal layout */}
-					<Banner
-						buttonText="Open scanner"
-						className="hidden md:flex"
-						colour="purple"
-						description="(Recommended for mobile) open this to scan participant meal tickets!"
-						href="/meal"
-						layout="horizontal"
-						title="Scan meal tickets"
-						type="ScanMealTickets"
-					/>
-					<ScheduleSection
-						emptyDescription="Check back soon for event times."
-						emptyTitle="No Events have been scheduled yet."
-						items={scheduleItems}
-						now={now}
-						title="Meal Schedule"
-					/>
+					<section className="flex flex-col gap-5">
+						<h2 className="font-medium text-dark-grey text-lg">
+							Meal Schedule
+						</h2>
+						<Schedule
+							emptyDescription="Check back soon for event times."
+							emptyTitle="No Events have been scheduled yet."
+							items={scheduleItems}
+							now={now}
+						/>
+					</section>
 					<MealAnalytics />
 				</div>
 			</div>

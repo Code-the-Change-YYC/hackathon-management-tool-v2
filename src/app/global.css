@@ -233,7 +233,7 @@
 	--radius: 0.625rem;
 
 	/* Surfaces */
-	--background: #ffffff;
+	--background: var(--color-pale-grey);
 	--foreground: var(--color-dark-grey);
 	--card: #ffffff;
 	--card-foreground: var(--color-dark-grey);
@@ -264,7 +264,7 @@
 	--chart-5: var(--color-grapefruit);
 
 	/* Sidebar */
-	--sidebar: var(--color-pale-grey);
+	--sidebar: #ffffff;
 	--sidebar-foreground: var(--color-dark-grey);
 	--sidebar-primary: var(--color-awesomer-purple);
 	--sidebar-primary-foreground: #ffffff;

@@ -2,10 +2,11 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { AuthActions } from "@/app/components/auth/AuthShell";
 import { CheckboxField } from "@/app/components/forms/CheckboxField";
+import { DietaryRestrictionsField } from "@/app/components/forms/DietaryRestrictionsField";
 import { Button } from "@/app/components/ui/button";
 import { FieldGroup } from "@/app/components/ui/field";
 import { Spinner } from "@/app/components/ui/spinner";
@@ -15,7 +16,6 @@ import {
 	foodPreferencesSchema
 } from "@/lib/validation/signup";
 import { api } from "@/trpc/react";
-import { DietaryRestrictionsField } from "./DietaryRestrictionsField";
 
 export function FoodPreferencesForm({
 	defaultValues
@@ -54,7 +54,17 @@ export function FoodPreferencesForm({
 				>
 					I want to be provided free meals at the hackathon
 				</CheckboxField>
-				<DietaryRestrictionsField control={form.control} disabled={isBusy} />
+				<Controller
+					control={form.control}
+					name="dietaryRestrictions"
+					render={({ field }) => (
+						<DietaryRestrictionsField
+							disabled={isBusy}
+							onChange={field.onChange}
+							value={field.value}
+						/>
+					)}
+				/>
 			</FieldGroup>
 			<AuthActions>
 				<Button className="w-full" disabled={isBusy} type="submit">

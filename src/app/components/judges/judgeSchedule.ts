@@ -1,3 +1,4 @@
+import { differenceInMinutes } from "date-fns";
 import { type JudgeAssignment, sortAssignments } from "./judgePortal";
 
 export function inferDuration(
@@ -16,9 +17,9 @@ export function inferDuration(
 		.sort(sortAssignments)[0];
 
 	if (!nextAssignment?.timeSlot) return 20;
-	const minutes = Math.round(
-		(nextAssignment.timeSlot.getTime() - assignmentTime.getTime()) / 60_000
-	);
+	const minutes = differenceInMinutes(nextAssignment.timeSlot, assignmentTime, {
+		roundingMethod: "round"
+	});
 	if (minutes <= 0 || minutes > 120) return 20;
 	return minutes;
 }

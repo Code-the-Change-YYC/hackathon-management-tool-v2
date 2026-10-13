@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Banner from "@/app/components/Banner";
 import type { Criterion } from "@/app/components/judges/judgePortal";
 import PageHeader from "@/app/components/PageHeader";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -9,13 +10,14 @@ import { useCurrentTime } from "@/hooks/use-current-time";
 import { criterionAppliesToRound } from "@/lib/judging";
 import {
 	type DashboardEvent,
-	selectDashboardEvents
+	eventNavigationUrlSchema,
+	getCurrentEvent
 } from "@/lib/participant-events";
 import { type JudgingRound, judgingStages } from "@/lib/participant-judging";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { EventType } from "@/types/types";
+import { CurrentEventBanner } from "./CurrentEventBanner";
+import CurrentEventImages from "./CurrentEventImages";
 import { DataState } from "./DataState";
-import { EventBanner } from "./EventBanner";
 import { ParticipantRubric } from "./ParticipantRubric";
 import { JudgingStatus, SubmissionCountdown } from "./ParticipantStatus";
 
@@ -204,49 +206,42 @@ export function JudgingView({
 	// Publish the shared rubric before judging starts; subsequent rounds unlock with the configured phase.
 	if (ordered[0] && !ordered.some((round) => available.has(round.id)))
 		available.add(ordered[0].id);
-	const current = selectDashboardEvents(events, now).current;
-	const assignedEvent: DashboardEvent | undefined = assignment
-		? {
-				id: assignment.id,
-				title: `${assignment.room.round.name}: your team’s judging assignment`,
-				description: assignment.timeSlot
-					? `Your team is scheduled for ${new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit", timeZone }).format(assignment.timeSlot)}. Please be ready to present your project.`
-					: "Your judging time will be announced soon. Please check back for updates.",
-				startTime: assignment.timeSlot ?? assignment.room.round.startTime,
-				endTime: assignment.timeSlot ?? assignment.room.round.endTime,
-				type: EventType.ACTIVITY,
-				location: assignment.room.name,
-				navigationUrl: assignment.room.roomLink
-			}
-		: undefined;
+	const meetingUrl = eventNavigationUrlSchema.safeParse(
+		assignment?.room.roomLink
+	);
 	return (
-		<div className="mx-auto flex w-full max-w-7xl flex-col gap-16 px-4 py-6 text-grey-800 md:px-8 xl:px-6">
+		<div className="flex flex-col gap-16 text-grey-800">
 			<div className="flex flex-col gap-6">
 				<PageHeader
-					className="gap-0"
 					description="Information about judging rounds, rubrics, judging criteria, and more."
-					descriptionClassName="font-medium text-grey-600 text-sm/5"
 					title="Judging Information"
-					titleClassName="text-[32px]/10"
 				/>
-				<EventBanner
-					actionLabel={assignedEvent ? "Join meeting" : "Navigate there"}
-					event={assignedEvent ?? current}
-					judging
-					timeLabel={
-						assignment
-							? assignment.timeSlot
-								? new Intl.DateTimeFormat("en-US", {
-										hour: "numeric",
-										minute: "2-digit",
-										timeZone
-									}).format(assignment.timeSlot)
-								: "Time to be announced"
-							: undefined
-					}
-					timeZone={timeZone}
-					title={assignedEvent?.title}
-				/>
+				{assignment ? (
+					<Banner
+						buttonText="Join meeting"
+						colour="red"
+						description={
+							assignment.timeSlot
+								? `Your team is scheduled for ${new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit", timeZone }).format(assignment.timeSlot)}. Please be ready to present your project.`
+								: "Your judging time will be announced soon. Please check back for updates."
+						}
+						endTime={
+							assignment.timeSlot ? undefined : assignment.room.round.endTime
+						}
+						href={meetingUrl.success ? meetingUrl.data : undefined}
+						image={<CurrentEventImages />}
+						location={assignment.room.name}
+						startTime={assignment.timeSlot ?? assignment.room.round.startTime}
+						timeZone={timeZone}
+						title={`${assignment.room.round.name}: your team’s judging assignment`}
+					/>
+				) : (
+					<CurrentEventBanner
+						colour="red"
+						event={getCurrentEvent(events, now)}
+						timeZone={timeZone}
+					/>
+				)}
 				<div className="grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
 					<JudgingStatus
 						currentRoundId={settings?.currentRoundId ?? null}

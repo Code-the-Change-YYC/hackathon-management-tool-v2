@@ -1,6 +1,14 @@
 "use client";
 
-import { ActionModal } from "./Modal";
+import { Button } from "@/app/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@/app/components/ui/dialog";
 
 export default function LeaveTeamModal({
 	open,
@@ -18,21 +26,29 @@ export default function LeaveTeamModal({
 	error?: string | null;
 }) {
 	return (
-		<ActionModal
-			danger
-			description="This action can't be undone!"
-			error={error}
-			onClose={onCancel}
-			open={open}
-			primary={{
-				label: "Yes, leave team",
-				loadingLabel: "Leaving...",
-				loading,
-				onClick: onConfirm
-			}}
-			secondary={{ label: "Cancel", onClick: onCancel }}
-			showClose={false}
-			title={`Are you sure you want to leave ${teamName}?`}
-		/>
+		<Dialog onOpenChange={(next) => !next && onCancel()} open={open}>
+			<DialogContent showCloseButton={false}>
+				<DialogHeader>
+					<DialogTitle>Are you sure you want to leave {teamName}?</DialogTitle>
+					<DialogDescription>This action can't be undone!</DialogDescription>
+				</DialogHeader>
+
+				{error && <p className="font-medium text-red-700 text-sm">{error}</p>}
+
+				<DialogFooter>
+					<Button
+						disabled={loading}
+						onClick={onConfirm}
+						type="button"
+						variant="destructive-solid"
+					>
+						{loading ? "Leaving..." : "Yes, leave team"}
+					</Button>
+					<Button onClick={onCancel} type="button" variant="outline">
+						Cancel
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

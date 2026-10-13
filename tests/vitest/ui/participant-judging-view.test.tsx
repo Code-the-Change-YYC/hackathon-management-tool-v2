@@ -94,10 +94,9 @@ describe("participant judging information", () => {
 			}
 		} as NonNullable<Parameters<typeof JudgingView>[0]["assignment"]>;
 		render(view({ assignment }));
-		expect(screen.getByRole("link", { name: "Join meeting" })).toHaveAttribute(
-			"href",
-			"https://example.com/meeting"
-		);
+		expect(
+			screen.getByRole("button", { name: "Join meeting" })
+		).toHaveAttribute("href", "https://example.com/meeting");
 		expect(screen.getByText("Room 2")).toBeVisible();
 		expect(screen.getByText("1:00 PM")).toBeVisible();
 		expect(screen.queryByText(/ongoing now/)).not.toBeInTheDocument();

@@ -11,7 +11,7 @@ import {
 
 export default function JudgingError({ reset }: { reset: () => void }) {
 	return (
-		<div className="mx-auto w-full max-w-7xl px-4 py-6 sm:p-8">
+		<div>
 			<Empty>
 				<EmptyHeader>
 					<EmptyTitle>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { formatDateTime } from "@/lib/datetime";
 import { api } from "@/trpc/react";
 import { EventStatus } from "@/types/types";
 
@@ -18,8 +19,7 @@ export default function MealsList() {
 						<h3 className="font-semibold">{m.title}</h3>
 						<p className="text-sm capitalize">{m.status}</p>
 						<p className="text-sm">
-							{new Date(m.startTime).toLocaleString()} -{" "}
-							{new Date(m.endTime).toLocaleString()}
+							{formatDateTime(m.startTime)} - {formatDateTime(m.endTime)}
 						</p>
 						<div className="flex">
 							{m.status === EventStatus.ACTIVE ? (

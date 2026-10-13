@@ -1,6 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { EventBanner } from "@/app/components/participant/EventBanner";
 import {
 	JudgingStatus,
 	SubmissionCountdown
@@ -9,7 +8,8 @@ import {
 	countdownParts,
 	type DashboardEvent,
 	eventNavigationUrlSchema,
-	selectDashboardEvents
+	getCurrentEvent,
+	getTodayFutureEvents
 } from "@/lib/participant-events";
 import { EventType } from "@/types/types";
 
@@ -29,31 +29,23 @@ function event(id: string, start: number, end: number): DashboardEvent {
 afterEach(() => vi.useRealTimers());
 
 describe("shared participant event and status components", () => {
-	it("chooses an ongoing event deterministically, excludes ended events, and sorts at most three upcoming events without mutating data", () => {
+	it("picks the first ongoing event and keeps today's unfinished events", () => {
 		const events = [
-			event("later", 30, 60),
-			event("ended", -60, 0),
-			event("overlap", -10, 10),
+			event("ended", -60, -30),
 			event("current", -20, 20),
+			event("overlap", -10, 10),
 			event("next", 10, 20),
-			event("third", 40, 50),
-			event("fourth", 50, 60)
+			event("tomorrow", 24 * 60, 24 * 60 + 30)
 		];
-		const result = selectDashboardEvents(events, now);
-		expect(result.current?.id).toBe("current");
-		expect(result.upcoming.map((item) => item.id)).toEqual([
-			"next",
-			"later",
-			"third"
+		expect(getCurrentEvent(events, now)?.id).toBe("current");
+		expect(getCurrentEvent([event("starts", 0, 10)], now)?.id).toBe("starts");
+		expect(getCurrentEvent([event("ends", -10, 0)], now)).toBeUndefined();
+		expect(getCurrentEvent([], now)).toBeUndefined();
+		expect(getTodayFutureEvents(events, now).map((item) => item.id)).toEqual([
+			"current",
+			"overlap",
+			"next"
 		]);
-		expect(events[0]?.id).toBe("later");
-		expect(
-			selectDashboardEvents([event("starts", 0, 10)], now).current?.id
-		).toBe("starts");
-		expect(selectDashboardEvents([], now)).toEqual({
-			current: undefined,
-			upcoming: []
-		});
 	});
 	it("calculates a multi-day countdown and clamps elapsed deadlines", () => {
 		expect(countdownParts(new Date(now.getTime() + 90_061_000), now)).toEqual([
@@ -87,34 +79,15 @@ describe("shared participant event and status components", () => {
 			screen.getByRole("heading", { name: "Submissions closed" })
 		).toBeInTheDocument();
 	});
-	it("only renders an actionable banner link for safe URLs", () => {
+	it("only accepts HTTP(S) navigation URLs", () => {
 		expect(
 			eventNavigationUrlSchema.safeParse("javascript:alert(1)").success
 		).toBe(false);
 		expect(eventNavigationUrlSchema.safeParse("not a URL").success).toBe(false);
-		const current = event("Trivia", -5, 5);
-		const { rerender } = render(<EventBanner event={current} timeZone="UTC" />);
 		expect(
-			screen.getByRole("link", { name: "Navigate there" })
-		).toHaveAttribute("href", current.navigationUrl);
-		rerender(
-			<EventBanner event={{ ...current, navigationUrl: null }} timeZone="UTC" />
-		);
-		expect(screen.queryByRole("link")).not.toBeInTheDocument();
-	});
-	it("keeps the banner slot with placeholder copy when no current event exists", () => {
-		render(<EventBanner timeZone="UTC" />);
-		expect(
-			screen.getByRole("heading", { name: "Hackathon updates coming soon" })
-		).toBeInTheDocument();
-		expect(
-			screen.getByText(
-				"We’re getting the next event ready. Check back soon for schedule details."
-			)
-		).toBeInTheDocument();
-		expect(
-			screen.queryByRole("link", { name: "Navigate there" })
-		).not.toBeInTheDocument();
+			eventNavigationUrlSchema.safeParse("https://example.com/directions")
+				.success
+		).toBe(true);
 	});
 	it("uses the configured phase and active round, rather than wall-clock time", () => {
 		const { rerender } = render(

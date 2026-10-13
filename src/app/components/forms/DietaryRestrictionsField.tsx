@@ -1,31 +1,31 @@
 "use client";
 
-import { type Control, useController } from "react-hook-form";
 import { Badge } from "@/app/components/ui/badge";
 import { FieldLegend, FieldSet } from "@/app/components/ui/field";
 import { cn } from "@/lib/utils";
 import {
 	DIETARY_RESTRICTION_LABELS,
 	DIETARY_RESTRICTIONS,
-	type DietaryRestriction,
-	type FoodPreferences
+	type DietaryRestriction
 } from "@/lib/validation/signup";
 
 export function DietaryRestrictionsField({
-	control,
+	value,
+	onChange,
 	disabled
 }: {
-	control: Control<FoodPreferences>;
+	value: DietaryRestriction[];
+	onChange: (value: DietaryRestriction[]) => void;
 	disabled?: boolean;
 }) {
-	const { field } = useController({ control, name: "dietaryRestrictions" });
-	const selected = field.value;
-
+	// Keeps the selection in display order, so equal selections compare equal.
 	function toggle(restriction: DietaryRestriction) {
-		field.onChange(
-			selected.includes(restriction)
-				? selected.filter((value) => value !== restriction)
-				: [...selected, restriction]
+		onChange(
+			DIETARY_RESTRICTIONS.filter((option) =>
+				option === restriction
+					? !value.includes(option)
+					: value.includes(option)
+			)
 		);
 	}
 
@@ -34,7 +34,7 @@ export function DietaryRestrictionsField({
 			<FieldLegend variant="label">Your dietary restrictions</FieldLegend>
 			<div className="mt-2 flex flex-wrap gap-2">
 				{DIETARY_RESTRICTIONS.map((restriction) => {
-					const isSelected = selected.includes(restriction);
+					const isSelected = value.includes(restriction);
 
 					return (
 						<Badge

@@ -1,4 +1,5 @@
 import type { ColDef, ValueFormatterParams } from "ag-grid-community";
+import { formatDateTime } from "@/lib/datetime";
 import type { Organization, PrescreenStatus } from "@/types/types";
 
 export const DEFAULT_COLUMN_WIDTH = 300;
@@ -35,14 +36,8 @@ export const TEAM_EDITABLE_FIELDS = new Set([
 	"metadata"
 ]);
 
-export const formatDateTime = (value: unknown) => {
-	if (!value) return "";
-	if (value instanceof Date) return value.toLocaleString();
-	const parsed = new Date(String(value));
-	return Number.isNaN(parsed.getTime())
-		? String(value)
-		: parsed.toLocaleString();
-};
+const formatDateCell = ({ value }: ValueFormatterParams) =>
+	value ? formatDateTime(value) : "";
 
 const PRESCREEN_STATUS_LABELS: Record<PrescreenStatus, string> = {
 	pending: "Pending",
@@ -84,13 +79,13 @@ export const createTeamColumnDefs = (): ColDef<Organization>[] => [
 		field: "prescreenedAt",
 		headerName: "Prescreened At",
 		editable: false,
-		valueFormatter: ({ value }: ValueFormatterParams) => formatDateTime(value),
+		valueFormatter: formatDateCell,
 		minWidth: 180
 	},
 	{
 		field: "createdAt",
 		editable: false,
-		valueFormatter: ({ value }: ValueFormatterParams) => formatDateTime(value),
+		valueFormatter: formatDateCell,
 		minWidth: 180
 	},
 	{

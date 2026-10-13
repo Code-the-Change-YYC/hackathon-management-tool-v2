@@ -3,20 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Field, FieldGroup, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import { toDateTimeLocalValue } from "@/lib/datetime";
 import {
 	JUDGING_PHASE_LABELS,
 	JUDGING_PHASES,
 	type JudgingPhase
 } from "@/lib/judging";
 import { api } from "@/trpc/react";
-
-function toDateTimeLocal(value: Date | null | undefined): string {
-	if (!value) return "";
-	const pad = (n: number) => String(n).padStart(2, "0");
-	return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T${pad(
-		value.getHours()
-	)}:${pad(value.getMinutes())}`;
-}
 
 export default function HackathonSettingsPanel() {
 	const utils = api.useUtils();
@@ -32,11 +25,11 @@ export default function HackathonSettingsPanel() {
 	const [currentRoundId, setCurrentRoundId] = useState("");
 
 	useEffect(() => {
-		setSubmissionDeadline(toDateTimeLocal(settings?.submissionDeadline));
+		setSubmissionDeadline(toDateTimeLocalValue(settings?.submissionDeadline));
 		setJudgingPhase(settings?.judgingPhase ?? "not_started");
 		setTimeZone(settings?.timeZone ?? "America/Edmonton");
-		setStartDate(toDateTimeLocal(settings?.startDate ?? null));
-		setEndDate(toDateTimeLocal(settings?.endDate ?? null));
+		setStartDate(toDateTimeLocalValue(settings?.startDate));
+		setEndDate(toDateTimeLocalValue(settings?.endDate));
 		setIsActive(settings?.isActive ?? true);
 		setCurrentRoundId(settings?.currentRoundId ?? "");
 	}, [
