@@ -1,9 +1,9 @@
 "use client";
 
+import { Edit2Line } from "@mingcute/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { EditIcon } from "@/app/components/layout/icons";
 import {
 	Avatar,
 	AvatarFallback,
@@ -88,7 +88,7 @@ export function AvatarPicker({
 				size="icon-xs"
 				variant="ghost"
 			>
-				<EditIcon />
+				<Edit2Line />
 			</Button>
 
 			<Dialog onOpenChange={(next) => !next && cancel()} open={open}>

@@ -1,7 +1,7 @@
 "use client";
 
+import { Edit2Line } from "@mingcute/react";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
-import { EditIcon } from "@/app/components/layout/icons";
 import { Button } from "@/app/components/ui/button";
 import { getCountryName } from "@/lib/countries";
 import { getNameParts } from "@/lib/names";
@@ -63,7 +63,7 @@ export function PersonalInformationDetails({
 		<PersonalInformationCard
 			actions={
 				<Button onClick={onEdit} size="sm" variant="ghost">
-					<EditIcon data-icon="inline-start" />
+					<Edit2Line data-icon="inline-start" />
 					Edit Info
 				</Button>
 			}

@@ -3,11 +3,11 @@ import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 import { JudgeUserProvider } from "../components/judges/JudgeUserProvider";
-import type { NavGroup } from "../components/layout/AppSidebar";
+import type { NavGroup } from "../components/sidebar/AppSidebar";
 import {
 	AppSidebar,
 	AppSidebarTriggerHeader
-} from "../components/layout/AppSidebar";
+} from "../components/sidebar/AppSidebar";
 
 export default async function JudgeLayout({
 	children

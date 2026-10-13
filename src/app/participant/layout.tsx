@@ -4,12 +4,12 @@ import { DEVPOST_URL, DISCORD_URL } from "@/lib/constants";
 import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
-import type { NavGroup } from "../components/layout/AppSidebar";
+import PageContainer from "../components/PageContainer";
+import type { NavGroup } from "../components/sidebar/AppSidebar";
 import {
 	AppSidebar,
 	AppSidebarTriggerHeader
-} from "../components/layout/AppSidebar";
-import PageContainer from "../components/PageContainer";
+} from "../components/sidebar/AppSidebar";
 
 export default async function ParticipantLayout({
 	children

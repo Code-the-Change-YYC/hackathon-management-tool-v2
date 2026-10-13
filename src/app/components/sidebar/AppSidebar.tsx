@@ -1,8 +1,7 @@
-import { NotificationLine } from "@mingcute/react";
-import { Button } from "@/app/components/ui/button";
 import {
 	Sidebar,
 	SidebarContent,
+	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupContent,
 	SidebarGroupLabel,
@@ -10,6 +9,7 @@ import {
 	SidebarMenu,
 	SidebarTrigger
 } from "@/app/components/ui/sidebar";
+import HackathonLogo from "./HackathonLogo";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { SidebarUserMenu } from "./SidebarUserMenu";
 import type { NavGroup } from "./sidebar-nav";
@@ -31,14 +31,8 @@ export function AppSidebar({
 }: AppSidebarProps) {
 	return (
 		<Sidebar className="border-none" collapsible="offcanvas">
-			<SidebarHeader className="p-4">
-				<div className="flex items-center gap-2">
-					<SidebarUserMenu
-						avatarUrl={avatarUrl}
-						profileHref={profileHref}
-						userName={userName}
-					/>
-				</div>
+			<SidebarHeader className="px-6 pt-6 pb-4">
+				<HackathonLogo />
 			</SidebarHeader>
 			<SidebarContent className="px-2">
 				{navGroups.map((group) => (
@@ -56,6 +50,13 @@ export function AppSidebar({
 					</SidebarGroup>
 				))}
 			</SidebarContent>
+			<SidebarFooter>
+				<SidebarUserMenu
+					avatarUrl={avatarUrl}
+					profileHref={profileHref}
+					userName={userName}
+				/>
+			</SidebarFooter>
 		</Sidebar>
 	);
 }
@@ -64,9 +65,6 @@ export function AppSidebarTriggerHeader() {
 	return (
 		<header className="flex items-center justify-between gap-2 border-b px-4 py-3 md:hidden">
 			<SidebarTrigger />
-			<Button aria-label="Notifications" size="icon-sm" variant="ghost">
-				<NotificationLine />
-			</Button>
 		</header>
 	);
 }

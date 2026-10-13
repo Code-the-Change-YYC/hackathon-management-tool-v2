@@ -10,12 +10,13 @@ import { NAV_ICONS, type NavItem } from "./sidebar-nav";
 
 export function SidebarNavItem({ item }: { item: NavItem }) {
 	const pathname = usePathname();
-	const Icon = NAV_ICONS[item.icon];
+	const isActive = pathname === item.href;
+	const Icon = NAV_ICONS[item.icon][isActive ? "fill" : "line"];
 
 	return (
 		<SidebarMenuItem>
 			<SidebarMenuButton
-				isActive={pathname === item.href}
+				isActive={isActive}
 				render={
 					<Link
 						href={item.href}

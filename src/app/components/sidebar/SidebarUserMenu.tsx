@@ -1,6 +1,6 @@
 "use client";
 
-import { ExitLine, User3Line } from "@mingcute/react";
+import { ExitLine, SelectorVerticalLine, User3Line } from "@mingcute/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -53,18 +53,25 @@ export function SidebarUserMenu({
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={
-							<SidebarMenuButton className="h-10 cursor-pointer gap-2 rounded-2xl px-1.5" />
+							<SidebarMenuButton className="h-10 cursor-pointer justify-between gap-2 rounded-lg pr-3 pl-1.5" />
 						}
 					>
-						<Avatar className="size-7">
-							{avatarUrl && <AvatarImage alt="" src={avatarUrl} />}
-							<AvatarFallback className="bg-primary text-primary-foreground">
-								{getInitials(userName)}
-							</AvatarFallback>
-						</Avatar>
-						<span className="font-medium text-base">{userName}</span>
+						<span className="flex items-center gap-2">
+							<Avatar className="size-7">
+								{avatarUrl && <AvatarImage alt="" src={avatarUrl} />}
+								<AvatarFallback className="bg-primary text-primary-foreground">
+									{getInitials(userName)}
+								</AvatarFallback>
+							</Avatar>
+							<span className="font-medium text-base">{userName}</span>
+						</span>
+						<SelectorVerticalLine />
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="start" className="w-52 rounded-xl p-1">
+					<DropdownMenuContent
+						align="start"
+						className="rounded-xl p-1"
+						sideOffset={8}
+					>
 						<DropdownMenuGroup>
 							{profileHref && (
 								<DropdownMenuItem
