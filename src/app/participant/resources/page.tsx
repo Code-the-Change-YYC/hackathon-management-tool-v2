@@ -7,7 +7,7 @@ export default function ResourcePage() {
 		<div className="flex flex-col gap-6 p-6">
 			<PageHeader
 				description="Helpful resources and mentors!"
-				title="Resources and Help"
+				title="Resources"
 			/>
 			<div className="flex flex-col gap-16">
 				<Resources />

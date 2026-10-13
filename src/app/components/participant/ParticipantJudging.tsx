@@ -212,7 +212,7 @@ export function JudgingView({
 		<div className="flex flex-col gap-6">
 			<PageHeader
 				description="Understand the scoring so you know where to focus."
-				title="Judging Information"
+				title="Judging"
 			/>
 			<div className="flex flex-col gap-12">
 				{assignment ? (

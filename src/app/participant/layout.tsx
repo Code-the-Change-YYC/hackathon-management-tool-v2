@@ -36,12 +36,12 @@ export default async function ParticipantLayout({
 			groupLabel: "Project Resources",
 			items: [
 				{
-					title: "Judging Information",
+					title: "Judging",
 					href: "/participant/judging",
 					icon: "task"
 				},
 				{
-					title: "Resources and Help",
+					title: "Resources",
 					href: "/participant/resources",
 					icon: "question"
 				}
@@ -51,13 +51,7 @@ export default async function ParticipantLayout({
 			groupLabel: "Quick Links",
 			items: [
 				{
-					title: "Hackathon Home",
-					href: "/",
-					icon: "link",
-					external: true
-				},
-				{
-					title: "Discord Join Link",
+					title: "Discord",
 					href: DISCORD_URL,
 					icon: "discord",
 					external: true
