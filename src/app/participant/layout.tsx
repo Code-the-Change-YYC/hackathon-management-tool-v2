@@ -22,8 +22,6 @@ export default async function ParticipantLayout({
 	// Stops prerendering to allow dynamically hiding/showing participant resources link
 	await connection();
 
-	console.log(Date.now());
-
 	const PARTICPANT_NAV_GROUPS: NavGroup[] = [
 		{
 			groupLabel: "Event Information",
