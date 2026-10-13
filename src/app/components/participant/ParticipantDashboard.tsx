@@ -2,7 +2,6 @@
 
 import { ArrowRightLine } from "@mingcute/react";
 import Link from "next/link";
-import Banner from "@/app/components/Banner";
 import PageHeader from "@/app/components/PageHeader";
 import { Schedule } from "@/app/components/Schedule";
 import { Button } from "@/app/components/ui/button";
@@ -10,13 +9,12 @@ import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import {
 	type DashboardEvent,
-	eventNavigationUrlSchema,
 	formatDashboardDate,
 	getCurrentEvent,
 	getTodayFutureEvents
 } from "@/lib/participant-events";
 import { api, type RouterOutputs } from "@/trpc/react";
-import CurrentEventImages from "./CurrentEventImages";
+import { CurrentEventBanner } from "./CurrentEventBanner";
 import { DataState } from "./DataState";
 import { JudgingStatus, SubmissionCountdown } from "./ParticipantStatus";
 
@@ -64,41 +62,6 @@ function getDashboardDescription(
 	return "Your hackathon at a glance. Happy hacking!";
 }
 
-function CurrentEventBanner({
-	event,
-	timeZone
-}: {
-	event?: DashboardEvent;
-	timeZone: string;
-}) {
-	if (!event) {
-		return (
-			<Banner
-				buttonText="Navigate there"
-				colour="red"
-				description="We’re getting the next event ready. Check back soon for schedule details."
-				image={<CurrentEventImages />}
-				title="Hackathon updates coming soon"
-			/>
-		);
-	}
-	const navigationUrl = eventNavigationUrlSchema.safeParse(event.navigationUrl);
-	return (
-		<Banner
-			buttonText="Navigate there"
-			colour="red"
-			description={event.description}
-			endTime={event.endTime}
-			href={navigationUrl.success ? navigationUrl.data : undefined}
-			image={<CurrentEventImages />}
-			location={event.location || "Location to be announced"}
-			startTime={event.startTime}
-			timeZone={timeZone}
-			title={`${event.title} ongoing now!`}
-		/>
-	);
-}
-
 // Separate view keeps data fetching out of reusable presentation components.
 export function DashboardView({
 	firstName,
@@ -136,7 +99,11 @@ export function DashboardView({
 		<div className="flex flex-col gap-6">
 			<PageHeader description={description} title={`Welcome, ${firstName}!`} />
 			{!eventsError && !eventsLoading && (
-				<CurrentEventBanner event={currentEvent} timeZone={timeZone} />
+				<CurrentEventBanner
+					colour="red"
+					event={currentEvent}
+					timeZone={timeZone}
+				/>
 			)}
 			<div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
 				<Card className="rounded-2xl ring-0">

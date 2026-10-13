@@ -1,3 +1,4 @@
+import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import { formatLongDate } from "@/lib/datetime";
 import { ScheduleItem, type ScheduleItemData } from "./ScheduleItem";
@@ -10,9 +11,14 @@ export type ScheduleGroup = {
 };
 
 // TODO: do this grouping logic in the procedure instead
-export function groupScheduleItemsByDate(items: ScheduleItemData[]) {
+export function groupScheduleItemsByDate(
+	items: ScheduleItemData[],
+	timeZone?: string
+) {
 	return items.reduce<ScheduleGroup[]>((groups, item) => {
-		const key = format(item.startTime, "yyyy-MM-dd");
+		const key = format(item.startTime, "yyyy-MM-dd", {
+			in: timeZone ? tz(timeZone) : undefined
+		});
 		const existingGroup = groups.find((group) => group.key === key);
 
 		if (existingGroup) {
@@ -22,7 +28,7 @@ export function groupScheduleItemsByDate(items: ScheduleItemData[]) {
 
 		groups.push({
 			key,
-			label: formatLongDate(item.startTime),
+			label: formatLongDate(item.startTime, timeZone),
 			items: [item]
 		});
 
@@ -47,7 +53,7 @@ export function Schedule({
 	timeZone,
 	showGroupLabels = true
 }: ScheduleProps) {
-	const groupedItems = groupScheduleItemsByDate(items);
+	const groupedItems = groupScheduleItemsByDate(items, timeZone);
 
 	if (groupedItems.length === 0) {
 		return (
