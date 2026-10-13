@@ -3,6 +3,7 @@ import type {
 	ValueFormatterParams,
 	ValueParserParams
 } from "ag-grid-community";
+import { formatDateTime } from "@/lib/datetime";
 import { ALL_ROLES, PROGRAMS, type User } from "@/types/types";
 
 export const DEFAULT_COLUMN_WIDTH = 300;
@@ -36,14 +37,8 @@ export const EDITABLE_FIELDS = new Set([
 ]);
 
 // Helper functions for formatting and parsing cell values
-export const formatDateTime = (value: unknown) => {
-	if (!value) return "";
-	if (value instanceof Date) return value.toLocaleString();
-	const parsed = new Date(String(value));
-	return Number.isNaN(parsed.getTime())
-		? String(value)
-		: parsed.toLocaleString();
-};
+const formatDateCell = ({ value }: ValueFormatterParams) =>
+	value ? formatDateTime(value) : "";
 
 export const parseEnumValue = (params: ValueParserParams) => {
 	if (params.newValue === "") return null;
@@ -94,11 +89,11 @@ export const createUserColumnDefs = (): ColDef<User>[] => [
 	{
 		field: "createdAt",
 		editable: false,
-		valueFormatter: ({ value }: ValueFormatterParams) => formatDateTime(value)
+		valueFormatter: formatDateCell
 	},
 	{
 		field: "updatedAt",
 		editable: false,
-		valueFormatter: ({ value }: ValueFormatterParams) => formatDateTime(value)
+		valueFormatter: formatDateCell
 	}
 ];

@@ -1,6 +1,7 @@
 import { Alarm1Line, ArrowRightLine, LocationLine } from "@mingcute/react";
 import Image from "next/image";
 import { buttonVariants } from "@/app/components/ui/button";
+import { formatTime } from "@/lib/datetime";
 import {
 	type DashboardEvent,
 	eventNavigationUrlSchema
@@ -15,11 +16,6 @@ export function EventBanner({
 	timeZone: string;
 }) {
 	const isPlaceholder = !event;
-	const format = new Intl.DateTimeFormat("en-US", {
-		hour: "numeric",
-		minute: "2-digit",
-		timeZone
-	});
 	const href = event
 		? eventNavigationUrlSchema.safeParse(event.navigationUrl)
 		: { success: false as const };
@@ -43,8 +39,8 @@ export function EventBanner({
 							</span>
 							<span className="flex items-center gap-2">
 								<Alarm1Line aria-hidden className="size-6 shrink-0" />
-								{format.format(event.startTime)} –{" "}
-								{format.format(event.endTime)}
+								{formatTime(event.startTime, timeZone)} –{" "}
+								{formatTime(event.endTime, timeZone)}
 							</span>
 						</div>
 					) : (

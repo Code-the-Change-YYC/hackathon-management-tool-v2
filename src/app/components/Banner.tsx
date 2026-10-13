@@ -1,4 +1,5 @@
 import { Alarm2Line, ArrowRightLine, LocationLine } from "@mingcute/react";
+import { format } from "date-fns";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/app/components/ui/button";
@@ -41,19 +42,8 @@ export default function Banner({
 			button: "bg-red-50 text-red-900 hover:bg-red-50/90"
 		}
 	};
-	const startTimeStr = startTime
-		? startTime.toLocaleTimeString("en-US", {
-				hour: "2-digit",
-				minute: "2-digit"
-			})
-		: "";
-
-	const endTimeStr = endTime
-		? endTime.toLocaleTimeString("en-US", {
-				hour: "2-digit",
-				minute: "2-digit"
-			})
-		: "";
+	const startTimeStr = startTime ? format(startTime, "hh:mm a") : "";
+	const endTimeStr = endTime ? format(endTime, "hh:mm a") : "";
 
 	return (
 		<div className={cn("@container w-full", className)}>

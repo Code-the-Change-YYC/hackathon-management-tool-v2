@@ -1,4 +1,5 @@
 "use client";
+import { differenceInMinutes } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
 import type { SlotMinutes } from "@/lib/judging";
@@ -8,10 +9,7 @@ import { byNameThenId } from "./judgingShared";
 type Assignment = RouterOutputs["judgingAssignments"]["getByRound"][number];
 type Team = RouterOutputs["teams"]["getAll"][number];
 function getTotalJudgingMinutes(startTime: Date, endTime: Date) {
-	return Math.max(
-		0,
-		Math.floor((endTime.getTime() - startTime.getTime()) / 60_000)
-	);
+	return Math.max(0, differenceInMinutes(endTime, startTime));
 }
 
 function getSlotCount(

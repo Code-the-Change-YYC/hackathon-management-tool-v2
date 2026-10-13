@@ -1,5 +1,6 @@
 "use client";
 
+import { differenceInMinutes, isAfter, isWithinInterval } from "date-fns";
 import Image from "next/image";
 import { formatTime } from "@/lib/datetime";
 import type { RouterOutputs } from "@/trpc/react";
@@ -14,21 +15,17 @@ function getMealTicketStatus(
 	event: Pick<TicketEvent, "startTime" | "endTime">,
 	now: Date
 ) {
-	const startTime = new Date(event.startTime).getTime();
-	const endTime = new Date(event.endTime).getTime();
-	const currentTime = now.getTime();
-
-	if (currentTime >= startTime && currentTime <= endTime) {
+	if (isWithinInterval(now, { start: event.startTime, end: event.endTime })) {
 		return "ongoing";
 	}
 
-	if (currentTime > endTime) {
+	if (isAfter(now, event.endTime)) {
 		return "completed";
 	}
 
 	const minutesUntilStart = Math.max(
 		1,
-		Math.round((startTime - currentTime) / 60000)
+		differenceInMinutes(event.startTime, now, { roundingMethod: "round" })
 	);
 
 	if (minutesUntilStart <= 60) {

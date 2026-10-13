@@ -6,7 +6,9 @@ import {
 	LocationLine,
 	TrophyLine
 } from "@mingcute/react";
+import { differenceInMinutes } from "date-fns";
 import { Badge } from "@/app/components/ui/badge";
+import { formatTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import { EventType } from "@/types/types";
 
@@ -77,21 +79,17 @@ function getScheduleItemIcon(eventType: EventType, color: string) {
 }
 
 export function getScheduleItemStatus(item: ScheduleItemData, now: Date) {
-	const startTime = item.startTime.getTime();
-	const endTime = item.endTime.getTime();
-	const currentTime = now.getTime();
-
-	if (currentTime >= startTime && currentTime < endTime) {
+	if (now >= item.startTime && now < item.endTime) {
 		return "Happening now!";
 	}
 
-	if (currentTime >= endTime) {
+	if (now >= item.endTime) {
 		return "Completed";
 	}
 
 	const minutesUntilStart = Math.max(
 		1,
-		Math.round((startTime - currentTime) / 60000)
+		differenceInMinutes(item.startTime, now, { roundingMethod: "round" })
 	);
 
 	if (minutesUntilStart <= 60) {
@@ -115,12 +113,6 @@ export function ScheduleItem({ item, now, timeZone }: ScheduleItemProps) {
 	const icon = getScheduleItemIcon(item.eventType, iconColor);
 	const eventType =
 		item.eventType.charAt(0).toUpperCase() + item.eventType.slice(1);
-	const timeFormatter = new Intl.DateTimeFormat("en-US", {
-		hour: "numeric",
-		hour12: true,
-		minute: "2-digit",
-		timeZone
-	});
 
 	const showStatusBadge = status !== "Scheduled" && status !== "Completed";
 
@@ -150,8 +142,8 @@ export function ScheduleItem({ item, now, timeZone }: ScheduleItemProps) {
 							<span className="flex items-center gap-2">
 								<span className="flex items-center gap-1">
 									<Alarm1Line aria-hidden className="size-4 shrink-0" />
-									{timeFormatter.format(item.startTime)} –{" "}
-									{timeFormatter.format(item.endTime)}
+									{formatTime(item.startTime, timeZone)} –{" "}
+									{formatTime(item.endTime, timeZone)}
 								</span>
 							</span>
 							{showStatusBadge && (

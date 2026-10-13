@@ -1,4 +1,7 @@
+import { tz, tzName } from "@date-fns/tz";
+import { differenceInSeconds, format, isSameDay } from "date-fns";
 import { z } from "zod";
+import { formatTime } from "@/lib/datetime";
 import type { EventType } from "@/types/types";
 
 export const eventNavigationUrlSchema = z
@@ -23,30 +26,19 @@ export function getCurrentEvent(events: DashboardEvent[], now: Date) {
 }
 
 export function getTodayFutureEvents(events: DashboardEvent[], now: Date) {
-	const todayStart = new Date(now);
-	todayStart.setHours(0, 0, 0, 0);
-	const todayEnd = new Date(todayStart);
-	todayEnd.setDate(todayEnd.getDate() + 1);
-
 	return events.filter(
-		(event) =>
-			event.endTime >= now &&
-			event.startTime >= todayStart &&
-			event.startTime < todayEnd
+		(event) => event.endTime >= now && isSameDay(event.startTime, now)
 	);
 }
 
 export function countdownParts(deadline: Date, now: Date) {
-	const seconds = Math.max(
-		0,
-		Math.floor((deadline.getTime() - now.getTime()) / 1000)
-	);
+	const seconds = Math.max(0, differenceInSeconds(deadline, now));
 	return [
 		Math.floor(seconds / 86400),
 		Math.floor(seconds / 3600) % 24,
 		Math.floor(seconds / 60) % 60,
 		seconds % 60
-	];
+	] as const;
 }
 
 export function formatDashboardDate(
@@ -54,13 +46,7 @@ export function formatDashboardDate(
 	timeZone: string,
 	includeTime = false
 ) {
-	return new Intl.DateTimeFormat("en-US", {
-		month: "long",
-		day: "numeric",
-		year: "numeric",
-		timeZone,
-		...(includeTime
-			? ({ hour: "numeric", minute: "2-digit", timeZoneName: "short" } as const)
-			: {})
-	}).format(date);
+	const formattedDate = format(date, "MMMM d, yyyy", { in: tz(timeZone) });
+	if (!includeTime) return formattedDate;
+	return `${formattedDate} at ${formatTime(date, timeZone)} ${tzName(timeZone, date, "short")}`;
 }

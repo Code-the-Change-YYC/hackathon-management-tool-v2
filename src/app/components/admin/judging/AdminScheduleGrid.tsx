@@ -1,5 +1,6 @@
 "use client";
 import { ArrowLeftLine, ArrowRightLine } from "@mingcute/react";
+import { addMinutes, differenceInMinutes } from "date-fns";
 import { type CSSProperties, useMemo, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { formatTime } from "@/lib/datetime";
@@ -17,15 +18,12 @@ function buildTimeSlots(
 ) {
 	const slotCount = Math.max(
 		0,
-		Math.floor(
-			(endTime.getTime() - startTime.getTime()) / (slotMinutes * 60_000)
-		)
+		Math.floor(differenceInMinutes(endTime, startTime) / slotMinutes)
 	);
-	const slotMs = slotMinutes * 60_000;
 
-	return Array.from({ length: slotCount }, (_, index) => {
-		return new Date(startTime.getTime() + index * slotMs);
-	});
+	return Array.from({ length: slotCount }, (_, index) =>
+		addMinutes(startTime, index * slotMinutes)
+	);
 }
 
 export function AdminScheduleGrid({
@@ -150,7 +148,7 @@ export function AdminScheduleGrid({
 					))}
 
 					{visibleSlots.map((slot, slotIndex) => {
-						const slotEnd = slot.getTime() + slotMinutes * 60 * 1000;
+						const slotEnd = addMinutes(slot, slotMinutes).getTime();
 						const isLastVisibleSlot = slotIndex === visibleSlots.length - 1;
 						return (
 							<div className="contents" key={slot.toISOString()}>

@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { formatLongDate } from "@/lib/datetime";
 import { ScheduleItem, type ScheduleItemData } from "./ScheduleItem";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
@@ -8,14 +9,10 @@ export type ScheduleGroup = {
 	items: ScheduleItemData[];
 };
 
-function formatDateKey(date: Date) {
-	return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-}
-
 // TODO: do this grouping logic in the procedure instead
 export function groupScheduleItemsByDate(items: ScheduleItemData[]) {
 	return items.reduce<ScheduleGroup[]>((groups, item) => {
-		const key = formatDateKey(item.startTime);
+		const key = format(item.startTime, "yyyy-MM-dd");
 		const existingGroup = groups.find((group) => group.key === key);
 
 		if (existingGroup) {

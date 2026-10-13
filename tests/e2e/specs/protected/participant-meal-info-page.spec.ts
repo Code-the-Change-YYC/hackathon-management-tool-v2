@@ -1,15 +1,14 @@
 import { eq } from "drizzle-orm";
 
+import { formatLongDate, formatTime } from "@/lib/datetime";
 import { db } from "@/server/db";
 import { event } from "@/server/db/event-schema";
 import { EventStatus, EventType, Role } from "@/types/types";
 import {
-	dateFormatter,
 	description,
 	minute,
 	mealInfoPath as path,
-	schedule,
-	timeFormatter
+	schedule
 } from "../../../utils/participant-meal-info-page";
 import { expect, test } from "../../fixtures/meal-info.fixture";
 
@@ -147,7 +146,7 @@ test(
 				});
 			await expect(
 				row.getByText(
-					`${timeFormatter.format(meal.startTime)} - ${timeFormatter.format(meal.endTime)}`,
+					`${formatTime(meal.startTime)} - ${formatTime(meal.endTime)}`,
 					{ exact: true }
 				)
 			).toBeVisible();
@@ -184,12 +183,12 @@ test("groups meals by calendar date", async ({
 	}
 	await page.goto(path);
 	await expect(schedule(page).getByRole("heading", { level: 3 })).toHaveText([
-		dateFormatter.format(today),
-		dateFormatter.format(tomorrow)
+		formatLongDate(today),
+		formatLongDate(tomorrow)
 	]);
 	for (const date of [today, tomorrow]) {
 		const heading = schedule(page).getByRole("heading", {
-			name: dateFormatter.format(date),
+			name: formatLongDate(date),
 			exact: true
 		});
 		const group = heading.locator("..");
