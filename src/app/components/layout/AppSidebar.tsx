@@ -16,29 +16,21 @@ import type { NavGroup } from "./sidebar-nav";
 
 export type { NavGroup, NavIconKey, NavItem } from "./sidebar-nav";
 
-export interface AppSidebarProps {
+interface AppSidebarProps {
 	navGroups: NavGroup[];
 	userName: string;
 	avatarUrl?: string;
 	profileHref?: string;
 }
 
-export function AppSidebar(props: AppSidebarProps) {
-	return (
-		<Sidebar className="border-none" collapsible="offcanvas">
-			<AppSidebarContent {...props} />
-		</Sidebar>
-	);
-}
-
-export function AppSidebarContent({
+export function AppSidebar({
 	navGroups,
 	userName,
 	avatarUrl,
 	profileHref
 }: AppSidebarProps) {
 	return (
-		<>
+		<Sidebar className="border-none" collapsible="offcanvas">
 			<SidebarHeader className="p-4">
 				<div className="flex items-center gap-2">
 					<SidebarUserMenu
@@ -67,7 +59,7 @@ export function AppSidebarContent({
 					</SidebarGroup>
 				))}
 			</SidebarContent>
-		</>
+		</Sidebar>
 	);
 }
 
