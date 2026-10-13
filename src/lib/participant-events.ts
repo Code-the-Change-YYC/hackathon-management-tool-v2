@@ -1,4 +1,7 @@
+import { tz, tzName } from "@date-fns/tz";
+import { differenceInSeconds, format, isSameDay } from "date-fns";
 import { z } from "zod";
+import { formatTime } from "@/lib/datetime";
 import type { EventType } from "@/types/types";
 
 export const eventNavigationUrlSchema = z
@@ -18,30 +21,24 @@ export type DashboardEvent = {
 	navigationUrl?: string | null;
 };
 
-export function selectDashboardEvents(events: DashboardEvent[], now: Date) {
-	const sorted = [...events].sort(
-		(a, b) =>
-			a.startTime.getTime() - b.startTime.getTime() || a.id.localeCompare(b.id)
+export function getCurrentEvent(events: DashboardEvent[], now: Date) {
+	return events.find((event) => event.startTime <= now && now < event.endTime);
+}
+
+export function getTodayFutureEvents(events: DashboardEvent[], now: Date) {
+	return events.filter(
+		(event) => event.endTime >= now && isSameDay(event.startTime, now)
 	);
-	return {
-		current: sorted.find(
-			(event) => event.startTime <= now && now < event.endTime
-		),
-		upcoming: sorted.filter((event) => event.startTime > now).slice(0, 3)
-	};
 }
 
 export function countdownParts(deadline: Date, now: Date) {
-	const seconds = Math.max(
-		0,
-		Math.floor((deadline.getTime() - now.getTime()) / 1000)
-	);
+	const seconds = Math.max(0, differenceInSeconds(deadline, now));
 	return [
 		Math.floor(seconds / 86400),
 		Math.floor(seconds / 3600) % 24,
 		Math.floor(seconds / 60) % 60,
 		seconds % 60
-	];
+	] as const;
 }
 
 export function formatDashboardDate(
@@ -49,13 +46,7 @@ export function formatDashboardDate(
 	timeZone: string,
 	includeTime = false
 ) {
-	return new Intl.DateTimeFormat("en-US", {
-		month: "long",
-		day: "numeric",
-		year: "numeric",
-		timeZone,
-		...(includeTime
-			? ({ hour: "numeric", minute: "2-digit", timeZoneName: "short" } as const)
-			: {})
-	}).format(date);
+	const formattedDate = format(date, "MMMM d, yyyy", { in: tz(timeZone) });
+	if (!includeTime) return formattedDate;
+	return `${formattedDate} at ${formatTime(date, timeZone)} ${tzName(timeZone, date, "short")}`;
 }

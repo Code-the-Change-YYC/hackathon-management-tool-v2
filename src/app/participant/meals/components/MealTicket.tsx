@@ -1,15 +1,12 @@
 "use client";
 
+import { differenceInMinutes, isAfter, isWithinInterval } from "date-fns";
 import Image from "next/image";
+import { formatTime } from "@/lib/datetime";
 import type { RouterOutputs } from "@/trpc/react";
 import { EventTicketStatus } from "@/types/types";
 import { StyledQRCode } from "./StyledQRCode";
 import { TicketTeeth } from "./TicketTeeth";
-
-const timeFormatter = new Intl.DateTimeFormat("en-US", {
-	hour: "numeric",
-	minute: "2-digit"
-});
 
 type EventTicket = RouterOutputs["events"]["rotateParticipantEventTicket"];
 type TicketEvent = EventTicket["event"];
@@ -18,21 +15,17 @@ function getMealTicketStatus(
 	event: Pick<TicketEvent, "startTime" | "endTime">,
 	now: Date
 ) {
-	const startTime = new Date(event.startTime).getTime();
-	const endTime = new Date(event.endTime).getTime();
-	const currentTime = now.getTime();
-
-	if (currentTime >= startTime && currentTime <= endTime) {
+	if (isWithinInterval(now, { start: event.startTime, end: event.endTime })) {
 		return "ongoing";
 	}
 
-	if (currentTime > endTime) {
+	if (isAfter(now, event.endTime)) {
 		return "completed";
 	}
 
 	const minutesUntilStart = Math.max(
 		1,
-		Math.round((startTime - currentTime) / 60000)
+		differenceInMinutes(event.startTime, now, { roundingMethod: "round" })
 	);
 
 	if (minutesUntilStart <= 60) {
@@ -53,7 +46,7 @@ function getTicketDescription(ticket: EventTicket | null, now: Date) {
 	}
 
 	if (ticket.status === EventTicketStatus.ALREADY_CHECKED_IN) {
-		return `You checked in at ${timeFormatter.format(new Date(ticket.checkedInAt))}.`;
+		return `You checked in at ${formatTime(ticket.checkedInAt)}.`;
 	}
 
 	return `${ticket.event.title} is ${getMealTicketStatus(
@@ -62,7 +55,7 @@ function getTicketDescription(ticket: EventTicket | null, now: Date) {
 			endTime: ticket.event.endTime
 		},
 		now
-	)} until ${timeFormatter.format(new Date(ticket.event.endTime))}.`;
+	)} until ${formatTime(ticket.event.endTime)}.`;
 }
 
 export function MealTicket({ displayName, ticket }: MealTicketProps) {

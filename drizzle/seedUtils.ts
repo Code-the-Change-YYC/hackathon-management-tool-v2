@@ -1,6 +1,5 @@
+import { addDays, setHours, startOfHour } from "date-fns";
+
 export function getEventDate(dayOffset: number, hour: number) {
-	const date = new Date();
-	date.setHours(hour, 0, 0, 0);
-	date.setDate(date.getDate() + dayOffset);
-	return date;
+	return addDays(startOfHour(setHours(new Date(), hour)), dayOffset);
 }

@@ -22,7 +22,7 @@ import { ONBOARDING_ROUTES } from "@/lib/routes";
 
 const SITUATIONS = ["registered", "unregistered", "no-team"] as const;
 
-type Situation = (typeof SITUATIONS)[number];
+export type Situation = (typeof SITUATIONS)[number];
 
 const SITUATION_DETAILS: Record<Situation, { label: string; href: string }> = {
 	registered: {
@@ -49,7 +49,13 @@ const teamSituationSchema = z.object({
 
 type TeamSituationValues = z.infer<typeof teamSituationSchema>;
 
-export function TeamSituationForm() {
+export function TeamSituationForm({
+	onContinue,
+	Actions = AuthActions
+}: {
+	onContinue?: (situation: Situation) => void;
+	Actions?: typeof AuthActions;
+}) {
 	const router = useRouter();
 	const [isNavigating, startNavigation] = useTransition();
 	const form = useForm<TeamSituationValues>({
@@ -57,6 +63,7 @@ export function TeamSituationForm() {
 	});
 
 	function goToSituation({ situation }: TeamSituationValues) {
+		if (onContinue) return onContinue(situation);
 		startNavigation(() => router.push(SITUATION_DETAILS[situation].href));
 	}
 
@@ -108,12 +115,12 @@ export function TeamSituationForm() {
 					</FieldSet>
 				)}
 			/>
-			<AuthActions>
+			<Actions>
 				<Button className="w-full" disabled={isNavigating} type="submit">
 					{isNavigating && <Spinner data-icon="inline-start" />}
 					Continue
 				</Button>
-			</AuthActions>
+			</Actions>
 		</form>
 	);
 }

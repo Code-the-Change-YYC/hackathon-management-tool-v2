@@ -1,27 +1,23 @@
-export function formatTime(value: Date | string | number) {
-	return new Intl.DateTimeFormat("en-US", {
-		hour: "numeric",
-		hour12: true,
-		minute: "2-digit"
-	}).format(new Date(value));
+import { tz } from "@date-fns/tz";
+import { format, isValid } from "date-fns";
+
+export function formatTime(value: Date | string | number, timeZone?: string) {
+	return format(value, "h:mm a", { in: timeZone ? tz(timeZone) : undefined });
+}
+
+export function formatLongDate(
+	value: Date | string | number,
+	timeZone?: string
+) {
+	return format(value, "EEEE, MMMM d", {
+		in: timeZone ? tz(timeZone) : undefined
+	});
 }
 
 export function formatDateTime(value: Date | string | number) {
-	return new Intl.DateTimeFormat("en-US", {
-		day: "numeric",
-		hour: "numeric",
-		hour12: true,
-		minute: "2-digit",
-		month: "short",
-		year: "numeric"
-	}).format(new Date(value));
+	return format(value, "MMM d, yyyy, h:mm a");
 }
 
-export function toDateTimeLocalValue(value: Date | string | number) {
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return "";
-	const localDate = new Date(
-		date.getTime() - date.getTimezoneOffset() * 60_000
-	);
-	return localDate.toISOString().slice(0, 16);
+export function toDateTimeLocalValue(value?: Date | null) {
+	return value && isValid(value) ? format(value, "yyyy-MM-dd'T'HH:mm") : "";
 }

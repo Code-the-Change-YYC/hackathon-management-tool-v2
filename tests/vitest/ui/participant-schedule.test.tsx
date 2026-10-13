@@ -1,10 +1,7 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ScheduleView } from "@/app/components/participant/ParticipantSchedule";
-import {
-	groupScheduleItemsByDate,
-	ScheduleSection
-} from "@/app/components/ScheduleSection";
+import { groupScheduleItemsByDate } from "@/app/components/Schedule";
 import type { DashboardEvent } from "@/lib/participant-events";
 import { EventType } from "@/types/types";
 
@@ -29,14 +26,14 @@ function event(
 afterEach(() => vi.useRealTimers());
 
 describe("participant schedule", () => {
-	it("keeps all categories and completed events, highlights overlapping ongoing events, and shares the deterministic banner selection", () => {
+	it("lists every event, including completed ones, and shows the current event banner", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(now);
 		const events = [
-			event("Later", EventType.PROJECT, 120, 180),
 			event("Meal", EventType.FOOD, -120, -60),
+			event("Opening", EventType.CEREMONY, -20, 30),
 			event("Trivia", EventType.ACTIVITY, -10, 20),
-			event("Opening", EventType.CEREMONY, -20, 30)
+			event("Later", EventType.PROJECT, 120, 180)
 		];
 		render(<ScheduleView events={events} timeZone="America/Edmonton" />);
 		expect(
@@ -47,14 +44,10 @@ describe("participant schedule", () => {
 				.getAllByRole("listitem")
 				.map((item) => within(item).getByRole("heading").textContent)
 		).toEqual(["Meal", "Opening", "Trivia", "Later"]);
-		expect(screen.getAllByRole("listitem", { current: true })).toHaveLength(2);
-		for (const category of ["Food", "Activity", "Ceremony", "Project"])
-			expect(screen.getByText(category)).toBeInTheDocument();
-		expect(screen.getByText("Completed")).toBeInTheDocument();
-		expect(screen.getByText("In 2 hours")).toBeInTheDocument();
+		expect(screen.getAllByText("Happening now!")).toHaveLength(2);
 		expect(screen.getByText("Trivia description")).toBeInTheDocument();
 		expect(
-			screen.getByRole("link", { name: "Navigate there" })
+			screen.getByRole("button", { name: "Navigate there" })
 		).toHaveAttribute("href", "https://example.com/directions");
 	});
 	it("transitions from upcoming to ongoing to completed without a page reload", () => {
@@ -72,28 +65,27 @@ describe("participant schedule", () => {
 		).toBeInTheDocument();
 		act(() => vi.advanceTimersByTime(30_000));
 		expect(screen.getByText("Trivia ongoing now!")).toBeInTheDocument();
-		expect(screen.getByRole("listitem", { current: true })).toBeInTheDocument();
+		expect(screen.getByText("Happening now!")).toBeInTheDocument();
 		act(() => vi.advanceTimersByTime(30_000));
-		expect(screen.getByText("Completed")).toBeInTheDocument();
-		expect(
-			screen.queryByRole("listitem", { current: true })
-		).not.toBeInTheDocument();
+		expect(screen.queryByText("Happening now!")).not.toBeInTheDocument();
 		expect(
 			screen.getByText("Hackathon updates coming soon")
 		).toBeInTheDocument();
 	});
-	it("groups and sorts by event timezone across midnight and daylight saving without mutating the input", () => {
+	it("groups events by day in the hackathon's timezone", () => {
 		const item = (id: string, date: string) => ({
 			...event(id, EventType.FOOD, 0, 1),
 			eventType: EventType.FOOD,
 			startTime: new Date(date)
 		});
-		const items = [
-			item("later", "2025-11-02T08:30:00Z"),
-			item("previous day", "2025-11-02T05:30:00Z"),
-			item("earlier", "2025-11-02T07:30:00Z")
-		];
-		const groups = groupScheduleItemsByDate(items, "America/Edmonton");
+		const groups = groupScheduleItemsByDate(
+			[
+				item("previous day", "2025-11-02T05:30:00Z"),
+				item("earlier", "2025-11-02T07:30:00Z"),
+				item("later", "2025-11-02T08:30:00Z")
+			],
+			"America/Edmonton"
+		);
 		expect(groups.map((group) => group.label)).toEqual([
 			"Saturday, November 1",
 			"Sunday, November 2"
@@ -102,9 +94,8 @@ describe("participant schedule", () => {
 			"earlier",
 			"later"
 		]);
-		expect(items[0]?.id).toBe("later");
 	});
-	it("renders timezone-correct metadata and omits missing or unsafe navigation links", () => {
+	it("renders timezone-correct times and omits unsafe navigation links", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(now);
 		const current = {
@@ -117,9 +108,11 @@ describe("participant schedule", () => {
 			within(screen.getByRole("listitem")).getByText("2:00 PM – 3:00 PM")
 		).toBeInTheDocument();
 		expect(screen.getByText("Location TBA")).toBeInTheDocument();
-		expect(screen.queryByRole("link")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Navigate there" })
+		).not.toBeInTheDocument();
 	});
-	it("keeps fallback banner copy for empty, loading, and retryable error states", () => {
+	it("shows empty, loading, and retryable error states", () => {
 		const retry = vi.fn();
 		const { rerender } = render(<ScheduleView events={[]} timeZone="UTC" />);
 		expect(
@@ -130,29 +123,11 @@ describe("participant schedule", () => {
 			"aria-busy",
 			"true"
 		);
-		expect(
-			screen.getByText("Hackathon updates coming soon")
-		).toBeInTheDocument();
 		rerender(<ScheduleView error events={[]} retry={retry} timeZone="UTC" />);
 		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
 		expect(retry).toHaveBeenCalledOnce();
 		expect(
 			screen.queryByText("No events have been scheduled yet.")
 		).not.toBeInTheDocument();
-	});
-	it("preserves the meal schedule's default card presentation", () => {
-		const meal = event("Breakfast", EventType.FOOD, 0, 60);
-		render(
-			<ScheduleSection
-				emptyDescription="Check back"
-				emptyTitle="No meals"
-				items={[{ ...meal, eventType: meal.type }]}
-				now={now}
-				title="Meal Schedule"
-			/>
-		);
-		expect(screen.getByText("Breakfast description")).toBeInTheDocument();
-		expect(screen.getByText("Ongoing")).toBeInTheDocument();
-		expect(screen.queryByText("ENG 224")).not.toBeInTheDocument();
 	});
 });

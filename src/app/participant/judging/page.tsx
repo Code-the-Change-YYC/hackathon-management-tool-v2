@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/datetime";
 import { tryCatch } from "@/lib/utils";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
@@ -31,7 +32,7 @@ export default async function ParticipantJudgingPage() {
 							<p>
 								{judgingAssignment.team.name} judges at{" "}
 								{judgingAssignment.timeSlot
-									? judgingAssignment.timeSlot.toLocaleString()
+									? formatDateTime(judgingAssignment.timeSlot)
 									: "a time to be announced"}
 								.
 							</p>

@@ -20,8 +20,10 @@
 
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
+import { addDays, isValid } from "date-fns";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
+import { resolveAvatarSrc } from "@/lib/avatars";
 import { tryCatch } from "@/lib/utils";
 import {
 	joinTeamSchema,
@@ -119,11 +121,7 @@ function parseDeadline(value: string | null | undefined): Date | null {
 	}
 
 	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) {
-		return null;
-	}
-
-	return date;
+	return isValid(date) ? date : null;
 }
 
 async function ensureNotInTeam(db: typeof dbType, userId: string) {
@@ -325,6 +323,7 @@ export const teamsRouter = createTRPCRouter({
 				userId: m.userId,
 				name: m.user.name,
 				email: m.user.email,
+				avatarSrc: resolveAvatarSrc(m.user.image),
 				role: m.role,
 				isYou: m.userId === userId
 			}))
@@ -500,7 +499,7 @@ export const teamsRouter = createTRPCRouter({
 					email: input.email,
 					role: MEMBER_ROLES.MEMBER,
 					status: "pending",
-					expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+					expiresAt: addDays(new Date(), 7),
 					inviterId: userId
 				})
 				.returning();

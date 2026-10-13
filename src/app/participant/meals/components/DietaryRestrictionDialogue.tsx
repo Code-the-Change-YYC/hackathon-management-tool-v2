@@ -1,9 +1,8 @@
 "use client";
 
-import { AddLine, CloseLine } from "@mingcute/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/app/components/ui/badge";
+import { DietaryRestrictionsField } from "@/app/components/forms/DietaryRestrictionsField";
 import { Button } from "@/app/components/ui/button";
 import {
 	Dialog,
@@ -13,17 +12,7 @@ import {
 	DialogHeader,
 	DialogTitle
 } from "@/app/components/ui/dialog";
-import {
-	Field,
-	FieldGroup,
-	FieldLegend,
-	FieldSet
-} from "@/app/components/ui/field";
-import {
-	DIETARY_RESTRICTION_LABELS,
-	DIETARY_RESTRICTIONS,
-	type DietaryRestriction
-} from "@/lib/validation/signup";
+import type { DietaryRestriction } from "@/lib/validation/signup";
 import { api } from "@/trpc/react";
 
 type DietaryRestrictionDialogueProps = {
@@ -58,9 +47,6 @@ export function DietaryRestrictionDialogue({
 		currentRestrictions,
 		draftRestrictions
 	);
-	const availableRestrictions = DIETARY_RESTRICTIONS.filter(
-		(restriction) => !draftRestrictions.includes(restriction)
-	);
 
 	function requestEditorClose() {
 		if (hasUnsavedChanges) {
@@ -84,24 +70,6 @@ export function DietaryRestrictionDialogue({
 		onCloseAction();
 	}
 
-	function addRestriction(restriction: DietaryRestriction) {
-		setDraftRestrictions((currentRestrictions) => {
-			if (currentRestrictions.includes(restriction)) {
-				return currentRestrictions;
-			}
-
-			return [...currentRestrictions, restriction];
-		});
-	}
-
-	function removeRestriction(restriction: DietaryRestriction) {
-		setDraftRestrictions((currentRestrictions) =>
-			currentRestrictions.filter(
-				(currentRestriction) => currentRestriction !== restriction
-			)
-		);
-	}
-
 	async function saveRestrictions() {
 		try {
 			await updateDietaryRestrictions.mutateAsync({
@@ -123,12 +91,10 @@ export function DietaryRestrictionDialogue({
 	return (
 		<Dialog onOpenChange={handleDialogueOpenChange} open>
 			{dialogueMode === "edit" ? (
-				<DialogContent className="gap-6 p-6 sm:p-8">
-					<DialogHeader className="gap-3 pr-6">
-						<DialogTitle className="font-semibold text-xl leading-tight">
-							Edit your dietary restrictions
-						</DialogTitle>
-						<DialogDescription className="font-normal text-sm">
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Edit your dietary restrictions</DialogTitle>
+						<DialogDescription>
 							Update your dietary restrictions so we can accommodate your needs!
 						</DialogDescription>
 					</DialogHeader>
@@ -140,70 +106,13 @@ export function DietaryRestrictionDialogue({
 							void saveRestrictions();
 						}}
 					>
-						<FieldGroup className="gap-4">
-							<FieldSet>
-								<FieldLegend className="font-normal text-sm" variant="label">
-									Your registered dietary restrictions:
-								</FieldLegend>
-								<Field>
-									<div className="flex min-h-5 flex-wrap gap-2">
-										{draftRestrictions.length > 0 ? (
-											draftRestrictions.map((restriction) => (
-												<Badge
-													aria-label={`Remove ${DIETARY_RESTRICTION_LABELS[restriction]}`}
-													className="h-7 cursor-pointer px-3"
-													key={restriction}
-													onClick={() => removeRestriction(restriction)}
-													render={<button type="button" />}
-													variant="accent"
-												>
-													{DIETARY_RESTRICTION_LABELS[restriction]}
-													<CloseLine data-icon="inline-end" />
-												</Badge>
-											))
-										) : (
-											<span className="text-muted-foreground text-sm">
-												None selected
-											</span>
-										)}
-									</div>
-								</Field>
-							</FieldSet>
+						<DietaryRestrictionsField
+							disabled={updateDietaryRestrictions.isPending}
+							onChange={setDraftRestrictions}
+							value={draftRestrictions}
+						/>
 
-							<FieldSet>
-								<FieldLegend className="font-normal text-sm" variant="label">
-									Add a restriction:
-								</FieldLegend>
-								<Field>
-									<div className="flex flex-wrap gap-2">
-										{draftRestrictions.length > 0 ? (
-											<Button
-												onClick={() => setDraftRestrictions([])}
-												size="sm"
-												type="button"
-												variant="outline"
-											>
-												None
-											</Button>
-										) : null}
-										{availableRestrictions.map((restriction) => (
-											<Button
-												key={restriction}
-												onClick={() => addRestriction(restriction)}
-												size="sm"
-												type="button"
-												variant="outline"
-											>
-												{DIETARY_RESTRICTION_LABELS[restriction]}
-												<AddLine data-icon="inline-end" />
-											</Button>
-										))}
-									</div>
-								</Field>
-							</FieldSet>
-						</FieldGroup>
-
-						<DialogFooter className="mx-0 mb-0 flex-col border-0 bg-transparent p-0 sm:flex-col">
+						<DialogFooter>
 							<Button
 								disabled={
 									updateDietaryRestrictions.isPending || !hasUnsavedChanges
@@ -228,16 +137,16 @@ export function DietaryRestrictionDialogue({
 					</form>
 				</DialogContent>
 			) : (
-				<DialogContent className="gap-6 p-6 sm:p-8">
-					<DialogHeader className="gap-3 pr-6">
-						<DialogTitle className="font-semibold text-xl leading-tight">
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>
 							Are you sure you want to discard your changes?
 						</DialogTitle>
-						<DialogDescription className="font-normal text-sm">
+						<DialogDescription>
 							You’ve made edits to your dietary restrictions without saving.
 						</DialogDescription>
 					</DialogHeader>
-					<DialogFooter className="mx-0 mb-0 flex-col border-0 bg-transparent p-0 sm:flex-col">
+					<DialogFooter>
 						<Button
 							onClick={discardChanges}
 							size="sm"

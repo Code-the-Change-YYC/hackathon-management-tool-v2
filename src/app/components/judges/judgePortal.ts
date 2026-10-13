@@ -1,3 +1,4 @@
+import { formatTime as formatClockTime, formatLongDate } from "@/lib/datetime";
 import type { RouterOutputs } from "@/trpc/react";
 
 export type JudgeAssignment =
@@ -12,26 +13,12 @@ export function sortCriteria(a: Criterion, b: Criterion) {
 	);
 }
 
-const judgeTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
 export function formatTime(value?: Date | null) {
-	if (!value) return "Unscheduled";
-	return new Intl.DateTimeFormat("en-US", {
-		hour: "numeric",
-		hour12: true,
-		minute: "2-digit",
-		timeZone: judgeTimeZone
-	}).format(value);
+	return value ? formatClockTime(value) : "Unscheduled";
 }
 
 export function formatDate(value?: Date | null) {
-	if (!value) return "Unscheduled";
-	return new Intl.DateTimeFormat("en-US", {
-		day: "numeric",
-		month: "long",
-		weekday: "long",
-		timeZone: judgeTimeZone
-	}).format(value);
+	return value ? formatLongDate(value) : "Unscheduled";
 }
 
 export function formatDuration(minutes: number) {

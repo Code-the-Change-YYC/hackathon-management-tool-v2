@@ -1,15 +1,13 @@
 "use client";
 
 import PageHeader from "@/app/components/PageHeader";
-import { ScheduleSection } from "@/app/components/ScheduleSection";
+import { Schedule } from "@/app/components/Schedule";
+import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
-import {
-	type DashboardEvent,
-	selectDashboardEvents
-} from "@/lib/participant-events";
+import { type DashboardEvent, getCurrentEvent } from "@/lib/participant-events";
 import { api } from "@/trpc/react";
+import { CurrentEventBanner } from "./CurrentEventBanner";
 import { DataState } from "./DataState";
-import { EventBanner } from "./EventBanner";
 
 const refreshOptions = { refetchInterval: 30_000, refetchOnWindowFocus: true };
 
@@ -33,6 +31,7 @@ export function ParticipantSchedule() {
 	);
 }
 
+// Separate view keeps data fetching out of reusable presentation components.
 export function ScheduleView({
 	events,
 	timeZone,
@@ -47,38 +46,35 @@ export function ScheduleView({
 	retry?: () => void;
 }) {
 	const now = useCurrentTime();
-	const { current } = selectDashboardEvents(events, now);
+	const currentEvent = getCurrentEvent(events, now);
 	return (
-		<div className="min-h-svh bg-grey-50 px-4 py-6 text-grey-800 md:px-8 xl:px-6">
-			<div className="mx-auto flex max-w-7xl flex-col gap-6">
-				<PageHeader
-					className="gap-0"
-					description="View all hackathon events and activities"
-					descriptionClassName="text-base/6 text-grey-600"
-					title="Schedule"
-					titleClassName="text-[32px]/10"
-				/>
-				<div className="flex flex-col gap-16">
-					<section
-						aria-labelledby="happening-now"
-						className="flex flex-col gap-4"
-					>
-						<h2 className="font-medium text-[22px]/7" id="happening-now">
-							Happening now
-						</h2>
-						<EventBanner
-							event={loading || error ? undefined : current}
-							timeZone={timeZone}
-							tone="purple"
-						/>
-					</section>
+		<div className="flex flex-col gap-6">
+			<PageHeader
+				description="View all hackathon events and activities"
+				title="Schedule"
+			/>
+			{!error && !loading && (
+				<section className="flex flex-col gap-4">
+					<h2 className="font-medium text-[22px]/7">Happening now</h2>
+					<CurrentEventBanner
+						colour="purple"
+						event={currentEvent}
+						timeZone={timeZone}
+					/>
+				</section>
+			)}
+			<Card className="rounded-2xl ring-0">
+				<CardHeader>
+					<h2 className="font-medium text-[22px]/7">Full Schedule</h2>
+				</CardHeader>
+				<CardContent>
 					<DataState
 						error={error}
 						label="Loading schedule"
 						loading={loading}
 						retry={retry}
 					>
-						<ScheduleSection
+						<Schedule
 							emptyDescription="Check back soon for hackathon events and activities."
 							emptyTitle="No events have been scheduled yet."
 							items={events.map((event) => ({
@@ -87,12 +83,10 @@ export function ScheduleView({
 							}))}
 							now={now}
 							timeZone={timeZone}
-							title="Full Schedule"
-							variant="timeline"
 						/>
 					</DataState>
-				</div>
-			</div>
+				</CardContent>
+			</Card>
 		</div>
 	);
 }

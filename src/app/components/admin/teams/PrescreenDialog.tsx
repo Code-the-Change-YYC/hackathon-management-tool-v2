@@ -107,9 +107,7 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 			<Dialog onOpenChange={requestClose} open={!confirmingDiscard}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle className="text-lg">
-							Prescreening for Team: {team.name}
-						</DialogTitle>
+						<DialogTitle>Prescreening for Team: {team.name}</DialogTitle>
 					</DialogHeader>
 
 					{step === "intro" && (
