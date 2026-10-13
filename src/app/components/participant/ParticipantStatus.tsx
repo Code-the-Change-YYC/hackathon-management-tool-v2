@@ -2,7 +2,7 @@
 
 import { ArrowRightLine, FileCheckLine, XlsLine } from "@mingcute/react";
 import Link from "next/link";
-import { buttonVariants } from "@/app/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import {
 	JUDGING_PHASE_LABELS,
@@ -102,16 +102,18 @@ export function JudgingStatus({
 					<h2 className="font-medium text-[22px]/7" id="judging-title">
 						Judging Status
 					</h2>
-					<Link
-						className={cn(
-							buttonVariants({ variant: "ghost" }),
-							"h-8 gap-1 rounded-full px-1 text-sm has-data-[icon=inline-end]:pr-1 [&_svg:not([class*='size-'])]:size-5"
-						)}
-						href="/participant/judging"
-					>
-						View judging info
-						<ArrowRightLine data-icon="inline-end" />
-					</Link>
+					<Button
+						className="active:not-aria-[haspopup]:translate-y-0" // Stops button from moving down when clicked
+						nativeButton={false}
+						render={
+							<Link href="/participant/judging">
+								View judging info
+								<ArrowRightLine className="size-5" data-icon="inline-end" />
+							</Link>
+						}
+						size="sm"
+						variant="ghost"
+					/>
 				</div>
 				<p aria-live="polite" className="text-grey-600 text-sm/5">
 					{label}

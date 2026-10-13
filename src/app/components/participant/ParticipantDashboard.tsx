@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
 import { ScheduleItem } from "@/app/components/ScheduleItem";
-import { buttonVariants } from "@/app/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import {
 	Empty,
@@ -20,7 +20,6 @@ import {
 	formatDashboardDate,
 	selectDashboardEvents
 } from "@/lib/participant-events";
-import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { DataState } from "./DataState";
 import { EventBanner } from "./EventBanner";
@@ -118,16 +117,21 @@ export function DashboardView({
 						<CardHeader>
 							<div className="flex flex-wrap items-center justify-between gap-1">
 								<h2 className="font-medium text-[22px]/7">Upcoming Events</h2>
-								<Link
-									className={cn(
-										buttonVariants({ variant: "ghost" }),
-										"h-8 gap-1 rounded-full px-1 text-sm has-data-[icon=inline-end]:pr-1 [&_svg:not([class*='size-'])]:size-5"
-									)}
-									href="/participant/schedule"
-								>
-									View full schedule
-									<ArrowRightLine data-icon="inline-end" />
-								</Link>
+								<Button
+									className="active:not-aria-[haspopup]:translate-y-0" // Stops button from moving down when clicked
+									nativeButton={false}
+									render={
+										<Link href="/participant/schedule">
+											View full schedule
+											<ArrowRightLine
+												className="size-5"
+												data-icon="inline-end"
+											/>
+										</Link>
+									}
+									size="sm"
+									variant="ghost"
+								/>
 							</div>
 						</CardHeader>
 						<CardContent>
