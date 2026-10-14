@@ -33,10 +33,15 @@ describe("datetime helpers", () => {
 		expect(toDateTimeLocalValue(null)).toBe("");
 	});
 
-	it("uses Calgary's offset on the parsed date, not today's", () => {
-		// January 2026 is still MST (UTC-7).
-		expect(fromDateTimeLocalValue("2026-01-15T18:30")).toEqual(
-			new Date("2026-01-16T01:30:00Z")
+	it("keeps Calgary on UTC-6 after November 1, 2026", () => {
+		// Older time-zone data moves Calgary to UTC-7 here, an hour off.
+		const hackathonMorning = new Date("2026-11-07T15:00:00Z");
+		expect(formatTime(hackathonMorning)).toBe("9:00 AM");
+		expect(fromDateTimeLocalValue("2026-11-07T09:00")).toEqual(
+			hackathonMorning
+		);
+		expect(formatDateTime(new Date("2027-01-15T15:00:00Z"))).toBe(
+			"Jan 15, 2027, 9:00 AM"
 		);
 	});
 

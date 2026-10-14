@@ -3,7 +3,16 @@ import { format, isSameDay, isValid, parse } from "date-fns";
 
 // The hackathon is in person in Calgary, so every time is Calgary time no
 // matter where the code runs (servers are usually UTC) or who is viewing.
-export const CALGARY_TIME_ZONE = "America/Edmonton";
+//
+// Alberta stopped changing its clocks in 2026: Calgary moved to UTC-6 on
+// March 8 and stays there (tzdata 2026c). Browsers and servers with older
+// time-zone data still move "America/Edmonton" back to UTC-7 on November 1,
+// which would show and save every hackathon time an hour off, so this is a
+// fixed offset. Dates before March 8, 2026, when Calgary was on UTC-7, come
+// out an hour late.
+//
+// https://www.alberta.ca/albertas-new-time-system-abt
+export const CALGARY_TIME_ZONE = "-06:00";
 const calgary = tz(CALGARY_TIME_ZONE);
 
 type DateValue = Date | string | number;

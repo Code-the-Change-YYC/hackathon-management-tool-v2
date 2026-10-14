@@ -5,7 +5,7 @@ import { groupScheduleItemsByDate } from "@/app/components/Schedule";
 import type { DashboardEvent } from "@/lib/participant-events";
 import { EventType } from "@/types/types";
 
-const now = new Date("2025-11-08T21:00:00Z");
+const now = new Date("2026-11-07T20:00:00Z");
 function event(
 	id: string,
 	type: EventType,

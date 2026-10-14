@@ -6,7 +6,8 @@ import { twMerge } from "tailwind-merge";
 import { countdownParts } from "@/lib/participant-events";
 import type { TimeLeft } from "@/types/landingPage";
 
-const HACKATHON_DATE = new Date("2026-11-07T09:00:00-07:00");
+// 9:00 AM in Calgary, which stays on UTC-6 in November (see lib/datetime.ts).
+const HACKATHON_DATE = new Date("2026-11-07T09:00:00-06:00");
 
 // Null until mounted, so the tiles first render with the real time instead of
 // flipping over from 00 on page load.
