@@ -7,7 +7,7 @@ export function ResourcesView() {
 		<div className="flex flex-col gap-6">
 			<PageHeader
 				description="Helpful resources and mentors!"
-				title="Resources"
+				title="Resources and Help"
 			/>
 			<div className="flex flex-col gap-16">
 				<ResourcesSection />

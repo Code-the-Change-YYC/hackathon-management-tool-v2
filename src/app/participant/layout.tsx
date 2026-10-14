@@ -1,11 +1,14 @@
+import { connection } from "next/server";
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { resolveAvatarSrc } from "@/lib/avatars";
 import { DEVPOST_URL, DISCORD_URL } from "@/lib/constants";
 import { getNameParts } from "@/lib/names";
+import { hasHackathonStarted } from "@/lib/participant-events";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
+import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
 import PageContainer from "../components/PageContainer";
-import type { NavGroup } from "../components/sidebar/AppSidebar";
+import type { NavGroup, NavItem } from "../components/sidebar/AppSidebar";
 import {
 	AppSidebar,
 	AppSidebarTriggerHeader
@@ -16,31 +19,29 @@ export default async function ParticipantLayout({
 }: {
 	children: React.ReactNode;
 }) {
+	// Stops prerendering to allow dynamically hiding/showing participant resources link
+	await connection();
 	const { user } = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
 
+	const settings = await api.hackathonSettings.get();
+
+	const navItems: NavItem[] = [
+		{ title: "Dashboard", href: "/participant", icon: "home" },
+		{ title: "Schedule", href: "/participant/schedule", icon: "calendar" },
+		{ title: "Team", href: "/participant/team", icon: "group" },
+		{ title: "Meals", href: "/participant/meals", icon: "hamburger" },
+		{ title: "Judging", href: "/participant/judging", icon: "task" }
+	];
+	if (hasHackathonStarted(settings?.startDate)) {
+		navItems.push({
+			title: "Resources",
+			href: "/participant/resources",
+			icon: "question"
+		});
+	}
+
 	const PARTICPANT_NAV_GROUPS: NavGroup[] = [
-		{
-			items: [
-				{ title: "Dashboard", href: "/participant", icon: "home" },
-				{ title: "Schedule", href: "/participant/schedule", icon: "calendar" },
-				{ title: "Team", href: "/participant/team", icon: "group" },
-				{
-					title: "Meals",
-					href: "/participant/meals",
-					icon: "hamburger"
-				},
-				{
-					title: "Judging",
-					href: "/participant/judging",
-					icon: "task"
-				},
-				{
-					title: "Resources",
-					href: "/participant/resources",
-					icon: "question"
-				}
-			]
-		},
+		{ items: navItems },
 		{
 			groupLabel: "Quick Links",
 			items: [

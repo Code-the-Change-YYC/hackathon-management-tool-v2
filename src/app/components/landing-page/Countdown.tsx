@@ -4,17 +4,17 @@ import Image from "next/image";
 import { Fragment, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { countdownParts } from "@/lib/participant-events";
+import { api } from "@/trpc/react";
 import type { TimeLeft } from "@/types/landingPage";
-
-// 9:00 AM in Calgary, which stays on UTC-6 in November (see lib/datetime.ts).
-const HACKATHON_DATE = new Date("2026-11-07T09:00:00-06:00");
 
 // Null until mounted, so the tiles first render with the real time instead of
 // flipping over from 00 on page load.
-function useCountdown(targetDate: Date): TimeLeft | null {
+function useCountdown(targetDate: Date | null): TimeLeft | null {
 	const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
 
 	useEffect(() => {
+		if (targetDate == null) return;
+
 		const calculate = (): TimeLeft => {
 			const [days, hours, minutes, seconds] = countdownParts(
 				targetDate,
@@ -127,7 +127,9 @@ function CountdownWindow({ children }: { children: React.ReactNode }) {
 }
 
 export default function Countdown() {
-	const timeLeft = useCountdown(HACKATHON_DATE);
+	const settingsQuery = api.hackathonSettings.get.useQuery();
+	const startDate = settingsQuery.data?.startDate;
+	const timeLeft = useCountdown(startDate ?? null);
 
 	return (
 		<CountdownWindow>

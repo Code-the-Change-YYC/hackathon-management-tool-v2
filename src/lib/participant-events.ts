@@ -20,6 +20,10 @@ export type DashboardEvent = {
 	navigationUrl?: string | null;
 };
 
+export function hasHackathonStarted(startDate: Date | null | undefined) {
+	return startDate != null && Date.now() >= startDate.getTime();
+}
+
 export function getCurrentEvent(events: DashboardEvent[], now: Date) {
 	return events.find((event) => event.startTime <= now && now < event.endTime);
 }
