@@ -63,8 +63,8 @@ export function PersonalInformationDetails({
 		<PersonalInformationCard
 			actions={
 				<Button onClick={onEdit} size="sm" variant="ghost">
+					Edit
 					<Edit2Line data-icon="inline-start" />
-					Edit Info
 				</Button>
 			}
 		>

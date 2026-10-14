@@ -126,12 +126,13 @@ export default function TeamTable({
 				{canEditName && (
 					<Button
 						aria-label="Edit team name"
-						className="shrink-0 hover:bg-purple-100"
+						className="shrink-0 hover:bg-purple-500/20"
 						onClick={onEditName}
-						size="icon-lg"
+						size="sm"
 						variant="ghost"
 					>
-						<Edit2Line />
+						Edit
+						<Edit2Line data-icon="inline-end" />
 					</Button>
 				)}
 			</div>
