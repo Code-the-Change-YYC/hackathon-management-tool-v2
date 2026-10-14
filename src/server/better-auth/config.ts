@@ -102,7 +102,9 @@ export const betterAuthDefaultConfig = {
 		// Deprecated alias of /email-otp/request-password-reset.
 		"/forget-password/email-otp",
 		"/email-otp/request-email-change",
-		"/email-otp/change-email"
+		"/email-otp/change-email",
+		// Names and avatars are saved through the users router, which checks them.
+		"/update-user"
 	],
 	// Teams live in the organization tables but are managed only through the
 	// teams router, so Better Auth's organization plugin (and the REST endpoints

@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { TextField } from "@/app/components/forms/TextField";
 import { Button } from "@/app/components/ui/button";
 import {
 	Dialog,
@@ -10,7 +13,11 @@ import {
 	DialogHeader,
 	DialogTitle
 } from "@/app/components/ui/dialog";
-import { Input } from "@/app/components/ui/input";
+import { TEAM_NAME_MAX } from "@/lib/utils";
+import {
+	type RegisterTeamValues,
+	registerTeamSchema
+} from "@/lib/validation/team";
 
 export default function EditTeamNameModal({
 	open,
@@ -27,12 +34,19 @@ export default function EditTeamNameModal({
 	loading?: boolean;
 	error?: string | null;
 }) {
-	const [name, setName] = useState(currentName);
-	const trimmed = name.trim();
+	// Uses the same rules as registering a team.
+	const form = useForm<RegisterTeamValues>({
+		defaultValues: { name: currentName },
+		resolver: zodResolver(registerTeamSchema)
+	});
 
 	useEffect(() => {
-		if (open) setName(currentName);
-	}, [open, currentName]);
+		if (open) form.reset({ name: currentName });
+	}, [open, currentName, form]);
+
+	useEffect(() => {
+		if (error) form.setError("name", { message: error }, { shouldFocus: true });
+	}, [error, form]);
 
 	return (
 		<Dialog onOpenChange={(next) => !next && onClose()} open={open}>
@@ -44,28 +58,32 @@ export default function EditTeamNameModal({
 					</DialogDescription>
 				</DialogHeader>
 
-				<Input
-					aria-label="Team name"
-					className="h-auto rounded-xl px-4 py-3 font-medium text-[16px]"
-					maxLength={50}
-					onChange={(e) => setName(e.target.value)}
-					value={name}
-				/>
+				<form
+					className="flex flex-col gap-6"
+					noValidate
+					onSubmit={form.handleSubmit(({ name }) => {
+						if (name === currentName) return onClose();
+						onSave(name);
+					})}
+				>
+					<TextField
+						autoComplete="off"
+						control={form.control}
+						disabled={loading}
+						label="Team name"
+						maxLength={TEAM_NAME_MAX}
+						name="name"
+					/>
 
-				{error && <p className="font-medium text-red-700 text-sm">{error}</p>}
-
-				<DialogFooter>
-					<Button
-						disabled={!trimmed || loading}
-						onClick={() => onSave(trimmed)}
-						type="button"
-					>
-						{loading ? "Saving..." : "Save"}
-					</Button>
-					<Button onClick={onClose} type="button" variant="outline">
-						Cancel
-					</Button>
-				</DialogFooter>
+					<DialogFooter>
+						<Button disabled={loading} type="submit">
+							{loading ? "Saving..." : "Save"}
+						</Button>
+						<Button onClick={onClose} type="button" variant="outline">
+							Cancel
+						</Button>
+					</DialogFooter>
+				</form>
 			</DialogContent>
 		</Dialog>
 	);

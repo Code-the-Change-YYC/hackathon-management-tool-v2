@@ -28,7 +28,8 @@ import { tryCatch } from "@/lib/utils";
 import {
 	joinTeamSchema,
 	registerTeamSchema,
-	TEAM_CODE_LENGTH
+	TEAM_CODE_LENGTH,
+	teamNameSchema
 } from "@/lib/validation/team";
 import {
 	adminProcedure,
@@ -337,6 +338,9 @@ export const teamsRouter = createTRPCRouter({
 			await ensureNotInTeam(ctx.db, userId);
 
 			const slug = input.name
+				// Drops accents so "Équipe" becomes "equipe" rather than "quipe".
+				.normalize("NFD")
+				.replace(/\p{M}/gu, "")
 				.toLowerCase()
 				.replace(/\s+/g, "-")
 				.replace(/[^a-z0-9-]/g, "");
@@ -634,8 +638,8 @@ export const teamsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				id: z.string(),
-				name: z.string().min(1).optional(),
-				slug: z.string().optional(),
+				name: teamNameSchema.optional(),
+				slug: z.string().trim().min(1).optional(),
 				logo: z.string().optional().nullable(),
 				metadata: z.string().optional().nullable()
 			})
@@ -646,6 +650,18 @@ export const teamsRouter = createTRPCRouter({
 			const isAppAdmin = ctx.session.user.role === "admin";
 
 			if (!isAppAdmin) {
+				// Owners can only rename; the other details are admin-only.
+				if (
+					data.slug !== undefined ||
+					data.logo !== undefined ||
+					data.metadata !== undefined
+				) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message:
+							"Only app admins can change team details other than the name"
+					});
+				}
 				const membership = await ctx.db.query.member.findFirst({
 					where: and(
 						eq(member.userId, userId),
@@ -661,12 +677,23 @@ export const teamsRouter = createTRPCRouter({
 				}
 			}
 
-			const [updated] = await ctx.db
-				.update(organization)
-				.set(data)
-				.where(eq(organization.id, id))
-				.returning();
-			return updated;
+			const { data: rows, error } = await tryCatch(
+				ctx.db
+					.update(organization)
+					.set(data)
+					.where(eq(organization.id, id))
+					.returning()
+			);
+			if (error) {
+				if (isUniqueViolation(error)) {
+					throw new TRPCError({
+						code: "CONFLICT",
+						message: "Another team already uses that slug"
+					});
+				}
+				throw error;
+			}
+			return rows[0];
 		}),
 	getRankings: adminProcedure.query(async ({ ctx }) => {
 		const result = await ctx.db.execute(

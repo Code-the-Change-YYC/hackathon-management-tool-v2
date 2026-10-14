@@ -11,7 +11,9 @@ export const teamNameSchema = z
 	.regex(
 		TEAM_NAME_PATTERN,
 		"Use only letters, numbers, spaces, hyphens, and underscores"
-	);
+	)
+	// "é" can be typed as one character or as "e" plus an accent; store one form.
+	.transform((name) => name.normalize("NFC"));
 
 export const teamCodeSchema = z
 	.string()

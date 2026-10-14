@@ -144,7 +144,12 @@ export function TeamView({ team }: { team: Team }) {
 					/>
 					<EditTeamNameModal
 						currentName={team.name}
-						error={update.error?.message ?? null}
+						error={
+							update.error
+								? (update.error.data?.zodError?.fieldErrors.name?.[0] ??
+									update.error.message)
+								: null
+						}
 						loading={update.isPending || isRefreshing}
 						onClose={() => setModal(null)}
 						onSave={(name) =>
