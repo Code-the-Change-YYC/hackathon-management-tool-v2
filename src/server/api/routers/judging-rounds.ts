@@ -5,36 +5,18 @@ import { assertRoundHasNoScores } from "@/server/api/routers/judging-rooms";
 import {
 	adminProcedure,
 	createTRPCRouter,
-	publicProcedure
+	protectedProcedure
 } from "@/server/api/trpc";
 import { judgingRounds } from "@/server/db/schema";
 
 export const judgingRoundsRouter = createTRPCRouter({
 	// Get all judging rounds
-	getAll: publicProcedure.query(async ({ ctx }) => {
+	getAll: protectedProcedure.query(async ({ ctx }) => {
 		const rounds = await ctx.db.query.judgingRounds.findMany({
 			orderBy: (rounds, { desc }) => [desc(rounds.startTime)]
 		});
 		return rounds;
 	}),
-
-	// Get a single judging round by ID
-	getById: publicProcedure
-		.input(z.object({ id: z.string().uuid() }))
-		.query(async ({ ctx, input }) => {
-			const round = await ctx.db.query.judgingRounds.findFirst({
-				where: eq(judgingRounds.id, input.id),
-				with: {
-					rooms: {
-						with: {
-							assignments: true,
-							staff: true
-						}
-					}
-				}
-			});
-			return round;
-		}),
 
 	// Create a new judging round
 	create: adminProcedure

@@ -668,7 +668,7 @@ export const teamsRouter = createTRPCRouter({
 				.returning();
 			return updated;
 		}),
-	getRankings: protectedProcedure.query(async ({ ctx }) => {
+	getRankings: adminProcedure.query(async ({ ctx }) => {
 		const result = await ctx.db.execute(
 			sql<TeamRanking>`
           SELECT 
