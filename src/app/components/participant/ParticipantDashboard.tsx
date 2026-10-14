@@ -111,7 +111,6 @@ export function DashboardView({
 						<div className="flex flex-wrap items-center justify-between gap-1">
 							<h2 className="font-medium text-[22px]/7">Upcoming Events</h2>
 							<Button
-								className="active:not-aria-[haspopup]:translate-y-0" // Stops button from moving down when clicked
 								nativeButton={false}
 								render={
 									<Link href="/participant/schedule">
