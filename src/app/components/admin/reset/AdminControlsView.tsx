@@ -1,10 +1,10 @@
 "use client";
 
-import { format, isValid, parse } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { RESET_CONFIRMATION_PHRASE } from "@/lib/constants";
+import { fromDateInputValue, toDateInputValue } from "@/lib/datetime";
 import { api } from "@/trpc/react";
 import PageHeader from "../../PageHeader";
 import { Field, FieldLabel } from "../../ui/field";
@@ -12,15 +12,6 @@ import { Input } from "../../ui/input";
 import { HackathonDatesSection } from "./HackathonDatesSection";
 import { HackathonResetSection } from "./HackathonResetSection";
 import { ScoringSection } from "./ScoringSection";
-
-function formatDateInput(value: Date | null) {
-	return value ? format(value, "yyyy-MM-dd") : "";
-}
-
-function parseDateInput(value: string) {
-	const date = parse(value, "yyyy-MM-dd", new Date());
-	return isValid(date) ? date : null;
-}
 
 export default function AdminControlsView() {
 	const utils = api.useUtils();
@@ -47,8 +38,8 @@ export default function AdminControlsView() {
 	useEffect(() => {
 		if (!settings) return;
 
-		setStartDate(formatDateInput(settings.startDate));
-		setEndDate(formatDateInput(settings.endDate));
+		setStartDate(toDateInputValue(settings.startDate));
+		setEndDate(toDateInputValue(settings.endDate));
 	}, [settings]);
 
 	const createCriteriaMutation = api.criteria.create.useMutation({
@@ -109,8 +100,9 @@ export default function AdminControlsView() {
 	);
 
 	const handleCreateHackathon = useCallback(async () => {
-		const start = parseDateInput(startDate);
-		const end = parseDateInput(endDate);
+		// Keep any start and end times already set in the hackathon settings.
+		const start = fromDateInputValue(startDate, settings?.startDate);
+		const end = fromDateInputValue(endDate, settings?.endDate);
 
 		if (!start || !end) {
 			toast.error("Both hackathon dates are required.");
@@ -134,7 +126,13 @@ export default function AdminControlsView() {
 			console.error(error);
 			toast.error("Failed to create hackathon");
 		}
-	}, [endDate, startDate, updateSettingsMutation]);
+	}, [
+		endDate,
+		settings?.endDate,
+		settings?.startDate,
+		startDate,
+		updateSettingsMutation
+	]);
 
 	const handleResetHackathon = useCallback(async () => {
 		if (!hasResetSelection) {

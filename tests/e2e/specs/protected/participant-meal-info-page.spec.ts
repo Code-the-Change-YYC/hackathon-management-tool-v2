@@ -1,6 +1,11 @@
+import { TZDate } from "@date-fns/tz";
 import { eq } from "drizzle-orm";
-
-import { formatLongDate, formatTime } from "@/lib/datetime";
+import {
+	CALGARY_TIME_ZONE,
+	formatDateKey,
+	formatLongDate,
+	formatTime
+} from "@/lib/datetime";
 import { db } from "@/server/db";
 import { event } from "@/server/db/event-schema";
 import { EventStatus, EventType, Role } from "@/types/types";
@@ -18,21 +23,23 @@ test.use({
 
 // Given I am signed in as a participant
 // When I navigate to /participant/meals
-// Then I see Meals, Your Meal Ticket, Dietary Restrictions, and Meal Schedule.
+// Then I see Meals, my meal ticket, Dietary Restrictions, and Meal Schedule.
 test(
 	"participant can access all meal information sections",
 	{ tag: "@smoke" },
 	async ({ authenticatedPage: page }) => {
 		await page.goto(path);
 		await expect(page).toHaveURL(path);
+		await expect(
+			page.getByRole("heading", { name: "Meals", exact: true })
+		).toBeVisible();
 		for (const name of [
-			"Meals",
-			"Your Meal Ticket",
+			"Meal ticket",
 			"Dietary Restrictions",
 			"Meal Schedule"
 		]) {
 			await expect(
-				page.getByRole("heading", { name, exact: true })
+				page.getByRole("region", { name, exact: true })
 			).toBeVisible();
 		}
 	}
@@ -49,14 +56,16 @@ test.describe("admin access", () => {
 	}) => {
 		await page.goto(path);
 		await expect(page).toHaveURL(path);
+		await expect(
+			page.getByRole("heading", { name: "Meals", exact: true })
+		).toBeVisible();
 		for (const name of [
-			"Meals",
-			"Your Meal Ticket",
+			"Meal ticket",
 			"Dietary Restrictions",
 			"Meal Schedule"
 		]) {
 			await expect(
-				page.getByRole("heading", { name, exact: true })
+				page.getByRole("region", { name, exact: true })
 			).toBeVisible();
 		}
 	});
@@ -162,10 +171,12 @@ test("groups meals by calendar date", async ({
 	authenticatedPage: page,
 	createMeal
 }) => {
-	const today = new Date();
-	today.setHours(12, 0, 0, 0);
-	const tomorrow = new Date(today);
-	tomorrow.setDate(tomorrow.getDate() + 1);
+	// Noon in Calgary, whatever time zone the test runner uses.
+	const noon = new TZDate(Date.now(), CALGARY_TIME_ZONE);
+	noon.setHours(12, 0, 0, 0);
+	const today = new Date(noon.getTime());
+	noon.setDate(noon.getDate() + 1);
+	const tomorrow = new Date(noon.getTime());
 	const meals = [];
 	for (const [title, startTime] of [
 		["Today lunch", today],
@@ -194,7 +205,7 @@ test("groups meals by calendar date", async ({
 		const group = heading.locator("..");
 		await expect(group.getByRole("heading", { level: 4 })).toHaveText(
 			meals
-				.filter((meal) => meal.startTime.toDateString() === date.toDateString())
+				.filter((meal) => formatDateKey(meal.startTime) === formatDateKey(date))
 				.map((meal) => meal.title)
 		);
 	}
@@ -252,7 +263,7 @@ for (const timing of [
 
 // Given there are no active meals, only a draft meal
 // When I view the meal schedule as a participant
-// Then I see "No meals have been scheduled yet."
+// Then I see "No meals have been scheduled yet"
 // And I see "Check back soon for updated meal times." with no meal entries displayed.
 test("shows an empty schedule when there are no active meals", async ({
 	authenticatedPage: page,
@@ -267,7 +278,7 @@ test("shows an empty schedule when there are no active meals", async ({
 	});
 	await page.goto(path);
 	await expect(
-		schedule(page).getByText("No meals have been scheduled yet.", {
+		schedule(page).getByText("No meals have been scheduled yet", {
 			exact: true
 		})
 	).toBeVisible();

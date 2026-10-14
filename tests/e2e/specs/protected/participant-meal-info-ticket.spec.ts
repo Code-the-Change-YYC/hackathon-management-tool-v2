@@ -2,6 +2,7 @@ import { createTRPCClient, httpLink } from "@trpc/client";
 import { and, eq } from "drizzle-orm";
 
 import superjson from "superjson";
+import { formatTime } from "@/lib/datetime";
 import type { AppRouter } from "@/server/api/root";
 import { db } from "@/server/db";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
@@ -12,7 +13,6 @@ import {
 	minute
 } from "../../../utils/participant-meal-info-page";
 import {
-	browserTime,
 	expectStoredTicket,
 	qrCode,
 	readTicketToken,
@@ -26,9 +26,24 @@ test.use({
 });
 
 for (const timing of [
-	{ name: "ongoing", startMinutes: -15, status: "ongoing" },
-	{ name: "within 60 minutes", startMinutes: 30, status: "in 30 min" },
-	{ name: "later than 60 minutes", startMinutes: 120, status: "scheduled" }
+	{
+		name: "ongoing",
+		startMinutes: -15,
+		expected: (_start: Date, end: Date) =>
+			`Being served until ${formatTime(end)}.`
+	},
+	{
+		name: "within 60 minutes",
+		startMinutes: 30,
+		expected: (_start: Date, end: Date) =>
+			`Starts in 30 min and runs until ${formatTime(end)}.`
+	},
+	{
+		name: "later than 60 minutes",
+		startMinutes: 120,
+		expected: (start: Date, end: Date) =>
+			`Runs from ${formatTime(start)} to ${formatTime(end)}.`
+	}
 ]) {
 	// Given I am a participant with no check-in for an active food meal
 	// And the meal is ongoing, starts within 60 minutes, or starts later (one test each)
@@ -59,7 +74,7 @@ for (const timing of [
 			ticket.getByText(authUser.name, { exact: true })
 		).toBeVisible();
 		await expect(ticket).toContainText(
-			`${meal.title} is ${timing.status} until ${await browserTime(page, meal.endTime)}.`
+			timing.expected(meal.startTime, meal.endTime)
 		);
 		await expect(ticket).toContainText("Present this QR code");
 		const token = await readTicketToken(page);
@@ -147,7 +162,7 @@ test("shows an existing check-in timestamp instead of a QR", async ({
 		ticketSection(page).getByText("Already checked in", { exact: true })
 	).toBeVisible();
 	await expect(ticketSection(page)).toContainText(
-		`You checked in at ${await browserTime(page, checkedInAt)}.`
+		`You checked in at ${formatTime(checkedInAt)}.`
 	);
 	await expect(qrCode(page)).toHaveCount(0);
 	await expect(ticketSection(page)).not.toContainText("Present this QR code");
@@ -252,7 +267,7 @@ test("reload rotates the QR: the old token is rejected and the current token red
 			ticketSection(page).getByText("Already checked in", { exact: true })
 		).toBeVisible();
 		await expect(ticketSection(page)).toContainText(
-			`You checked in at ${await browserTime(page, redeemed.checkedInAt)}.`
+			`You checked in at ${formatTime(redeemed.checkedInAt)}.`
 		);
 		await expect(qrCode(page)).toHaveCount(0);
 	} finally {

@@ -13,9 +13,15 @@ import {
 	AccordionItem,
 	AccordionTrigger
 } from "@/app/components/ui/accordion";
-import { Empty, EmptyDescription } from "@/app/components/ui/empty";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle
+} from "@/app/components/ui/empty";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { getRubricBands } from "@/lib/judging";
-import { cn } from "@/lib/utils";
+import { cn, range } from "@/lib/utils";
 
 function RubricScoreBar({
 	value,
@@ -62,14 +68,17 @@ export function ParticipantRubric({
 			<>
 				{children}
 				<Empty>
-					<EmptyDescription>
-						No judging criteria have been published yet.
-					</EmptyDescription>
+					<EmptyHeader>
+						<EmptyTitle>No judging criteria yet</EmptyTitle>
+						<EmptyDescription>
+							Check back once the judging criteria have been published.
+						</EmptyDescription>
+					</EmptyHeader>
 				</Empty>
 			</>
 		);
 	return (
-		<section className="flex flex-col gap-4 rounded-2xl bg-purple-50 px-8 py-4">
+		<section className="flex flex-col gap-4">
 			<p className="m-0 font-medium text-base/6 italic">
 				{scores
 					? "Click on any category to view the detailed scoring criteria for each round of judging."
@@ -165,5 +174,61 @@ export function ParticipantRubric({
 				})}
 			</Accordion>
 		</section>
+	);
+}
+
+function RubricRowSkeleton() {
+	return (
+		<div className="flex h-14.5 items-center gap-4">
+			<Skeleton className="h-4 w-5 shrink-0" />
+			<Skeleton className="h-4 w-48 max-w-full" />
+			<Skeleton className="ml-auto h-3 w-8 shrink-0" />
+		</div>
+	);
+}
+
+export function ParticipantRubricSkeleton() {
+	return (
+		<div className="flex flex-col gap-4">
+			<Skeleton className="my-1 h-4 w-96 max-w-full" />
+			<div className="flex gap-2">
+				<Skeleton className="h-7 w-36" />
+				<Skeleton className="h-7 w-18" />
+			</div>
+			<div className="flex flex-col gap-3">
+				<div className="rounded-[10px] border-[0.4px] border-purple-500 bg-card px-4">
+					<RubricRowSkeleton />
+					<div className="border-grey-300 border-t-[0.4px] pt-4 pb-5">
+						<Skeleton className="my-1 h-3 w-2/3" />
+						<Skeleton className="my-1 h-3 w-1/2" />
+						<div className="px-2 sm:px-5">
+							{range(5).map((index) => (
+								<div
+									className="grid grid-cols-[80px_minmax(0,1fr)] gap-3 border-grey-100 not-last:border-b py-3 sm:grid-cols-[108px_minmax(0,1fr)] sm:border-grey-300 sm:py-6"
+									key={index}
+								>
+									<div className="flex flex-col items-center gap-1 sm:items-start sm:gap-2">
+										<Skeleton className="my-1 h-4 w-10 sm:h-6" />
+										<Skeleton className="my-0.5 h-3 w-14" />
+									</div>
+									<div className="flex flex-col gap-2">
+										<Skeleton className="h-3 w-full" />
+										<Skeleton className="h-3 w-2/3" />
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				</div>
+				{range(3).map((index) => (
+					<div
+						className="rounded-[10px] border-[0.4px] border-grey-300 bg-card px-4"
+						key={index}
+					>
+						<RubricRowSkeleton />
+					</div>
+				))}
+			</div>
+		</div>
 	);
 }

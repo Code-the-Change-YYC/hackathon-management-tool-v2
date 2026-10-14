@@ -30,9 +30,7 @@ decoder.setZXingModuleOverrides({
 });
 
 export const ticketSection = (page: Page) =>
-	page.locator("section").filter({
-		has: page.getByRole("heading", { name: "Your Meal Ticket", exact: true })
-	});
+	page.getByRole("region", { name: "Meal ticket", exact: true });
 export const qrCode = (page: Page) =>
 	ticketSection(page).getByRole("img", {
 		name: "Meal ticket QR code",
@@ -76,14 +74,3 @@ export async function expectStoredTicket(
 		expiresAt: meal.endTime
 	});
 }
-
-// Match the browser's formatter, including its timezone, rather than the worker's.
-export const browserTime = (page: Page, date: Date) =>
-	page.evaluate(
-		(value) =>
-			new Intl.DateTimeFormat("en-US", {
-				hour: "numeric",
-				minute: "2-digit"
-			}).format(new Date(value)),
-		date.toISOString()
-	);

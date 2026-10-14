@@ -33,14 +33,14 @@ const main: Criterion = {
 const sidepot: Criterion = { ...main, id: "sidepot", isSidepot: true };
 
 describe("judge schedule", () => {
-	it("groups scheduled teams by local date without mutating query data", () => {
+	it("groups scheduled teams by Calgary date without mutating query data", () => {
 		const first = assignment({
 			id: "first",
-			timeSlot: new Date(2026, 8, 19, 23, 59)
+			timeSlot: new Date("2026-09-19T23:59:00-06:00")
 		});
 		const next = assignment({
 			id: "next",
-			timeSlot: new Date(2026, 8, 20, 0, 1)
+			timeSlot: new Date("2026-09-20T00:01:00-06:00")
 		});
 		const input = [next, assignment({ timeSlot: null }), first];
 		expect(groupScheduleByDate(input)).toEqual([[first], [next]]);

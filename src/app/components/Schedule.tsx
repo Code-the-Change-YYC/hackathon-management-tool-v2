@@ -1,8 +1,8 @@
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
-import { formatLongDate } from "@/lib/datetime";
+import { formatDateKey, formatLongDate } from "@/lib/datetime";
+import { range } from "@/lib/utils";
 import { ScheduleItem, type ScheduleItemData } from "./ScheduleItem";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
+import { Skeleton } from "./ui/skeleton";
 
 export type ScheduleGroup = {
 	key: string;
@@ -11,14 +11,9 @@ export type ScheduleGroup = {
 };
 
 // TODO: do this grouping logic in the procedure instead
-export function groupScheduleItemsByDate(
-	items: ScheduleItemData[],
-	timeZone?: string
-) {
+export function groupScheduleItemsByDate(items: ScheduleItemData[]) {
 	return items.reduce<ScheduleGroup[]>((groups, item) => {
-		const key = format(item.startTime, "yyyy-MM-dd", {
-			in: timeZone ? tz(timeZone) : undefined
-		});
+		const key = formatDateKey(item.startTime);
 		const existingGroup = groups.find((group) => group.key === key);
 
 		if (existingGroup) {
@@ -28,7 +23,7 @@ export function groupScheduleItemsByDate(
 
 		groups.push({
 			key,
-			label: formatLongDate(item.startTime, timeZone),
+			label: formatLongDate(item.startTime),
 			items: [item]
 		});
 
@@ -41,7 +36,6 @@ interface ScheduleProps {
 	now: Date;
 	emptyTitle: string;
 	emptyDescription: string;
-	timeZone?: string;
 	showGroupLabels?: boolean;
 }
 
@@ -50,10 +44,9 @@ export function Schedule({
 	now,
 	emptyTitle,
 	emptyDescription,
-	timeZone,
 	showGroupLabels = true
 }: ScheduleProps) {
-	const groupedItems = groupScheduleItemsByDate(items, timeZone);
+	const groupedItems = groupScheduleItemsByDate(items);
 
 	if (groupedItems.length === 0) {
 		return (
@@ -67,20 +60,49 @@ export function Schedule({
 	}
 
 	return (
-		<div className="grid gap-8 lg:grid-flow-col">
+		<div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:auto-cols-fr lg:grid-flow-col">
 			{groupedItems.map((group) => (
-				<div className="flex w-full flex-col gap-4" key={group.key}>
+				<div className="flex w-full min-w-0 flex-col gap-4" key={group.key}>
 					{showGroupLabels && <h3 className="font-medium">{group.label}</h3>}
 					<ol className="flex flex-col gap-6">
 						{group.items.map((item) => (
-							<ScheduleItem
-								item={item}
-								key={item.id}
-								now={now}
-								timeZone={timeZone}
-							/>
+							<ScheduleItem item={item} key={item.id} now={now} />
 						))}
 					</ol>
+				</div>
+			))}
+		</div>
+	);
+}
+
+export function ScheduleItemsSkeleton({
+	groups = 1,
+	items = 3,
+	showGroupLabels = true
+}: {
+	groups?: number;
+	items?: number;
+	showGroupLabels?: boolean;
+}) {
+	return (
+		<div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:auto-cols-fr lg:grid-flow-col">
+			{range(groups).map((group) => (
+				<div className="flex w-full flex-col gap-4" key={group}>
+					{showGroupLabels && <Skeleton className="my-0.5 h-4 w-40" />}
+					<div className="flex flex-col gap-6">
+						{range(items).map((item) => (
+							<div className="flex items-start gap-4" key={item}>
+								<Skeleton className="size-18 shrink-0 rounded-lg" />
+								<div className="flex flex-1 flex-col gap-2">
+									<div className="flex flex-col gap-0.5">
+										<Skeleton className="my-1 h-4 w-2/5" />
+										<Skeleton className="my-0.5 h-3 w-3/5" />
+									</div>
+									<Skeleton className="my-0.5 h-3 w-4/5" />
+								</div>
+							</div>
+						))}
+					</div>
 				</div>
 			))}
 		</div>

@@ -2,6 +2,7 @@ import { Alarm2Line, ArrowRightLine, LocationLine } from "@mingcute/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/app/components/ui/button";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { formatTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +15,6 @@ interface BannerProps {
 	location?: string;
 	startTime?: Date;
 	endTime?: Date;
-	timeZone?: string;
 	href?: string;
 	onClick?: () => void;
 	className?: string;
@@ -29,7 +29,6 @@ export default function Banner({
 	location,
 	startTime,
 	endTime,
-	timeZone,
 	href,
 	onClick,
 	className
@@ -46,7 +45,7 @@ export default function Banner({
 	};
 	const timeRange = [startTime, endTime]
 		.filter((time) => time !== undefined)
-		.map((time) => formatTime(time, timeZone))
+		.map((time) => formatTime(time))
 		.join(" - ");
 	const hasAction = Boolean(href || onClick);
 
@@ -60,15 +59,15 @@ export default function Banner({
 					image && !hasAction && "@4xl:pb-6 pb-49"
 				)}
 			>
-				<div className="z-1 flex w-full max-w-100 flex-col gap-8">
+				<div className="z-1 flex w-full min-w-0 max-w-100 flex-col gap-8">
 					<div className="flex flex-col gap-4">
 						<h2 className="font-medium text-3xl text-white">{title}</h2>
 						{location && (startTime || endTime) && (
 							<div className="flex flex-row flex-wrap gap-x-6 gap-y-2">
 								{location && (
-									<div className="flex flex-row items-center gap-2 text-white opacity-80">
-										<LocationLine className="size-6" />
-										<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
+									<div className="flex min-w-0 flex-row items-center gap-2 text-white opacity-80">
+										<LocationLine className="size-6 shrink-0" />
+										<p className="wrap-anywhere min-w-0 font-medium text-[14px] text-white leading-5">
 											{location}
 										</p>
 									</div>
@@ -84,7 +83,9 @@ export default function Banner({
 							</div>
 						)}
 					</div>
-					{description && <p className="text-white">{description}</p>}
+					{description && (
+						<p className="wrap-anywhere text-white">{description}</p>
+					)}
 					{
 						!description && (
 							<div />
@@ -121,6 +122,14 @@ export default function Banner({
 					</div>
 				)}
 			</div>
+		</div>
+	);
+}
+
+export function BannerSkeleton({ className }: { className?: string }) {
+	return (
+		<div className={cn("@container w-full", className)}>
+			<Skeleton className="@4xl:h-50 h-93 rounded-[16px]" />
 		</div>
 	);
 }

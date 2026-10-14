@@ -1,28 +1,21 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import PageHeader from "@/app/components/PageHeader";
-import Mentors from "@/app/components/resources/MentorsSection";
-import Resources from "@/app/components/resources/ResourcesSection";
+import { ResourcesView } from "@/app/components/participant/resources/ResourcesView";
+import { hasHackathonStarted } from "@/lib/participant-events";
+import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
+import { Role } from "@/types/types";
 
-export default async function ResourcePage() {
-	const settingsQuery = await api.hackathonSettings.get();
-	const startDate = settingsQuery?.startDate;
-	const showResources = startDate && Date.now() >= startDate?.getTime();
+export const metadata: Metadata = {
+	title: "Resources and Help | Hack the Change"
+};
 
-	if (!showResources) {
-		redirect("/under-construction");
+export default async function ResourcesPage() {
+	await requireRole([Role.PARTICIPANT, Role.ADMIN]);
+	const settings = await api.hackathonSettings.get();
+	if (!hasHackathonStarted(settings?.startDate)) {
+		redirect("/participant");
 	}
 
-	return (
-		<div className="flex flex-col gap-6 p-6">
-			<PageHeader
-				description="Helpful resources and mentors!"
-				title="Resources and Help"
-			/>
-			<div className="flex flex-col gap-16">
-				<Resources />
-				<Mentors />
-			</div>
-		</div>
-	);
+	return <ResourcesView />;
 }
