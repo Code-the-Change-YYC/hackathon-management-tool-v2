@@ -2,12 +2,7 @@
 
 import PageHeader from "@/app/components/PageHeader";
 import { Schedule } from "@/app/components/Schedule";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle
-} from "@/app/components/ui/card";
+import { Card, CardContent } from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { type DashboardEvent, getCurrentEvent } from "@/lib/participant-events";
 import { api } from "@/trpc/react";
