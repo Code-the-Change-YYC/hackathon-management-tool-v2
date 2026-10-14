@@ -11,7 +11,7 @@ import Countdown from "./Countdown";
 const EVENT_NAME = "Hack the Change";
 const EVENT_YEAR = "2026";
 const EVENT_BLURB =
-	"Hack the Change is an in-person, two-day, for-charity hackathon with the mission of coding a better world together.";
+	"Hack the Change is Calgary's first MLH-supported hackathon! A two-day, in-person, for-charity event focused on developing innovative tech solutions for a better world.";
 const BG_IMAGE = "/svgs/landingPage/countdown_bg.svg";
 const CTA_BUTTON_STYLES =
 	"h-15 w-40 rounded-3xl border-5 border-white bg-awesomer-purple font-semibold text-white transition-opacity hover:bg-awesomer-purple hover:opacity-70";

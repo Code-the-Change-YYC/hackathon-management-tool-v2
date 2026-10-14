@@ -36,11 +36,5 @@ export const sponsors: Sponsor[] = [
 		image: "/svgs/landingPage/sponsors/pason_logo.png",
 		name: "Pason",
 		url: "https://pason.com/"
-	},
-	{
-		id: "sponsor-6",
-		image: "/svgs/landingPage/sponsors/village-ice-cream-logo.png",
-		name: "Village Ice Cream",
-		url: "https://villageicecream.com/"
 	}
 ];
