@@ -75,41 +75,45 @@ test("register flow walks situation, register and invite modals", async ({
 	await expect(page.getByText(name, { exact: true })).toBeVisible();
 });
 
-test("owner can open invite, edit name and leave modals", async ({
-	authenticatedPage: page
-}) => {
-	await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-	const name = `Owner Team ${Date.now()}`;
-	await registerTeam(page, name);
+test(
+	"owner can open invite, edit name and leave modals",
+	{ tag: "@responsive" },
+	async ({ authenticatedPage: page }) => {
+		await page
+			.context()
+			.grantPermissions(["clipboard-read", "clipboard-write"]);
+		const name = `Owner Team ${Date.now()}`;
+		await registerTeam(page, name);
 
-	// Invite code modal
-	await page.getByRole("button", { name: /Invite team member/i }).click();
-	await expect(
-		page.getByText("Invite others to join your team!")
-	).toBeVisible();
-	await page.getByRole("button", { name: "Copy to clipboard" }).click();
-	await page.keyboard.press("Escape");
+		// Invite code modal
+		await page.getByRole("button", { name: /Invite team member/i }).click();
+		await expect(
+			page.getByText("Invite others to join your team!")
+		).toBeVisible();
+		await page.getByRole("button", { name: "Copy to clipboard" }).click();
+		await page.keyboard.press("Escape");
 
-	// Edit team name modal
-	const renamed = `${name} Renamed`;
-	createdTeamNames.add(renamed);
-	await page.getByRole("button", { name: "Edit team name" }).click();
-	const nameField = page.getByLabel("Team name", { exact: true });
-	await expect(nameField).toBeVisible();
-	await nameField.fill(renamed);
-	await page.getByRole("button", { name: "Save" }).click();
-	await expect(page.getByText(renamed)).toBeVisible();
+		// Edit team name modal
+		const renamed = `${name} Renamed`;
+		createdTeamNames.add(renamed);
+		await page.getByRole("button", { name: "Edit team name" }).click();
+		const nameField = page.getByLabel("Team name", { exact: true });
+		await expect(nameField).toBeVisible();
+		await nameField.fill(renamed);
+		await page.getByRole("button", { name: "Save" }).click();
+		await expect(page.getByText(renamed)).toBeVisible();
 
-	// Leave team modal
-	await page.getByRole("button", { name: "Leave team" }).click();
-	await expect(
-		page.getByText(`Are you sure you want to leave ${renamed}?`)
-	).toBeVisible();
-	await page.getByRole("button", { name: "Yes, leave team" }).click();
-	await expect(
-		page.getByRole("button", { name: "Join or register a team" })
-	).toBeVisible();
-});
+		// Leave team modal
+		await page.getByRole("button", { name: "Leave team" }).click();
+		await expect(
+			page.getByText(`Are you sure you want to leave ${renamed}?`)
+		).toBeVisible();
+		await page.getByRole("button", { name: "Yes, leave team" }).click();
+		await expect(
+			page.getByRole("button", { name: "Join or register a team" })
+		).toBeVisible();
+	}
+);
 
 test("join flow accepts a valid code and shows success modal", async ({
 	authenticatedPage: page,

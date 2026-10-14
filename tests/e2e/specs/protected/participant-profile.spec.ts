@@ -75,42 +75,45 @@ test("picks and saves a new avatar", async ({
 	expect(saved?.image).toBe("/avatars/pizza.webp");
 });
 
-test("validates and saves profile edits", async ({
-	authenticatedPage: page,
-	authUser
-}) => {
-	await page.goto("/participant/profile");
-	await page.getByRole("button", { name: "Edit Info" }).click();
+test(
+	"validates and saves profile edits",
+	{ tag: "@responsive" },
+	async ({ authenticatedPage: page, authUser }) => {
+		await page.goto("/participant/profile");
+		await page.getByRole("button", { name: "Edit Info" }).click();
 
-	await page.getByLabel("First name").fill("");
-	await page.getByRole("combobox", { name: "Institution" }).click();
-	await page
-		.getByRole("option", { name: "University of Calgary", exact: true })
-		.click();
-	await page.getByRole("button", { name: "Save changes" }).click();
+		await page.getByLabel("First name").fill("");
+		await page.getByRole("combobox", { name: "Institution" }).click();
+		await page
+			.getByRole("option", { name: "University of Calgary", exact: true })
+			.click();
+		await page.getByRole("button", { name: "Save changes" }).click();
 
-	await expect(page.getByText("Enter your first name")).toBeVisible();
-	await expect(page.getByText("Select your major")).toBeVisible();
+		await expect(page.getByText("Enter your first name")).toBeVisible();
+		await expect(page.getByText("Select your major")).toBeVisible();
 
-	await page.getByLabel("First name").fill("Updated");
-	await page.getByLabel("Major").click();
-	await page
-		.getByRole("option", { name: "Computer Science", exact: true })
-		.click();
-	await page.getByRole("button", { name: "Save changes" }).click();
+		await page.getByLabel("First name").fill("Updated");
+		await page.getByLabel("Major").click();
+		await page
+			.getByRole("option", { name: "Computer Science", exact: true })
+			.click();
+		await page.getByRole("button", { name: "Save changes" }).click();
 
-	await expect(page.getByText("Profile updated")).toBeVisible();
-	await expect(detail(page, "First name")).toHaveText("Updated");
-	await expect(detail(page, "Institution")).toHaveText("University of Calgary");
-	await expect(detail(page, "Major")).toHaveText("Computer Science");
+		await expect(page.getByText("Profile updated")).toBeVisible();
+		await expect(detail(page, "First name")).toHaveText("Updated");
+		await expect(detail(page, "Institution")).toHaveText(
+			"University of Calgary"
+		);
+		await expect(detail(page, "Major")).toHaveText("Computer Science");
 
-	const saved = await db.query.user.findFirst({
-		where: eq(user.id, authUser.id)
-	});
-	expect(saved).toMatchObject({
-		firstName: "Updated",
-		name: "Updated Participant",
-		school: "University of Calgary",
-		program: "computer_science"
-	});
-});
+		const saved = await db.query.user.findFirst({
+			where: eq(user.id, authUser.id)
+		});
+		expect(saved).toMatchObject({
+			firstName: "Updated",
+			name: "Updated Participant",
+			school: "University of Calgary",
+			program: "computer_science"
+		});
+	}
+);

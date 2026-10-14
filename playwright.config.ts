@@ -45,6 +45,13 @@ export default defineConfig({
 			use: {
 				...devices["Desktop Chrome"]
 			}
+		},
+		{
+			name: "mobile",
+			grep: /@responsive/,
+			use: {
+				...devices["Pixel 7"]
+			}
 		}
 	]
 });

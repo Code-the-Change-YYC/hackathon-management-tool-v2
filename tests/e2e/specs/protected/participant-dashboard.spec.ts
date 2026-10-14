@@ -36,6 +36,25 @@ test("reflects the saved hackathon settings", async ({
 	).toBeVisible();
 });
 
+test("counts down to submissions opening before the start", async ({
+	authenticatedPage: page,
+	setSettings
+}) => {
+	await setSettings({
+		startDate: minutesFromNow(3 * 24 * 60 + 5),
+		submissionDeadline: minutesFromNow(4 * 24 * 60)
+	});
+	await page.goto("/participant");
+
+	await expect(page.getByText(/^Get ready to hack, starting on/)).toBeVisible();
+	await expect(
+		page.getByRole("heading", { name: "Time until submission opens" })
+	).toBeVisible();
+	await expect(page.getByRole("timer")).toHaveAccessibleName(
+		/^3 days, 0 hours, [45] minutes, \d+ seconds remaining$/
+	);
+});
+
 test("shows the ongoing event and hides drafts", async ({
 	authenticatedPage: page,
 	createMeal

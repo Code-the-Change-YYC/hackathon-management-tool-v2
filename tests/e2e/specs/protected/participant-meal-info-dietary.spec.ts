@@ -71,17 +71,19 @@ test.describe("without registered restrictions", () => {
 // Then it becomes selected and enables Save changes
 // When I save and reload the page
 // Then the updated restrictions remain registered.
-test("adds Vegetarian and persists it after reload", async ({
-	authenticatedPage: page
-}) => {
-	await openEditor(page);
-	await toggleRestriction(page, "Vegetarian");
-	await expectDraft(page, ["Halal", "Gluten-free", "Vegetarian"]);
-	await expect(
-		editor(page).getByRole("button", { name: "Save changes" })
-	).toBeEnabled();
-	await saveAndExpectRegistered(page, ["Halal", "Gluten-free", "Vegetarian"]);
-});
+test(
+	"adds Vegetarian and persists it after reload",
+	{ tag: "@responsive" },
+	async ({ authenticatedPage: page }) => {
+		await openEditor(page);
+		await toggleRestriction(page, "Vegetarian");
+		await expectDraft(page, ["Halal", "Gluten-free", "Vegetarian"]);
+		await expect(
+			editor(page).getByRole("button", { name: "Save changes" })
+		).toBeEnabled();
+		await saveAndExpectRegistered(page, ["Halal", "Gluten-free", "Vegetarian"]);
+	}
+);
 
 // Given the dietary editor contains Halal and Gluten-free
 // When I click Halal
