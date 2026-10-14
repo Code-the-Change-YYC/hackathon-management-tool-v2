@@ -24,6 +24,8 @@ export const event = createTable(
 		id: uuid("id").primaryKey().defaultRandom(),
 		title: text("title").notNull(),
 		description: text("description").default("").notNull(),
+		location: text("location"),
+		navigationUrl: text("navigation_url"),
 		type: text("type", { enum: EVENT_TYPES }).default(EventType.FOOD).notNull(),
 		status: text("status", { enum: EVENT_STATUSES })
 			.default(EventStatus.DRAFT)

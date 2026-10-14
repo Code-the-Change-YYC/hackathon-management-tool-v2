@@ -1,5 +1,6 @@
 "use client";
 
+import { isValid } from "date-fns";
 import { useState } from "react";
 import { api } from "@/trpc/react";
 
@@ -65,9 +66,7 @@ export default function CreateMeal() {
 				name="start-time"
 				onChange={(e) => {
 					const nextStartTime = new Date(e.target.value);
-					setStartTime(
-						Number.isNaN(nextStartTime.getTime()) ? null : nextStartTime
-					);
+					setStartTime(isValid(nextStartTime) ? nextStartTime : null);
 				}}
 				type="datetime-local"
 			/>
@@ -80,7 +79,7 @@ export default function CreateMeal() {
 				name="end-time"
 				onChange={(e) => {
 					const nextEndTime = new Date(e.target.value);
-					setEndTime(Number.isNaN(nextEndTime.getTime()) ? null : nextEndTime);
+					setEndTime(isValid(nextEndTime) ? nextEndTime : null);
 				}}
 				type="datetime-local"
 			/>

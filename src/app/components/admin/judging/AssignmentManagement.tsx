@@ -1,5 +1,6 @@
 "use client";
 
+import { addMinutes } from "date-fns";
 import { useState } from "react";
 import {
 	ConfirmAlertDialog,
@@ -107,7 +108,7 @@ export function AssignmentManagement({
 			return;
 		}
 		const slotStart = parsedTime;
-		const slotEnd = slotStart + slotMinutes * 60 * 1000;
+		const slotEnd = addMinutes(slotStart, slotMinutes).getTime();
 		const teamAlreadyAssigned = (assignmentsQuery.data ?? []).some(
 			(assignment) =>
 				assignment.id !== editingId && assignment.teamId === teamId
@@ -305,9 +306,7 @@ export function AssignmentManagement({
 													setTeamId(assignment.teamId);
 													setRoomId(assignment.room.id);
 													setTimeSlot(
-														assignment.timeSlot
-															? toDateTimeLocalValue(assignment.timeSlot)
-															: ""
+														toDateTimeLocalValue(assignment.timeSlot)
 													);
 													setMessage("");
 												}}

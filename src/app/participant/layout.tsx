@@ -34,7 +34,7 @@ export default async function ParticipantLayout({
 				{ title: "Schedule", href: "/participant/schedule", icon: "calendar" },
 				{ title: "Team", href: "/participant/team", icon: "group" },
 				{
-					title: "Meal Information",
+					title: "Meals",
 					href: "/participant/meals",
 					icon: "hamburger"
 				}

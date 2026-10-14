@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Fragment, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
+import { countdownParts } from "@/lib/participant-events";
 import { api } from "@/trpc/react";
 import type { TimeLeft } from "@/types/landingPage";
 
@@ -18,14 +19,11 @@ function useCountdown(targetDate: Date | null): TimeLeft | null {
 		if (targetDate == null) return;
 
 		const calculate = (): TimeLeft => {
-			const diff = targetDate.getTime() - Date.now();
-			if (diff <= 0) return ZERO_TIME;
-			return {
-				days: Math.floor(diff / MS_PER_DAY),
-				hours: new Date(diff).getUTCHours(),
-				minutes: new Date(diff).getUTCMinutes(),
-				seconds: new Date(diff).getUTCSeconds()
-			};
+			const [days, hours, minutes, seconds] = countdownParts(
+				targetDate,
+				new Date()
+			);
+			return { days, hours, minutes, seconds };
 		};
 
 		setTimeLeft(calculate());

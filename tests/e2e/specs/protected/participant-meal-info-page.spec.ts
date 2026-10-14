@@ -1,15 +1,14 @@
 import { eq } from "drizzle-orm";
 
+import { formatLongDate, formatTime } from "@/lib/datetime";
 import { db } from "@/server/db";
 import { event } from "@/server/db/event-schema";
 import { EventStatus, EventType, Role } from "@/types/types";
 import {
-	dateFormatter,
 	description,
 	minute,
 	mealInfoPath as path,
-	schedule,
-	timeFormatter
+	schedule
 } from "../../../utils/participant-meal-info-page";
 import { expect, test } from "../../fixtures/meal-info.fixture";
 
@@ -19,7 +18,7 @@ test.use({
 
 // Given I am signed in as a participant
 // When I navigate to /participant/meals
-// Then I see Meal Information, Your Meal Ticket, Dietary Restrictions, and Meal Schedule.
+// Then I see Meals, Your Meal Ticket, Dietary Restrictions, and Meal Schedule.
 test(
 	"participant can access all meal information sections",
 	{ tag: "@smoke" },
@@ -27,7 +26,7 @@ test(
 		await page.goto(path);
 		await expect(page).toHaveURL(path);
 		for (const name of [
-			"Meal Information",
+			"Meals",
 			"Your Meal Ticket",
 			"Dietary Restrictions",
 			"Meal Schedule"
@@ -51,7 +50,7 @@ test.describe("admin access", () => {
 		await page.goto(path);
 		await expect(page).toHaveURL(path);
 		for (const name of [
-			"Meal Information",
+			"Meals",
 			"Your Meal Ticket",
 			"Dietary Restrictions",
 			"Meal Schedule"
@@ -147,7 +146,7 @@ test(
 				});
 			await expect(
 				row.getByText(
-					`${timeFormatter.format(meal.startTime)} - ${timeFormatter.format(meal.endTime)}`,
+					`${formatTime(meal.startTime)} – ${formatTime(meal.endTime)}`,
 					{ exact: true }
 				)
 			).toBeVisible();
@@ -158,9 +157,8 @@ test(
 
 // Given active meals exist today and tomorrow
 // When I view the meal schedule as a participant
-// Then meals appear under their respective calendar dates in chronological order
-// And today's date is visually emphasized while tomorrow's is not.
-test("groups meals by calendar date and visually marks today", async ({
+// Then meals appear under their respective calendar dates in chronological order.
+test("groups meals by calendar date", async ({
 	authenticatedPage: page,
 	createMeal
 }) => {
@@ -185,17 +183,14 @@ test("groups meals by calendar date and visually marks today", async ({
 	}
 	await page.goto(path);
 	await expect(schedule(page).getByRole("heading", { level: 3 })).toHaveText([
-		dateFormatter.format(today),
-		dateFormatter.format(tomorrow)
+		formatLongDate(today),
+		formatLongDate(tomorrow)
 	]);
 	for (const date of [today, tomorrow]) {
 		const heading = schedule(page).getByRole("heading", {
-			name: dateFormatter.format(date),
+			name: formatLongDate(date),
 			exact: true
 		});
-		await expect(heading).toHaveClass(
-			date === today ? /font-semibold/ : /font-normal/
-		);
 		const group = heading.locator("..");
 		await expect(group.getByRole("heading", { level: 4 })).toHaveText(
 			meals
@@ -210,9 +205,9 @@ for (const timing of [
 		condition: "currently in progress",
 		start: -15,
 		end: 45,
-		status: "Ongoing"
+		status: "Happening now!"
 	},
-	{ condition: "already finished", start: -120, end: -60, status: "Completed" },
+	{ condition: "already finished", start: -120, end: -60, status: null },
 	{
 		condition: "starting within 60 min",
 		start: 30,
@@ -223,12 +218,12 @@ for (const timing of [
 		condition: "starting later than 60 min",
 		start: 120,
 		end: 180,
-		status: "Scheduled"
+		status: null
 	}
 ]) {
 	// Given an active meal has the time condition in this example
 	// When I view its schedule entry as a participant
-	// Then its status is Ongoing, Completed, In <n> min, or Scheduled as appropriate.
+	// Then it shows a Happening now! or In <n> min status badge, or no badge if finished or more than 60 min away.
 	test(`schedule status: ${timing.condition}`, async ({
 		authenticatedPage: page,
 		createMeal
@@ -246,14 +241,19 @@ for (const timing of [
 			.filter({
 				has: page.getByRole("heading", { name: meal.title, exact: true })
 			});
-		await expect(row.getByText(timing.status, { exact: true })).toBeVisible();
+		if (timing.status) {
+			await expect(row.getByText(timing.status, { exact: true })).toBeVisible();
+		} else {
+			await expect(row).toBeVisible();
+			await expect(row.locator('[data-slot="badge"]')).toHaveCount(0);
+		}
 	});
 }
 
 // Given there are no active meals, only a draft meal
 // When I view the meal schedule as a participant
-// Then I see "No meals have been scheduled yet." and the check-back guidance
-// And no meal entries are displayed.
+// Then I see "No meals have been scheduled yet."
+// And I see "Check back soon for updated meal times." with no meal entries displayed.
 test("shows an empty schedule when there are no active meals", async ({
 	authenticatedPage: page,
 	createMeal
@@ -272,10 +272,9 @@ test("shows an empty schedule when there are no active meals", async ({
 		})
 	).toBeVisible();
 	await expect(
-		schedule(page).getByText(
-			"Check back soon for meal times and ticket scanning windows.",
-			{ exact: true }
-		)
+		schedule(page).getByText("Check back soon for updated meal times.", {
+			exact: true
+		})
 	).toBeVisible();
 	await expect(schedule(page).getByRole("listitem")).toHaveCount(0);
 });

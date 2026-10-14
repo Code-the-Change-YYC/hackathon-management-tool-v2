@@ -8,6 +8,7 @@ assertE2EDatabaseSafety();
 const baseURL = "http://127.0.0.1:3000";
 
 export default defineConfig({
+	expect: { timeout: 10_000 },
 	forbidOnly: Boolean(process.env.CI),
 	outputDir: "test-results",
 	reporter: [

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTime } from "@/lib/datetime";
 import { api } from "@/trpc/react";
 
 export default function MealAttendees({ mealId }: { mealId: string }) {
@@ -20,7 +21,7 @@ export default function MealAttendees({ mealId }: { mealId: string }) {
 				>
 					<div className="font-medium">{attendee.userName}</div>
 					<div className="text-medium-grey text-xs">
-						{new Date(attendee.createdAt).toLocaleString()}
+						{formatDateTime(attendee.createdAt)}
 					</div>
 				</li>
 			))}
