@@ -3,8 +3,8 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { assertRoundHasNoScores } from "@/server/api/routers/judging-rooms";
 import {
+	adminProcedure,
 	createTRPCRouter,
-	protectedProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
 import { judgingRounds } from "@/server/db/schema";
@@ -37,7 +37,7 @@ export const judgingRoundsRouter = createTRPCRouter({
 		}),
 
 	// Create a new judging round
-	create: protectedProcedure
+	create: adminProcedure
 		.input(
 			z
 				.object({
@@ -59,7 +59,7 @@ export const judgingRoundsRouter = createTRPCRouter({
 		}),
 
 	// Update a judging round
-	update: protectedProcedure
+	update: adminProcedure
 		.input(
 			z.object({
 				id: z.string().uuid(),
@@ -105,7 +105,7 @@ export const judgingRoundsRouter = createTRPCRouter({
 		}),
 
 	// Delete a judging round
-	delete: protectedProcedure
+	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			await assertRoundHasNoScores(ctx.db, input.id);
