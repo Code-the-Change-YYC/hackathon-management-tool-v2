@@ -36,6 +36,18 @@ export default function TeamView() {
 		setModal(next);
 	}
 
+	function leaveDescription() {
+		if (!viewTeam) return "";
+		if (viewTeam.members.length <= 1) {
+			return `You're the only member, so leaving will delete ${viewTeam.name}. This action can't be undone!`;
+		}
+		const nextOwner = viewTeam.members.find((m) => !m.isYou);
+		if (viewTeam.isOwner && nextOwner) {
+			return `${nextOwner.name} will become the team owner.`;
+		}
+		return "This action can't be undone!";
+	}
+
 	function handleSituation(situation: Situation) {
 		if (situation === "registered") return open("join");
 		if (situation === "unregistered") return open("register");
@@ -128,14 +140,12 @@ export default function TeamView() {
 			/>
 			{viewTeam && (
 				<LeaveTeamModal
+					description={leaveDescription()}
 					error={leave.error?.message ?? null}
 					loading={leave.isPending}
 					onCancel={() => setModal(null)}
 					onConfirm={() =>
-						leave.mutate(
-							{ confirmDelete: true },
-							{ onSuccess: () => setModal(null) }
-						)
+						leave.mutate(undefined, { onSuccess: () => setModal(null) })
 					}
 					open={modal === "leave"}
 					teamName={viewTeam.name}

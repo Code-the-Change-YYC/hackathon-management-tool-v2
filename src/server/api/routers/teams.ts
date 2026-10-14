@@ -14,14 +14,14 @@
  * team can't both slip past the cap.
  *
  * Only owners can invite or update team details (besides app admins).
- * Leaving requires confirmDelete for owners (deletes the team); a team left
- * with zero members is cleaned up automatically.
+ * When the owner leaves, the earliest-joined remaining member becomes owner;
+ * a team left with zero members is deleted.
  */
 
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { addDays, isValid } from "date-fns";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { resolveAvatarSrc } from "@/lib/avatars";
 import { tryCatch } from "@/lib/utils";
@@ -588,46 +588,47 @@ export const teamsRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
-	leave: protectedProcedure
-		.input(
-			z
-				.object({
-					confirmDelete: z.boolean().optional()
-				})
-				.optional()
-		)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-			const membership = await getUserMembership(ctx.db, userId);
-			const isOwner = membership.role === MEMBER_ROLES.OWNER;
+	leave: protectedProcedure.mutation(async ({ ctx }) => {
+		const userId = ctx.session.user.id;
+		const { organizationId } = await getUserMembership(ctx.db, userId);
 
-			if (isOwner && !input?.confirmDelete) {
-				return {
-					success: false,
-					warning:
-						"You are the team owner. Leaving will delete the entire team " +
-						"and all pending invitations. Set confirmDelete: true to proceed."
-				};
-			}
+		await ctx.db.transaction(async (tx) => {
+			// Serializes with joins and other leaves, so two members leaving at
+			// once can't both skip the promotion or the empty-team cleanup.
+			await tx.execute(
+				sql`select pg_advisory_xact_lock(hashtext(${organizationId}))`
+			);
 
-			await ctx.db.transaction(async (tx) => {
-				if (isOwner) {
-					await deleteTeamAndInvitations(tx, membership.organizationId);
-				} else {
-					await tx.delete(member).where(eq(member.id, membership.id));
+			await tx
+				.delete(member)
+				.where(
+					and(
+						eq(member.userId, userId),
+						eq(member.organizationId, organizationId)
+					)
+				);
 
-					const remainingMembers = await tx.query.member.findMany({
-						where: eq(member.organizationId, membership.organizationId)
-					});
-
-					if (remainingMembers.length === 0) {
-						await deleteTeamAndInvitations(tx, membership.organizationId);
-					}
-				}
+			const remainingMembers = await tx.query.member.findMany({
+				where: eq(member.organizationId, organizationId),
+				orderBy: [asc(member.createdAt), asc(member.id)]
 			});
 
-			return { success: true };
-		}),
+			const [earliest] = remainingMembers;
+			if (!earliest) {
+				await deleteTeamAndInvitations(tx, organizationId);
+				return;
+			}
+
+			if (!remainingMembers.some((m) => m.role === MEMBER_ROLES.OWNER)) {
+				await tx
+					.update(member)
+					.set({ role: MEMBER_ROLES.OWNER })
+					.where(eq(member.id, earliest.id));
+			}
+		});
+
+		return { success: true };
+	}),
 
 	update: protectedProcedure
 		.input(
