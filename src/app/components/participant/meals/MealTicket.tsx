@@ -35,11 +35,6 @@ function getMealTicketStatus(
 	return "scheduled";
 }
 
-type MealTicketProps = {
-	displayName: string;
-	ticket: EventTicket | null;
-};
-
 function getTicketDescription(ticket: EventTicket | null, now: Date) {
 	if (!ticket) {
 		return "There is no upcoming meal ticket available.";
@@ -49,13 +44,22 @@ function getTicketDescription(ticket: EventTicket | null, now: Date) {
 		return `You checked in at ${formatTime(ticket.checkedInAt)}.`;
 	}
 
-	return `${ticket.event.title} is ${getMealTicketStatus(
+	const ticketStatus = getMealTicketStatus(
 		{
 			startTime: ticket.event.startTime,
 			endTime: ticket.event.endTime
 		},
 		now
-	)} until ${formatTime(ticket.event.endTime)}.`;
+	);
+
+	return `Present this QR code to a Code the Change member scanning 
+          tickets at the door to receive your meal. ${ticketStatus} 
+          until ${formatTime(ticket.event.endTime)}.`;
+}
+
+interface MealTicketProps {
+	displayName: string;
+	ticket: EventTicket | null;
 }
 
 export function MealTicket({ displayName, ticket }: MealTicketProps) {
@@ -81,9 +85,6 @@ export function MealTicket({ displayName, ticket }: MealTicketProps) {
 							{displayName}
 						</p>
 						<p className="max-w-sm text-dark-grey/70 text-sm leading-6">
-							{ticket?.status === EventTicketStatus.ACTIVE
-								? "Present this QR code to a Code the Change member scanning tickets at the door to receive your meal. "
-								: null}
 							{ticketDescription}
 						</p>
 					</div>
