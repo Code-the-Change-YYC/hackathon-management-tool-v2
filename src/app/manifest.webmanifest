@@ -1,0 +1,32 @@
+{
+  "id": "/",
+  "name": "Hack the Change",
+  "short_name": "Hack the Change",
+  "description": "Hack the Change is an in-person, two-day, for-charity hackathon with the mission of coding a better world together.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "lang": "en-CA",
+  "background_color": "#ffffff",
+  "theme_color": "#7054fd",
+  "icons": [
+    {
+      "src": "/icons/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
