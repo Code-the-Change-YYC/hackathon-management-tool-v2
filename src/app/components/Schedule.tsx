@@ -60,9 +60,9 @@ export function Schedule({
 	}
 
 	return (
-		<div className="grid gap-8 lg:grid-flow-col">
+		<div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:auto-cols-fr lg:grid-flow-col">
 			{groupedItems.map((group) => (
-				<div className="flex w-full flex-col gap-4" key={group.key}>
+				<div className="flex w-full min-w-0 flex-col gap-4" key={group.key}>
 					{showGroupLabels && <h3 className="font-medium">{group.label}</h3>}
 					<ol className="flex flex-col gap-6">
 						{group.items.map((item) => (
@@ -85,7 +85,7 @@ export function ScheduleItemsSkeleton({
 	showGroupLabels?: boolean;
 }) {
 	return (
-		<div className="grid gap-8 lg:grid-flow-col">
+		<div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:auto-cols-fr lg:grid-flow-col">
 			{range(groups).map((group) => (
 				<div className="flex w-full flex-col gap-4" key={group}>
 					{showGroupLabels && <Skeleton className="my-0.5 h-4 w-40" />}

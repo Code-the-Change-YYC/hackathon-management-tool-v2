@@ -59,15 +59,15 @@ export default function Banner({
 					image && !hasAction && "@4xl:pb-6 pb-49"
 				)}
 			>
-				<div className="z-1 flex w-full max-w-100 flex-col gap-8">
+				<div className="z-1 flex w-full min-w-0 max-w-100 flex-col gap-8">
 					<div className="flex flex-col gap-4">
 						<h2 className="font-medium text-3xl text-white">{title}</h2>
 						{location && (startTime || endTime) && (
 							<div className="flex flex-row flex-wrap gap-x-6 gap-y-2">
 								{location && (
-									<div className="flex flex-row items-center gap-2 text-white opacity-80">
-										<LocationLine className="size-6" />
-										<p className="whitespace-nowrap font-medium text-[14px] text-white leading-5">
+									<div className="flex min-w-0 flex-row items-center gap-2 text-white opacity-80">
+										<LocationLine className="size-6 shrink-0" />
+										<p className="wrap-anywhere min-w-0 font-medium text-[14px] text-white leading-5">
 											{location}
 										</p>
 									</div>
@@ -83,7 +83,9 @@ export default function Banner({
 							</div>
 						)}
 					</div>
-					{description && <p className="text-white">{description}</p>}
+					{description && (
+						<p className="wrap-anywhere text-white">{description}</p>
+					)}
 					{
 						!description && (
 							<div />
