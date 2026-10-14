@@ -1,8 +1,13 @@
+import { formatTime as formatClockTime, formatLongDate } from "@/lib/datetime";
+import { criterionAppliesToRound } from "@/lib/judging";
 import type { RouterOutputs } from "@/trpc/react";
 
 export type JudgeAssignment =
 	RouterOutputs["judgingAssignments"]["getByJudge"][number];
-export type Criterion = RouterOutputs["criteria"]["getAll"][number];
+export type Criterion = Omit<
+	RouterOutputs["criteria"]["getAll"][number],
+	"roundIds"
+> & { roundIds?: string[] };
 
 export function sortCriteria(a: Criterion, b: Criterion) {
 	return (
@@ -12,26 +17,12 @@ export function sortCriteria(a: Criterion, b: Criterion) {
 	);
 }
 
-const judgeTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
 export function formatTime(value?: Date | null) {
-	if (!value) return "Unscheduled";
-	return new Intl.DateTimeFormat("en-US", {
-		hour: "numeric",
-		hour12: true,
-		minute: "2-digit",
-		timeZone: judgeTimeZone
-	}).format(value);
+	return value ? formatClockTime(value) : "Unscheduled";
 }
 
 export function formatDate(value?: Date | null) {
-	if (!value) return "Unscheduled";
-	return new Intl.DateTimeFormat("en-US", {
-		day: "numeric",
-		month: "long",
-		weekday: "long",
-		timeZone: judgeTimeZone
-	}).format(value);
+	return value ? formatLongDate(value) : "Unscheduled";
 }
 
 export function formatDuration(minutes: number) {
@@ -65,13 +56,25 @@ export function getCriteriaScore(
 		?.value;
 }
 
+export function getAssignmentCriteria(
+	assignment: JudgeAssignment,
+	criteria: Criterion[]
+) {
+	return criteria.filter((criterion) =>
+		criterionAppliesToRound(criterion, assignment.room.roundId)
+	);
+}
+
 export function isAssignmentScored(
 	assignment: JudgeAssignment,
 	criteria: Criterion[]
 ) {
-	const mainCriteria = criteria.filter((criterion) => !criterion.isSidepot);
+	const applicable = getAssignmentCriteria(assignment, criteria);
+	const mainCriteria = applicable.filter((criterion) => !criterion.isSidepot);
 	if (mainCriteria.length === 0) {
-		return assignment.scores.length > 0;
+		return applicable.some((criterion) =>
+			assignment.scores.some((score) => score.criteriaId === criterion.id)
+		);
 	}
 	return mainCriteria.every((criterion) =>
 		assignment.scores.some((score) => score.criteriaId === criterion.id)
@@ -83,7 +86,7 @@ export function getAssignmentTotal(
 	criteria: Criterion[],
 	includeSidepots = false
 ) {
-	const selectedCriteria = criteria.filter(
+	const selectedCriteria = getAssignmentCriteria(assignment, criteria).filter(
 		(criterion) => includeSidepots || !criterion.isSidepot
 	);
 	const selectedIds = new Set(

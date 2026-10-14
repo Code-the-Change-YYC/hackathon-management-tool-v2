@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { addMinutes } from "date-fns";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
@@ -272,9 +273,9 @@ export const judgingRoomsRouter = createTRPCRouter({
 			const finalSlotIndex = Math.floor(
 				(eligibleTeams.length - 1) / input.roomCount
 			);
-			const scheduleEndsAt = new Date(
-				round.startTime.getTime() +
-					(finalSlotIndex + 1) * input.slotDurationMinutes * 60_000
+			const scheduleEndsAt = addMinutes(
+				round.startTime,
+				(finalSlotIndex + 1) * input.slotDurationMinutes
 			);
 			if (scheduleEndsAt > round.endTime) {
 				throw new TRPCError({
@@ -336,9 +337,9 @@ export const judgingRoomsRouter = createTRPCRouter({
 						return {
 							roomId: room.id,
 							teamId: team.id,
-							timeSlot: new Date(
-								round.startTime.getTime() +
-									slotIndex * input.slotDurationMinutes * 60_000
+							timeSlot: addMinutes(
+								round.startTime,
+								slotIndex * input.slotDurationMinutes
 							)
 						};
 					})

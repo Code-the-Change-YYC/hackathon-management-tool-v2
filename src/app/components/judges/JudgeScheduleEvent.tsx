@@ -1,3 +1,4 @@
+import { differenceInMinutes } from "date-fns";
 import Link from "next/link";
 import { Badge } from "@/app/components/ui/badge";
 import {
@@ -24,9 +25,9 @@ export function JudgeScheduleEvent({
 	const scored = isAssignmentScored(assignment, criteria);
 	const total = getAssignmentTotal(assignment, criteria);
 	const minutesUntil = assignment.timeSlot
-		? Math.ceil(
-				(assignment.timeSlot.getTime() - currentTime.getTime()) / 60_000
-			)
+		? differenceInMinutes(assignment.timeSlot, currentTime, {
+				roundingMethod: "ceil"
+			})
 		: null;
 	let status = "Unscheduled";
 	if (minutesUntil !== null) {

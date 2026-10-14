@@ -1,5 +1,6 @@
 "use client";
 
+import { isValid } from "date-fns";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -164,8 +165,7 @@ export function RoundManagement({
 							{...register("startTime", {
 								required: "This field is required.",
 								validate: (value) =>
-									!Number.isNaN(new Date(value).getTime()) ||
-									"Choose a valid start time."
+									isValid(new Date(value)) || "Choose a valid start time."
 							})}
 							type="datetime-local"
 						/>

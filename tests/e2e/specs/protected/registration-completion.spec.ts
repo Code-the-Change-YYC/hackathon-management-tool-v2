@@ -1,80 +1,116 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { user } from "@/server/db/auth-schema";
-import { expect, test } from "../../fixtures/auth.fixture";
+import { expect, test } from "../../fixtures/pages.fixture";
 
-test("an authenticated incomplete user completes their own registration", async ({
-	authenticatedPage,
-	authUser
+test.use({ authUserOptions: { completedRegistration: false, role: "user" } });
+
+test("an incomplete user completes onboarding and registers", async ({
+	authenticatedPage: page,
+	authUser,
+	onboardingPage
 }) => {
-	await authenticatedPage.goto("/signup/identity");
+	await page.goto("/onboarding");
+	await expect(page).toHaveURL(/\/onboarding\/personal-details$/);
 
-	await expect(authenticatedPage.getByLabel("Email")).toHaveCount(0);
-	await expect(authenticatedPage.getByLabel("Password")).toHaveCount(0);
-	await authenticatedPage.getByLabel("First name").fill("Updated");
-	await authenticatedPage.getByLabel("Last name").fill("Participant");
-	await authenticatedPage
-		.getByLabel("Which institution are you attending?*")
-		.click();
-	await authenticatedPage
-		.getByRole("option", { name: "SAIT", exact: true })
-		.click();
-	await authenticatedPage
-		.getByRole("button", { name: "Continue", exact: true })
-		.click();
-
-	const selectOption = async (label: string, option: string) => {
-		await authenticatedPage.getByLabel(label).click();
-		await authenticatedPage
-			.getByRole("option", { name: option, exact: true })
-			.click();
-	};
-	await selectOption(
-		"Do you want to be provided free meals at the hackathon?*",
-		"Yes"
+	await page.getByLabel("First name", { exact: true }).fill("Maria Anne");
+	await page.getByLabel("Last name", { exact: true }).fill("De La Cruz");
+	await page.getByLabel("Age", { exact: true }).fill("19");
+	await page.getByLabel("Phone number", { exact: true }).fill("403-555-0123");
+	await onboardingPage.searchAndChoose("Country of residence", "can", "Canada");
+	await onboardingPage.searchAndChoose(
+		"Which institution are you attending?",
+		"calgary",
+		"University of Calgary"
 	);
-	await authenticatedPage
-		.getByRole("button", { name: "Continue", exact: true })
+	await onboardingPage.selectOption(
+		"What is your current level of study?",
+		"Undergraduate University (3+ year)"
+	);
+	await onboardingPage.selectOption(
+		"What is your major?",
+		"Software Engineering"
+	);
+	await onboardingPage.continue();
+
+	await expect(page).toHaveURL(/\/onboarding\/food-preferences$/);
+	await onboardingPage.continue();
+
+	await expect(page).toHaveURL(/\/onboarding\/mlh-policies$/);
+	await onboardingPage.continue();
+	await expect(
+		page.getByText("Agree to the MLH Code of Conduct to continue")
+	).toBeVisible();
+	await page.getByRole("checkbox", { name: /MLH Code of Conduct/ }).click();
+	await page
+		.getByRole("checkbox", { name: /share my application\/registration/ })
 		.click();
-	// wait for the redirect to the home page after registration completion
-	await authenticatedPage.waitForURL(/\/$/);
-	await expect(authenticatedPage).toHaveURL(/\/$/);
+	await onboardingPage.continue();
+
+	await expect(page).toHaveURL(/\/onboarding\/discord$/);
+	await page
+		.getByRole("link", { name: "I’ve already joined, continue" })
+		.click();
+	await expect(page).toHaveURL(/\/onboarding\/team$/);
+	await page.getByRole("radio", { name: "I don’t have a team yet." }).click();
+	await onboardingPage.continue();
+
+	await expect(page).toHaveURL(/\/onboarding\/team\/find$/);
+	await page.getByRole("button", { name: "Complete registration" }).click();
+	await expect(page).toHaveURL(/\/participant$/);
 
 	const savedUser = await db.query.user.findFirst({
 		where: eq(user.id, authUser.id)
 	});
 	expect(savedUser).toMatchObject({
+		name: "Maria Anne De La Cruz",
+		firstName: "Maria Anne",
+		lastName: "De La Cruz",
+		age: 19,
+		// Canada is preselected, so the number is saved with its +1.
+		phoneNumber: "+14035550123",
+		countryOfResidence: "CA",
+		school: "University of Calgary",
+		levelOfStudy: "undergraduate_three_plus_year",
+		program: "software_engineering",
+		wantsFood: false,
+		mlhCodeOfConductAcceptedAt: expect.any(Date),
+		mlhDataSharingAcceptedAt: expect.any(Date),
+		mlhEmailOptIn: false,
 		completedRegistration: true,
-		school: "SAIT",
-		program: null,
-		name: "Updated Participant"
+		role: "participant"
 	});
 });
 
 test("registration completion rejects unauthenticated callers", async ({
 	page
 }) => {
+	// This sends the same batched HTTP request that the tRPC browser client would
+	// send, but without a login session, so the test can assert the HTTP 401 response.
+	// That requires spelling out tRPC's URL and request-body format here.
+	// TODO: Investigate a clearer way to make unauthenticated tRPC requests in E2E
+	// tests without manually reproducing transport details.
 	const response = await page.request.post(
 		"/api/trpc/users.completeRegistration?batch=1",
 		{
 			headers: { "content-type": "application/json" },
-			data: { 0: { json: { wantsFood: "yes" } } }
+			data: { 0: { json: null } }
 		}
 	);
 
 	expect(response.status()).toBe(401);
 });
 
-test("completed users bypass the registration wizard", async ({
-	authenticatedPage,
-	authUser
-}) => {
-	await db
-		.update(user)
-		.set({ completedRegistration: true })
-		.where(eq(user.id, authUser.id));
+test.describe("once registered", () => {
+	test.use({ authUserOptions: { completedRegistration: true } });
 
-	await authenticatedPage.goto("/signup");
+	test("users skip sign-up and onboarding for their dashboard", async ({
+		authenticatedPage: page
+	}) => {
+		await page.goto("/signup");
+		await expect(page).toHaveURL(/\/participant$/);
 
-	await expect(authenticatedPage).toHaveURL(/\/$/);
+		await page.goto("/onboarding/personal-details");
+		await expect(page).toHaveURL(/\/participant$/);
+	});
 });

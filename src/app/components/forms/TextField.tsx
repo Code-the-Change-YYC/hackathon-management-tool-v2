@@ -37,7 +37,10 @@ export function TextField<
 	const id = useId();
 
 	return (
-		<Field data-invalid={fieldState.invalid}>
+		<Field
+			data-disabled={inputProps.disabled}
+			data-invalid={fieldState.invalid}
+		>
 			<FieldLabel htmlFor={id}>{label}</FieldLabel>
 			<Input
 				{...field}

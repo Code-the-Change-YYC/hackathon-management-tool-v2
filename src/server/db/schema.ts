@@ -8,6 +8,7 @@ import {
 	uniqueIndex,
 	uuid
 } from "drizzle-orm/pg-core";
+import { JUDGING_PHASES } from "@/lib/judging";
 import { organization, user } from "./auth-schema";
 import { scores } from "./scores-schema";
 
@@ -83,11 +84,33 @@ export const judgingAssignments = createTable("judging_assignment", {
 		.notNull()
 });
 
+export const roleInvitation = createTable(
+	"role_invitation",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		email: text("email").notNull(),
+		role: text("role").notNull(),
+		invitedById: text("invited_by_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+	},
+	(table) => [uniqueIndex("role_invitation_email_uniq").on(table.email)]
+);
+
 // Singleton table for hackathon settings
 export const hackathonSettings = createTable("hackathon_settings", {
 	id: integer("id").primaryKey().default(1), // Enforce singleton by always using ID 1
 	startDate: timestamp("start_date", { withTimezone: true }),
 	endDate: timestamp("end_date", { withTimezone: true }),
+	submissionDeadline: timestamp("submission_deadline", { withTimezone: true }),
+	judgingPhase: text("judging_phase", { enum: JUDGING_PHASES })
+		.default("not_started")
+		.notNull(),
+	timeZone: text("time_zone").default("America/Edmonton").notNull(),
 	isActive: boolean("is_active").default(true).notNull(),
 	currentRoundId: uuid("current_round_id").references(() => judgingRounds.id, {
 		onDelete: "set null"

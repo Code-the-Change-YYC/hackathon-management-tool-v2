@@ -17,17 +17,18 @@ import {
 	SelectValue
 } from "@/app/components/ui/select";
 
-export type SelectOption = { value: string; label: string };
+export type SelectOption<TValue = string> = { value: TValue; label: string };
 
 type SelectFieldProps<
 	TFieldValues extends FieldValues,
 	TName extends FieldPath<TFieldValues>,
-	TTransformedValues
+	TTransformedValues,
+	TValue
 > = {
 	control: Control<TFieldValues, unknown, TTransformedValues>;
 	name: TName;
 	label: string;
-	options: SelectOption[];
+	options: SelectOption<TValue>[];
 	placeholder?: string;
 	disabled?: boolean;
 };
@@ -35,7 +36,8 @@ type SelectFieldProps<
 export function SelectField<
 	TFieldValues extends FieldValues,
 	TName extends FieldPath<TFieldValues>,
-	TTransformedValues = TFieldValues
+	TTransformedValues = TFieldValues,
+	TValue = string
 >({
 	control,
 	name,
@@ -43,12 +45,12 @@ export function SelectField<
 	options,
 	placeholder,
 	disabled
-}: SelectFieldProps<TFieldValues, TName, TTransformedValues>) {
+}: SelectFieldProps<TFieldValues, TName, TTransformedValues, TValue>) {
 	const { field, fieldState } = useController({ control, name });
 	const id = useId();
 
 	return (
-		<Field data-invalid={fieldState.invalid}>
+		<Field data-disabled={disabled} data-invalid={fieldState.invalid}>
 			<FieldLabel htmlFor={id}>{label}</FieldLabel>
 			<Select
 				disabled={disabled}
@@ -67,7 +69,7 @@ export function SelectField<
 				<SelectContent>
 					<SelectGroup>
 						{options.map((option) => (
-							<SelectItem key={option.value} value={option.value}>
+							<SelectItem key={option.label} value={option.value}>
 								{option.label}
 							</SelectItem>
 						))}

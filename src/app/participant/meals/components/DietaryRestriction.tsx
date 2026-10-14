@@ -12,31 +12,20 @@ import {
 	CardTitle
 } from "@/app/components/ui/card";
 import {
-	DIETARY_RESTRICTIONS,
-	type DietaryRestriction as DietaryRestrictionValue
-} from "@/server/db/auth-schema";
-import {
-	DietaryRestrictionDialogue,
-	restrictionLabels
-} from "./DietaryRestrictionDialogue";
+	DIETARY_RESTRICTION_LABELS,
+	toDietaryRestrictions
+} from "@/lib/validation/signup";
+import { DietaryRestrictionDialogue } from "./DietaryRestrictionDialogue";
 
 type DietaryRestrictionProps = {
 	dietaryRestrictions: string[];
 };
 
-function getDietaryRestrictions(
-	dietaryRestrictions: string[]
-): DietaryRestrictionValue[] {
-	return DIETARY_RESTRICTIONS.filter((restriction) =>
-		dietaryRestrictions.includes(restriction)
-	);
-}
-
 export function DietaryRestriction({
 	dietaryRestrictions: initialDietaryRestrictions
 }: DietaryRestrictionProps) {
 	const [dietaryRestrictions, setDietaryRestrictions] = useState(() =>
-		getDietaryRestrictions(initialDietaryRestrictions)
+		toDietaryRestrictions(initialDietaryRestrictions)
 	);
 	const [isDialogueOpen, setIsDialogueOpen] = useState(false);
 
@@ -46,9 +35,9 @@ export function DietaryRestriction({
 				Dietary Restrictions
 			</h2>
 
-			<Card size="sm">
+			<Card>
 				<CardHeader>
-					<CardTitle>Your registered dietary restrictions:</CardTitle>
+					<CardTitle>Your registered dietary restrictions</CardTitle>
 					<CardAction>
 						<Button
 							onClick={() => setIsDialogueOpen(true)}
@@ -64,8 +53,8 @@ export function DietaryRestriction({
 					{dietaryRestrictions.length > 0 ? (
 						<div className="flex flex-wrap gap-2">
 							{dietaryRestrictions.map((restriction) => (
-								<Badge key={restriction} variant="accent">
-									{restrictionLabels[restriction]}
+								<Badge className="h-8 px-3" key={restriction}>
+									{DIETARY_RESTRICTION_LABELS[restriction]}
 								</Badge>
 							))}
 						</div>

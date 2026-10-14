@@ -1,36 +1,38 @@
-import Sponsors from "@/app/components/admin/landingpage/Sponsors";
-import Footer from "@/app/components/Footer";
-import Header from "@/app/components/Header";
+import AboutChallenge from "@/app/components/landing-page/AboutChallenge";
+import EventDetails from "@/app/components/landing-page/EventDetails";
+import FAQ from "@/app/components/landing-page/FAQ";
+import Footer from "@/app/components/landing-page/Footer";
+import Header from "@/app/components/landing-page/Header";
+import Hero from "@/app/components/landing-page/Hero";
+import Judges from "@/app/components/landing-page/Judges";
+import JudgingCriteria from "@/app/components/landing-page/JudgingCriteria";
+import MLHBadge from "@/app/components/landing-page/MLHBadge";
+import Prizes from "@/app/components/landing-page/Prizes";
+import Requirements from "@/app/components/landing-page/Requirements";
+import Sponsors from "@/app/components/landing-page/Sponsors";
+import Winners from "@/app/components/landing-page/Winners";
 import { HydrateClient } from "@/trpc/server";
-import AboutChallenge from "./components/admin/landingpage/AboutChallenge";
-import Countdown from "./components/admin/landingpage/countdown/Countdown";
-import EventDetails from "./components/admin/landingpage/EventDetails";
-import HackathonInformationContainer from "./components/admin/landingpage/HackathonInformationContainer";
-import Judges from "./components/admin/landingpage/Judges";
-import JudgingCriteria from "./components/admin/landingpage/JudgingCriteria";
-import Prizes from "./components/admin/landingpage/Prizes";
-import Requirements from "./components/admin/landingpage/Requirements";
-import Winners from "./components/admin/landingpage/Winners";
 
 export const revalidate = 3600;
 
 export default async function Home() {
-	// TODO: replace with real team-membership check. addressing this later as the whole participant flow to be fixed in a seperate PR (HMTV2-39)
-	const hasTeam = false;
 	return (
 		<HydrateClient>
-			<Header hasTeam={hasTeam} />
-			<Countdown />
-			<EventDetails />
-			<HackathonInformationContainer>
+			<Header />
+			<MLHBadge />
+			{/* Clips the decorative squiggles that hang past the viewport edges */}
+			<main className="overflow-x-clip">
+				<Hero />
+				<EventDetails />
 				<AboutChallenge />
 				<Requirements />
 				<Prizes />
 				<JudgingCriteria />
 				<Judges />
 				<Winners />
-			</HackathonInformationContainer>
-			<Sponsors />
+				<Sponsors />
+				<FAQ />
+			</main>
 			<Footer />
 		</HydrateClient>
 	);
