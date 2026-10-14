@@ -1,5 +1,3 @@
-"use client";
-
 import MentorEntry from "./MentorEntry";
 
 // TODO: Populate with actual people
@@ -134,7 +132,7 @@ const industryMembers = [
 export default function MentorsSection() {
 	return (
 		<div className="flex flex-col gap-4">
-			<h1 className="font-medium text-[22px] leading-7">Mentors</h1>
+			<h2 className="font-medium text-xl">Mentors</h2>
 			<div className="grid grid-cols-[repeat(auto-fit,minmax(192px,1fr))] justify-items-center gap-4">
 				{eventsMembers.map((member) => (
 					<MentorEntry

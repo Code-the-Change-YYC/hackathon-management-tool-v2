@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
+// [0, 1, …, length - 1], e.g. for rendering a fixed number of skeleton rows.
+export function range(length: number) {
+	return Array.from({ length }, (_, index) => index);
+}
+
 // Types for the result object with discriminated union
 type Success<T> = {
 	data: T;

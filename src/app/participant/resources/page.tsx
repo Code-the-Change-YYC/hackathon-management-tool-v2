@@ -1,18 +1,14 @@
-import PageHeader from "@/app/components/PageHeader";
-import Mentors from "@/app/components/resources/MentorsSection";
-import Resources from "@/app/components/resources/ResourcesSection";
+import type { Metadata } from "next";
+import { ResourcesView } from "@/app/components/participant/resources/ResourcesView";
+import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
+import { Role } from "@/types/types";
 
-export default function ResourcePage() {
-	return (
-		<div className="flex flex-col gap-6 p-6">
-			<PageHeader
-				description="Helpful resources and mentors!"
-				title="Resources"
-			/>
-			<div className="flex flex-col gap-16">
-				<Resources />
-				<Mentors />
-			</div>
-		</div>
-	);
+export const metadata: Metadata = {
+	title: "Resources | Hack the Change"
+};
+
+export default async function ResourcesPage() {
+	await requireRole([Role.PARTICIPANT, Role.ADMIN]);
+
+	return <ResourcesView />;
 }

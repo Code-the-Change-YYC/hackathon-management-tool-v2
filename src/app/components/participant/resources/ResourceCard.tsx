@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Card, CardContent } from "../ui/card";
+import { Card, CardContent } from "@/app/components/ui/card";
 
 interface ResourceCardProps {
 	name: string;
@@ -26,13 +26,13 @@ export default function ResourceCard({
 				/>
 				<div className="flex size-full flex-1 flex-col justify-between">
 					<div className="flex flex-col gap-2">
-						<h1 className="font-medium text-lg">{name}</h1>
+						<h3 className="font-medium text-lg">{name}</h3>
 						<p>{description}</p>
 					</div>
 					<a
 						className="mt-4 block text-end text-black/50 hover:text-awesomer-purple"
 						href={link}
-						rel="noopener noreffer"
+						rel="noopener noreferrer"
 						target="_blank"
 					>
 						Visit →

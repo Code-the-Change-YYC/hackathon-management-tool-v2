@@ -1,9 +1,9 @@
 import ResourceCard from "./ResourceCard";
 
-export default function Resources() {
+export default function ResourcesSection() {
 	return (
 		<div className="flex h-full w-full flex-col gap-4">
-			<h1 className="font-medium text-[22px] leading-7">Resources</h1>
+			<h2 className="font-medium text-xl">Resources</h2>
 			<div className="grid grid-cols-1 justify-items-center gap-4 md:grid-cols-2 2xl:grid-cols-4">
 				{/* TODO: Fill with actual resources */}
 				<ResourceCard

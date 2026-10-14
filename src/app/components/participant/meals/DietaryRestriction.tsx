@@ -22,16 +22,14 @@ type DietaryRestrictionProps = {
 };
 
 export function DietaryRestriction({
-	dietaryRestrictions: initialDietaryRestrictions
+	dietaryRestrictions
 }: DietaryRestrictionProps) {
-	const [dietaryRestrictions, setDietaryRestrictions] = useState(() =>
-		toDietaryRestrictions(initialDietaryRestrictions)
-	);
+	const restrictions = toDietaryRestrictions(dietaryRestrictions);
 	const [isDialogueOpen, setIsDialogueOpen] = useState(false);
 
 	return (
 		<section className="flex flex-col gap-4">
-			<h2 className="font-medium text-dark-grey text-lg">
+			<h2 className="font-medium text-dark-grey text-xl">
 				Dietary Restrictions
 			</h2>
 
@@ -50,9 +48,9 @@ export function DietaryRestriction({
 					</CardAction>
 				</CardHeader>
 				<CardContent>
-					{dietaryRestrictions.length > 0 ? (
+					{restrictions.length > 0 ? (
 						<div className="flex flex-wrap gap-2">
-							{dietaryRestrictions.map((restriction) => (
+							{restrictions.map((restriction) => (
 								<Badge className="h-8 px-3" key={restriction}>
 									{DIETARY_RESTRICTION_LABELS[restriction]}
 								</Badge>
@@ -66,9 +64,8 @@ export function DietaryRestriction({
 
 			{isDialogueOpen ? (
 				<DietaryRestrictionDialogue
-					currentRestrictions={dietaryRestrictions}
+					currentRestrictions={restrictions}
 					onCloseAction={() => setIsDialogueOpen(false)}
-					onSaveAction={setDietaryRestrictions}
 				/>
 			) : null}
 		</section>

@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import {
 	JUDGING_PHASE_LABELS,
 	JUDGING_PHASES,
@@ -16,7 +17,7 @@ import {
 } from "@/lib/judging";
 import { countdownParts, formatDashboardDate } from "@/lib/participant-events";
 import { type JudgingRound, judgingStages } from "@/lib/participant-judging";
-import { cn } from "@/lib/utils";
+import { cn, range } from "@/lib/utils";
 
 // Ticks every second, unlike the shared useCurrentTime, so the seconds tile stays live.
 function useSecondTick() {
@@ -46,7 +47,7 @@ export function SubmissionCountdown({
 			className="flex min-w-0 flex-col gap-4"
 		>
 			<div className="flex flex-col gap-1">
-				<h2 className="font-medium text-[22px]/7" id="countdown-title">
+				<h2 className="font-medium text-xl" id="countdown-title">
 					{expired
 						? "Submissions closed"
 						: `Time until submission ${beforeStart ? "opens" : "closes"}`}
@@ -58,6 +59,8 @@ export function SubmissionCountdown({
 				</p>
 			</div>
 			{parts && (
+				// The server renders a few seconds earlier than hydration, so the
+				// ticking values can't match.
 				<div
 					aria-label={
 						expired
@@ -66,6 +69,7 @@ export function SubmissionCountdown({
 					}
 					className="flex justify-between gap-1 px-2 py-3 tabular-nums"
 					role="timer"
+					suppressHydrationWarning
 				>
 					{parts.map((value, index) => (
 						<div
@@ -73,7 +77,10 @@ export function SubmissionCountdown({
 							key={["Days", "Hours", "Minutes", "Seconds"][index]}
 						>
 							<div className="flex min-w-0 flex-1 flex-col items-center">
-								<span className="text-[32px]/11 sm:text-4xl/11">
+								<span
+									className="text-[32px]/11 sm:text-4xl/11"
+									suppressHydrationWarning
+								>
 									{String(value).padStart(2, "0")}
 								</span>
 								<span className="font-medium text-[11px]/4 uppercase">
@@ -112,7 +119,7 @@ export function JudgingStatus({
 				aria-labelledby="judging-title"
 				className="flex min-w-0 flex-col gap-6"
 			>
-				<h2 className="font-medium text-[22px]/7" id="judging-title">
+				<h2 className="font-medium text-xl" id="judging-title">
 					Judging Status
 				</h2>
 				{!["judging", "review", "winners_announced"].includes(phase) && (
@@ -206,7 +213,7 @@ export function JudgingStatus({
 		>
 			<div className="flex flex-col gap-1">
 				<div className="flex flex-wrap items-center justify-between gap-1">
-					<h2 className="font-medium text-[22px]/7" id="judging-title">
+					<h2 className="font-medium text-xl" id="judging-title">
 						Judging Status
 					</h2>
 					<Button
@@ -283,5 +290,70 @@ export function JudgingStatus({
 				</div>
 			</div>
 		</section>
+	);
+}
+
+export function SubmissionCountdownSkeleton() {
+	return (
+		<div className="flex min-w-0 flex-col gap-4">
+			<div className="flex flex-col gap-1">
+				<Skeleton className="my-1 h-5 w-3/4" />
+				<Skeleton className="my-1 h-3 w-1/2" />
+			</div>
+			<div className="flex justify-between gap-4 px-2 py-3">
+				{range(4).map((index) => (
+					<div className="flex flex-1 flex-col items-center gap-1" key={index}>
+						<Skeleton className="my-0.5 h-9 w-12" />
+						<Skeleton className="my-0.5 h-3 w-10" />
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+export function JudgingStatusSkeleton({
+	variant = "compact"
+}: {
+	variant?: "compact" | "detailed";
+}) {
+	if (variant === "detailed")
+		return (
+			<div className="flex min-w-0 flex-col gap-6">
+				<h2 className="font-medium text-xl">Judging Status</h2>
+				<Skeleton className="my-1 h-3 w-40" />
+				<div className="flex flex-col gap-4">
+					{range(5).map((index) => (
+						<div
+							className="flex min-h-20 items-start gap-6 px-4 py-3"
+							key={index}
+						>
+							<Skeleton className="size-6 shrink-0 rounded-full" />
+							<div className="flex min-w-0 flex-1 flex-col gap-2">
+								<Skeleton className="my-1 h-4 w-48 max-w-full" />
+								<Skeleton className="my-0.5 h-3 w-3/4" />
+							</div>
+						</div>
+					))}
+				</div>
+			</div>
+		);
+	return (
+		<div className="flex min-w-0 flex-col gap-4">
+			<div className="flex flex-col gap-1">
+				<div className="flex flex-wrap items-center justify-between gap-1">
+					<h2 className="font-medium text-xl">Judging Status</h2>
+					<Skeleton className="h-9 w-40" />
+				</div>
+				<Skeleton className="my-1 h-3 w-40" />
+			</div>
+			<div className="flex flex-col gap-4 px-4 pt-5">
+				<Skeleton className="h-3 w-full rounded-full" />
+				<div className="-mx-4 flex justify-between">
+					<Skeleton className="h-16 w-18" />
+					<Skeleton className="h-16 w-18" />
+				</div>
+			</div>
+		</div>
 	);
 }

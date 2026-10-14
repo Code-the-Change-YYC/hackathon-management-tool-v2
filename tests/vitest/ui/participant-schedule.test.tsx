@@ -1,6 +1,6 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ScheduleView } from "@/app/components/participant/ParticipantSchedule";
+import { ScheduleView } from "@/app/components/participant/schedule/ScheduleView";
 import { groupScheduleItemsByDate } from "@/app/components/Schedule";
 import type { DashboardEvent } from "@/lib/participant-events";
 import { EventType } from "@/types/types";
@@ -106,22 +106,10 @@ describe("participant schedule", () => {
 			screen.queryByRole("button", { name: "Navigate there" })
 		).not.toBeInTheDocument();
 	});
-	it("shows empty, loading, and retryable error states", () => {
-		const retry = vi.fn();
-		const { rerender } = render(<ScheduleView events={[]} />);
+	it("shows an empty state when nothing is scheduled", () => {
+		render(<ScheduleView events={[]} />);
 		expect(
-			screen.getByText("No events have been scheduled yet.")
+			screen.getByText("No events have been scheduled yet")
 		).toBeInTheDocument();
-		rerender(<ScheduleView events={[]} loading />);
-		expect(screen.getByLabelText("Loading schedule")).toHaveAttribute(
-			"aria-busy",
-			"true"
-		);
-		rerender(<ScheduleView error events={[]} retry={retry} />);
-		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-		expect(retry).toHaveBeenCalledOnce();
-		expect(
-			screen.queryByText("No events have been scheduled yet.")
-		).not.toBeInTheDocument();
 	});
 });

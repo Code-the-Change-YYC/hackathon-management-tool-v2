@@ -13,7 +13,7 @@ export function PersonalInformationCard({
 	return (
 		<section aria-labelledby={HEADING_ID} className="flex flex-col gap-4">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<h2 className="font-medium text-[22px] leading-7" id={HEADING_ID}>
+				<h2 className="font-medium text-xl" id={HEADING_ID}>
 					Personal Information
 				</h2>
 				<div className="ml-auto flex items-center gap-2">{actions}</div>

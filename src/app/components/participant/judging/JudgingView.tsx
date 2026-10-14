@@ -4,6 +4,12 @@ import { useState } from "react";
 import Banner from "@/app/components/Banner";
 import type { Criterion } from "@/app/components/judges/judgePortal";
 import PageHeader from "@/app/components/PageHeader";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle
+} from "@/app/components/ui/empty";
 import { ToggleGroup, ToggleGroupItem } from "@/app/components/ui/toggle-group";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { criterionAppliesToRound } from "@/lib/judging";
@@ -13,17 +19,15 @@ import {
 	getCurrentEvent
 } from "@/lib/participant-events";
 import { type JudgingRound, judgingStages } from "@/lib/participant-judging";
-import { api, type RouterOutputs } from "@/trpc/react";
-import { CurrentEventBanner } from "./CurrentEventBanner";
-import CurrentEventImages from "./CurrentEventImages";
-import { DataState } from "./DataState";
-import { ParticipantRubric } from "./ParticipantRubric";
-import { JudgingStatus } from "./ParticipantStatus";
+import type { RouterOutputs } from "@/trpc/react";
+import { CurrentEventBanner } from "../CurrentEventBanner";
+import CurrentEventImages from "../CurrentEventImages";
+import { ParticipantRubric } from "../ParticipantRubric";
+import { JudgingStatus } from "../ParticipantStatus";
 
 type Settings = RouterOutputs["hackathonSettings"]["get"];
 type Assignment = RouterOutputs["judgingAssignments"]["getMineForActiveRound"];
 type Results = RouterOutputs["scores"]["getMineReleased"];
-const refresh = { refetchInterval: 30_000, refetchOnWindowFocus: true };
 
 function RoundFilter({
 	rounds,
@@ -91,73 +95,38 @@ function RoundRubric({
 				(roundScores ?? []).map((score) => [score.criterionId, score.value])
 			)
 		: undefined;
-	return (
-		<>
-			{scores && !roundScores?.length ? (
-				<p className="text-grey-600 text-sm/5">
-					No scores have been published for your team yet.
-				</p>
-			) : (
-				<ParticipantRubric
-					criteria={
-						scores
-							? filtered.filter(
-									(criterion) => values?.[criterion.id] !== undefined
-								)
-							: filtered
-					}
-					key={roundId}
-					scores={values}
-				>
-					<RoundFilter
-						available={available}
-						label={scores ? "Team score round" : "Rubric round"}
-						onSelect={setSelected}
-						rounds={rounds}
-						selected={roundId}
-					/>
-				</ParticipantRubric>
-			)}
-		</>
-	);
-}
 
-export function ParticipantJudging() {
-	const settings = api.hackathonSettings.get.useQuery(undefined, refresh);
-	const events = api.events.getActiveEvents.useQuery(undefined, refresh);
-	const rounds = api.judgingRounds.getAll.useQuery(undefined, refresh);
-	const criteria = api.criteria.getAll.useQuery(undefined, refresh);
-	const assignment = api.judgingAssignments.getMineForActiveRound.useQuery(
-		undefined,
-		refresh
-	);
-	const released = settings.data?.judgingPhase === "winners_announced";
-	const scores = api.scores.getMineReleased.useQuery(undefined, {
-		...refresh,
-		enabled: released
-	});
-	const queries = [settings, events, rounds, criteria, assignment];
+	if (scores && !roundScores?.length) {
+		return (
+			<Empty>
+				<EmptyHeader>
+					<EmptyTitle>No team scores yet</EmptyTitle>
+					<EmptyDescription>
+						Your team’s scores will appear here once they’re published.
+					</EmptyDescription>
+				</EmptyHeader>
+			</Empty>
+		);
+	}
+
 	return (
-		<DataState
-			error={queries.some((query) => query.isError)}
-			label="Loading judging information"
-			loading={queries.some((query) => query.isPending)}
-			retry={() => {
-				for (const query of queries) void query.refetch();
-			}}
+		<ParticipantRubric
+			criteria={
+				scores
+					? filtered.filter((criterion) => values?.[criterion.id] !== undefined)
+					: filtered
+			}
+			key={roundId}
+			scores={values}
 		>
-			<JudgingView
-				assignment={assignment.data ?? null}
-				criteria={criteria.data ?? []}
-				events={events.data ?? []}
-				results={scores.data}
-				retryScores={() => void scores.refetch()}
-				rounds={rounds.data ?? []}
-				scoresError={scores.isError}
-				scoresLoading={released && scores.isPending}
-				settings={settings.data ?? null}
+			<RoundFilter
+				available={available}
+				label={scores ? "Team score round" : "Rubric round"}
+				onSelect={setSelected}
+				rounds={rounds}
+				selected={roundId}
 			/>
-		</DataState>
+		</ParticipantRubric>
 	);
 }
 
@@ -167,20 +136,14 @@ export function JudgingView({
 	rounds,
 	criteria,
 	assignment,
-	results,
-	scoresLoading = false,
-	scoresError = false,
-	retryScores = () => {}
+	results
 }: {
 	settings: Settings;
 	events: DashboardEvent[];
 	rounds: JudgingRound[];
 	criteria: Criterion[];
 	assignment: Assignment;
-	results?: Results;
-	scoresLoading?: boolean;
-	scoresError?: boolean;
-	retryScores?: () => void;
+	results: Results;
 }) {
 	const now = useCurrentTime();
 	const phase = settings?.judgingPhase ?? "not_started";
@@ -207,6 +170,8 @@ export function JudgingView({
 	const meetingUrl = eventNavigationUrlSchema.safeParse(
 		assignment?.room.roomLink
 	);
+	const releasedScores = results.released ? results.rounds : [];
+
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
@@ -243,11 +208,9 @@ export function JudgingView({
 					aria-labelledby="rubric-title"
 					className="flex min-w-0 flex-col gap-6"
 				>
-					<div>
-						<h2 className="font-medium text-[22px]/7" id="rubric-title">
-							Judging Rubric
-						</h2>
-					</div>
+					<h2 className="font-medium text-xl" id="rubric-title">
+						Judging Rubric
+					</h2>
 					<RoundRubric
 						available={available}
 						criteria={criteria}
@@ -259,30 +222,15 @@ export function JudgingView({
 						aria-labelledby="team-scores-title"
 						className="flex min-w-0 flex-col gap-6"
 					>
-						<div>
-							<h2 className="font-medium text-[22px]/7" id="team-scores-title">
-								Team Scores
-							</h2>
-						</div>
-						<DataState
-							error={scoresError}
-							label="Loading team scores"
-							loading={scoresLoading}
-							retry={retryScores}
-						>
-							<RoundRubric
-								available={
-									new Set(
-										results?.released
-											? results.rounds.map((score) => score.roundId)
-											: []
-									)
-								}
-								criteria={criteria}
-								rounds={ordered}
-								scores={results?.released ? results.rounds : []}
-							/>
-						</DataState>
+						<h2 className="font-medium text-xl" id="team-scores-title">
+							Team Scores
+						</h2>
+						<RoundRubric
+							available={new Set(releasedScores.map((score) => score.roundId))}
+							criteria={criteria}
+							rounds={ordered}
+							scores={releasedScores}
+						/>
 					</section>
 				)}
 			</div>

@@ -64,7 +64,7 @@ export function MealTicket({ displayName, ticket }: MealTicketProps) {
 
 	return (
 		<section className="@container/meal-ticket flex flex-col gap-4">
-			<h2 className="font-medium text-dark-grey text-lg">Your Meal Ticket</h2>
+			<h2 className="font-medium text-dark-grey text-xl">Your Meal Ticket</h2>
 
 			<div className="relative flex @min-[40rem]/meal-ticket:h-62.25 @min-[40rem]/meal-ticket:flex-row flex-col overflow-hidden bg-pastel-pink">
 				<TicketTeeth position="top" />

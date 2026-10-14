@@ -2,6 +2,7 @@ import { Alarm2Line, ArrowRightLine, LocationLine } from "@mingcute/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/app/components/ui/button";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { formatTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 
@@ -119,6 +120,14 @@ export default function Banner({
 					</div>
 				)}
 			</div>
+		</div>
+	);
+}
+
+export function BannerSkeleton({ className }: { className?: string }) {
+	return (
+		<div className={cn("@container w-full", className)}>
+			<Skeleton className="@4xl:h-50 h-93 rounded-[16px]" />
 		</div>
 	);
 }

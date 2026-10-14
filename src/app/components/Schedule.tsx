@@ -1,6 +1,8 @@
 import { formatDateKey, formatLongDate } from "@/lib/datetime";
+import { range } from "@/lib/utils";
 import { ScheduleItem, type ScheduleItemData } from "./ScheduleItem";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
+import { Skeleton } from "./ui/skeleton";
 
 export type ScheduleGroup = {
 	key: string;
@@ -67,6 +69,40 @@ export function Schedule({
 							<ScheduleItem item={item} key={item.id} now={now} />
 						))}
 					</ol>
+				</div>
+			))}
+		</div>
+	);
+}
+
+export function ScheduleItemsSkeleton({
+	groups = 1,
+	items = 3,
+	showGroupLabels = true
+}: {
+	groups?: number;
+	items?: number;
+	showGroupLabels?: boolean;
+}) {
+	return (
+		<div className="grid gap-8 lg:grid-flow-col">
+			{range(groups).map((group) => (
+				<div className="flex w-full flex-col gap-4" key={group}>
+					{showGroupLabels && <Skeleton className="my-0.5 h-4 w-40" />}
+					<div className="flex flex-col gap-6">
+						{range(items).map((item) => (
+							<div className="flex items-start gap-4" key={item}>
+								<Skeleton className="size-18 shrink-0 rounded-lg" />
+								<div className="flex flex-1 flex-col gap-2">
+									<div className="flex flex-col gap-0.5">
+										<Skeleton className="my-1 h-4 w-2/5" />
+										<Skeleton className="my-0.5 h-3 w-3/5" />
+									</div>
+									<Skeleton className="my-0.5 h-3 w-4/5" />
+								</div>
+							</div>
+						))}
+					</div>
 				</div>
 			))}
 		</div>

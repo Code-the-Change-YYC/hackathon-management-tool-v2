@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { JudgingView } from "@/app/components/participant/ParticipantJudging";
+import { JudgingView } from "@/app/components/participant/judging/JudgingView";
 import { criterionAppliesToRound } from "@/lib/judging";
 import { judgingStages } from "@/lib/participant-judging";
 
@@ -144,8 +144,6 @@ describe("participant judging information", () => {
 				results: { released: true, rounds: [] }
 			})
 		);
-		expect(
-			screen.getByText("No scores have been published for your team yet.")
-		).toBeVisible();
+		expect(screen.getByText("No team scores yet")).toBeVisible();
 	});
 });

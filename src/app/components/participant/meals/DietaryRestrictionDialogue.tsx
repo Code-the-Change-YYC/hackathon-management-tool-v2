@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { DietaryRestrictionsField } from "@/app/components/forms/DietaryRestrictionsField";
 import { Button } from "@/app/components/ui/button";
@@ -18,7 +19,6 @@ import { api } from "@/trpc/react";
 type DietaryRestrictionDialogueProps = {
 	currentRestrictions: DietaryRestriction[];
 	onCloseAction: () => void;
-	onSaveAction: (dietaryRestrictions: DietaryRestriction[]) => void;
 };
 
 type DialogueMode = "edit" | "discard";
@@ -35,14 +35,16 @@ function areRestrictionsEqual(
 
 export function DietaryRestrictionDialogue({
 	currentRestrictions,
-	onCloseAction,
-	onSaveAction
+	onCloseAction
 }: DietaryRestrictionDialogueProps) {
+	const router = useRouter();
+	const [isRefreshing, startTransition] = useTransition();
 	const [draftRestrictions, setDraftRestrictions] =
 		useState<DietaryRestriction[]>(currentRestrictions);
 	const [dialogueMode, setDialogueMode] = useState<DialogueMode>("edit");
 	const updateDietaryRestrictions =
 		api.users.updateUserDietaryRestrictions.useMutation();
+	const isSaving = updateDietaryRestrictions.isPending || isRefreshing;
 	const hasUnsavedChanges = !areRestrictionsEqual(
 		currentRestrictions,
 		draftRestrictions
@@ -75,9 +77,12 @@ export function DietaryRestrictionDialogue({
 			await updateDietaryRestrictions.mutateAsync({
 				dietaryRestrictions: draftRestrictions
 			});
-			onSaveAction(draftRestrictions);
-			onCloseAction();
 			toast.success("Dietary restrictions updated");
+			// Close once the refreshed restrictions are ready so nothing flickers.
+			startTransition(() => {
+				router.refresh();
+				onCloseAction();
+			});
 		} catch {
 			toast.error("Unable to update dietary restrictions");
 		}
@@ -107,25 +112,21 @@ export function DietaryRestrictionDialogue({
 						}}
 					>
 						<DietaryRestrictionsField
-							disabled={updateDietaryRestrictions.isPending}
+							disabled={isSaving}
 							onChange={setDraftRestrictions}
 							value={draftRestrictions}
 						/>
 
 						<DialogFooter>
 							<Button
-								disabled={
-									updateDietaryRestrictions.isPending || !hasUnsavedChanges
-								}
+								disabled={isSaving || !hasUnsavedChanges}
 								size="sm"
 								type="submit"
 							>
-								{updateDietaryRestrictions.isPending
-									? "Saving..."
-									: "Save changes"}
+								{isSaving ? "Saving..." : "Save changes"}
 							</Button>
 							<Button
-								disabled={updateDietaryRestrictions.isPending}
+								disabled={isSaving}
 								onClick={requestEditorClose}
 								size="sm"
 								type="button"
