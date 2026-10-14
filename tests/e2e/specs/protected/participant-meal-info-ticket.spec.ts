@@ -26,9 +26,24 @@ test.use({
 });
 
 for (const timing of [
-	{ name: "ongoing", startMinutes: -15, status: "ongoing" },
-	{ name: "within 60 minutes", startMinutes: 30, status: "in 30 min" },
-	{ name: "later than 60 minutes", startMinutes: 120, status: "scheduled" }
+	{
+		name: "ongoing",
+		startMinutes: -15,
+		expected: (_start: Date, end: Date) =>
+			`Being served until ${formatTime(end)}.`
+	},
+	{
+		name: "within 60 minutes",
+		startMinutes: 30,
+		expected: (_start: Date, end: Date) =>
+			`Starts in 30 min and runs until ${formatTime(end)}.`
+	},
+	{
+		name: "later than 60 minutes",
+		startMinutes: 120,
+		expected: (start: Date, end: Date) =>
+			`Runs from ${formatTime(start)} to ${formatTime(end)}.`
+	}
 ]) {
 	// Given I am a participant with no check-in for an active food meal
 	// And the meal is ongoing, starts within 60 minutes, or starts later (one test each)
@@ -59,7 +74,7 @@ for (const timing of [
 			ticket.getByText(authUser.name, { exact: true })
 		).toBeVisible();
 		await expect(ticket).toContainText(
-			`${timing.status} until ${formatTime(meal.endTime)}.`
+			timing.expected(meal.startTime, meal.endTime)
 		);
 		await expect(ticket).toContainText("Present this QR code");
 		const token = await readTicketToken(page);

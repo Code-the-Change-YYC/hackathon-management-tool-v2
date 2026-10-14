@@ -11,16 +11,18 @@ import { TicketTeeth } from "./TicketTeeth";
 type EventTicket = RouterOutputs["events"]["rotateParticipantEventTicket"];
 type TicketEvent = EventTicket["event"];
 
-function getMealTicketStatus(
+function getMealTiming(
 	event: Pick<TicketEvent, "startTime" | "endTime">,
 	now: Date
 ) {
+	const endTime = formatTime(event.endTime);
+
 	if (isWithinInterval(now, { start: event.startTime, end: event.endTime })) {
-		return "ongoing";
+		return `Being served until ${endTime}.`;
 	}
 
 	if (isAfter(now, event.endTime)) {
-		return "completed";
+		return `Ended at ${endTime}.`;
 	}
 
 	const minutesUntilStart = Math.max(
@@ -29,10 +31,10 @@ function getMealTicketStatus(
 	);
 
 	if (minutesUntilStart <= 60) {
-		return `in ${minutesUntilStart} min`;
+		return `Starts in ${minutesUntilStart} min and runs until ${endTime}.`;
 	}
 
-	return "scheduled";
+	return `Runs from ${formatTime(event.startTime)} to ${endTime}.`;
 }
 
 function getTicketDescription(ticket: EventTicket | null, now: Date) {
@@ -44,17 +46,7 @@ function getTicketDescription(ticket: EventTicket | null, now: Date) {
 		return `You checked in at ${formatTime(ticket.checkedInAt)}.`;
 	}
 
-	const ticketStatus = getMealTicketStatus(
-		{
-			startTime: ticket.event.startTime,
-			endTime: ticket.event.endTime
-		},
-		now
-	);
-
-	return `Present this QR code to a Code the Change member scanning 
-          tickets at the door to receive your meal. ${ticketStatus} 
-          until ${formatTime(ticket.event.endTime)}.`;
+	return `Present this QR code to a Code the Change member scanning tickets at the door to receive your meal. ${getMealTiming(ticket.event, now)}`;
 }
 
 interface MealTicketProps {
