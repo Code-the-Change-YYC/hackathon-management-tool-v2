@@ -1,8 +1,18 @@
+import { redirect } from "next/navigation";
 import PageHeader from "@/app/components/PageHeader";
 import Mentors from "@/app/components/resources/MentorsSection";
 import Resources from "@/app/components/resources/ResourcesSection";
+import { api } from "@/trpc/server";
 
-export default function ResourcePage() {
+export default async function ResourcePage() {
+	const settingsQuery = await api.hackathonSettings.get();
+	const startDate = settingsQuery?.startDate;
+	const showResources = startDate && Date.now() >= startDate?.getTime();
+
+	if (!showResources) {
+		redirect("/under-construction");
+	}
+
 	return (
 		<div className="flex flex-col gap-6 p-6">
 			<PageHeader
