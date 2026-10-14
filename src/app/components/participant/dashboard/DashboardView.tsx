@@ -86,20 +86,26 @@ export function DashboardView({
 						/>
 					</CardContent>
 				</Card>
-				<Card>
-					<CardContent className="@container">
-						<div className="grid gap-12 max-lg:@[34rem]:grid-cols-2 lg:min-h-89 lg:content-between lg:gap-10">
-							<SubmissionCountdown
-								deadline={settings?.submissionDeadline ?? null}
-								startDate={settings?.startDate ?? null}
-							/>
-							<JudgingStatus
-								phase={settings?.judgingPhase ?? "not_started"}
-								roundName={roundName}
-							/>
-						</div>
-					</CardContent>
-				</Card>
+				<div className="@container min-w-0">
+					<div className="grid gap-6 max-lg:@[40rem]:grid-cols-2">
+						<Card>
+							<CardContent>
+								<SubmissionCountdown
+									deadline={settings?.submissionDeadline ?? null}
+									startDate={settings?.startDate ?? null}
+								/>
+							</CardContent>
+						</Card>
+						<Card>
+							<CardContent>
+								<JudgingStatus
+									phase={settings?.judgingPhase ?? "not_started"}
+									roundName={roundName}
+								/>
+							</CardContent>
+						</Card>
+					</div>
+				</div>
 			</div>
 		</div>
 	);

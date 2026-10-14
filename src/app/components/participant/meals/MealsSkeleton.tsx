@@ -1,12 +1,6 @@
 import PageHeader from "@/app/components/PageHeader";
 import { ScheduleItemsSkeleton } from "@/app/components/Schedule";
-import {
-	Card,
-	CardAction,
-	CardContent,
-	CardHeader,
-	CardTitle
-} from "@/app/components/ui/card";
+import { Card, CardAction, CardContent } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
 
 export function MealsSkeleton() {
@@ -32,23 +26,24 @@ export function MealsSkeleton() {
 						Dietary Restrictions
 					</h2>
 					<Card>
-						<CardHeader>
-							<CardTitle>Your registered dietary restrictions</CardTitle>
-							<CardAction>
-								<Skeleton className="h-9 w-20" />
-							</CardAction>
-						</CardHeader>
-						<CardContent>
+						<CardContent className="flex items-center justify-between">
 							<div className="flex flex-wrap gap-2">
 								<Skeleton className="h-8 w-24 rounded-full" />
 								<Skeleton className="h-8 w-28 rounded-full" />
 							</div>
+							<CardAction>
+								<Skeleton className="h-9 w-18" />
+							</CardAction>
 						</CardContent>
 					</Card>
 				</div>
-				<div className="flex flex-col gap-5">
+				<div className="flex flex-col gap-4">
 					<h2 className="font-medium text-dark-grey text-xl">Meal Schedule</h2>
-					<ScheduleItemsSkeleton groups={2} />
+					<Card>
+						<CardContent>
+							<ScheduleItemsSkeleton groups={2} />
+						</CardContent>
+					</Card>
 				</div>
 			</div>
 		</section>

@@ -31,14 +31,20 @@ export function DashboardSkeleton() {
 						<ScheduleItemsSkeleton showGroupLabels={false} />
 					</CardContent>
 				</Card>
-				<Card>
-					<CardContent className="@container">
-						<div className="grid gap-12 max-lg:@[34rem]:grid-cols-2 lg:min-h-89 lg:content-between lg:gap-10">
-							<SubmissionCountdownSkeleton />
-							<JudgingStatusSkeleton />
-						</div>
-					</CardContent>
-				</Card>
+				<div className="@container min-w-0">
+					<div className="grid gap-6 max-lg:@[40rem]:grid-cols-2">
+						<Card>
+							<CardContent>
+								<SubmissionCountdownSkeleton />
+							</CardContent>
+						</Card>
+						<Card>
+							<CardContent>
+								<JudgingStatusSkeleton />
+							</CardContent>
+						</Card>
+					</div>
+				</div>
 			</div>
 		</section>
 	);

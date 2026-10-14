@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
+import { Card, CardContent } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import {
 	JUDGING_PHASE_LABELS,
@@ -127,77 +128,83 @@ export function JudgingStatus({
 						{JUDGING_PHASE_LABELS[phase]}
 					</p>
 				)}
-				<ol
-					aria-label="Judging phases"
-					className="relative flex flex-col gap-4"
-				>
-					{judgingStages(phase, rounds, currentRoundId).map(
-						(stage, index, stages) => (
-							<li
-								aria-current={stage.state === "current" ? "step" : undefined}
-								className="relative flex min-h-20 items-start gap-6 px-4 py-3"
-								key={stage.id}
-							>
-								{index < stages.length - 1 && (
-									<span
-										aria-hidden
-										className="absolute top-9 bottom-[-28px] left-[27.5px] w-px bg-grey-300"
-									/>
-								)}
-								<span
-									className={cn(
-										"relative flex size-6 shrink-0 items-center justify-center rounded-full",
-										stage.state === "completed"
-											? "bg-[#04b38f]"
-											: cn(
-													"border-2 bg-white",
-													stage.state === "current"
-														? "border-purple-500"
-														: "border-grey-300"
-												)
-									)}
-								>
-									{stage.state === "completed" ? (
-										<CheckLine aria-hidden className="size-4 text-white" />
-									) : stage.state === "current" ? (
-										<span
-											aria-hidden
-											className="size-3 rounded-full bg-purple-500"
-										/>
-									) : null}
-								</span>
-								<div className="flex min-w-0 flex-1 flex-col gap-2">
-									<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-										<span className="font-medium text-base/6">
-											{stage.name}
-										</span>
+				<Card>
+					<CardContent>
+						<ol
+							aria-label="Judging phases"
+							className="relative flex flex-col gap-4"
+						>
+							{judgingStages(phase, rounds, currentRoundId).map(
+								(stage, index, stages) => (
+									<li
+										aria-current={
+											stage.state === "current" ? "step" : undefined
+										}
+										className="relative flex min-h-20 items-start gap-6 py-3"
+										key={stage.id}
+									>
+										{index < stages.length - 1 && (
+											<span
+												aria-hidden
+												className="-bottom-7 absolute top-9 left-[11.5px] w-px bg-grey-300"
+											/>
+										)}
 										<span
 											className={cn(
-												"rounded px-2 font-medium text-[11px]/4 uppercase",
+												"relative flex size-6 shrink-0 items-center justify-center rounded-full",
 												stage.state === "completed"
-													? "bg-[#d1fff2] text-[#006c53]"
-													: stage.state === "current"
-														? "bg-purple-100 text-purple-800"
-														: "bg-grey-100 text-grey-600"
+													? "bg-[#04b38f]"
+													: cn(
+															"border-2 bg-white",
+															stage.state === "current"
+																? "border-purple-500"
+																: "border-grey-300"
+														)
 											)}
 										>
-											{stage.state === "current" ? "Ongoing" : stage.state}
+											{stage.state === "completed" ? (
+												<CheckLine aria-hidden className="size-4 text-white" />
+											) : stage.state === "current" ? (
+												<span
+													aria-hidden
+													className="size-3 rounded-full bg-purple-500"
+												/>
+											) : null}
 										</span>
-									</div>
-									<p className="font-medium text-grey-600 text-xs/4">
-										{stage.id === "submissions"
-											? "Submit your project before the configured deadline to take part in judging."
-											: stage.id === "review"
-												? "Projects are reviewed before proceeding to live judging."
-												: stage.id === "winners"
-													? "Results will be published once judging and deliberation are complete."
-													: "Prepare a short project demonstration for your team’s assigned judging time."}
-									</p>
-								</div>
-							</li>
-						)
-					)}
-				</ol>
+										<div className="flex min-w-0 flex-1 flex-col gap-2">
+											<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+												<span className="font-medium text-base/6">
+													{stage.name}
+												</span>
+												<span
+													className={cn(
+														"rounded px-2 font-medium text-[11px]/4 uppercase",
+														stage.state === "completed"
+															? "bg-[#d1fff2] text-[#006c53]"
+															: stage.state === "current"
+																? "bg-purple-100 text-purple-800"
+																: "bg-grey-100 text-grey-600"
+													)}
+												>
+													{stage.state === "current" ? "Ongoing" : stage.state}
+												</span>
+											</div>
+											<p className="font-medium text-grey-600 text-xs/4">
+												{stage.id === "submissions"
+													? "Submit your project before the configured deadline to take part in judging."
+													: stage.id === "review"
+														? "Projects are reviewed before proceeding to live judging."
+														: stage.id === "winners"
+															? "Results will be published once judging and deliberation are complete."
+															: "Prepare a short project demonstration for your team’s assigned judging time."}
+											</p>
+										</div>
+									</li>
+								)
+							)}
+						</ol>
+					</CardContent>
+				</Card>
 			</section>
 		);
 	const milestones = JUDGING_PHASES.filter((value) => value !== "not_started");
@@ -322,20 +329,19 @@ export function JudgingStatusSkeleton({
 			<div className="flex min-w-0 flex-col gap-6">
 				<h2 className="font-medium text-xl">Judging Status</h2>
 				<Skeleton className="my-1 h-3 w-40" />
-				<div className="flex flex-col gap-4">
-					{range(5).map((index) => (
-						<div
-							className="flex min-h-20 items-start gap-6 px-4 py-3"
-							key={index}
-						>
-							<Skeleton className="size-6 shrink-0 rounded-full" />
-							<div className="flex min-w-0 flex-1 flex-col gap-2">
-								<Skeleton className="my-1 h-4 w-48 max-w-full" />
-								<Skeleton className="my-0.5 h-3 w-3/4" />
+				<Card>
+					<CardContent className="flex flex-col gap-4">
+						{range(5).map((index) => (
+							<div className="flex min-h-20 items-start gap-6 py-3" key={index}>
+								<Skeleton className="size-6 shrink-0 rounded-full" />
+								<div className="flex min-w-0 flex-1 flex-col gap-2">
+									<Skeleton className="my-1 h-4 w-48 max-w-full" />
+									<Skeleton className="my-0.5 h-3 w-3/4" />
+								</div>
 							</div>
-						</div>
-					))}
-				</div>
+						))}
+					</CardContent>
+				</Card>
 			</div>
 		);
 	return (
