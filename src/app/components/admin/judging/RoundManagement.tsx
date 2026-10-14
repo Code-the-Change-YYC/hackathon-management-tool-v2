@@ -1,6 +1,5 @@
 "use client";
 
-import { isValid } from "date-fns";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -24,7 +23,11 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
-import { formatDateTime, toDateTimeLocalValue } from "@/lib/datetime";
+import {
+	formatDateTime,
+	fromDateTimeLocalValue,
+	toDateTimeLocalValue
+} from "@/lib/datetime";
 import { api } from "@/trpc/react";
 
 import { ManagementSection } from "./judgingShared";
@@ -105,11 +108,13 @@ export function RoundManagement({
 	const submit = handleSubmit(({ name, startTime, endTime }) => {
 		if (createRound.isPending || updateRound.isPending) return;
 		setMessage("");
-		if (!name.trim() || !startTime || !endTime) return;
+		const parsedStartTime = fromDateTimeLocalValue(startTime);
+		const parsedEndTime = fromDateTimeLocalValue(endTime);
+		if (!name.trim() || !parsedStartTime || !parsedEndTime) return;
 		const values = {
-			endTime: new Date(endTime),
+			endTime: parsedEndTime,
 			name: name.trim(),
-			startTime: new Date(startTime)
+			startTime: parsedStartTime
 		};
 		if (editingId) {
 			updateRound.mutate({ id: editingId, ...values });
@@ -165,7 +170,8 @@ export function RoundManagement({
 							{...register("startTime", {
 								required: "This field is required.",
 								validate: (value) =>
-									isValid(new Date(value)) || "Choose a valid start time."
+									Boolean(fromDateTimeLocalValue(value)) ||
+									"Choose a valid start time."
 							})}
 							type="datetime-local"
 						/>

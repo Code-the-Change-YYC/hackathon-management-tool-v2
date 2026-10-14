@@ -47,6 +47,11 @@ describe("shared participant event and status components", () => {
 			"next"
 		]);
 	});
+	it("decides what counts as today in Calgary, not UTC", () => {
+		// 02:00 UTC tomorrow is 7:00 PM today in Calgary.
+		const evening = [event("evening", 8 * 60, 9 * 60)];
+		expect(getTodayFutureEvents(evening, now)).toEqual(evening);
+	});
 	it("calculates a multi-day countdown and clamps elapsed deadlines", () => {
 		expect(countdownParts(new Date(now.getTime() + 90_061_000), now)).toEqual([
 			1, 1, 1, 1
@@ -62,7 +67,6 @@ describe("shared participant event and status components", () => {
 			<SubmissionCountdown
 				deadline={new Date(now.getTime() + 3000)}
 				startDate={new Date(now.getTime() + 1000)}
-				timeZone="America/Edmonton"
 			/>
 		);
 		expect(screen.getByText("Time until submission opens")).toBeInTheDocument();

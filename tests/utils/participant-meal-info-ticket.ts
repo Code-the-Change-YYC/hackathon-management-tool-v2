@@ -76,14 +76,3 @@ export async function expectStoredTicket(
 		expiresAt: meal.endTime
 	});
 }
-
-// Match the browser's formatter, including its timezone, rather than the worker's.
-export const browserTime = (page: Page, date: Date) =>
-	page.evaluate(
-		(value) =>
-			new Intl.DateTimeFormat("en-US", {
-				hour: "numeric",
-				minute: "2-digit"
-			}).format(new Date(value)),
-		date.toISOString()
-	);

@@ -30,12 +30,10 @@ function useSecondTick() {
 
 export function SubmissionCountdown({
 	deadline,
-	startDate,
-	timeZone
+	startDate
 }: {
 	deadline: Date | null;
 	startDate: Date | null;
-	timeZone: string;
 }) {
 	const now = useSecondTick();
 	const beforeStart = !!startDate && now < startDate;
@@ -55,7 +53,7 @@ export function SubmissionCountdown({
 				</h2>
 				<p className="text-grey-600 text-sm/5">
 					{target
-						? `Submissions ${beforeStart ? "open" : "close"} on ${formatDashboardDate(target, timeZone, true)}`
+						? `Submissions ${beforeStart ? "open" : "close"} on ${formatDashboardDate(target, true)}`
 						: "The submission deadline will be announced soon."}
 				</p>
 			</div>

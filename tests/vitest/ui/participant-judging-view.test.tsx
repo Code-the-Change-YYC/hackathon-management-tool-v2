@@ -20,7 +20,6 @@ const criteria = ["Innovation", "Technical execution"].map((name, index) => ({
 	roundIds: index ? ["round-1"] : []
 }));
 const settings = {
-	timeZone: "America/Edmonton",
 	judgingPhase: "judging",
 	currentRoundId: "round-0",
 	submissionDeadline: new Date("2025-11-09T19:00:00Z")

@@ -48,16 +48,12 @@ export function ParticipantDashboard({ firstName }: { firstName: string }) {
 	);
 }
 
-function getDashboardDescription(
-	startDate: Date | null,
-	now: Date,
-	timeZone: string
-) {
+function getDashboardDescription(startDate: Date | null, now: Date) {
 	if (!startDate) {
 		return "Your events, submission deadline, and judging updates in one place.";
 	}
 	if (now < startDate) {
-		return `Get ready to hack, starting on ${formatDashboardDate(startDate, timeZone)}!`;
+		return `Get ready to hack, starting on ${formatDashboardDate(startDate)}!`;
 	}
 	return "Your hackathon at a glance. Happy hacking!";
 }
@@ -89,21 +85,12 @@ export function DashboardView({
 	const now = useCurrentTime();
 	const currentEvent = getCurrentEvent(events, now);
 	const upcomingEvents = getTodayFutureEvents(events, now);
-	const timeZone = settings?.timeZone ?? "America/Edmonton";
-	const description = getDashboardDescription(
-		settings?.startDate ?? null,
-		now,
-		timeZone
-	);
+	const description = getDashboardDescription(settings?.startDate ?? null, now);
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader description={description} title={`Welcome, ${firstName}!`} />
 			{!eventsError && !eventsLoading && (
-				<CurrentEventBanner
-					colour="red"
-					event={currentEvent}
-					timeZone={timeZone}
-				/>
+				<CurrentEventBanner colour="red" event={currentEvent} />
 			)}
 			<div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
 				<Card>
@@ -138,7 +125,6 @@ export function DashboardView({
 								}))}
 								now={now}
 								showGroupLabels={false}
-								timeZone={timeZone}
 							/>
 						</DataState>
 					</CardContent>
@@ -154,7 +140,6 @@ export function DashboardView({
 								<SubmissionCountdown
 									deadline={settings?.submissionDeadline ?? null}
 									startDate={settings?.startDate ?? null}
-									timeZone={timeZone}
 								/>
 								<JudgingStatus
 									phase={settings?.judgingPhase ?? "not_started"}

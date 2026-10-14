@@ -14,7 +14,6 @@ interface BannerProps {
 	location?: string;
 	startTime?: Date;
 	endTime?: Date;
-	timeZone?: string;
 	href?: string;
 	onClick?: () => void;
 	className?: string;
@@ -29,7 +28,6 @@ export default function Banner({
 	location,
 	startTime,
 	endTime,
-	timeZone,
 	href,
 	onClick,
 	className
@@ -46,7 +44,7 @@ export default function Banner({
 	};
 	const timeRange = [startTime, endTime]
 		.filter((time) => time !== undefined)
-		.map((time) => formatTime(time, timeZone))
+		.map((time) => formatTime(time))
 		.join(" - ");
 	const hasAction = Boolean(href || onClick);
 

@@ -26,7 +26,6 @@ export function ParticipantSchedule() {
 				void events.refetch();
 				void settings.refetch();
 			}}
-			timeZone={settings.data?.timeZone ?? "America/Edmonton"}
 		/>
 	);
 }
@@ -34,13 +33,11 @@ export function ParticipantSchedule() {
 // Separate view keeps data fetching out of reusable presentation components.
 export function ScheduleView({
 	events,
-	timeZone,
 	loading = false,
 	error = false,
 	retry = () => {}
 }: {
 	events: DashboardEvent[];
-	timeZone: string;
 	loading?: boolean;
 	error?: boolean;
 	retry?: () => void;
@@ -54,11 +51,7 @@ export function ScheduleView({
 				title="Schedule"
 			/>
 			{!error && !loading && (
-				<CurrentEventBanner
-					colour="purple"
-					event={currentEvent}
-					timeZone={timeZone}
-				/>
+				<CurrentEventBanner colour="purple" event={currentEvent} />
 			)}
 			<Card>
 				<CardContent>
@@ -76,7 +69,6 @@ export function ScheduleView({
 								eventType: event.type
 							}))}
 							now={now}
-							timeZone={timeZone}
 						/>
 					</DataState>
 				</CardContent>

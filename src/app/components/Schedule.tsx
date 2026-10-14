@@ -1,6 +1,4 @@
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
-import { formatLongDate } from "@/lib/datetime";
+import { formatDateKey, formatLongDate } from "@/lib/datetime";
 import { ScheduleItem, type ScheduleItemData } from "./ScheduleItem";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
 
@@ -11,14 +9,9 @@ export type ScheduleGroup = {
 };
 
 // TODO: do this grouping logic in the procedure instead
-export function groupScheduleItemsByDate(
-	items: ScheduleItemData[],
-	timeZone?: string
-) {
+export function groupScheduleItemsByDate(items: ScheduleItemData[]) {
 	return items.reduce<ScheduleGroup[]>((groups, item) => {
-		const key = format(item.startTime, "yyyy-MM-dd", {
-			in: timeZone ? tz(timeZone) : undefined
-		});
+		const key = formatDateKey(item.startTime);
 		const existingGroup = groups.find((group) => group.key === key);
 
 		if (existingGroup) {
@@ -28,7 +21,7 @@ export function groupScheduleItemsByDate(
 
 		groups.push({
 			key,
-			label: formatLongDate(item.startTime, timeZone),
+			label: formatLongDate(item.startTime),
 			items: [item]
 		});
 
@@ -41,7 +34,6 @@ interface ScheduleProps {
 	now: Date;
 	emptyTitle: string;
 	emptyDescription: string;
-	timeZone?: string;
 	showGroupLabels?: boolean;
 }
 
@@ -50,10 +42,9 @@ export function Schedule({
 	now,
 	emptyTitle,
 	emptyDescription,
-	timeZone,
 	showGroupLabels = true
 }: ScheduleProps) {
-	const groupedItems = groupScheduleItemsByDate(items, timeZone);
+	const groupedItems = groupScheduleItemsByDate(items);
 
 	if (groupedItems.length === 0) {
 		return (
@@ -73,12 +64,7 @@ export function Schedule({
 					{showGroupLabels && <h3 className="font-medium">{group.label}</h3>}
 					<ol className="flex flex-col gap-6">
 						{group.items.map((item) => (
-							<ScheduleItem
-								item={item}
-								key={item.id}
-								now={now}
-								timeZone={timeZone}
-							/>
+							<ScheduleItem item={item} key={item.id} now={now} />
 						))}
 					</ol>
 				</div>

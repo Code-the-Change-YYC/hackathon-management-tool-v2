@@ -183,7 +183,6 @@ export function JudgingView({
 	retryScores?: () => void;
 }) {
 	const now = useCurrentTime();
-	const timeZone = settings?.timeZone ?? "America/Edmonton";
 	const phase = settings?.judgingPhase ?? "not_started";
 	const ordered = rounds
 		.slice()
@@ -226,14 +225,12 @@ export function JudgingView({
 						image={<CurrentEventImages />}
 						location={assignment.room.name}
 						startTime={assignment.timeSlot ?? assignment.room.round.startTime}
-						timeZone={timeZone}
 						title={`${assignment.room.round.name}: your team’s judging assignment`}
 					/>
 				) : (
 					<CurrentEventBanner
 						colour="red"
 						event={getCurrentEvent(events, now)}
-						timeZone={timeZone}
 					/>
 				)}
 				<JudgingStatus

@@ -1,6 +1,11 @@
+import { TZDate } from "@date-fns/tz";
 import { eq } from "drizzle-orm";
-
-import { formatLongDate, formatTime } from "@/lib/datetime";
+import {
+	CALGARY_TIME_ZONE,
+	formatDateKey,
+	formatLongDate,
+	formatTime
+} from "@/lib/datetime";
 import { db } from "@/server/db";
 import { event } from "@/server/db/event-schema";
 import { EventStatus, EventType, Role } from "@/types/types";
@@ -162,10 +167,12 @@ test("groups meals by calendar date", async ({
 	authenticatedPage: page,
 	createMeal
 }) => {
-	const today = new Date();
-	today.setHours(12, 0, 0, 0);
-	const tomorrow = new Date(today);
-	tomorrow.setDate(tomorrow.getDate() + 1);
+	// Noon in Calgary, whatever time zone the test runner uses.
+	const noon = new TZDate(Date.now(), CALGARY_TIME_ZONE);
+	noon.setHours(12, 0, 0, 0);
+	const today = new Date(noon.getTime());
+	noon.setDate(noon.getDate() + 1);
+	const tomorrow = new Date(noon.getTime());
 	const meals = [];
 	for (const [title, startTime] of [
 		["Today lunch", today],
@@ -194,7 +201,7 @@ test("groups meals by calendar date", async ({
 		const group = heading.locator("..");
 		await expect(group.getByRole("heading", { level: 4 })).toHaveText(
 			meals
-				.filter((meal) => meal.startTime.toDateString() === date.toDateString())
+				.filter((meal) => formatDateKey(meal.startTime) === formatDateKey(date))
 				.map((meal) => meal.title)
 		);
 	}

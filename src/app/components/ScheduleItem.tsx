@@ -102,10 +102,9 @@ export function getScheduleItemStatus(item: ScheduleItemData, now: Date) {
 type ScheduleItemProps = {
 	item: ScheduleItemData;
 	now: Date;
-	timeZone?: string;
 };
 
-export function ScheduleItem({ item, now, timeZone }: ScheduleItemProps) {
+export function ScheduleItem({ item, now }: ScheduleItemProps) {
 	const status = getScheduleItemStatus(item, now);
 	const { badgeClassName, previewClassName, iconColor } = getScheduleItemTheme(
 		item.eventType
@@ -142,8 +141,7 @@ export function ScheduleItem({ item, now, timeZone }: ScheduleItemProps) {
 							<span className="flex items-center gap-2">
 								<span className="flex items-center gap-1">
 									<Alarm1Line aria-hidden className="size-4 shrink-0" />
-									{formatTime(item.startTime, timeZone)} –{" "}
-									{formatTime(item.endTime, timeZone)}
+									{formatTime(item.startTime)} – {formatTime(item.endTime)}
 								</span>
 							</span>
 							{showStatusBadge && (

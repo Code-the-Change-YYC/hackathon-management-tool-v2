@@ -1,4 +1,5 @@
 import { differenceInMinutes } from "date-fns";
+import { formatDateKey } from "@/lib/datetime";
 import { type JudgeAssignment, sortAssignments } from "./judgePortal";
 
 export function inferDuration(
@@ -28,7 +29,7 @@ export function groupScheduleByDate(assignments: JudgeAssignment[]) {
 	const groups = new Map<string, JudgeAssignment[]>();
 	for (const assignment of assignments.slice().sort(sortAssignments)) {
 		if (!assignment.timeSlot) continue;
-		const key = assignment.timeSlot.toDateString();
+		const key = formatDateKey(assignment.timeSlot);
 		const group = groups.get(key);
 		if (group) group.push(assignment);
 		else groups.set(key, [assignment]);
