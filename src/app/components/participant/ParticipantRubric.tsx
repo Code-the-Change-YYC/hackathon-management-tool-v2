@@ -78,7 +78,7 @@ export function ParticipantRubric({
 			</>
 		);
 	return (
-		<section className="flex flex-col gap-4 rounded-2xl bg-purple-50 px-8 py-4">
+		<section className="flex flex-col gap-4">
 			<p className="m-0 font-medium text-base/6 italic">
 				{scores
 					? "Click on any category to view the detailed scoring criteria for each round of judging."
@@ -189,7 +189,7 @@ function RubricRowSkeleton() {
 
 export function ParticipantRubricSkeleton() {
 	return (
-		<div className="flex flex-col gap-4 rounded-2xl bg-purple-50 px-8 py-4">
+		<div className="flex flex-col gap-4">
 			<Skeleton className="my-1 h-4 w-96 max-w-full" />
 			<div className="flex gap-2">
 				<Skeleton className="h-7 w-36" />

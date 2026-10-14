@@ -4,6 +4,7 @@ import { useState } from "react";
 import Banner from "@/app/components/Banner";
 import type { Criterion } from "@/app/components/judges/judgePortal";
 import PageHeader from "@/app/components/PageHeader";
+import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import {
 	Empty,
 	EmptyDescription,
@@ -22,8 +23,8 @@ import { type JudgingRound, judgingStages } from "@/lib/participant-judging";
 import type { RouterOutputs } from "@/trpc/react";
 import { CurrentEventBanner } from "../CurrentEventBanner";
 import CurrentEventImages from "../CurrentEventImages";
+import { JudgingStatus } from "../dashboard/JudgingStatus";
 import { ParticipantRubric } from "../ParticipantRubric";
-import { JudgingStatus } from "../ParticipantStatus";
 
 type Settings = RouterOutputs["hackathonSettings"]["get"];
 type Assignment = RouterOutputs["judgingAssignments"]["getMineForActiveRound"];
@@ -178,7 +179,7 @@ export function JudgingView({
 				description="Understand the scoring so you know where to focus."
 				title="Judging"
 			/>
-			<div className="flex flex-col gap-12">
+			<div className="flex flex-col gap-6">
 				{assignment ? (
 					<Banner
 						buttonText="Join meeting"
@@ -204,34 +205,34 @@ export function JudgingView({
 					rounds={ordered}
 					variant="detailed"
 				/>
-				<section
-					aria-labelledby="rubric-title"
-					className="flex min-w-0 flex-col gap-6"
-				>
-					<h2 className="font-medium text-xl" id="rubric-title">
-						Judging Rubric
-					</h2>
-					<RoundRubric
-						available={available}
-						criteria={criteria}
-						rounds={ordered}
-					/>
-				</section>
-				{phase === "winners_announced" && (
-					<section
-						aria-labelledby="team-scores-title"
-						className="flex min-w-0 flex-col gap-6"
-					>
-						<h2 className="font-medium text-xl" id="team-scores-title">
-							Team Scores
-						</h2>
+				<Card className="min-w-0">
+					<CardHeader>
+						<h2 className="font-medium text-xl">Judging Rubric</h2>
+					</CardHeader>
+					<CardContent>
 						<RoundRubric
-							available={new Set(releasedScores.map((score) => score.roundId))}
+							available={available}
 							criteria={criteria}
 							rounds={ordered}
-							scores={releasedScores}
 						/>
-					</section>
+					</CardContent>
+				</Card>
+				{phase === "winners_announced" && (
+					<Card className="min-w-0">
+						<CardHeader>
+							<h2 className="font-medium text-xl">Team Scores</h2>
+						</CardHeader>
+						<CardContent>
+							<RoundRubric
+								available={
+									new Set(releasedScores.map((score) => score.roundId))
+								}
+								criteria={criteria}
+								rounds={ordered}
+								scores={releasedScores}
+							/>
+						</CardContent>
+					</Card>
 				)}
 			</div>
 		</div>

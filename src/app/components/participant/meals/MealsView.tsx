@@ -29,7 +29,7 @@ export function MealsView({
 				description="Your meal tickets, dietary restrictions, and upcoming meal times."
 				title="Meals"
 			/>
-			<div className="flex flex-col gap-12">
+			<div className="flex flex-col gap-6">
 				<MealTicket displayName={displayName} ticket={ticket} />
 				<DietaryRestriction dietaryRestrictions={dietaryRestrictions} />
 				<MealScheduleSection meals={meals} now={now} />

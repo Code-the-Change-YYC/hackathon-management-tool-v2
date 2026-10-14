@@ -16,7 +16,8 @@ import {
 import type { JudgingRound } from "@/lib/participant-judging";
 import type { RouterOutputs } from "@/trpc/react";
 import { CurrentEventBanner } from "../CurrentEventBanner";
-import { JudgingStatus, SubmissionCountdown } from "../ParticipantStatus";
+import { JudgingStatus } from "./JudgingStatus";
+import { SubmissionCountdown } from "./SubmissionCountdown";
 
 type Settings = RouterOutputs["hackathonSettings"]["get"];
 

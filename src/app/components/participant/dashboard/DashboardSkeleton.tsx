@@ -2,10 +2,8 @@ import { BannerSkeleton } from "@/app/components/Banner";
 import { ScheduleItemsSkeleton } from "@/app/components/Schedule";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import {
-	JudgingStatusSkeleton,
-	SubmissionCountdownSkeleton
-} from "../ParticipantStatus";
+import { JudgingStatusSkeleton } from "./JudgingStatus";
+import { SubmissionCountdownSkeleton } from "./SubmissionCountdown";
 
 export function DashboardSkeleton() {
 	return (

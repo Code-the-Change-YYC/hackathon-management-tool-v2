@@ -1,9 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-	JudgingStatus,
-	SubmissionCountdown
-} from "@/app/components/participant/ParticipantStatus";
+import { JudgingStatus } from "@/app/components/participant/dashboard/JudgingStatus";
+import { SubmissionCountdown } from "@/app/components/participant/dashboard/SubmissionCountdown";
 import {
 	countdownParts,
 	type DashboardEvent,

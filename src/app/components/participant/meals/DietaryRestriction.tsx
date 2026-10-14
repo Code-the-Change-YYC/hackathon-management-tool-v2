@@ -4,7 +4,7 @@ import { Edit2Line } from "@mingcute/react";
 import { useState } from "react";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
-import { Card, CardAction, CardContent } from "@/app/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import {
 	DIETARY_RESTRICTION_LABELS,
 	toDietaryRestrictions
@@ -22,13 +22,22 @@ export function DietaryRestriction({
 	const [isDialogueOpen, setIsDialogueOpen] = useState(false);
 
 	return (
-		<section className="flex flex-col gap-4">
-			<h2 className="font-medium text-dark-grey text-xl">
-				Dietary Restrictions
-			</h2>
-
+		<>
 			<Card>
-				<CardContent className="flex items-center justify-between">
+				<CardHeader>
+					<div className="flex flex-wrap items-center justify-between gap-1">
+						<h2 className="font-medium text-xl">Dietary Restrictions</h2>
+						<Button
+							onClick={() => setIsDialogueOpen(true)}
+							size="sm"
+							variant="ghost"
+						>
+							Edit
+							<Edit2Line data-icon="inline-end" />
+						</Button>
+					</div>
+				</CardHeader>
+				<CardContent>
 					{restrictions.length > 0 ? (
 						<div className="flex flex-wrap gap-2">
 							{restrictions.map((restriction) => (
@@ -42,16 +51,6 @@ export function DietaryRestriction({
 							No dietary restrictions registered.
 						</p>
 					)}
-					<CardAction>
-						<Button
-							onClick={() => setIsDialogueOpen(true)}
-							size="sm"
-							variant="ghost"
-						>
-							Edit
-							<Edit2Line data-icon="inline-end" />
-						</Button>
-					</CardAction>
 				</CardContent>
 			</Card>
 
@@ -61,6 +60,6 @@ export function DietaryRestriction({
 					onCloseAction={() => setIsDialogueOpen(false)}
 				/>
 			) : null}
-		</section>
+		</>
 	);
 }
