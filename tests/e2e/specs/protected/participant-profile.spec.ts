@@ -7,7 +7,13 @@ import { expect, test } from "../../fixtures/auth.fixture";
 
 test.use({
 	authUserOptions: {
+		age: 21,
+		countryOfResidence: "CA",
+		firstName: "Profile",
+		lastName: "Participant",
+		levelOfStudy: "undergraduate_three_plus_year",
 		name: "Profile Participant",
+		phoneNumber: "+14035550123",
 		role: Role.PARTICIPANT,
 		school: "SAIT"
 	}
@@ -77,13 +83,13 @@ test("validates and saves profile edits", async ({
 	await page.getByRole("button", { name: "Edit Info" }).click();
 
 	await page.getByLabel("First name").fill("");
-	await page.getByLabel("Institution").click();
+	await page.getByRole("combobox", { name: "Institution" }).click();
 	await page
 		.getByRole("option", { name: "University of Calgary", exact: true })
 		.click();
 	await page.getByRole("button", { name: "Save changes" }).click();
 
-	await expect(page.getByText("First name is required")).toBeVisible();
+	await expect(page.getByText("Enter your first name")).toBeVisible();
 	await expect(page.getByText("Select your major")).toBeVisible();
 
 	await page.getByLabel("First name").fill("Updated");
@@ -102,6 +108,7 @@ test("validates and saves profile edits", async ({
 		where: eq(user.id, authUser.id)
 	});
 	expect(saved).toMatchObject({
+		firstName: "Updated",
 		name: "Updated Participant",
 		school: "University of Calgary",
 		program: "computer_science"

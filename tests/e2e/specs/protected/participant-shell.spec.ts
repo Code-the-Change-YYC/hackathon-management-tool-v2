@@ -32,7 +32,7 @@ test.describe("on mobile", () => {
 		authenticatedPage: page
 	}) => {
 		await page.goto("/participant");
-		const myTeam = page.getByRole("link", { name: "My Team", exact: true });
+		const myTeam = page.getByRole("link", { name: "Team", exact: true });
 		await expect(myTeam).toBeHidden();
 
 		await page.getByRole("button", { name: "Toggle Sidebar" }).click();

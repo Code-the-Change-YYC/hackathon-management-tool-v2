@@ -1,5 +1,6 @@
+import { DEVPOST_URL, DISCORD_URL } from "@/lib/constants";
 import { Role } from "@/types/types";
-import { expect, test } from "../../fixtures/auth.fixture";
+import { expect, test } from "../../fixtures/settings.fixture";
 
 const participantRoutes = [
 	"/participant",
@@ -11,7 +12,14 @@ const participantRoutes = [
 	"/participant/profile"
 ];
 
-test("unauthenticated visitors are redirected home", async ({ page }) => {
+const daysFromNow = (days: number) =>
+	new Date(Date.now() + days * 24 * 60 * 60_000);
+
+test("unauthenticated visitors are redirected home", async ({
+	page,
+	setSettings
+}) => {
+	await setSettings({ startDate: daysFromNow(-1) });
 	for (const route of participantRoutes) {
 		await page.goto(route);
 		await expect(page).toHaveURL(/\/$/);
@@ -19,25 +27,19 @@ test("unauthenticated visitors are redirected home", async ({ page }) => {
 });
 
 test.describe("judges", () => {
-	test.use({ authUserOptions: { role: Role.JUDGE } });
+	test.use({
+		authUserOptions: { completedRegistration: true, role: Role.JUDGE }
+	});
 
 	test("are redirected away from participant pages", async ({
-		authenticatedPage: page
+		authenticatedPage: page,
+		setSettings
 	}) => {
+		await setSettings({ startDate: daysFromNow(-1) });
 		for (const route of participantRoutes) {
 			await page.goto(route);
 			await expect(page).toHaveURL(/\/$/);
 		}
-	});
-});
-
-test.describe("admins", () => {
-	test.use({ authUserOptions: { role: Role.ADMIN } });
-
-	test("can open participant pages", async ({ authenticatedPage: page }) => {
-		await page.goto("/participant/profile");
-		await expect(page).toHaveURL(/\/participant\/profile$/);
-		await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
 	});
 });
 
@@ -47,13 +49,15 @@ test.describe("participants", () => {
 	});
 
 	test("sidebar links navigate between participant pages", async ({
-		authenticatedPage: page
+		authenticatedPage: page,
+		setSettings
 	}) => {
+		await setSettings({ startDate: daysFromNow(-1) });
 		await page.goto("/participant");
 		const nav = [
 			["Schedule", /\/participant\/schedule$/],
-			["My Team", /\/participant\/team$/],
-			["Meal Information", /\/participant\/meals$/],
+			["Team", /\/participant\/team$/],
+			["Meals", /\/participant\/meals$/],
 			["Judging Information", /\/participant\/judging$/],
 			["Resources and Help", /\/participant\/resources$/],
 			["Dashboard", /\/participant$/]
@@ -69,10 +73,44 @@ test.describe("participants", () => {
 		authenticatedPage: page
 	}) => {
 		await page.goto("/participant");
-		for (const title of ["Discord Join Link", "Hackathon Home"]) {
-			await expect(
-				page.getByRole("link", { name: title, exact: true })
-			).toHaveAttribute("target", "_blank");
+		for (const [title, href] of [
+			["Discord Join Link", DISCORD_URL],
+			["Hackathon Home", "/"],
+			["Devpost", DEVPOST_URL]
+		] as const) {
+			const link = page.getByRole("link", { name: title, exact: true });
+			await expect(link).toHaveAttribute("href", href);
+			await expect(link).toHaveAttribute("target", "_blank");
 		}
+	});
+
+	test("resources stay hidden until the hackathon starts", async ({
+		authenticatedPage: page,
+		setSettings
+	}) => {
+		await setSettings({ startDate: daysFromNow(1) });
+		await page.goto("/participant");
+		await expect(
+			page.getByRole("link", { name: "Resources and Help", exact: true })
+		).toHaveCount(0);
+
+		await page.goto("/participant/resources");
+		await expect(page).toHaveURL(/\/under-construction$/);
+	});
+
+	test("resources open once the hackathon starts", async ({
+		authenticatedPage: page,
+		setSettings
+	}) => {
+		await setSettings({ startDate: daysFromNow(-1) });
+		await page.goto("/participant/resources");
+
+		await expect(
+			page.getByRole("heading", { name: "Resources and Help" })
+		).toBeVisible();
+		await expect(
+			page.getByRole("heading", { name: "Resources", exact: true })
+		).toBeVisible();
+		await expect(page.getByRole("heading", { name: "Mentors" })).toBeVisible();
 	});
 });

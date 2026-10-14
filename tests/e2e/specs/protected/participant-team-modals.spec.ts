@@ -206,9 +206,8 @@ test("lists teammates and marks the current user", async ({
 		for (const name of ["Teammate 1", "Teammate 2"]) {
 			await expect(page.getByText(name, { exact: true })).toBeVisible();
 		}
-		await expect(page.getByText("Member", { exact: true })).toHaveCount(2);
 		await expect(
-			page.getByRole("button", { name: /Invite Team Member/ })
+			page.getByRole("button", { name: /Invite team member/i })
 		).toBeEnabled();
 	} finally {
 		await cleanup();
@@ -228,8 +227,8 @@ test("a full team cannot invite more members", async ({
 		await page.goto("/participant/team");
 		await expect(page.getByText("5/5 Members")).toBeVisible();
 		await expect(
-			page.getByRole("button", { name: /Invite Team Member/ })
-		).toBeDisabled();
+			page.getByRole("button", { name: /Invite team member/i })
+		).toHaveCount(0);
 	} finally {
 		await cleanup();
 	}

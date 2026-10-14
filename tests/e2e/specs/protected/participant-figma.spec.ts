@@ -62,10 +62,16 @@ const cleanups: (() => Promise<void>)[] = [];
 test.beforeEach(async ({ authUser }) => {
 	const teams = new TeamFixtureTracker();
 	const events = new EventFixtureTracker();
+	const teammates: Awaited<ReturnType<typeof createTestUser>>[] = [];
+	cleanups.push(async () => {
+		await events.cleanup();
+		await teams.cleanup();
+		for (const { cleanup } of teammates) await cleanup();
+	});
 	const team = await teams.create("Code Wizards");
-	const teammates = await Promise.all(
-		["Fiona Truong", "Grace Ilori"].map((name) => createTestUser({ name }))
-	);
+	for (const name of ["Fiona Truong", "Grace Ilori"]) {
+		teammates.push(await createTestUser({ name }));
+	}
 	await db.insert(member).values(
 		[authUser.id, ...teammates.map(({ user }) => user.id)].map((userId, i) => ({
 			id: crypto.randomUUID(),
@@ -92,12 +98,6 @@ test.beforeEach(async ({ authUser }) => {
 		.update(organization)
 		.set({ name: "Code Wizards" })
 		.where(eq(organization.id, team.id));
-
-	cleanups.push(async () => {
-		await events.cleanup();
-		await teams.cleanup();
-		for (const { cleanup } of teammates) await cleanup();
-	});
 });
 
 test.afterEach(async () => {

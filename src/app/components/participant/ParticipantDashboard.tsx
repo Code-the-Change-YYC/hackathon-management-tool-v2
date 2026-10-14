@@ -4,7 +4,7 @@ import { ArrowRightLine } from "@mingcute/react";
 import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
 import { Schedule } from "@/app/components/Schedule";
-import { Button } from "@/app/components/ui/button";
+import { buttonVariants } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import {
@@ -13,6 +13,7 @@ import {
 	getCurrentEvent,
 	getTodayFutureEvents
 } from "@/lib/participant-events";
+import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { CurrentEventBanner } from "./CurrentEventBanner";
 import { DataState } from "./DataState";
@@ -110,18 +111,16 @@ export function DashboardView({
 					<CardHeader>
 						<div className="flex flex-wrap items-center justify-between gap-1">
 							<h2 className="font-medium text-[22px]/7">Upcoming Events</h2>
-							<Button
-								className="active:not-aria-[haspopup]:translate-y-0" // Stops button from moving down when clicked
-								nativeButton={false}
-								render={
-									<Link href="/participant/schedule">
-										View full schedule
-										<ArrowRightLine className="size-5" data-icon="inline-end" />
-									</Link>
-								}
-								size="sm"
-								variant="ghost"
-							/>
+							<Link
+								className={cn(
+									buttonVariants({ size: "sm", variant: "ghost" }),
+									"active:not-aria-[haspopup]:translate-y-0"
+								)}
+								href="/participant/schedule"
+							>
+								View full schedule
+								<ArrowRightLine className="size-5" data-icon="inline-end" />
+							</Link>
 						</div>
 					</CardHeader>
 					<CardContent>

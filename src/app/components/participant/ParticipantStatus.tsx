@@ -8,7 +8,7 @@ import {
 } from "@mingcute/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button } from "@/app/components/ui/button";
+import { buttonVariants } from "@/app/components/ui/button";
 import {
 	JUDGING_PHASE_LABELS,
 	JUDGING_PHASES,
@@ -211,18 +211,16 @@ export function JudgingStatus({
 					<h2 className="font-medium text-[22px]/7" id="judging-title">
 						Judging Status
 					</h2>
-					<Button
-						className="active:not-aria-[haspopup]:translate-y-0" // Stops button from moving down when clicked
-						nativeButton={false}
-						render={
-							<Link href="/participant/judging">
-								View judging info
-								<ArrowRightLine className="size-5" data-icon="inline-end" />
-							</Link>
-						}
-						size="sm"
-						variant="ghost"
-					/>
+					<Link
+						className={cn(
+							buttonVariants({ size: "sm", variant: "ghost" }),
+							"active:not-aria-[haspopup]:translate-y-0"
+						)}
+						href="/participant/judging"
+					>
+						View judging info
+						<ArrowRightLine className="size-5" data-icon="inline-end" />
+					</Link>
 				</div>
 				<p aria-live="polite" className="text-grey-600 text-sm/5">
 					{label}
