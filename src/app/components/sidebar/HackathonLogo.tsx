@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { EVENT_NAME, EVENT_YEAR } from "@/lib/constants";
 
 export default function HackathonLogo() {
 	return (
@@ -12,9 +13,9 @@ export default function HackathonLogo() {
 				width={72}
 			/>
 			<span className="font-semibold text-lg leading-none tracking-tight">
-				Hack the Change
+				{EVENT_NAME}
 				<br />
-				2026
+				{EVENT_YEAR}
 			</span>
 		</div>
 	);
