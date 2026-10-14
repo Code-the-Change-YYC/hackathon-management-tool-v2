@@ -32,8 +32,8 @@ export function DashboardSkeleton() {
 					</CardContent>
 				</Card>
 				<Card>
-					<CardContent>
-						<div className="grid gap-12 sm:grid-cols-2 lg:min-h-89 lg:grid-cols-1 lg:content-between lg:gap-10">
+					<CardContent className="@container">
+						<div className="grid gap-12 max-lg:@[34rem]:grid-cols-2 lg:min-h-89 lg:content-between lg:gap-10">
 							<SubmissionCountdownSkeleton />
 							<JudgingStatusSkeleton />
 						</div>
