@@ -2,10 +2,14 @@ import { redirect } from "next/navigation";
 import PageHeader from "@/app/components/PageHeader";
 import Mentors from "@/app/components/resources/MentorsSection";
 import Resources from "@/app/components/resources/ResourcesSection";
-import { HACKATHON_DATE } from "@/lib/constants";
+import { api } from "@/trpc/server";
 
-export default function ResourcePage() {
-	if (Date.now() < HACKATHON_DATE.getTime()) {
+export default async function ResourcePage() {
+	const settingsQuery = await api.hackathonSettings.get();
+	const startDate = settingsQuery?.startDate;
+	const showResources = startDate && Date.now() >= startDate?.getTime();
+
+	if (!showResources) {
 		redirect("/under-construction");
 	}
 

@@ -1,9 +1,10 @@
 import { connection } from "next/server";
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { resolveAvatarSrc } from "@/lib/avatars";
-import { DEVPOST_URL, DISCORD_URL, HACKATHON_DATE } from "@/lib/constants";
+import { DEVPOST_URL, DISCORD_URL } from "@/lib/constants";
 import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
+import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
 import type { NavGroup, NavItem } from "../components/layout/AppSidebar";
 import {
@@ -17,10 +18,13 @@ export default async function ParticipantLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const { user } = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
-
 	// Stops prerendering to allow dynamically hiding/showing participant resources link
 	await connection();
+	const { user } = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
+
+	const settingsQuery = await api.hackathonSettings.get();
+	const startDate = settingsQuery?.startDate;
+	const showResources = startDate && Date.now() >= startDate?.getTime();
 
 	const PARTICPANT_NAV_GROUPS: NavGroup[] = [
 		{
@@ -44,7 +48,7 @@ export default async function ParticipantLayout({
 					href: "/participant/judging",
 					icon: "task"
 				},
-				...(Date.now() >= HACKATHON_DATE.getTime()
+				...(showResources
 					? [
 							{
 								title: "Resources and Help",

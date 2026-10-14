@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Fragment, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { HACKATHON_DATE } from "@/lib/constants";
+import { api } from "@/trpc/react";
 import type { TimeLeft } from "@/types/landingPage";
 
 const ZERO_TIME: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -11,10 +11,12 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 // Null until mounted, so the tiles first render with the real time instead of
 // flipping over from 00 on page load.
-function useCountdown(targetDate: Date): TimeLeft | null {
+function useCountdown(targetDate: Date | null): TimeLeft | null {
 	const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
 
 	useEffect(() => {
+		if (targetDate == null) return;
+
 		const calculate = (): TimeLeft => {
 			const diff = targetDate.getTime() - Date.now();
 			if (diff <= 0) return ZERO_TIME;
@@ -130,7 +132,9 @@ function CountdownWindow({ children }: { children: React.ReactNode }) {
 }
 
 export default function Countdown() {
-	const timeLeft = useCountdown(HACKATHON_DATE);
+	const settingsQuery = api.hackathonSettings.get.useQuery();
+	const startDate = settingsQuery.data?.startDate;
+	const timeLeft = useCountdown(startDate ?? null);
 
 	return (
 		<CountdownWindow>
