@@ -19,7 +19,8 @@ import {
 import {
 	SidebarMenu,
 	SidebarMenuButton,
-	SidebarMenuItem
+	SidebarMenuItem,
+	useSidebar
 } from "@/app/components/ui/sidebar";
 import { getInitials } from "@/lib/names";
 import { authClient } from "@/server/better-auth/client";
@@ -36,6 +37,7 @@ export function SidebarUserMenu({
 	profileHref
 }: SidebarUserMenuProps) {
 	const router = useRouter();
+	const { setOpenMobile } = useSidebar();
 
 	async function logOut() {
 		const { error } = await authClient.signOut();
@@ -76,6 +78,7 @@ export function SidebarUserMenu({
 							{profileHref && (
 								<DropdownMenuItem
 									className="rounded-lg p-2 font-medium"
+									onClick={() => setOpenMobile(false)}
 									render={<Link href={profileHref} />}
 								>
 									<User3Line />
