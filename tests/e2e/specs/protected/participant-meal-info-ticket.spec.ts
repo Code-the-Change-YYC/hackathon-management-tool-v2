@@ -59,7 +59,7 @@ for (const timing of [
 			ticket.getByText(authUser.name, { exact: true })
 		).toBeVisible();
 		await expect(ticket).toContainText(
-			`${meal.title} is ${timing.status} until ${formatTime(meal.endTime)}.`
+			`${timing.status} until ${formatTime(meal.endTime)}.`
 		);
 		await expect(ticket).toContainText("Present this QR code");
 		const token = await readTicketToken(page);

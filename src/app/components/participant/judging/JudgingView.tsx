@@ -205,9 +205,11 @@ export function JudgingView({
 					rounds={ordered}
 					variant="detailed"
 				/>
-				<Card className="min-w-0">
+				<Card aria-labelledby="rubric-title" className="min-w-0" role="region">
 					<CardHeader>
-						<h2 className="font-medium text-xl">Judging Rubric</h2>
+						<h2 className="font-medium text-xl" id="rubric-title">
+							Judging Rubric
+						</h2>
 					</CardHeader>
 					<CardContent>
 						<RoundRubric
@@ -218,9 +220,15 @@ export function JudgingView({
 					</CardContent>
 				</Card>
 				{phase === "winners_announced" && (
-					<Card className="min-w-0">
+					<Card
+						aria-labelledby="team-scores-title"
+						className="min-w-0"
+						role="region"
+					>
 						<CardHeader>
-							<h2 className="font-medium text-xl">Team Scores</h2>
+							<h2 className="font-medium text-xl" id="team-scores-title">
+								Team Scores
+							</h2>
 						</CardHeader>
 						<CardContent>
 							<RoundRubric

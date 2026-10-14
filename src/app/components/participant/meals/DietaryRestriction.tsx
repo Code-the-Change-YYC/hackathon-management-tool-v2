@@ -23,10 +23,12 @@ export function DietaryRestriction({
 
 	return (
 		<>
-			<Card>
+			<Card aria-labelledby="dietary-restrictions-title" role="region">
 				<CardHeader>
 					<div className="flex flex-wrap items-center justify-between gap-1">
-						<h2 className="font-medium text-xl">Dietary Restrictions</h2>
+						<h2 className="font-medium text-xl" id="dietary-restrictions-title">
+							Dietary Restrictions
+						</h2>
 						<Button
 							onClick={() => setIsDialogueOpen(true)}
 							size="sm"

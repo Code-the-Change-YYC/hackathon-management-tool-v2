@@ -30,9 +30,7 @@ decoder.setZXingModuleOverrides({
 });
 
 export const ticketSection = (page: Page) =>
-	page.locator("section").filter({
-		has: page.getByRole("heading", { name: "Your Meal Ticket", exact: true })
-	});
+	page.getByRole("region", { name: "Meal ticket", exact: true });
 export const qrCode = (page: Page) =>
 	ticketSection(page).getByRole("img", {
 		name: "Meal ticket QR code",

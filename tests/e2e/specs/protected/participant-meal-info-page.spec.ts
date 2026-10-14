@@ -23,21 +23,23 @@ test.use({
 
 // Given I am signed in as a participant
 // When I navigate to /participant/meals
-// Then I see Meals, Your Meal Ticket, Dietary Restrictions, and Meal Schedule.
+// Then I see Meals, my meal ticket, Dietary Restrictions, and Meal Schedule.
 test(
 	"participant can access all meal information sections",
 	{ tag: "@smoke" },
 	async ({ authenticatedPage: page }) => {
 		await page.goto(path);
 		await expect(page).toHaveURL(path);
+		await expect(
+			page.getByRole("heading", { name: "Meals", exact: true })
+		).toBeVisible();
 		for (const name of [
-			"Meals",
-			"Your Meal Ticket",
+			"Meal ticket",
 			"Dietary Restrictions",
 			"Meal Schedule"
 		]) {
 			await expect(
-				page.getByRole("heading", { name, exact: true })
+				page.getByRole("region", { name, exact: true })
 			).toBeVisible();
 		}
 	}
@@ -54,14 +56,16 @@ test.describe("admin access", () => {
 	}) => {
 		await page.goto(path);
 		await expect(page).toHaveURL(path);
+		await expect(
+			page.getByRole("heading", { name: "Meals", exact: true })
+		).toBeVisible();
 		for (const name of [
-			"Meals",
-			"Your Meal Ticket",
+			"Meal ticket",
 			"Dietary Restrictions",
 			"Meal Schedule"
 		]) {
 			await expect(
-				page.getByRole("heading", { name, exact: true })
+				page.getByRole("region", { name, exact: true })
 			).toBeVisible();
 		}
 	});

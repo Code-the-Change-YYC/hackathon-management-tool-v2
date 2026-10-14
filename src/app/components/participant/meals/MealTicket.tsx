@@ -67,7 +67,10 @@ export function MealTicket({ displayName, ticket }: MealTicketProps) {
 	const ticketDescription = getTicketDescription(ticket, new Date());
 
 	return (
-		<section className="@container/meal-ticket flex flex-col gap-4">
+		<section
+			aria-label="Meal ticket"
+			className="@container/meal-ticket flex flex-col gap-4"
+		>
 			<div className="relative flex @min-[40rem]/meal-ticket:h-62.25 @min-[40rem]/meal-ticket:flex-row flex-col overflow-hidden bg-pastel-pink">
 				<TicketTeeth position="top" />
 				<TicketTeeth position="bottom" />

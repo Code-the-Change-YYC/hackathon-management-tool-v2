@@ -13,9 +13,11 @@ export function MealScheduleSection({
 	now: Date;
 }) {
 	return (
-		<Card>
+		<Card aria-labelledby="meal-schedule-title" role="region">
 			<CardHeader>
-				<h2 className="font-medium text-xl">Meal Schedule</h2>
+				<h2 className="font-medium text-xl" id="meal-schedule-title">
+					Meal Schedule
+				</h2>
 			</CardHeader>
 			<CardContent>
 				<Schedule

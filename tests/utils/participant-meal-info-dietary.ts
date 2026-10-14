@@ -11,12 +11,10 @@ export const dietaryMutation =
 const restrictionLabels = Object.values(DIETARY_RESTRICTION_LABELS);
 
 export function dietarySection(page: Page) {
-	return page.locator("section").filter({
-		has: page.getByRole("heading", {
-			name: "Dietary Restrictions",
-			exact: true,
-			includeHidden: true
-		})
+	return page.getByRole("region", {
+		name: "Dietary Restrictions",
+		exact: true,
+		includeHidden: true
 	});
 }
 
@@ -44,11 +42,11 @@ export async function expectRegistered(page: Page, labels: string[]) {
 	await expect(section.locator('[data-slot="badge"]')).toHaveText(labels);
 	if (labels.length === 0) {
 		await expect(
-			section.getByText("None registered", { exact: true })
+			section.getByText("No dietary restrictions registered.", { exact: true })
 		).toBeVisible();
 	} else {
 		await expect(
-			section.getByText("None registered", { exact: true })
+			section.getByText("No dietary restrictions registered.", { exact: true })
 		).toHaveCount(0);
 	}
 }
@@ -70,10 +68,11 @@ export async function saveAndExpectRegistered(page: Page, labels: string[]) {
 	await editor(page)
 		.getByRole("button", { name: "Save changes", exact: true })
 		.click();
-	await expect(editor(page)).toHaveCount(0);
+	// The toast fires before the editor waits on the page refresh to close.
 	await expect(
 		page.getByText("Dietary restrictions updated", { exact: true })
 	).toBeVisible();
+	await expect(editor(page)).toHaveCount(0);
 	const ordered = restrictionLabels.filter((label) => labels.includes(label));
 	await expectRegistered(page, ordered);
 	await page.reload();
