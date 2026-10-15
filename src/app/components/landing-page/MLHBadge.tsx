@@ -13,10 +13,10 @@ export default function MLHBadge() {
 			target="_blank"
 		>
 			<Image
-				alt="Major League Hacking 2026 Hackathon Season"
+				alt="Major League Hacking 2027 Hackathon Season"
 				className="h-auto w-full"
 				height={175}
-				src="https://logged-assets.s3.amazonaws.com/trust-badge/2026/mlh-trust-badge-2026-white.svg"
+				src="https://logged-assets.s3.amazonaws.com/trust-badge/2027/mlh-trust-badge-2027-white.svg"
 				unoptimized
 				width={100}
 			/>
