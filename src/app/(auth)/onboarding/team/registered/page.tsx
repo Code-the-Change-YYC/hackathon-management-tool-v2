@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AuthActions, AuthHeading } from "@/app/components/auth/AuthShell";
 import { CompleteRegistrationButton } from "@/app/components/onboarding/CompleteRegistrationButton";
 import { OnboardingSteps } from "@/app/components/onboarding/OnboardingSteps";
 import { TeamCodeDisplay } from "@/app/components/onboarding/TeamCodeDisplay";
+import { buttonVariants } from "@/app/components/ui/button";
+import { ONBOARDING_ROUTES } from "@/lib/routes";
+import { cn } from "@/lib/utils";
 import { requireOnboardingStep } from "@/server/better-auth/auth-helpers/helpers";
 import { requireTeam } from "../team-guards";
 
@@ -25,6 +29,12 @@ export default async function TeamRegisteredPage() {
 			{team.teamCode && <TeamCodeDisplay code={team.teamCode} />}
 			<AuthActions>
 				<CompleteRegistrationButton />
+				<Link
+					className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+					href={ONBOARDING_ROUTES.discord}
+				>
+					Go back
+				</Link>
 			</AuthActions>
 		</>
 	);
