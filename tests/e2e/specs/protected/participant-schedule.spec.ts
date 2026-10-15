@@ -7,10 +7,8 @@ test.use({
 
 test("lists active events in the hackathon time zone and hides drafts", async ({
 	authenticatedPage: page,
-	createMeal,
-	setSettings
+	createMeal
 }) => {
-	await setSettings({ timeZone: "America/Edmonton" });
 	await createMeal({
 		title: "Demo Day",
 		location: "Room 101",

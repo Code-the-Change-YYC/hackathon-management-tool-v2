@@ -98,8 +98,7 @@ test("assigned team sees its room, time slot and meeting link", async ({
 	try {
 		await setSettings({
 			currentRoundId: round.id,
-			judgingPhase: "judging",
-			timeZone: "America/Edmonton"
+			judgingPhase: "judging"
 		});
 		await page.goto("/participant/judging");
 

@@ -3,13 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
-import { DASHBOARD_HREFS } from "@/lib/constants";
+import { DASHBOARD_HREFS, EVENT_NAME, EVENT_YEAR } from "@/lib/constants";
 import { authClient } from "@/server/better-auth/client";
 import { Role } from "@/types/types";
 import Countdown from "./Countdown";
 
-const EVENT_NAME = "Hack the Change";
-const EVENT_YEAR = "2026";
 const EVENT_BLURB =
 	"Hack the Change is a two-day, in-person, for-charity event focused on developing innovative tech solutions for a better world, and Calgary's first MLH supported Hackathon!";
 const BG_IMAGE = "/svgs/landingPage/countdown_bg.svg";

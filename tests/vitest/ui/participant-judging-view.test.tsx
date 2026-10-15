@@ -1,14 +1,14 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { JudgingView } from "@/app/components/participant/ParticipantJudging";
+import { JudgingView } from "@/app/components/participant/judging/JudgingView";
 import { criterionAppliesToRound } from "@/lib/judging";
 import { judgingStages } from "@/lib/participant-judging";
 
 const rounds = ["Round 1", "Round 2"].map((name, index) => ({
 	id: `round-${index}`,
 	name,
-	startTime: new Date(`2025-11-09T${index + 12}:00:00Z`),
-	endTime: new Date(`2025-11-09T${index + 13}:00:00Z`)
+	startTime: new Date(`2026-11-08T${index + 12}:00:00Z`),
+	endTime: new Date(`2026-11-08T${index + 13}:00:00Z`)
 }));
 const criteria = ["Innovation", "Technical execution"].map((name, index) => ({
 	id: `criterion-${index}`,
@@ -20,10 +20,9 @@ const criteria = ["Innovation", "Technical execution"].map((name, index) => ({
 	roundIds: index ? ["round-1"] : []
 }));
 const settings = {
-	timeZone: "America/Edmonton",
 	judgingPhase: "judging",
 	currentRoundId: "round-0",
-	submissionDeadline: new Date("2025-11-09T19:00:00Z")
+	submissionDeadline: new Date("2026-11-08T19:00:00Z")
 } as NonNullable<Parameters<typeof JudgingView>[0]["settings"]>;
 const results = {
 	released: true,
@@ -86,7 +85,7 @@ describe("participant judging information", () => {
 	it("shows assigned time and safe meeting navigation without claiming an ongoing event", () => {
 		const assignment = {
 			id: "assigned",
-			timeSlot: new Date("2025-11-09T20:00:00Z"),
+			timeSlot: new Date("2026-11-08T19:00:00Z"),
 			room: {
 				name: "Room 2",
 				roomLink: "https://example.com/meeting",
@@ -146,8 +145,6 @@ describe("participant judging information", () => {
 				results: { released: true, rounds: [] }
 			})
 		);
-		expect(
-			screen.getByText("No scores have been published for your team yet.")
-		).toBeVisible();
+		expect(screen.getByText("No team scores yet")).toBeVisible();
 	});
 });

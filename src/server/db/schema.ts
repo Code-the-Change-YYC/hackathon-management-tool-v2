@@ -110,7 +110,6 @@ export const hackathonSettings = createTable("hackathon_settings", {
 	judgingPhase: text("judging_phase", { enum: JUDGING_PHASES })
 		.default("not_started")
 		.notNull(),
-	timeZone: text("time_zone").default("America/Edmonton").notNull(),
 	isActive: boolean("is_active").default(true).notNull(),
 	currentRoundId: uuid("current_round_id").references(() => judgingRounds.id, {
 		onDelete: "set null"

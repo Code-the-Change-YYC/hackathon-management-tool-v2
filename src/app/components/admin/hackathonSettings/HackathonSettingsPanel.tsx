@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Field, FieldGroup, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
-import { toDateTimeLocalValue } from "@/lib/datetime";
+import { fromDateTimeLocalValue, toDateTimeLocalValue } from "@/lib/datetime";
 import {
 	JUDGING_PHASE_LABELS,
 	JUDGING_PHASES,
@@ -20,14 +20,12 @@ export default function HackathonSettingsPanel() {
 	const [endDate, setEndDate] = useState("");
 	const [submissionDeadline, setSubmissionDeadline] = useState("");
 	const [judgingPhase, setJudgingPhase] = useState<JudgingPhase>("not_started");
-	const [timeZone, setTimeZone] = useState("America/Edmonton");
 	const [isActive, setIsActive] = useState(true);
 	const [currentRoundId, setCurrentRoundId] = useState("");
 
 	useEffect(() => {
 		setSubmissionDeadline(toDateTimeLocalValue(settings?.submissionDeadline));
 		setJudgingPhase(settings?.judgingPhase ?? "not_started");
-		setTimeZone(settings?.timeZone ?? "America/Edmonton");
 		setStartDate(toDateTimeLocalValue(settings?.startDate));
 		setEndDate(toDateTimeLocalValue(settings?.endDate));
 		setIsActive(settings?.isActive ?? true);
@@ -35,7 +33,6 @@ export default function HackathonSettingsPanel() {
 	}, [
 		settings?.submissionDeadline,
 		settings?.judgingPhase,
-		settings?.timeZone,
 		settings?.currentRoundId,
 		settings?.endDate,
 		settings?.isActive,
@@ -80,24 +77,13 @@ export default function HackathonSettingsPanel() {
 				<FieldGroup className="max-w-sm">
 					<Field>
 						<FieldLabel htmlFor="submission-deadline">
-							Submission deadline (your local time)
+							Submission deadline
 						</FieldLabel>
 						<Input
 							id="submission-deadline"
 							onChange={(e) => setSubmissionDeadline(e.target.value)}
 							type="datetime-local"
 							value={submissionDeadline}
-						/>
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="dashboard-time-zone">
-							Participant time zone
-						</FieldLabel>
-						<Input
-							id="dashboard-time-zone"
-							onChange={(e) => setTimeZone(e.target.value)}
-							placeholder="America/Edmonton"
-							value={timeZone}
 						/>
 					</Field>
 					<Field>
@@ -147,13 +133,10 @@ export default function HackathonSettingsPanel() {
 					disabled={update.isPending}
 					onClick={() => {
 						update.mutate({
-							startDate: startDate ? new Date(startDate) : undefined,
-							endDate: endDate ? new Date(endDate) : undefined,
-							submissionDeadline: submissionDeadline
-								? new Date(submissionDeadline)
-								: null,
+							startDate: fromDateTimeLocalValue(startDate) ?? undefined,
+							endDate: fromDateTimeLocalValue(endDate) ?? undefined,
+							submissionDeadline: fromDateTimeLocalValue(submissionDeadline),
 							judgingPhase,
-							timeZone,
 							isActive,
 							currentRoundId: currentRoundId || null
 						});

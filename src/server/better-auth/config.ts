@@ -1,6 +1,6 @@
 import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { admin, emailOTP, organization } from "better-auth/plugins";
+import { admin, emailOTP } from "better-auth/plugins";
 
 import { env } from "@/env";
 import {
@@ -102,10 +102,14 @@ export const betterAuthDefaultConfig = {
 		// Deprecated alias of /email-otp/request-password-reset.
 		"/forget-password/email-otp",
 		"/email-otp/request-email-change",
-		"/email-otp/change-email"
+		"/email-otp/change-email",
+		// Names and avatars are saved through the users router, which checks them.
+		"/update-user"
 	],
+	// Teams live in the organization tables but are managed only through the
+	// teams router, so Better Auth's organization plugin (and the REST endpoints
+	// that skip the team rules) isn't installed.
 	plugins: [
-		organization(),
 		admin(),
 		emailOTP({
 			otpLength: VERIFICATION_CODE_LENGTH,

@@ -26,7 +26,7 @@ test.beforeEach(async ({ authenticatedPage }) => {
 
 // Given I am a participant with Halal and Gluten-free registered
 // When I view meal information and click Edit
-// Then the page shows both badges rather than "None registered"
+// Then the page shows both badges rather than "No dietary restrictions registered."
 // And the editor shows my selections and disables Save changes.
 test("shows registered Halal and Gluten-free badges and an unchanged editor", async ({
 	authenticatedPage: page
@@ -52,7 +52,7 @@ test.describe("without registered restrictions", () => {
 
 	// Given I am a participant with no registered dietary restrictions
 	// When I view meal information and open the editor
-	// Then I see "None registered" on the page and nothing selected in the editor
+	// Then I see "No dietary restrictions registered." on the page and nothing selected in the editor
 	// And Save changes remains disabled.
 	test("shows the empty state and nothing selected in the editor", async ({
 		authenticatedPage: page
@@ -103,7 +103,7 @@ test("removes Halal and persists the remaining restriction", async ({
 // When I deselect both
 // Then nothing is selected and Save changes is enabled
 // When I save and reload the page
-// Then the page still shows "None registered".
+// Then the page still shows "No dietary restrictions registered.".
 test("deselecting every restriction persists the empty state", async ({
 	authenticatedPage: page
 }) => {
@@ -121,7 +121,7 @@ test("deselecting every restriction persists the empty state", async ({
 // When I click Save changes
 // Then the disabled button shows "Saving...", Cancel is disabled, and my draft stays visible
 // When the request is released and succeeds
-// Then the dialog closes, "Dietary restrictions updated" appears, and the page updates
+// Then "Dietary restrictions updated" appears, the dialog closes, and the page updates
 // And the saved restrictions persist after reload.
 test("disables save and cancel while saving, then updates the page on success", async ({
 	authenticatedPage: page
@@ -160,10 +160,11 @@ test("disables save and cancel while saving, then updates the page on success", 
 		releaseSave();
 	}
 
-	await expect(editor(page)).toHaveCount(0);
+	// The toast fires before the editor waits on the page refresh to close.
 	await expect(
 		page.getByText("Dietary restrictions updated", { exact: true })
 	).toBeVisible();
+	await expect(editor(page)).toHaveCount(0);
 	await expectRegistered(page, ["Halal", "Vegetarian", "Gluten-free"]);
 	await page.reload();
 	await expectRegistered(page, ["Halal", "Vegetarian", "Gluten-free"]);

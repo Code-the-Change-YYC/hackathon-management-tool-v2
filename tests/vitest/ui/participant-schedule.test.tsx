@@ -1,11 +1,11 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ScheduleView } from "@/app/components/participant/ParticipantSchedule";
+import { ScheduleView } from "@/app/components/participant/schedule/ScheduleView";
 import { groupScheduleItemsByDate } from "@/app/components/Schedule";
 import type { DashboardEvent } from "@/lib/participant-events";
 import { EventType } from "@/types/types";
 
-const now = new Date("2025-11-08T21:00:00Z");
+const now = new Date("2026-11-07T20:00:00Z");
 function event(
 	id: string,
 	type: EventType,
@@ -35,7 +35,7 @@ describe("participant schedule", () => {
 			event("Trivia", EventType.ACTIVITY, -10, 20),
 			event("Later", EventType.PROJECT, 120, 180)
 		];
-		render(<ScheduleView events={events} timeZone="America/Edmonton" />);
+		render(<ScheduleView events={events} />);
 		expect(
 			screen.getByRole("heading", { name: "Opening ongoing now!" })
 		).toBeInTheDocument();
@@ -54,10 +54,7 @@ describe("participant schedule", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(now);
 		render(
-			<ScheduleView
-				events={[event("Trivia", EventType.ACTIVITY, 0.5, 1)]}
-				timeZone="UTC"
-			/>
+			<ScheduleView events={[event("Trivia", EventType.ACTIVITY, 0.5, 1)]} />
 		);
 		expect(screen.getByText("In 1 min")).toBeInTheDocument();
 		expect(
@@ -72,20 +69,17 @@ describe("participant schedule", () => {
 			screen.getByText("Hackathon updates coming soon")
 		).toBeInTheDocument();
 	});
-	it("groups events by day in the hackathon's timezone", () => {
+	it("groups events by Calgary day", () => {
 		const item = (id: string, date: string) => ({
 			...event(id, EventType.FOOD, 0, 1),
 			eventType: EventType.FOOD,
 			startTime: new Date(date)
 		});
-		const groups = groupScheduleItemsByDate(
-			[
-				item("previous day", "2025-11-02T05:30:00Z"),
-				item("earlier", "2025-11-02T07:30:00Z"),
-				item("later", "2025-11-02T08:30:00Z")
-			],
-			"America/Edmonton"
-		);
+		const groups = groupScheduleItemsByDate([
+			item("previous day", "2025-11-02T05:30:00Z"),
+			item("earlier", "2025-11-02T07:30:00Z"),
+			item("later", "2025-11-02T08:30:00Z")
+		]);
 		expect(groups.map((group) => group.label)).toEqual([
 			"Saturday, November 1",
 			"Sunday, November 2"
@@ -95,7 +89,7 @@ describe("participant schedule", () => {
 			"later"
 		]);
 	});
-	it("renders timezone-correct times and omits unsafe navigation links", () => {
+	it("renders Calgary times and omits unsafe navigation links", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(now);
 		const current = {
@@ -103,7 +97,7 @@ describe("participant schedule", () => {
 			location: null,
 			navigationUrl: "javascript:alert(1)"
 		};
-		render(<ScheduleView events={[current]} timeZone="America/Edmonton" />);
+		render(<ScheduleView events={[current]} />);
 		expect(
 			within(screen.getByRole("listitem")).getByText("2:00 PM – 3:00 PM")
 		).toBeInTheDocument();
@@ -112,22 +106,10 @@ describe("participant schedule", () => {
 			screen.queryByRole("link", { name: "Navigate there" })
 		).not.toBeInTheDocument();
 	});
-	it("shows empty, loading, and retryable error states", () => {
-		const retry = vi.fn();
-		const { rerender } = render(<ScheduleView events={[]} timeZone="UTC" />);
+	it("shows an empty state when nothing is scheduled", () => {
+		render(<ScheduleView events={[]} />);
 		expect(
-			screen.getByText("No events have been scheduled yet.")
+			screen.getByText("No events have been scheduled yet")
 		).toBeInTheDocument();
-		rerender(<ScheduleView events={[]} loading timeZone="UTC" />);
-		expect(screen.getByLabelText("Loading schedule")).toHaveAttribute(
-			"aria-busy",
-			"true"
-		);
-		rerender(<ScheduleView error events={[]} retry={retry} timeZone="UTC" />);
-		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-		expect(retry).toHaveBeenCalledOnce();
-		expect(
-			screen.queryByText("No events have been scheduled yet.")
-		).not.toBeInTheDocument();
 	});
 });

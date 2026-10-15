@@ -25,7 +25,11 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
-import { formatDateTime, toDateTimeLocalValue } from "@/lib/datetime";
+import {
+	formatDateTime,
+	fromDateTimeLocalValue,
+	toDateTimeLocalValue
+} from "@/lib/datetime";
 import type { SlotMinutes } from "@/lib/judging";
 import { tryCatch } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
@@ -89,12 +93,12 @@ export function AssignmentManagement({
 		const selectedRound = roundsQuery.data?.find(
 			(round) => round.id === roundId
 		);
-		const parsedTimeSlot = new Date(timeSlot);
-		const parsedTime = parsedTimeSlot.getTime();
-		if (Number.isNaN(parsedTime)) {
+		const parsedTimeSlot = fromDateTimeLocalValue(timeSlot);
+		if (!parsedTimeSlot) {
 			setMessage("Choose a valid time slot.");
 			return;
 		}
+		const parsedTime = parsedTimeSlot.getTime();
 		if (
 			selectedRound &&
 			(parsedTime < selectedRound.startTime.getTime() ||

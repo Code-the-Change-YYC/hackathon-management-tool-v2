@@ -3,41 +3,23 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { assertRoundHasNoScores } from "@/server/api/routers/judging-rooms";
 import {
+	adminProcedure,
 	createTRPCRouter,
-	protectedProcedure,
-	publicProcedure
+	protectedProcedure
 } from "@/server/api/trpc";
 import { judgingRounds } from "@/server/db/schema";
 
 export const judgingRoundsRouter = createTRPCRouter({
 	// Get all judging rounds
-	getAll: publicProcedure.query(async ({ ctx }) => {
+	getAll: protectedProcedure.query(async ({ ctx }) => {
 		const rounds = await ctx.db.query.judgingRounds.findMany({
 			orderBy: (rounds, { desc }) => [desc(rounds.startTime)]
 		});
 		return rounds;
 	}),
 
-	// Get a single judging round by ID
-	getById: publicProcedure
-		.input(z.object({ id: z.string().uuid() }))
-		.query(async ({ ctx, input }) => {
-			const round = await ctx.db.query.judgingRounds.findFirst({
-				where: eq(judgingRounds.id, input.id),
-				with: {
-					rooms: {
-						with: {
-							assignments: true,
-							staff: true
-						}
-					}
-				}
-			});
-			return round;
-		}),
-
 	// Create a new judging round
-	create: protectedProcedure
+	create: adminProcedure
 		.input(
 			z
 				.object({
@@ -59,7 +41,7 @@ export const judgingRoundsRouter = createTRPCRouter({
 		}),
 
 	// Update a judging round
-	update: protectedProcedure
+	update: adminProcedure
 		.input(
 			z.object({
 				id: z.string().uuid(),
@@ -105,7 +87,7 @@ export const judgingRoundsRouter = createTRPCRouter({
 		}),
 
 	// Delete a judging round
-	delete: protectedProcedure
+	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			await assertRoundHasNoScores(ctx.db, input.id);

@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
+// [0, 1, …, length - 1], e.g. for rendering a fixed number of skeleton rows.
+export function range(length: number) {
+	return Array.from({ length }, (_, index) => index);
+}
+
 // Types for the result object with discriminated union
 type Success<T> = {
 	data: T;
@@ -30,7 +35,8 @@ export async function tryCatch<T, E = Error>(
 	}
 }
 
-export const TEAM_NAME_PATTERN = /^[a-zA-Z0-9 _-]+$/;
+// Letters from any language (including accents), numbers, spaces, hyphens, underscores.
+export const TEAM_NAME_PATTERN = /^[\p{L}\p{M}\p{N} _-]+$/u;
 export const TEAM_NAME_MAX = 50;
 
 export function isValidTeamName(name: string): boolean {

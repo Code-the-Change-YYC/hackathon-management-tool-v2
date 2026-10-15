@@ -5,6 +5,4 @@ export const minute = 60_000;
 export const description =
 	"Show your meal ticket during this window to check in";
 export const schedule = (page: Page) =>
-	page.locator("section").filter({
-		has: page.getByRole("heading", { name: "Meal Schedule", exact: true })
-	});
+	page.getByRole("region", { name: "Meal Schedule", exact: true });

@@ -28,17 +28,6 @@ export const hackathonSettingsRouter = createTRPCRouter({
 				endDate: z.date().optional(),
 				submissionDeadline: z.date().optional().nullable(),
 				judgingPhase: z.enum(JUDGING_PHASES).optional(),
-				timeZone: z
-					.string()
-					.refine((value) => {
-						try {
-							new Intl.DateTimeFormat("en", { timeZone: value });
-							return true;
-						} catch {
-							return false;
-						}
-					}, "Enter a valid IANA time zone.")
-					.optional(),
 				isActive: z.boolean().optional(),
 				currentRoundId: z.string().uuid().optional().nullable()
 			})

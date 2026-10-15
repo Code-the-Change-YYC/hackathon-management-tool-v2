@@ -10,6 +10,7 @@ test("an incomplete user completes onboarding and registers", async ({
 	authUser,
 	onboardingPage
 }) => {
+	test.setTimeout(45_000);
 	await page.goto("/onboarding");
 	await expect(page).toHaveURL(/\/onboarding\/personal-details$/);
 
@@ -34,6 +35,13 @@ test("an incomplete user completes onboarding and registers", async ({
 	await onboardingPage.continue();
 
 	await expect(page).toHaveURL(/\/onboarding\/food-preferences$/);
+	await page.getByRole("button", { name: "Go back" }).click();
+	await expect(page).toHaveURL(/\/onboarding\/personal-details$/);
+	await expect(page.getByLabel("First name", { exact: true })).toHaveValue(
+		"Maria Anne"
+	);
+	await onboardingPage.continue();
+	await expect(page).toHaveURL(/\/onboarding\/food-preferences$/);
 	await onboardingPage.continue();
 
 	await expect(page).toHaveURL(/\/onboarding\/mlh-policies$/);
@@ -47,6 +55,13 @@ test("an incomplete user completes onboarding and registers", async ({
 		.click();
 	await onboardingPage.continue();
 
+	await expect(page).toHaveURL(/\/onboarding\/discord$/);
+	await page.getByRole("link", { name: "Go back" }).click();
+	await expect(page).toHaveURL(/\/onboarding\/mlh-policies$/);
+	await expect(
+		page.getByRole("checkbox", { name: /MLH Code of Conduct/ })
+	).toBeChecked();
+	await onboardingPage.continue();
 	await expect(page).toHaveURL(/\/onboarding\/discord$/);
 	await page
 		.getByRole("link", { name: "I’ve already joined, continue" })

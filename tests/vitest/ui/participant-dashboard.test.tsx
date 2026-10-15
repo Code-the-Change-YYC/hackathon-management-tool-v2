@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import { DashboardView } from "@/app/components/participant/ParticipantDashboard";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { DashboardView } from "@/app/components/participant/dashboard/DashboardView";
 import type { DashboardEvent } from "@/lib/participant-events";
 import { EventType } from "@/types/types";
 
@@ -18,10 +18,14 @@ function ongoingEvent(navigationUrl: string | null): DashboardEvent {
 }
 
 describe("participant dashboard page", () => {
-	it("shows honest empty/unconfigured states and retryable errors", () => {
-		const retry = vi.fn();
-		const { rerender } = render(
-			<DashboardView events={[]} firstName="Victoria" settings={null} />
+	it("shows honest empty and unconfigured states", () => {
+		render(
+			<DashboardView
+				events={[]}
+				firstName="Victoria"
+				rounds={[]}
+				settings={null}
+			/>
 		);
 		expect(screen.getByText("No upcoming events")).toBeInTheDocument();
 		expect(
@@ -30,23 +34,13 @@ describe("participant dashboard page", () => {
 		expect(
 			screen.getByRole("link", { name: "View full schedule" })
 		).toHaveAttribute("href", "/participant/schedule");
-		rerender(
-			<DashboardView
-				events={[]}
-				eventsError
-				firstName="Victoria"
-				retryEvents={retry}
-				settings={null}
-			/>
-		);
-		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-		expect(retry).toHaveBeenCalledOnce();
 	});
 	it("only shows the current event navigation button for safe URLs", () => {
 		const { rerender } = render(
 			<DashboardView
 				events={[ongoingEvent("https://example.com/directions")]}
 				firstName="Victoria"
+				rounds={[]}
 				settings={null}
 			/>
 		);
@@ -60,6 +54,7 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[ongoingEvent("javascript:alert(1)")]}
 				firstName="Victoria"
+				rounds={[]}
 				settings={null}
 			/>
 		);
@@ -68,7 +63,14 @@ describe("participant dashboard page", () => {
 		).not.toBeInTheDocument();
 	});
 	it("keeps the banner slot with placeholder copy when no current event exists", () => {
-		render(<DashboardView events={[]} firstName="Victoria" settings={null} />);
+		render(
+			<DashboardView
+				events={[]}
+				firstName="Victoria"
+				rounds={[]}
+				settings={null}
+			/>
+		);
 		expect(
 			screen.getByRole("heading", { name: "Hackathon updates coming soon" })
 		).toBeInTheDocument();

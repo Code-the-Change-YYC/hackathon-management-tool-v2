@@ -113,6 +113,15 @@ export function MlhPoliciesForm({
 					{isBusy && <Spinner data-icon="inline-start" />}
 					Continue
 				</Button>
+				<Button
+					className="w-full"
+					disabled={isBusy}
+					onClick={() => router.push(ONBOARDING_ROUTES.foodPreferences)}
+					type="button"
+					variant="outline"
+				>
+					Go back
+				</Button>
 			</AuthActions>
 		</form>
 	);

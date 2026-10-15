@@ -3,12 +3,10 @@
 import Image from "next/image";
 import { Fragment, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
+import { EVENT_NAME, EVENT_YEAR } from "@/lib/constants";
 import { countdownParts } from "@/lib/participant-events";
 import { api } from "@/trpc/react";
 import type { TimeLeft } from "@/types/landingPage";
-
-const ZERO_TIME: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 // Null until mounted, so the tiles first render with the real time instead of
 // flipping over from 00 on page load.
@@ -138,7 +136,7 @@ export default function Countdown() {
 		<CountdownWindow>
 			<div className="mb-8 flex flex-col items-center gap-3">
 				<p className="text-center font-bold text-4xl text-awesomer-purple">
-					Hack the Change 2026 begins in...
+					{EVENT_NAME} {EVENT_YEAR} begins in...
 				</p>
 				<Image
 					alt=""

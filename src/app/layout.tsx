@@ -1,22 +1,35 @@
 import "./global.css";
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import { Toaster } from "@/app/components/ui/sonner";
 import { omnes } from "@/app/fonts";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
+	metadataBase: new URL("https://hackthechangeyyc.ca"),
+	applicationName: "Hack the Change",
 	title: "Hack the Change",
-	description: "Hack the Change",
-	icons: [
-		{
-			rel: "icon",
-			type: "image/x-icon",
-			sizes: "32x32",
-			url: "/favicon.ico"
-		}
-	]
+	description:
+		"Hack the Change is an in-person, two-day, for-charity hackathon with the mission of coding a better world together.",
+	openGraph: {
+		type: "website",
+		locale: "en_CA",
+		siteName: "Hack the Change",
+		title: "Hack the Change",
+		description:
+			"Hack the Change is an in-person, two-day, for-charity hackathon with the mission of coding a better world together."
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Hack the Change",
+		description:
+			"Hack the Change is an in-person, two-day, for-charity hackathon with the mission of coding a better world together."
+	}
+};
+
+export const viewport: Viewport = {
+	themeColor: "#7054fd"
 };
 
 export default function RootLayout({

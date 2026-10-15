@@ -7,11 +7,9 @@ import CurrentEventImages from "./CurrentEventImages";
 
 export function CurrentEventBanner({
 	event,
-	timeZone,
 	colour
 }: {
 	event?: DashboardEvent;
-	timeZone: string;
 	colour: "purple" | "red";
 }) {
 	if (!event) {
@@ -36,7 +34,6 @@ export function CurrentEventBanner({
 			image={<CurrentEventImages />}
 			location={event.location || "Location to be announced"}
 			startTime={event.startTime}
-			timeZone={timeZone}
 			title={`${event.title} ongoing now!`}
 		/>
 	);
