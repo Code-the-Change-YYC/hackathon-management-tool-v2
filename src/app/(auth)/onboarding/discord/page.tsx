@@ -34,10 +34,19 @@ export default async function DiscordPage() {
 			<AuthActions>
 				<DiscordLinkButton>Join the server</DiscordLinkButton>
 				<Link
-					className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+					className={cn(
+						buttonVariants({ variant: "outline-purple" }),
+						"w-full"
+					)}
 					href={ONBOARDING_ROUTES.team}
 				>
 					I’ve already joined, continue
+				</Link>
+				<Link
+					className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+					href={ONBOARDING_ROUTES.mlhPolicies}
+				>
+					Go back
 				</Link>
 			</AuthActions>
 		</>

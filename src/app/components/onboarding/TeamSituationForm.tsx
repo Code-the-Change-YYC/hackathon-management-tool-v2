@@ -120,6 +120,17 @@ export function TeamSituationForm({
 					{isNavigating && <Spinner data-icon="inline-start" />}
 					Continue
 				</Button>
+				{!onContinue && (
+					<Button
+						className="w-full"
+						disabled={isNavigating}
+						onClick={() => router.push(ONBOARDING_ROUTES.discord)}
+						type="button"
+						variant="outline"
+					>
+						Go back
+					</Button>
+				)}
 			</Actions>
 		</form>
 	);
