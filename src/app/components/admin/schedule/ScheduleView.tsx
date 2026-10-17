@@ -1,47 +1,54 @@
+"use client";
+
+import PageHeader from "@/app/components/PageHeader";
 import { Schedule } from "@/app/components/Schedule";
-import type { ScheduleItemData } from "@/app/components/ScheduleItem";
-import { api } from "@/trpc/server";
-import PageHeader from "../../PageHeader";
+import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
+import { useCurrentTime } from "@/hooks/use-current-time";
+import type { RouterOutputs } from "@/trpc/react";
 import { EventDetailsForm } from "./EventDetailsForm";
 
-export default async function ScheduleView() {
-	const events = await api.events.getAllEvents();
-	const now = new Date();
+type Event = RouterOutputs["events"]["getAllEvents"][number];
 
-	const scheduleItems: ScheduleItemData[] = events.map((event) => ({
-		id: event.id,
-		title: event.title,
-		startTime: event.startTime,
-		endTime: event.endTime,
-		eventType: event.type,
-		description: event.description
-	}));
+export function ScheduleView({ events }: { events: Event[] }) {
+	const now = useCurrentTime();
 
 	return (
-		<div className="flex min-h-svh flex-1 flex-col overflow-y-auto bg-white">
-			<div className="flex flex-col gap-6 p-6">
-				<PageHeader
-					description="View all hackathon events and activities"
-					title="Schedule"
-				/>
-				<section className="flex flex-col gap-5">
-					<h2 className="font-medium text-dark-grey text-lg">Event Schedule</h2>
+		<div className="flex flex-col gap-6">
+			<PageHeader
+				description="View all hackathon events and activities"
+				title="Schedule"
+			/>
+			<Card>
+				<CardHeader>
+					<h2 className="font-medium text-xl">Event Schedule</h2>
+				</CardHeader>
+				<CardContent>
 					<Schedule
 						emptyDescription="Check back soon for event times."
-						emptyTitle="No Events have been scheduled yet."
-						items={scheduleItems}
+						emptyTitle="No events have been scheduled yet"
+						items={events.map((event) => ({
+							...event,
+							eventType: event.type
+						}))}
 						now={now}
 					/>
-				</section>
+				</CardContent>
+			</Card>
+			{events.length > 0 && (
 				<section
-					aria-label="Event locations and directions"
-					className="flex flex-col gap-3"
+					aria-labelledby="event-details-title"
+					className="flex flex-col gap-4"
 				>
-					{events.map((event) => (
-						<EventDetailsForm event={event} key={event.id} />
-					))}
+					<h2 className="font-medium text-xl" id="event-details-title">
+						Locations and Directions
+					</h2>
+					<div className="flex flex-col gap-3">
+						{events.map((event) => (
+							<EventDetailsForm event={event} key={event.id} />
+						))}
+					</div>
 				</section>
-			</div>
+			)}
 		</div>
 	);
 }

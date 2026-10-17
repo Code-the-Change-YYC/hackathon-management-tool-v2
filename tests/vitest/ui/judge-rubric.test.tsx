@@ -1,11 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { JudgeRubric } from "@/app/components/judges/JudgeRubric";
 import {
 	type Criterion,
 	getCriterionDescription,
 	sortCriteria
-} from "@/app/components/judges/judgePortal";
+} from "@/app/components/judge/judgePortal";
+import { JudgeRubric } from "@/app/components/judge/rubric/JudgeRubric";
 
 const innovation: Criterion = {
 	id: "innovation",
@@ -70,9 +70,7 @@ describe("judge rubric", () => {
 
 	it("shows an empty state without an accordion", () => {
 		render(<JudgeRubric criteria={[]} />);
-		expect(
-			screen.getByText("No judging criteria have been published yet.")
-		).toBeInTheDocument();
+		expect(screen.getByText("No judging criteria yet")).toBeInTheDocument();
 		expect(screen.queryByRole("button")).not.toBeInTheDocument();
 	});
 });

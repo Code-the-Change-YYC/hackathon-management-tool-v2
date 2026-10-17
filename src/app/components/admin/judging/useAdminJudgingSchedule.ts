@@ -1,13 +1,21 @@
 "use client";
 import { differenceInMinutes } from "date-fns";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useConfirmDialog } from "@/app/components/ConfirmAlertDialog";
+import { useRefresh } from "@/hooks/use-refresh";
 import type { SlotMinutes } from "@/lib/judging";
-import { api, type RouterOutputs } from "@/trpc/react";
-import { byNameThenId } from "./judgingShared";
+import { api } from "@/trpc/react";
+import type {
+	Assignment,
+	Judge,
+	Room,
+	RoomLayouts,
+	Round,
+	Team
+} from "./judgingShared";
 
-type Assignment = RouterOutputs["judgingAssignments"]["getByRound"][number];
-type Team = RouterOutputs["teams"]["getAll"][number];
+// Stable, so effects that depend on a round's rooms don't rerun every render.
+const NO_ROOMS: Room[] = [];
 function getTotalJudgingMinutes(startTime: Date, endTime: Date) {
 	return Math.max(0, differenceInMinutes(endTime, startTime));
 }
@@ -93,128 +101,97 @@ function calculateClientReadiness({
 	};
 }
 
-export function useAdminJudgingSchedule() {
-	const utils = api.useUtils();
+// Unscheduled assignments sort last, like the database's ascending order.
+function byTimeSlot(a: Assignment, b: Assignment) {
+	return (
+		(a.timeSlot?.getTime() ?? Number.POSITIVE_INFINITY) -
+		(b.timeSlot?.getTime() ?? Number.POSITIVE_INFINITY)
+	);
+}
+
+export function useAdminJudgingSchedule({
+	rounds,
+	activeRoundId,
+	layouts,
+	assignments,
+	judges,
+	teams
+}: {
+	rounds: Round[];
+	activeRoundId: string | null;
+	layouts: RoomLayouts;
+	assignments: Assignment[];
+	judges: Judge[];
+	teams: Team[];
+}) {
+	const { isRefreshing, refresh } = useRefresh();
 	const { confirm, dialogProps } = useConfirmDialog();
-	const [selectedRoundId, setSelectedRoundId] = useState("");
+	const defaultRoundId = activeRoundId ?? rounds[0]?.id ?? "";
+	const [selectedRoundId, setSelectedRoundId] = useState(defaultRoundId);
 	const [selectedRoomId, setSelectedRoomId] = useState("all");
 	const [roomCount, setRoomCount] = useState(1);
 	const [judgesPerRoom, setJudgesPerRoom] = useState(1);
 	const [slotMinutes, setSlotMinutes] = useState<SlotMinutes>(30);
 	const [assignmentMessage, setAssignmentMessage] = useState("");
 
-	const roundsQuery = api.judgingRounds.getAll.useQuery();
-	const settingsQuery = api.hackathonSettings.get.useQuery();
-	const defaultRoundId =
-		settingsQuery.data?.currentRoundId ?? roundsQuery.data?.[0]?.id ?? "";
-
-	useEffect(() => {
-		if (!selectedRoundId && defaultRoundId) {
-			setSelectedRoundId(defaultRoundId);
-			setAssignmentMessage("");
-		}
-	}, [defaultRoundId, selectedRoundId]);
-
-	const layoutQuery = api.judgingRooms.getLayoutByRound.useQuery(
-		{ roundId: selectedRoundId },
-		{ enabled: Boolean(selectedRoundId) }
-	);
-	const assignmentsQuery = api.judgingAssignments.getByRound.useQuery(
-		{ roundId: selectedRoundId },
-		{ enabled: Boolean(selectedRoundId) }
-	);
-	const usersQuery = api.users.getAll.useQuery();
-	const teamsQuery = api.teams.getAll.useQuery();
-
-	const rooms = layoutQuery.data?.rooms ?? [];
-	const assignments = assignmentsQuery.data ?? [];
-	const judges = useMemo(
-		() =>
-			(usersQuery.data ?? [])
-				.filter((person) => person.role === "judge")
-				.sort(byNameThenId),
-		[usersQuery.data]
-	);
-	const teams = useMemo(
-		() => (teamsQuery.data ?? []).slice().sort(byNameThenId),
-		[teamsQuery.data]
-	);
-	const eligibleTeams = useMemo(() => teams.filter(isPrescreenPassed), [teams]);
-	const selectedRound = roundsQuery.data?.find(
-		(round) => round.id === selectedRoundId
-	);
-
-	useEffect(() => {
-		if (
-			selectedRoomId !== "all" &&
-			!rooms.some((room) => room.id === selectedRoomId)
-		) {
-			setSelectedRoomId("all");
-		}
-	}, [rooms, selectedRoomId]);
-
+	// Falls back to the default once the selected round is deleted.
+	const roundId = rounds.some((round) => round.id === selectedRoundId)
+		? selectedRoundId
+		: defaultRoundId;
+	const selectedRound = rounds.find((round) => round.id === roundId);
+	const rooms = layouts[roundId] ?? NO_ROOMS;
+	const roundAssignments = assignments
+		.filter((assignment) => assignment.room.round.id === roundId)
+		.sort(byTimeSlot);
+	const eligibleTeams = teams.filter(isPrescreenPassed);
+	// Falls back to all rooms once the selected room is deleted.
+	const roomId = rooms.some((room) => room.id === selectedRoomId)
+		? selectedRoomId
+		: "all";
 	const visibleRooms =
-		selectedRoomId === "all"
-			? rooms
-			: rooms.filter((room) => room.id === selectedRoomId);
+		roomId === "all" ? rooms : rooms.filter((room) => room.id === roomId);
 	const visibleAssignments =
-		selectedRoomId === "all"
-			? assignments
-			: assignments.filter(
-					(assignment) => assignment.room.id === selectedRoomId
-				);
-	const unscheduledCount = assignments.filter(
+		roomId === "all"
+			? roundAssignments
+			: roundAssignments.filter((assignment) => assignment.room.id === roomId);
+	const unscheduledCount = roundAssignments.filter(
 		(assignment) => !assignment.timeSlot
 	).length;
-	const readiness = useMemo(
-		() =>
-			calculateClientReadiness({
-				assignments,
-				judgeCount: judges.length,
-				judgesPerRoom,
-				roomCount,
-				roundEnd: selectedRound?.endTime,
-				roundStart: selectedRound?.startTime,
-				slotMinutes,
-				teamCount: eligibleTeams.length
-			}),
-		[
-			assignments,
-			eligibleTeams.length,
-			judges.length,
-			judgesPerRoom,
-			roomCount,
-			selectedRound?.endTime,
-			selectedRound?.startTime,
-			slotMinutes
-		]
-	);
+	const readiness = calculateClientReadiness({
+		assignments: roundAssignments,
+		judgeCount: judges.length,
+		judgesPerRoom,
+		roomCount,
+		roundEnd: selectedRound?.endTime,
+		roundStart: selectedRound?.startTime,
+		slotMinutes,
+		teamCount: eligibleTeams.length
+	});
+
+	const selectRound = (id: string) => {
+		setSelectedRoundId(id);
+		setSelectedRoomId("all");
+		setAssignmentMessage("");
+	};
 
 	const generateSchedule = api.judgingRooms.generateSchedule.useMutation({
 		onError: (error) => {
 			setAssignmentMessage(error.message);
 		},
-		onSuccess: async (result) => {
-			await Promise.all([
-				utils.judgingRooms.getLayoutByRound.invalidate({
-					roundId: selectedRoundId
-				}),
-				utils.judgingAssignments.getByRound.invalidate({
-					roundId: selectedRoundId
-				}),
-				utils.judgingAssignments.getAll.invalidate()
-			]);
-			setSelectedRoomId("all");
-			setAssignmentMessage(
-				result.message ??
-					`Assigned ${result.assignmentsCreated} teams across ${result.roomsCreated} room${result.roomsCreated === 1 ? "" : "s"}.`
-			);
+		onSuccess: (result) => {
+			refresh(() => {
+				setSelectedRoomId("all");
+				setAssignmentMessage(
+					result.message ??
+						`Assigned ${result.assignmentsCreated} teams across ${result.roomsCreated} room${result.roomsCreated === 1 ? "" : "s"}.`
+				);
+			});
 		}
 	});
 
 	const handleAutoAssign = async () => {
 		setAssignmentMessage("");
-		if (!selectedRoundId) {
+		if (!roundId) {
 			setAssignmentMessage("Select a judging round before assigning rooms.");
 			return;
 		}
@@ -230,7 +207,7 @@ export function useAdminJudgingSchedule() {
 		}
 
 		if (
-			(rooms.length > 0 || assignments.length > 0) &&
+			(rooms.length > 0 || roundAssignments.length > 0) &&
 			!(await confirm({
 				title: "Replace schedule?",
 				description:
@@ -243,7 +220,7 @@ export function useAdminJudgingSchedule() {
 		}
 
 		generateSchedule.mutate({
-			roundId: selectedRoundId,
+			roundId,
 			roomCount,
 			judgesPerRoom,
 			slotDurationMinutes: slotMinutes,
@@ -251,19 +228,12 @@ export function useAdminJudgingSchedule() {
 		});
 	};
 
-	const queryError =
-		roundsQuery.error ??
-		settingsQuery.error ??
-		layoutQuery.error ??
-		assignmentsQuery.error ??
-		usersQuery.error ??
-		teamsQuery.error;
-
 	return {
 		dialogProps,
-		selectedRoundId,
-		setSelectedRoundId,
-		selectedRoomId,
+		rounds,
+		selectedRoundId: roundId,
+		selectRound,
+		selectedRoomId: roomId,
 		setSelectedRoomId,
 		roomCount,
 		setRoomCount,
@@ -273,12 +243,8 @@ export function useAdminJudgingSchedule() {
 		setSlotMinutes,
 		assignmentMessage,
 		setAssignmentMessage,
-		roundsQuery,
-		layoutQuery,
-		assignmentsQuery,
-		usersQuery,
-		teamsQuery,
 		rooms,
+		roundAssignments,
 		judges,
 		eligibleTeams,
 		selectedRound,
@@ -286,8 +252,7 @@ export function useAdminJudgingSchedule() {
 		visibleAssignments,
 		unscheduledCount,
 		readiness,
-		generateSchedule,
-		handleAutoAssign,
-		queryError
+		isGenerating: generateSchedule.isPending || isRefreshing,
+		handleAutoAssign
 	};
 }

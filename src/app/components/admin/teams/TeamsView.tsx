@@ -147,8 +147,8 @@ export function TeamsView({ teams }: TeamsViewProps) {
 	}
 
 	return (
-		<div className="flex min-h-svh flex-col">
-			<div className="flex flex-1 flex-col gap-5 p-4 md:p-8">
+		<>
+			<div className="flex flex-col gap-6">
 				<PageHeader description="View all teams" title="Teams" />
 
 				<TeamsToolbar
@@ -234,6 +234,6 @@ export function TeamsView({ teams }: TeamsViewProps) {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
-		</div>
+		</>
 	);
 }

@@ -1,14 +1,22 @@
-"use client";
-
 import type { ReactNode } from "react";
 import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardHeader,
-	CardTitle
+	CardHeader
 } from "@/app/components/ui/card";
-import type { RouterInputs } from "@/trpc/react";
+import type { RouterInputs, RouterOutputs } from "@/trpc/react";
+
+export type Round = RouterOutputs["judgingRounds"]["getAll"][number];
+export type Assignment = RouterOutputs["judgingAssignments"]["getAll"][number];
+export type Room =
+	RouterOutputs["judgingRooms"]["getLayoutByRound"]["rooms"][number];
+// Each round's rooms, by round ID.
+export type RoomLayouts = Record<string, Room[]>;
+export type Judge = RouterOutputs["users"]["getAll"][number];
+export type Team = RouterOutputs["teams"]["getAll"][number];
+export type Criterion = RouterOutputs["criteria"]["getAll"][number];
+export type Ranking = RouterOutputs["teams"]["getRankings"][number];
 
 export type LayoutInput =
 	RouterInputs["judgingRooms"]["saveLayoutByRound"]["layout"];
@@ -37,7 +45,7 @@ export function ManagementSection({
 		<section className="scroll-mt-6" id={id}>
 			<Card>
 				<CardHeader>
-					<CardTitle className="text-[22px] leading-7">{title}</CardTitle>
+					<h2 className="font-medium text-xl">{title}</h2>
 					<CardDescription>{description}</CardDescription>
 				</CardHeader>
 				<CardContent>{children}</CardContent>

@@ -1,9 +1,16 @@
-import { JudgeRubricPage } from "../../components/judges/JudgeRubricPage";
+import type { Metadata } from "next";
+import { RubricView } from "@/app/components/judge/rubric/RubricView";
+import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
+import { api } from "@/trpc/server";
+import { Role } from "@/types/types";
 
-export default function page() {
-	return (
-		<main className="flex flex-col gap-5 px-6 py-6">
-			<JudgeRubricPage />
-		</main>
-	);
+export const metadata: Metadata = {
+	title: "Rubric | Hack the Change"
+};
+
+export default async function RubricPage() {
+	await requireRole([Role.JUDGE, Role.ADMIN]);
+	const criteria = await api.criteria.getAll();
+
+	return <RubricView criteria={criteria} />;
 }
