@@ -79,7 +79,7 @@ test("participant without an assignment sees the general banner", async ({
 	await page.goto("/participant/judging");
 
 	await expect(
-		page.getByRole("heading", { name: "Judging Information" })
+		page.getByRole("heading", { name: "Judging", exact: true })
 	).toBeVisible();
 	await expect(
 		page.getByRole("heading", { name: /your team’s judging assignment/ })

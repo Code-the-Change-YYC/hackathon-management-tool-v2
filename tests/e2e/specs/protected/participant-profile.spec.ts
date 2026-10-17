@@ -40,7 +40,7 @@ test("cancelling an edit keeps the saved profile", async ({
 	authenticatedPage: page
 }) => {
 	await page.goto("/participant/profile");
-	await page.getByRole("button", { name: "Edit Info" }).click();
+	await page.getByRole("button", { name: "Edit" }).click();
 	await page.getByLabel("First name").fill("Changed");
 	await page.getByRole("button", { name: "Cancel" }).click();
 
@@ -80,7 +80,7 @@ test(
 	{ tag: "@responsive" },
 	async ({ authenticatedPage: page, authUser }) => {
 		await page.goto("/participant/profile");
-		await page.getByRole("button", { name: "Edit Info" }).click();
+		await page.getByRole("button", { name: "Edit" }).click();
 
 		await page.getByLabel("First name").fill("");
 		await page.getByRole("combobox", { name: "Institution" }).click();

@@ -58,8 +58,8 @@ test.describe("participants", () => {
 			["Schedule", /\/participant\/schedule$/],
 			["Team", /\/participant\/team$/],
 			["Meals", /\/participant\/meals$/],
-			["Judging Information", /\/participant\/judging$/],
-			["Resources and Help", /\/participant\/resources$/],
+			["Judging", /\/participant\/judging$/],
+			["Resources", /\/participant\/resources$/],
 			["Dashboard", /\/participant$/]
 		] as const;
 
@@ -74,8 +74,7 @@ test.describe("participants", () => {
 	}) => {
 		await page.goto("/participant");
 		for (const [title, href] of [
-			["Discord Join Link", DISCORD_URL],
-			["Hackathon Home", "/"],
+			["Discord", DISCORD_URL],
 			["Devpost", DEVPOST_URL]
 		] as const) {
 			const link = page.getByRole("link", { name: title, exact: true });
@@ -95,7 +94,7 @@ test.describe("participants", () => {
 		).toHaveCount(0);
 
 		await page.goto("/participant/resources");
-		await expect(page).toHaveURL(/\/under-construction$/);
+		await expect(page).toHaveURL(/\/participant$/);
 	});
 
 	test("resources open once the hackathon starts", async ({
