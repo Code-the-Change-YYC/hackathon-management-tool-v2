@@ -1,10 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Banner from "@/app/components/Banner";
 import type { Situation } from "@/app/components/onboarding/TeamSituationForm";
 import PageHeader from "@/app/components/PageHeader";
+import { useRefresh } from "@/hooks/use-refresh";
 import { DISCORD_URL } from "@/lib/constants";
 import { api, type RouterOutputs } from "@/trpc/react";
 import EditTeamNameModal from "./EditTeamNameModal";
@@ -41,8 +41,7 @@ function getLeaveDescription(team: NonNullable<Team>) {
 }
 
 export function TeamView({ team }: { team: Team }) {
-	const router = useRouter();
-	const [isRefreshing, startTransition] = useTransition();
+	const { isRefreshing, refresh } = useRefresh();
 	const [modal, setModal] = useState<ModalKind>(null);
 	const leave = api.teams.leave.useMutation();
 	const update = api.teams.update.useMutation();
@@ -56,10 +55,7 @@ export function TeamView({ team }: { team: Team }) {
 	// Switches modals once the refreshed team is ready, so the next modal
 	// already has its name and invite code.
 	function refreshThenShow(next: ModalKind) {
-		startTransition(() => {
-			router.refresh();
-			setModal(next);
-		});
+		refresh(() => setModal(next));
 	}
 
 	function handleSituation(situation: Situation) {

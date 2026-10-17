@@ -6,7 +6,7 @@ import {
 	useCreateCriteria,
 	useDeleteCriteria,
 	useUpdateCriteria
-} from "@/app/components/admin/criteriaTable/hooks";
+} from "@/app/components/admin/dashboard/criteriaTable/hooks";
 
 const mocks = vi.hoisted(() => ({
 	create: vi.fn(),
@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 	update: vi.fn()
 }));
 
-vi.mock("@/app/components/admin/criteriaTable/actions", () => ({
+vi.mock("@/app/components/admin/dashboard/criteriaTable/actions", () => ({
 	createCriteria: mocks.create,
 	deleteCriteria: mocks.delete,
 	updateCriteria: mocks.update

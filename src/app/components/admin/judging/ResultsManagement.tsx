@@ -1,6 +1,12 @@
 "use client";
 
 import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle
+} from "@/app/components/ui/empty";
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -8,13 +14,9 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
-import { api } from "@/trpc/react";
+import { ManagementSection, type Ranking } from "./judgingShared";
 
-import { ManagementSection } from "./judgingShared";
-
-export function ResultsManagement() {
-	const rankingsQuery = api.teams.getRankings.useQuery();
-
+export function ResultsManagement({ rankings }: { rankings: Ranking[] }) {
 	return (
 		<ManagementSection
 			description="Live team totals after scores are submitted."
@@ -32,7 +34,7 @@ export function ResultsManagement() {
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{(rankingsQuery.data ?? []).map((team, index) => (
+					{rankings.map((team, index) => (
 						<TableRow key={team.id}>
 							<TableCell className="px-3 py-4 font-semibold text-primary">
 								{index + 1}
@@ -47,11 +49,16 @@ export function ResultsManagement() {
 					))}
 				</TableBody>
 			</Table>
-			{!rankingsQuery.isLoading && !rankingsQuery.data?.length ? (
-				<p className="py-5 text-center text-muted-foreground">
-					No teams are available for ranking.
-				</p>
-			) : null}
+			{rankings.length === 0 && (
+				<Empty>
+					<EmptyHeader>
+						<EmptyTitle>No results yet</EmptyTitle>
+						<EmptyDescription>
+							Team totals appear here once judges submit scores.
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
+			)}
 		</ManagementSection>
 	);
 }

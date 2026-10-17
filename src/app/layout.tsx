@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next";
 
 import { Toaster } from "@/app/components/ui/sonner";
 import { omnes } from "@/app/fonts";
+import { ServerTimeProvider } from "@/hooks/use-current-time";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
@@ -38,7 +39,9 @@ export default function RootLayout({
 	return (
 		<html className={omnes.variable} lang="en">
 			<body>
-				<TRPCReactProvider>{children}</TRPCReactProvider>
+				<ServerTimeProvider time={Date.now()}>
+					<TRPCReactProvider>{children}</TRPCReactProvider>
+				</ServerTimeProvider>
 				<Toaster />
 			</body>
 		</html>

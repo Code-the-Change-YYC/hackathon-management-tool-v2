@@ -1,8 +1,9 @@
-import { redirect } from "next/navigation";
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
+import { resolveAvatarSrc } from "@/lib/avatars";
+import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
-import { JudgeUserProvider } from "../components/judges/JudgeUserProvider";
+import PageContainer from "../components/PageContainer";
 import type { NavGroup } from "../components/sidebar/AppSidebar";
 import {
 	AppSidebar,
@@ -11,14 +12,10 @@ import {
 
 export default async function JudgeLayout({
 	children
-}: Readonly<{ children: React.ReactNode }>) {
-	const session = await requireRole([Role.JUDGE, Role.ADMIN]);
-
-	if (!session.user?.id) {
-		redirect("/");
-	}
-
-	const userName = session.user.name || "Judge";
+}: {
+	children: React.ReactNode;
+}) {
+	const { user } = await requireRole([Role.JUDGE, Role.ADMIN]);
 
 	const JUDGE_NAV_GROUPS: NavGroup[] = [
 		{
@@ -33,12 +30,16 @@ export default async function JudgeLayout({
 
 	return (
 		<SidebarProvider>
-			<AppSidebar navGroups={JUDGE_NAV_GROUPS} userName={userName} />
+			<AppSidebar
+				avatarUrl={resolveAvatarSrc(user.image)}
+				navGroups={JUDGE_NAV_GROUPS}
+				userName={
+					user.firstName || getNameParts(user.name).firstName || "Judge"
+				}
+			/>
 			<SidebarInset>
 				<AppSidebarTriggerHeader />
-				<JudgeUserProvider userId={session.user.id} userName={userName}>
-					{children}
-				</JudgeUserProvider>
+				<PageContainer>{children}</PageContainer>
 			</SidebarInset>
 		</SidebarProvider>
 	);

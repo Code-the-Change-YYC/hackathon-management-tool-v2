@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -10,6 +9,7 @@ import {
 	FieldLabel
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import { useRefresh } from "@/hooks/use-refresh";
 import { eventNavigationUrlSchema } from "@/lib/participant-events";
 import { api } from "@/trpc/react";
 
@@ -21,15 +21,12 @@ type EventDetails = {
 };
 
 export function EventDetailsForm({ event }: { event: EventDetails }) {
-	const router = useRouter();
-	const utils = api.useUtils();
+	const { isRefreshing, refresh } = useRefresh();
 	const [error, setError] = useState("");
 	const update = api.events.updateEventDetails.useMutation({
-		onSuccess: async () => {
-			await utils.events.getActiveEvents.invalidate();
-			router.refresh();
-		}
+		onSuccess: () => refresh()
 	});
+	const isSaving = update.isPending || isRefreshing;
 	return (
 		<details className="rounded-lg border p-4">
 			<summary className="cursor-pointer font-medium">
@@ -84,13 +81,13 @@ export function EventDetailsForm({ event }: { event: EventDetails }) {
 					</Field>
 				</FieldGroup>
 				<div className="flex items-center gap-3">
-					<Button disabled={update.isPending} size="sm" type="submit">
-						{update.isPending ? "Saving…" : "Save event details"}
+					<Button disabled={isSaving} size="sm" type="submit">
+						{isSaving ? "Saving…" : "Save event details"}
 					</Button>
 					<output className="text-sm">
 						{update.error
 							? update.error.message
-							: update.isSuccess
+							: update.isSuccess && !isRefreshing
 								? "Event details saved."
 								: ""}
 					</output>
