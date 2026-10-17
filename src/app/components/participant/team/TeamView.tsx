@@ -78,7 +78,7 @@ export function TeamView({ team }: { team: Team }) {
 
 			{team ? (
 				<TeamTable
-					isOwner={team.myRole === "owner"}
+					canEditName={team.myRole === "owner"}
 					maxMembers={team.maxMembers}
 					members={team.members}
 					onEditName={() => open("edit")}

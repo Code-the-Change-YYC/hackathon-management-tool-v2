@@ -258,9 +258,6 @@ test("members cannot rename the team or send invites", async ({
 	await expect(
 		page.getByRole("button", { name: "Edit team name" })
 	).toHaveCount(0);
-	await expect(
-		page.getByRole("button", { name: /Invite team member/i })
-	).toHaveCount(0);
 
 	const call = (path: string, json: object) =>
 		page.request.post(`/api/trpc/${path}?batch=1`, {

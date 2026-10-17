@@ -90,7 +90,7 @@ interface TeamTableProps {
 	teamName: string;
 	members: TeamMember[];
 	maxMembers: number;
-	isOwner: boolean;
+	canEditName: boolean;
 	onEditName: () => void;
 	onInvite: () => void;
 	onLeave: () => void;
@@ -100,7 +100,7 @@ export default function TeamTable({
 	teamName,
 	members,
 	maxMembers,
-	isOwner,
+	canEditName,
 	onEditName,
 	onInvite,
 	onLeave
@@ -123,7 +123,7 @@ export default function TeamTable({
 					</div>
 				</div>
 
-				{isOwner && (
+				{canEditName && (
 					<Button
 						aria-label="Edit team name"
 						className="shrink-0 hover:bg-purple-500/20"
@@ -141,9 +141,7 @@ export default function TeamTable({
 				{members.map((member) => (
 					<MemberRow key={member.id} member={member} onLeave={onLeave} />
 				))}
-				{isOwner && members.length < maxMembers && (
-					<InviteRow onInvite={onInvite} />
-				)}
+				{members.length < maxMembers && <InviteRow onInvite={onInvite} />}
 			</div>
 		</div>
 	);
