@@ -87,11 +87,7 @@ export function DashboardView({
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 				<PageHeader
 					description="Manage and score your assigned teams."
-					title={
-						<>
-							Hi, <span className="text-strawberry-red">{userName}!</span>
-						</>
-					}
+					title={`Hi, ${userName}!`}
 				/>
 				<div className="flex flex-col items-start gap-1 sm:items-end">
 					<p className="m-0 font-medium text-base">

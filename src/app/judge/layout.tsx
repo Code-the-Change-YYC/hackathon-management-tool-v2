@@ -19,7 +19,6 @@ export default async function JudgeLayout({
 
 	const JUDGE_NAV_GROUPS: NavGroup[] = [
 		{
-			groupLabel: "Judging Information",
 			items: [
 				{ title: "Dashboard", href: "/judge", icon: "home" },
 				{ title: "Schedule", href: "/judge/schedule", icon: "calendar" },
