@@ -188,7 +188,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				inArray(judgingAssignments.roomId, roomIds)
 			),
 			with: {
-				team: true,
+				team: { columns: { id: true, name: true, prescreenStatus: true } },
 				room: {
 					with: {
 						round: true

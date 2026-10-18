@@ -31,16 +31,12 @@ vi.mock("@/trpc/react", () => ({
 		}
 	}
 }));
-vi.mock(
-	"@/app/components/judges/useJudgePortalData",
-	async (importOriginal) => ({
-		...(await importOriginal<
-			typeof import("@/app/components/judges/useJudgePortalData")
-		>()),
-		useJudgeUser: () => ({ userId: "judge-a" }),
-		useJudgePortalData: mocks.portal
-	})
-);
+vi.mock("@/app/components/judges/JudgeUserProvider", () => ({
+	useJudgeUser: () => ({ userId: "judge-a" })
+}));
+vi.mock("@/app/components/judges/useJudgePortalData", () => ({
+	useJudgePortalData: mocks.portal
+}));
 const main = {
 	id: "main",
 	name: "Technical",
@@ -60,7 +56,7 @@ function assignment(id = "assignment-a") {
 	return {
 		id,
 		team: { id: "team", name: id, teamCode: "TEAM" },
-		room: { round: { id: "round", name: "Round 1" } },
+		room: { roundId: "round", round: { id: "round", name: "Round 1" } },
 		timeSlot: null,
 		scores: []
 	};
@@ -83,6 +79,35 @@ function review() {
 	fireEvent.click(screen.getByRole("button", { name: "Review scores" }));
 }
 describe("judge scoring flow", () => {
+	it("only shows and submits criteria for the assignment's round", async () => {
+		mocks.portal.mockReturnValue({
+			assignments: [assignment()],
+			criteria: [
+				{ ...main, roundIds: ["round"] },
+				{ ...main, id: "final", name: "Final round only", roundIds: ["final"] },
+				sidepot
+			],
+			isLoading: false,
+			error: null
+		});
+		mocks.query.mockReturnValue({
+			data: [{ criteriaId: "final", value: 9 }],
+			isLoading: false,
+			error: null
+		});
+		render(<JudgeScorePage assignmentId="assignment-a" />);
+		expect(screen.queryByText("Final round only")).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("radio", { name: "8 out of 10" }));
+		review();
+		expect(
+			screen.getAllByRole("status", { name: "Main score total" })[0]
+		).toHaveTextContent("8");
+		fireEvent.click(screen.getByRole("button", { name: "Submit scores" }));
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/judge"));
+		expect(mocks.mutate).toHaveBeenCalledExactlyOnceWith([
+			{ assignmentId: "assignment-a", criteriaId: "main", score: 8 }
+		]);
+	});
 	it("requires a main score, allows an unscored sidepot, and submits only selected scores", async () => {
 		render(<JudgeScorePage assignmentId="assignment-a" />);
 		expect(screen.getAllByRole("radio")).toHaveLength(10);

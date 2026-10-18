@@ -13,7 +13,8 @@ const mocks = vi.hoisted(() => ({
 		scores: { findFirst: vi.fn(), findMany: vi.fn() },
 		criteria: { findMany: vi.fn(), findFirst: vi.fn() },
 		judgingAssignments: { findFirst: vi.fn(), findMany: vi.fn() },
-		judgingRoomStaff: { findMany: vi.fn() }
+		judgingRoomStaff: { findMany: vi.fn() },
+		judgingRounds: { findMany: vi.fn() }
 	},
 	insert: vi.fn(),
 	update: vi.fn(),
@@ -41,12 +42,14 @@ vi.mock("@/server/db", () => ({
 
 const assignmentId = "11111111-1111-4111-8111-111111111111";
 const criteriaId = "22222222-2222-4222-8222-222222222222";
+const roundId = "44444444-4444-4444-8444-444444444444";
 const scoreId = "33333333-3333-4333-8333-333333333333";
 const mainCriterion = {
 	id: criteriaId,
 	name: "Technical",
 	isSidepot: false,
-	maxScore: 10
+	maxScore: 10,
+	roundIds: [] as string[]
 };
 const input = (score = 7) => [{ assignmentId, criteriaId, score }];
 const dialect = new PgDialect();
@@ -79,7 +82,7 @@ beforeEach(() => {
 	mocks.returning.mockResolvedValue([]);
 	mocks.query.scores.findMany.mockResolvedValue([]);
 	mocks.query.judgingAssignments.findFirst.mockResolvedValue({
-		room: { staff: [{ staffId: "judge-a" }, { staffId: "judge-b" }] }
+		room: { roundId, staff: [{ staffId: "judge-a" }, { staffId: "judge-b" }] }
 	});
 	mocks.query.criteria.findMany.mockResolvedValue([mainCriterion]);
 });
@@ -248,6 +251,52 @@ describe("individual judge scorecards", () => {
 			scores.assignmentId,
 			scores.judgeId
 		]);
+	});
+	it("rejects another round's criterion on both score creation and update", async () => {
+		const otherRoundCriterion = { ...mainCriterion, roundIds: [assignmentId] };
+		mocks.query.criteria.findMany.mockResolvedValue([otherRoundCriterion]);
+		mocks.query.scores.findFirst.mockResolvedValue({
+			assignmentId,
+			criteria: otherRoundCriterion
+		});
+		const api = await caller();
+		await expect(api.createMany(input())).rejects.toMatchObject({
+			code: "BAD_REQUEST",
+			message: "Criterion is not available for this judging round."
+		});
+		await expect(api.update({ id: scoreId, score: 8 })).rejects.toMatchObject({
+			code: "BAD_REQUEST",
+			message: "Criterion is not available for this judging round."
+		});
+		expect(mocks.insert).not.toHaveBeenCalled();
+		expect(mocks.update).not.toHaveBeenCalled();
+	});
+	it("accepts a criterion assigned to the current judging round", async () => {
+		mocks.query.criteria.findMany.mockResolvedValue([
+			{ ...mainCriterion, roundIds: [roundId] }
+		]);
+		await (await caller()).createMany(input());
+		expect(mocks.insert).toHaveBeenCalledOnce();
+	});
+	it("keeps round validation when creating and updating criteria", async () => {
+		const api = criteriaRouter.createCaller(await context("admin", "admin"));
+		mocks.query.judgingRounds.findMany.mockResolvedValue([]);
+		await expect(
+			api.create({ name: "Technical", roundIds: [roundId] })
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		await expect(
+			api.update({ id: criteriaId, roundIds: [roundId] })
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		expect(mocks.insert).not.toHaveBeenCalled();
+		expect(mocks.update).not.toHaveBeenCalled();
+		mocks.query.judgingRounds.findMany.mockResolvedValue([{ id: roundId }]);
+		mocks.query.criteria.findFirst.mockResolvedValue(mainCriterion);
+		await api.create({ name: "Technical", roundIds: [roundId] });
+		expect(mocks.values).toHaveBeenCalledWith(
+			expect.objectContaining({ maxScore: 10, roundIds: [roundId] })
+		);
+		await api.update({ id: criteriaId, roundIds: [roundId] });
+		expect(mocks.set).toHaveBeenCalledWith({ roundIds: [roundId] });
 	});
 	it("keeps main criteria on a ten-point scale when created or updated", async () => {
 		const api = criteriaRouter.createCaller(await context("admin", "admin"));

@@ -11,7 +11,7 @@ import {
 	getTeamCode,
 	hasDraftScore,
 	type JudgeAssignment
-} from "./useJudgePortalData";
+} from "./judgePortal";
 
 function ScoreStatusChip({
 	active,

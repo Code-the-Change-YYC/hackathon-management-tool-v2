@@ -9,6 +9,7 @@ import {
 	useConfirmDialog
 } from "@/app/components/ConfirmAlertDialog";
 import { Button } from "@/app/components/ui/button";
+import { criterionAppliesToRound } from "@/lib/judging";
 import { api } from "@/trpc/react";
 import {
 	JudgeMainCriterion,
@@ -16,8 +17,9 @@ import {
 } from "./JudgeScoreCriterion";
 import { JudgeScoreHeader } from "./JudgeScoreHeader";
 import { JudgeScoreSummary } from "./JudgeScoreSummary";
+import { useJudgeUser } from "./JudgeUserProvider";
 import { LoadingCard } from "./LoadingCard";
-import { useJudgePortalData, useJudgeUser } from "./useJudgePortalData";
+import { useJudgePortalData } from "./useJudgePortalData";
 
 export function JudgeScorePage({ assignmentId }: { assignmentId: string }) {
 	const { userId } = useJudgeUser();
@@ -53,9 +55,15 @@ function ScoringWorkspace({
 	);
 	const [message, setMessage] = useState("");
 	const [submitting, setSubmitting] = useState(false);
-	const criteria = data.criteria.map((criterion) =>
-		criterion.isSidepot ? criterion : { ...criterion, maxScore: 10 }
-	);
+	const criteria = data.criteria
+		.filter(
+			(criterion) =>
+				!assignment ||
+				criterionAppliesToRound(criterion, assignment.room.roundId)
+		)
+		.map((criterion) =>
+			criterion.isSidepot ? criterion : { ...criterion, maxScore: 10 }
+		);
 	const mainCriteria = criteria.filter((criterion) => !criterion.isSidepot);
 	const sidepotCriteria = criteria.filter((criterion) => criterion.isSidepot);
 	const savedScores = Object.fromEntries(

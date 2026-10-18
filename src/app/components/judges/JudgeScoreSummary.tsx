@@ -7,7 +7,7 @@ import {
 	getScoreFillClass,
 	getScoreTextColor,
 	getScoreTone
-} from "./useJudgePortalData";
+} from "./judgePortal";
 export function ScoreTotal({
 	criteria,
 	scores

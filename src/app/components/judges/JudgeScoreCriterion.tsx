@@ -9,7 +9,7 @@ import {
 	getScoreFillClass,
 	getScoreTextColor,
 	getScoreTone
-} from "./useJudgePortalData";
+} from "./judgePortal";
 
 function ScoreButtonGroup({
 	criterion,

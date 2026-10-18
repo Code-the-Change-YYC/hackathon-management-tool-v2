@@ -1,6 +1,7 @@
 /**
- * Teams router (backed by the organization table). Team names are validated
- * against teamNameSchema, mirrored client-side in teamName.ts.
+ * Teams router (backed by the organization table). Team names and invite
+ * codes are validated with the schemas in lib/validation/team.ts, which the
+ * client forms share.
  *
  * Team codes and one-team-per-user are both race-prone under concurrent
  * requests, so both lean on DB constraints instead of check-then-act:
@@ -13,15 +14,23 @@
  * team can't both slip past the cap.
  *
  * Only owners can invite or update team details (besides app admins).
- * Leaving requires confirmDelete for owners (deletes the team); a team left
- * with zero members is cleaned up automatically.
+ * When the owner leaves, the earliest-joined remaining member becomes owner;
+ * a team left with zero members is deleted.
  */
 
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { addDays, isValid } from "date-fns";
+import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
+import { resolveAvatarSrc } from "@/lib/avatars";
 import { tryCatch } from "@/lib/utils";
+import {
+	joinTeamSchema,
+	registerTeamSchema,
+	TEAM_CODE_LENGTH,
+	teamNameSchema
+} from "@/lib/validation/team";
 import {
 	adminProcedure,
 	createTRPCRouter,
@@ -45,18 +54,8 @@ type HackathonMetadata = {
 	devpostSubmissionCloseAt?: string | null;
 };
 
-const teamNameSchema = z
-	.string()
-	.min(1, "Team name is required")
-	.max(50, "Team name must be 50 characters or less")
-	.regex(
-		/^[a-zA-Z0-9 _-]+$/,
-		"Team name can only contain letters, numbers, spaces, hyphens, and underscores"
-	);
-
 const MAX_TEAM_SIZE = 5;
 
-const TEAM_CODE_LENGTH = 6;
 const TEAM_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 const MAX_TEAM_CODE_ATTEMPTS = 5;
@@ -123,11 +122,7 @@ function parseDeadline(value: string | null | undefined): Date | null {
 	}
 
 	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) {
-		return null;
-	}
-
-	return date;
+	return isValid(date) ? date : null;
 }
 
 async function ensureNotInTeam(db: typeof dbType, userId: string) {
@@ -207,7 +202,7 @@ export const teamsRouter = createTRPCRouter({
 		};
 	}),
 
-	getAll: protectedProcedure.query(async ({ ctx }) => {
+	getAll: adminProcedure.query(async ({ ctx }) => {
 		const teams = await ctx.db.query.organization.findMany({
 			orderBy: [desc(organization.createdAt)]
 		});
@@ -329,6 +324,7 @@ export const teamsRouter = createTRPCRouter({
 				userId: m.userId,
 				name: m.user.name,
 				email: m.user.email,
+				avatarSrc: resolveAvatarSrc(m.user.image),
 				role: m.role,
 				isYou: m.userId === userId
 			}))
@@ -336,16 +332,15 @@ export const teamsRouter = createTRPCRouter({
 	}),
 
 	create: protectedProcedure
-		.input(
-			z.object({
-				name: teamNameSchema
-			})
-		)
+		.input(registerTeamSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
 			await ensureNotInTeam(ctx.db, userId);
 
 			const slug = input.name
+				// Drops accents so "Équipe" becomes "equipe" rather than "quipe".
+				.normalize("NFD")
+				.replace(/\p{M}/gu, "")
 				.toLowerCase()
 				.replace(/\s+/g, "-")
 				.replace(/[^a-z0-9-]/g, "");
@@ -396,17 +391,7 @@ export const teamsRouter = createTRPCRouter({
 		}),
 
 	join: protectedProcedure
-		.input(
-			z.object({
-				teamCode: z
-					.string()
-					.length(
-						TEAM_CODE_LENGTH,
-						`Team code must be exactly ${TEAM_CODE_LENGTH} characters`
-					)
-					.toUpperCase()
-			})
-		)
+		.input(joinTeamSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
 			await ensureNotInTeam(ctx.db, userId);
@@ -518,7 +503,7 @@ export const teamsRouter = createTRPCRouter({
 					email: input.email,
 					role: MEMBER_ROLES.MEMBER,
 					status: "pending",
-					expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+					expiresAt: addDays(new Date(), 7),
 					inviterId: userId
 				})
 				.returning();
@@ -607,53 +592,54 @@ export const teamsRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
-	leave: protectedProcedure
-		.input(
-			z
-				.object({
-					confirmDelete: z.boolean().optional()
-				})
-				.optional()
-		)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-			const membership = await getUserMembership(ctx.db, userId);
-			const isOwner = membership.role === MEMBER_ROLES.OWNER;
+	leave: protectedProcedure.mutation(async ({ ctx }) => {
+		const userId = ctx.session.user.id;
+		const { organizationId } = await getUserMembership(ctx.db, userId);
 
-			if (isOwner && !input?.confirmDelete) {
-				return {
-					success: false,
-					warning:
-						"You are the team owner. Leaving will delete the entire team " +
-						"and all pending invitations. Set confirmDelete: true to proceed."
-				};
-			}
+		await ctx.db.transaction(async (tx) => {
+			// Serializes with joins and other leaves, so two members leaving at
+			// once can't both skip the promotion or the empty-team cleanup.
+			await tx.execute(
+				sql`select pg_advisory_xact_lock(hashtext(${organizationId}))`
+			);
 
-			await ctx.db.transaction(async (tx) => {
-				if (isOwner) {
-					await deleteTeamAndInvitations(tx, membership.organizationId);
-				} else {
-					await tx.delete(member).where(eq(member.id, membership.id));
+			await tx
+				.delete(member)
+				.where(
+					and(
+						eq(member.userId, userId),
+						eq(member.organizationId, organizationId)
+					)
+				);
 
-					const remainingMembers = await tx.query.member.findMany({
-						where: eq(member.organizationId, membership.organizationId)
-					});
-
-					if (remainingMembers.length === 0) {
-						await deleteTeamAndInvitations(tx, membership.organizationId);
-					}
-				}
+			const remainingMembers = await tx.query.member.findMany({
+				where: eq(member.organizationId, organizationId),
+				orderBy: [asc(member.createdAt), asc(member.id)]
 			});
 
-			return { success: true };
-		}),
+			const [earliest] = remainingMembers;
+			if (!earliest) {
+				await deleteTeamAndInvitations(tx, organizationId);
+				return;
+			}
+
+			if (!remainingMembers.some((m) => m.role === MEMBER_ROLES.OWNER)) {
+				await tx
+					.update(member)
+					.set({ role: MEMBER_ROLES.OWNER })
+					.where(eq(member.id, earliest.id));
+			}
+		});
+
+		return { success: true };
+	}),
 
 	update: protectedProcedure
 		.input(
 			z.object({
 				id: z.string(),
-				name: z.string().min(1).optional(),
-				slug: z.string().optional(),
+				name: teamNameSchema.optional(),
+				slug: z.string().trim().min(1).optional(),
 				logo: z.string().optional().nullable(),
 				metadata: z.string().optional().nullable()
 			})
@@ -664,6 +650,18 @@ export const teamsRouter = createTRPCRouter({
 			const isAppAdmin = ctx.session.user.role === "admin";
 
 			if (!isAppAdmin) {
+				// Owners can only rename; the other details are admin-only.
+				if (
+					data.slug !== undefined ||
+					data.logo !== undefined ||
+					data.metadata !== undefined
+				) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message:
+							"Only app admins can change team details other than the name"
+					});
+				}
 				const membership = await ctx.db.query.member.findFirst({
 					where: and(
 						eq(member.userId, userId),
@@ -679,14 +677,25 @@ export const teamsRouter = createTRPCRouter({
 				}
 			}
 
-			const [updated] = await ctx.db
-				.update(organization)
-				.set(data)
-				.where(eq(organization.id, id))
-				.returning();
-			return updated;
+			const { data: rows, error } = await tryCatch(
+				ctx.db
+					.update(organization)
+					.set(data)
+					.where(eq(organization.id, id))
+					.returning()
+			);
+			if (error) {
+				if (isUniqueViolation(error)) {
+					throw new TRPCError({
+						code: "CONFLICT",
+						message: "Another team already uses that slug"
+					});
+				}
+				throw error;
+			}
+			return rows[0];
 		}),
-	getRankings: protectedProcedure.query(async ({ ctx }) => {
+	getRankings: adminProcedure.query(async ({ ctx }) => {
 		const result = await ctx.db.execute(
 			sql<TeamRanking>`
           SELECT 

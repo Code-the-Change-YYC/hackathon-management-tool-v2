@@ -6,8 +6,8 @@ import { tryCatch } from "@/lib/utils";
 import { fetchContentful } from "@/server/contentful";
 import { db } from "@/server/db";
 import { criteria } from "@/server/db/scores-schema";
-import { mapJudges } from "./components/admin/landingpage/data/judges";
-import { mapPastHackathonWinners } from "./components/admin/landingpage/data/winners";
+import { mapJudges } from "./components/landing-page/data/judges";
+import { mapPastHackathonWinners } from "./components/landing-page/data/winners";
 
 export async function getWinners() {
 	const { data, error } = await tryCatch(

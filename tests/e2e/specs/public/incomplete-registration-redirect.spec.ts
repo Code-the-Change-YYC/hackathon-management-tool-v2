@@ -1,28 +1,26 @@
-import { auth } from "auth.test";
+import { createTestUserWithPassword } from "../../../utils/auth";
 import { expect, test } from "../../fixtures/pages.fixture";
 
-test("an incomplete email user is sent to personal details after signing in", async ({
+test("an email user who hasn't onboarded is sent to personal details after logging in", async ({
 	page,
-	loginPage,
-	registerUserForCleanup
-}, testInfo) => {
-	const email = `incomplete-${Date.now()}-${testInfo.parallelIndex}@hackathon.com`;
+	loginPage
+}) => {
 	const password = "Password123!";
-	registerUserForCleanup(email);
-
-	await auth.api.signUpEmail({
-		body: {
-			email,
-			name: "Incomplete Participant",
-			password
-		}
+	const { cleanup, user } = await createTestUserWithPassword(password, {
+		completedRegistration: false,
+		name: "",
+		role: "user"
 	});
 
-	await loginPage.goto();
-	await loginPage.fillFormAndSubmit({ email, password });
+	try {
+		await loginPage.goto();
+		await loginPage.fillFormAndSubmit({ email: user.email, password });
 
-	await expect(page).toHaveURL(/\/signup\/identity$/);
-	await expect(
-		page.getByLabel("Which institution are you attending?*")
-	).toBeVisible();
+		await expect(page).toHaveURL(/\/onboarding\/personal-details$/);
+		await expect(
+			page.getByLabel("Which institution are you attending?", { exact: true })
+		).toBeVisible();
+	} finally {
+		await cleanup();
+	}
 });

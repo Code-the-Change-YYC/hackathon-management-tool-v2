@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 // TODO: guard with `requireRole([Role.ADMIN])` and load teams from the
 // teams router once the backend for this screen exists.
-export const MOCK_TEAMS: Team[] = [
+const MOCK_TEAMS: Team[] = [
 	{
 		rank: 1,
 		id: "1XJD",
