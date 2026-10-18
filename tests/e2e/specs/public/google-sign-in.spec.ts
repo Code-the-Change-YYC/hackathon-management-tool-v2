@@ -1,6 +1,6 @@
 import { expect, test } from "playwright/test";
 
-test("login and registration pages offer Google sign-in", async ({ page }) => {
+test("login and sign-up pages offer Google sign-in", async ({ page }) => {
 	await page.goto("/login");
 	await expect(
 		page.getByRole("button", { name: "Continue with Google" })
@@ -32,9 +32,10 @@ test("Google sign-in starts the Better Auth social flow", async ({ page }) => {
 	await page.getByRole("button", { name: "Continue with Google" }).click();
 
 	const request = await requestPromise;
+	// Onboarding sends each user on to their next step or their dashboard.
 	expect(request.postDataJSON()).toMatchObject({
 		provider: "google",
-		callbackURL: "/signup/identity",
-		newUserCallbackURL: "/signup/identity"
+		callbackURL: "/onboarding",
+		errorCallbackURL: "/login"
 	});
 });

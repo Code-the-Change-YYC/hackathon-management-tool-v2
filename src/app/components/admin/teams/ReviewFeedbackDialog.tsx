@@ -130,9 +130,7 @@ export function ReviewFeedbackDialog({
 			<Dialog onOpenChange={requestClose} open={!confirmingDiscard}>
 				<DialogContent className="sm:max-w-sm">
 					<DialogHeader>
-						<DialogTitle className="text-lg">
-							Review Judging Feedback
-						</DialogTitle>
+						<DialogTitle>Review Judging Feedback</DialogTitle>
 					</DialogHeader>
 					<FieldGroup>
 						<Field>

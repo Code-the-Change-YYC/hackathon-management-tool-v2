@@ -81,7 +81,10 @@
 					"a11y": {
 						"useSemanticElements": "off",
 						"noLabelWithoutControl": "off",
-						"useKeyWithClickEvents": "off"
+						"useKeyWithClickEvents": "off",
+						// Static role="separator" elements need neither focus nor aria-valuenow.
+						"useAriaPropsForRole": "off",
+						"useFocusableInteractive": "off"
 					},
 					"correctness": {
 						"useExhaustiveDependencies": "off"

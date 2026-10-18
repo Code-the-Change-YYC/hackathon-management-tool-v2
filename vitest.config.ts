@@ -18,6 +18,13 @@ export default defineConfig({
 			{
 				extends: true,
 				test: {
+					include: ["tests/vitest/unit/**/*.test.ts"],
+					name: "unit"
+				}
+			},
+			{
+				extends: true,
+				test: {
 					include: ["tests/vitest/integration/**/*.test.ts"],
 					name: "integration"
 				}

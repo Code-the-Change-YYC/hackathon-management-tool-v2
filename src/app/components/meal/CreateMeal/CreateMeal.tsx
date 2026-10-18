@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fromDateTimeLocalValue } from "@/lib/datetime";
 import { api } from "@/trpc/react";
 
 export default function CreateMeal() {
@@ -64,10 +65,7 @@ export default function CreateMeal() {
 				id="start-time"
 				name="start-time"
 				onChange={(e) => {
-					const nextStartTime = new Date(e.target.value);
-					setStartTime(
-						Number.isNaN(nextStartTime.getTime()) ? null : nextStartTime
-					);
+					setStartTime(fromDateTimeLocalValue(e.target.value));
 				}}
 				type="datetime-local"
 			/>
@@ -79,8 +77,7 @@ export default function CreateMeal() {
 				id="end-time"
 				name="end-time"
 				onChange={(e) => {
-					const nextEndTime = new Date(e.target.value);
-					setEndTime(Number.isNaN(nextEndTime.getTime()) ? null : nextEndTime);
+					setEndTime(fromDateTimeLocalValue(e.target.value));
 				}}
 				type="datetime-local"
 			/>

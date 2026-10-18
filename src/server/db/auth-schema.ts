@@ -23,18 +23,23 @@ import {
 import {
 	boolean,
 	index,
+	integer,
 	pgTableCreator,
 	text,
 	timestamp,
 	uniqueIndex
 } from "drizzle-orm/pg-core";
-import { DIETARY_RESTRICTIONS, PROGRAMS } from "@/lib/validation/signup";
+import {
+	DIETARY_RESTRICTIONS,
+	LEVELS_OF_STUDY,
+	PROGRAMS
+} from "@/lib/validation/signup";
 
 export {
 	DIETARY_RESTRICTIONS,
 	type DietaryRestriction,
-	PROGRAMS,
-	SCHOOLS
+	LEVELS_OF_STUDY,
+	PROGRAMS
 } from "@/lib/validation/signup";
 
 const MEMBER_ROLE_VALUES = ["owner", "member", "admin"] as const;
@@ -63,8 +68,24 @@ export const user = createTable("user", {
 		.array()
 		.default(sql`ARRAY[]::text[]`)
 		.notNull(),
+	// The registration details MLH member events collect. `name` stays the full
+	// name Better Auth needs; MLH wants first and last names as entered.
+	firstName: text("first_name"),
+	lastName: text("last_name"),
+	age: integer("age"),
+	phoneNumber: text("phone_number"),
+	// An ISO 3166-1 alpha-2 code.
+	countryOfResidence: text("country_of_residence"),
+	// A name from MLH's list of schools, or one the participant typed in.
 	school: text("school"),
+	levelOfStudy: text("level_of_study", { enum: LEVELS_OF_STUDY }),
 	program: text("program", { enum: PROGRAMS }),
+	// Null until the participant answers during onboarding.
+	wantsFood: boolean("wants_food"),
+	// When the participant agreed to the MLH policies during onboarding.
+	mlhCodeOfConductAcceptedAt: timestamp("mlh_code_of_conduct_accepted_at"),
+	mlhDataSharingAcceptedAt: timestamp("mlh_data_sharing_accepted_at"),
+	mlhEmailOptIn: boolean("mlh_email_opt_in").default(false).notNull(),
 	completedRegistration: boolean("completed_registration")
 		.default(false)
 		.notNull()

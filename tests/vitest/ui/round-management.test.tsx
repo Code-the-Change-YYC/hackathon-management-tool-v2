@@ -73,8 +73,8 @@ describe("judging round form", () => {
 		await waitFor(() =>
 			expect(mocks.create).toHaveBeenCalledWith({
 				name: "Finals",
-				startTime: new Date("2026-09-12T10:00"),
-				endTime: new Date("2026-09-12T12:00")
+				startTime: new Date("2026-09-12T10:00:00-06:00"),
+				endTime: new Date("2026-09-12T12:00:00-06:00")
 			})
 		);
 	});
@@ -83,8 +83,8 @@ describe("judging round form", () => {
 			{
 				id: "round-1",
 				name: "Existing round",
-				startTime: new Date("2026-09-12T10:00"),
-				endTime: new Date("2026-09-12T12:00")
+				startTime: new Date("2026-09-12T16:00:00Z"),
+				endTime: new Date("2026-09-12T18:00:00Z")
 			}
 		];
 		render(
@@ -92,6 +92,7 @@ describe("judging round form", () => {
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Edit" }));
 		expect(screen.getByLabelText("Round name")).toHaveValue("Existing round");
+		expect(screen.getByLabelText("Starts")).toHaveValue("2026-09-12T10:00");
 		fireEvent.change(screen.getByLabelText("Round name"), {
 			target: { value: "Renamed round" }
 		});

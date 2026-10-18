@@ -14,7 +14,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle
 } from "@/app/components/ui/alert-dialog";
-import { Button, buttonVariants } from "../../ui/button";
+import { Button } from "../../ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -107,9 +107,7 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 			<Dialog onOpenChange={requestClose} open={!confirmingDiscard}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle className="text-lg">
-							Prescreening for Team: {team.name}
-						</DialogTitle>
+						<DialogTitle>Prescreening for Team: {team.name}</DialogTitle>
 					</DialogHeader>
 
 					{step === "intro" && (

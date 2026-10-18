@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Field, FieldGroup, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { fromDateTimeLocalValue, toDateTimeLocalValue } from "@/lib/datetime";
+import {
+	JUDGING_PHASE_LABELS,
+	JUDGING_PHASES,
+	type JudgingPhase
+} from "@/lib/judging";
 import { api } from "@/trpc/react";
-
-function toDateTimeLocal(value: Date | null | undefined): string {
-	if (!value) return "";
-	const pad = (n: number) => String(n).padStart(2, "0");
-	return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T${pad(
-		value.getHours()
-	)}:${pad(value.getMinutes())}`;
-}
 
 export default function HackathonSettingsPanel() {
 	const utils = api.useUtils();
@@ -18,15 +18,21 @@ export default function HackathonSettingsPanel() {
 
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
+	const [submissionDeadline, setSubmissionDeadline] = useState("");
+	const [judgingPhase, setJudgingPhase] = useState<JudgingPhase>("not_started");
 	const [isActive, setIsActive] = useState(true);
 	const [currentRoundId, setCurrentRoundId] = useState("");
 
 	useEffect(() => {
-		setStartDate(toDateTimeLocal(settings?.startDate ?? null));
-		setEndDate(toDateTimeLocal(settings?.endDate ?? null));
+		setSubmissionDeadline(toDateTimeLocalValue(settings?.submissionDeadline));
+		setJudgingPhase(settings?.judgingPhase ?? "not_started");
+		setStartDate(toDateTimeLocalValue(settings?.startDate));
+		setEndDate(toDateTimeLocalValue(settings?.endDate));
 		setIsActive(settings?.isActive ?? true);
 		setCurrentRoundId(settings?.currentRoundId ?? "");
 	}, [
+		settings?.submissionDeadline,
+		settings?.judgingPhase,
 		settings?.currentRoundId,
 		settings?.endDate,
 		settings?.isActive,
@@ -68,6 +74,36 @@ export default function HackathonSettingsPanel() {
 						value={endDate}
 					/>
 				</label>
+				<FieldGroup className="max-w-sm">
+					<Field>
+						<FieldLabel htmlFor="submission-deadline">
+							Submission deadline
+						</FieldLabel>
+						<Input
+							id="submission-deadline"
+							onChange={(e) => setSubmissionDeadline(e.target.value)}
+							type="datetime-local"
+							value={submissionDeadline}
+						/>
+					</Field>
+					<Field>
+						<FieldLabel htmlFor="dashboard-judging-phase">
+							Participant judging phase
+						</FieldLabel>
+						<select
+							id="dashboard-judging-phase"
+							onChange={(e) => setJudgingPhase(e.target.value as JudgingPhase)}
+							value={judgingPhase}
+						>
+							{JUDGING_PHASES.map((phase) => (
+								<option key={phase} value={phase}>
+									{JUDGING_PHASE_LABELS[phase]}
+								</option>
+							))}
+						</select>
+					</Field>
+				</FieldGroup>
+
 				<label style={{ display: "flex", alignItems: "center", gap: 6 }}>
 					<input
 						checked={isActive}
@@ -97,8 +133,10 @@ export default function HackathonSettingsPanel() {
 					disabled={update.isPending}
 					onClick={() => {
 						update.mutate({
-							startDate: startDate ? new Date(startDate) : undefined,
-							endDate: endDate ? new Date(endDate) : undefined,
+							startDate: fromDateTimeLocalValue(startDate) ?? undefined,
+							endDate: fromDateTimeLocalValue(endDate) ?? undefined,
+							submissionDeadline: fromDateTimeLocalValue(submissionDeadline),
+							judgingPhase,
 							isActive,
 							currentRoundId: currentRoundId || null
 						});
