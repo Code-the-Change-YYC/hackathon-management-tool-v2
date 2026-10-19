@@ -72,7 +72,6 @@ describe("participant schedule", () => {
 	it("groups events by Calgary day", () => {
 		const item = (id: string, date: string) => ({
 			...event(id, EventType.FOOD, 0, 1),
-			eventType: EventType.FOOD,
 			startTime: new Date(date)
 		});
 		const groups = groupScheduleItemsByDate([

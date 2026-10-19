@@ -78,10 +78,7 @@ export function DashboardView({
 						<Schedule
 							emptyDescription="Check back here for new events and activities."
 							emptyTitle="No upcoming events"
-							items={upcomingEvents.map((event) => ({
-								...event,
-								eventType: event.type
-							}))}
+							items={upcomingEvents}
 							now={now}
 							showGroupLabels={false}
 						/>

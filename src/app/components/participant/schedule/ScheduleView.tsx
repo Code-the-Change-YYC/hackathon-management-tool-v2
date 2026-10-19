@@ -25,10 +25,7 @@ export function ScheduleView({ events }: { events: DashboardEvent[] }) {
 					<Schedule
 						emptyDescription="Check back soon for hackathon events and activities."
 						emptyTitle="No events have been scheduled yet"
-						items={events.map((event) => ({
-							...event,
-							eventType: event.type
-						}))}
+						items={events}
 						now={now}
 					/>
 				</CardContent>
