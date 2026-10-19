@@ -105,12 +105,13 @@ describe("admin schedule", () => {
 
 		change("Ends", "2026-11-07T15:00");
 		change("Directions or meeting URL", "");
+		fireEvent.click(screen.getByRole("radio", { name: "Ceremony" }));
 		submit();
 		await waitFor(() =>
 			expect(mocks.add).toHaveBeenCalledWith({
 				title: "Trivia",
 				description: "Win prizes",
-				type: EventType.ACTIVITY,
+				type: EventType.CEREMONY,
 				status: EventStatus.ACTIVE,
 				location: null,
 				navigationUrl: null,
@@ -125,6 +126,7 @@ describe("admin schedule", () => {
 		openMenu("Lunch");
 		fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
 		expect(screen.getByLabelText("Title")).toHaveValue("Lunch");
+		expect(screen.getByRole("radio", { name: "Food" })).toBeChecked();
 		expect(screen.getByLabelText("Starts")).toHaveValue("2026-11-07T13:00");
 		expect(
 			screen.getByRole("checkbox", { name: "Show on the participant schedule" })

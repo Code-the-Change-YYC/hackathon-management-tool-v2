@@ -1,12 +1,16 @@
 "use client";
 
+import { Radio } from "@base-ui/react/radio";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { CheckboxField } from "@/app/components/forms/CheckboxField";
-import { SelectField } from "@/app/components/forms/SelectField";
 import { TextField } from "@/app/components/forms/TextField";
+import {
+	EVENT_TYPE_THEMES,
+	EventTypeIcon
+} from "@/app/components/ScheduleItem";
 import { Button } from "@/app/components/ui/button";
 import {
 	Dialog,
@@ -21,20 +25,21 @@ import {
 	FieldGroup,
 	FieldLabel
 } from "@/app/components/ui/field";
+import { RadioGroup } from "@/app/components/ui/radio-group";
 import { Textarea } from "@/app/components/ui/textarea";
 import { toDateTimeLocalValue } from "@/lib/datetime";
+import { cn } from "@/lib/utils";
 import {
 	EMPTY_EVENT_FORM,
 	EVENT_DESCRIPTION_MAX_LENGTH,
 	EVENT_LOCATION_MAX_LENGTH,
 	EVENT_TITLE_MAX_LENGTH,
-	EVENT_TYPE_OPTIONS,
 	type EventFormInput,
 	type EventFormValues,
 	eventFormSchema
 } from "@/lib/validation/event";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { EventStatus } from "@/types/types";
+import { EVENT_TYPES, EventStatus } from "@/types/types";
 
 export type AdminEvent = RouterOutputs["events"]["getAllEvents"][number];
 
@@ -76,6 +81,7 @@ export function EventDialog({
 	const updateEvent = api.events.updateEvent.useMutation(callbacks);
 	const isPending = addEvent.isPending || updateEvent.isPending;
 	const descriptionError = form.formState.errors.description;
+	const eventType = useWatch({ control: form.control, name: "type" });
 
 	return (
 		<Dialog
@@ -104,22 +110,31 @@ export function EventDialog({
 							maxLength={EVENT_TITLE_MAX_LENGTH}
 							name="title"
 						/>
+						<Field>
+							<FieldLabel id="event-type-label">Type</FieldLabel>
+							<RadioGroup
+								aria-labelledby="event-type-label"
+								className="grid-cols-4"
+								disabled={isPending}
+								onValueChange={(type) => form.setValue("type", type)}
+								value={eventType}
+							>
+								{EVENT_TYPES.map((type) => (
+									<Radio.Root
+										className={cn(
+											"flex min-w-0 flex-col items-center gap-1.5 rounded-lg border-2 border-transparent p-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring data-checked:font-medium data-disabled:opacity-50",
+											EVENT_TYPE_THEMES[type].selectedClassName
+										)}
+										key={type}
+										value={type}
+									>
+										<EventTypeIcon className="size-12 p-2.5" type={type} />
+										{EVENT_TYPE_THEMES[type].label}
+									</Radio.Root>
+								))}
+							</RadioGroup>
+						</Field>
 						<div className="grid gap-4 sm:grid-cols-2">
-							<SelectField
-								control={form.control}
-								disabled={isPending}
-								label="Type"
-								name="type"
-								options={EVENT_TYPE_OPTIONS}
-							/>
-							<TextField
-								control={form.control}
-								disabled={isPending}
-								label="Location"
-								maxLength={EVENT_LOCATION_MAX_LENGTH}
-								name="location"
-								placeholder="Room or venue"
-							/>
 							<TextField
 								control={form.control}
 								disabled={isPending}
@@ -134,15 +149,23 @@ export function EventDialog({
 								name="endTime"
 								type="datetime-local"
 							/>
+							<TextField
+								control={form.control}
+								disabled={isPending}
+								label="Location"
+								maxLength={EVENT_LOCATION_MAX_LENGTH}
+								name="location"
+								placeholder="Room or venue"
+							/>
+							<TextField
+								control={form.control}
+								disabled={isPending}
+								label="Directions or meeting URL"
+								name="navigationUrl"
+								placeholder="https://"
+								type="url"
+							/>
 						</div>
-						<TextField
-							control={form.control}
-							disabled={isPending}
-							label="Directions or meeting URL"
-							name="navigationUrl"
-							placeholder="https://"
-							type="url"
-						/>
 						<Field data-invalid={Boolean(descriptionError)}>
 							<FieldLabel htmlFor="event-description">Description</FieldLabel>
 							<Textarea

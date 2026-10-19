@@ -7,11 +7,6 @@ export const EVENT_TITLE_MAX_LENGTH = 120;
 export const EVENT_DESCRIPTION_MAX_LENGTH = 1000;
 export const EVENT_LOCATION_MAX_LENGTH = 200;
 
-export const EVENT_TYPE_OPTIONS = EVENT_TYPES.map((value) => ({
-	value,
-	label: value.charAt(0).toUpperCase() + value.slice(1)
-}));
-
 const dateTimeField = z.string().transform((value, ctx) => {
 	const date = fromDateTimeLocalValue(value);
 	if (!date) {
