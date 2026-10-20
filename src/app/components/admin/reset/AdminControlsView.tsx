@@ -35,7 +35,7 @@ const ACTIONS = [
 	{ value: "reset", label: "Reset hackathon" }
 ] as const;
 
-const sectionTitle = "font-medium text-xl";
+const sectionTitle = "font-medium text-[22px] leading-7";
 
 export default function AdminControlsView() {
 	const utils = api.useUtils();
@@ -98,138 +98,145 @@ export default function AdminControlsView() {
 	}
 
 	return (
-		<div className="flex min-h-svh flex-1 flex-col gap-12 bg-white p-6">
+		<div className="flex flex-col gap-6 p-6">
 			<PageHeader
 				description="Create or reset the hackathon"
 				title="Admin Controls"
 			/>
-
-			<section aria-labelledby="dates-title" className="flex flex-col gap-4">
-				<h2 className={sectionTitle} id="dates-title">
-					Set Hackathon Dates
-				</h2>
-				<div className="grid gap-4 md:grid-cols-2 md:gap-16">
-					<Field data-invalid={datesInvalid}>
-						<FieldLabel htmlFor="hackathon-start">Start Date</FieldLabel>
-						<Input
-							disabled={action !== "create"}
-							id="hackathon-start"
-							onChange={(event) => setStartDate(event.target.value)}
-							type="date"
-							value={startDate}
-						/>
-					</Field>
-					<Field data-invalid={datesInvalid}>
-						<FieldLabel htmlFor="hackathon-end">End Date</FieldLabel>
-						<Input
-							aria-describedby="hackathon-dates-error"
-							aria-invalid={datesInvalid}
-							disabled={action !== "create"}
-							id="hackathon-end"
-							onChange={(event) => setEndDate(event.target.value)}
-							type="date"
-							value={endDate}
-						/>
-						{datesInvalid && (
-							<p
-								className="text-destructive text-sm"
-								id="hackathon-dates-error"
-							>
-								The end date must be after the start date.
-							</p>
-						)}
-					</Field>
-				</div>
-			</section>
-
-			<div className="grid gap-12 md:grid-cols-2 md:gap-16">
-				<section aria-labelledby="action-title" className="flex flex-col gap-4">
-					<h2 className={sectionTitle} id="action-title">
-						Hackathon Action
+			<div className="flex flex-col gap-16">
+				<section aria-labelledby="dates-title" className="flex flex-col gap-4">
+					<h2 className={sectionTitle} id="dates-title">
+						Set Hackathon Dates
 					</h2>
-					<RadioGroup
-						aria-labelledby="action-title"
-						onValueChange={(value) => {
-							setAction(value);
-							setResets(NO_RESETS);
-							setConfirmation("");
-						}}
-						value={action}
-					>
-						{ACTIONS.map(({ value, label }) => (
-							<label
-								className="flex h-12 items-center gap-4"
-								htmlFor={`action-${value}`}
-								key={value}
-							>
-								<RadioGroupItem
-									className="size-5"
-									id={`action-${value}`}
-									value={value}
-								/>
-								{label}
-							</label>
-						))}
-					</RadioGroup>
-				</section>
-
-				<section aria-labelledby="reset-title" className="flex flex-col gap-4">
-					<h2 className={sectionTitle} id="reset-title">
-						Reset Fields
-					</h2>
-					<div className="flex flex-col gap-2">
-						{RESET_FIELDS.map(({ key, label }) => {
-							const included = key === "scores" && scoresIncluded;
-							return (
-								<label
-									className="flex min-h-12 items-center gap-4 p-2"
-									htmlFor={`reset-${key}`}
-									key={key}
+					<div className="grid gap-4 md:grid-cols-2 md:gap-16">
+						<Field data-invalid={datesInvalid}>
+							<FieldLabel htmlFor="hackathon-start">Start Date</FieldLabel>
+							<Input
+								disabled={action !== "create"}
+								id="hackathon-start"
+								onChange={(event) => setStartDate(event.target.value)}
+								type="date"
+								value={startDate}
+							/>
+						</Field>
+						<Field data-invalid={datesInvalid}>
+							<FieldLabel htmlFor="hackathon-end">End Date</FieldLabel>
+							<Input
+								aria-describedby="hackathon-dates-error"
+								aria-invalid={datesInvalid}
+								disabled={action !== "create"}
+								id="hackathon-end"
+								onChange={(event) => setEndDate(event.target.value)}
+								type="date"
+								value={endDate}
+							/>
+							{datesInvalid && (
+								<p
+									className="text-destructive text-sm"
+									id="hackathon-dates-error"
 								>
-									<Checkbox
-										checked={selection[key]}
-										disabled={action !== "reset" || included}
-										id={`reset-${key}`}
-										onCheckedChange={(checked) =>
-											setResets({ ...resets, [key]: checked === true })
-										}
-									/>
-									<span className="flex flex-col">
-										{label}
-										{included && (
-											<span className="text-muted-foreground text-sm">
-												Included with teams or rooms
-											</span>
-										)}
-									</span>
-								</label>
-							);
-						})}
+									The end date must be after the start date.
+								</p>
+							)}
+						</Field>
 					</div>
 				</section>
-			</div>
 
-			<div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-end">
-				<Field className="md:w-100">
-					<FieldLabel htmlFor="reset-confirmation">
-						Enter “{RESET_CONFIRMATION_PHRASE}” to confirm reset
-					</FieldLabel>
-					<Input
-						autoComplete="off"
-						disabled={action !== "reset"}
-						id="reset-confirmation"
-						onChange={(event) => setConfirmation(event.target.value)}
-						placeholder={RESET_CONFIRMATION_PHRASE}
-						value={confirmation}
-					/>
-				</Field>
-				<Button
-					className="self-end"
-					disabled={!canSubmit || isPending}
-					onClick={submit}
-				>
-					Submit Changes
-				</Button>
+				<div className="grid gap-16 md:grid-cols-2">
+					<section
+						aria-labelledby="action-title"
+						className="flex flex-col gap-4"
+					>
+						<h2 className={sectionTitle} id="action-title">
+							Hackathon Action
+						</h2>
+						<RadioGroup
+							aria-labelledby="action-title"
+							onValueChange={(value) => {
+								setAction(value);
+								setResets(NO_RESETS);
+								setConfirmation("");
+							}}
+							value={action}
+						>
+							{ACTIONS.map(({ value, label }) => (
+								<label
+									className="flex h-12 items-center gap-4"
+									htmlFor={`action-${value}`}
+									key={value}
+								>
+									<RadioGroupItem
+										className="size-5"
+										id={`action-${value}`}
+										value={value}
+									/>
+									{label}
+								</label>
+							))}
+						</RadioGroup>
+					</section>
+
+					<section
+						aria-labelledby="reset-title"
+						className="flex flex-col gap-4"
+					>
+						<h2 className={sectionTitle} id="reset-title">
+							Reset Fields
+						</h2>
+						<div className="flex flex-col gap-2">
+							{RESET_FIELDS.map(({ key, label }) => {
+								const included = key === "scores" && scoresIncluded;
+								return (
+									<label
+										className="flex min-h-12 items-center gap-4 p-2"
+										htmlFor={`reset-${key}`}
+										key={key}
+									>
+										<Checkbox
+											checked={selection[key]}
+											disabled={action !== "reset" || included}
+											id={`reset-${key}`}
+											onCheckedChange={(checked) =>
+												setResets({ ...resets, [key]: checked === true })
+											}
+										/>
+										<span className="flex flex-col">
+											{label}
+											{included && (
+												<span className="text-muted-foreground text-sm">
+													Included with teams or rooms
+												</span>
+											)}
+										</span>
+									</label>
+								);
+							})}
+						</div>
+					</section>
+				</div>
+
+				<div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-end">
+					<Field className="md:w-100">
+						<FieldLabel htmlFor="reset-confirmation">
+							Enter “{RESET_CONFIRMATION_PHRASE}” to confirm reset
+						</FieldLabel>
+						<Input
+							autoComplete="off"
+							disabled={action !== "reset"}
+							id="reset-confirmation"
+							onChange={(event) => setConfirmation(event.target.value)}
+							placeholder={RESET_CONFIRMATION_PHRASE}
+							value={confirmation}
+						/>
+					</Field>
+					<Button
+						className="self-end"
+						disabled={!canSubmit || isPending}
+						onClick={submit}
+					>
+						Submit Changes
+					</Button>
+				</div>
 			</div>
 		</div>
 	);
