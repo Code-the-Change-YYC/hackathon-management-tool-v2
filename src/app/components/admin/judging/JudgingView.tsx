@@ -78,6 +78,7 @@ export function JudgingView({
 					<RoomManagement
 						assignments={schedule.roundAssignments}
 						judges={judges}
+						key={schedule.selectedRoundId}
 						rooms={schedule.rooms}
 						roundId={schedule.selectedRoundId}
 					/>

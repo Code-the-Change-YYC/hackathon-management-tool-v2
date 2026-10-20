@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
 	ConfirmAlertDialog,
 	useConfirmDialog
@@ -46,23 +46,21 @@ export function RoomManagement({
 }) {
 	const { confirm, dialogProps } = useConfirmDialog();
 	const { refresh } = useRefresh();
-	const [links, setLinks] = useState<Record<string, string>>({});
-	const [staff, setStaff] = useState<Record<string, string[]>>({});
+	// Unsaved edits by room ID. Rooms without an edit show their saved values,
+	// so a refresh after another save on the page keeps these edits.
+	const [linkEdits, setLinkEdits] = useState<Record<string, string>>({});
+	const [staffEdits, setStaffEdits] = useState<Record<string, string[]>>({});
 	const [message, setMessage] = useState("");
 	const [busyRoomId, setBusyRoomId] = useState<string | null>(null);
 	const saveLayout = api.judgingRooms.saveLayoutByRound.useMutation();
 
-	// Resets unsaved edits whenever the saved layout changes.
-	useEffect(() => {
-		const nextLinks: Record<string, string> = {};
-		const nextStaff: Record<string, string[]> = {};
-		for (const room of rooms) {
-			nextLinks[room.id] = room.roomLink ?? "";
-			nextStaff[room.id] = room.staffIds;
-		}
-		setLinks(nextLinks);
-		setStaff(nextStaff);
-	}, [rooms]);
+	const linkFor = (room: Room) => linkEdits[room.id] ?? room.roomLink ?? "";
+	const staffFor = (room: Room) => staffEdits[room.id] ?? room.staffIds;
+
+	const clearEdits = (roomId: string) => {
+		setLinkEdits(({ [roomId]: _, ...others }) => others);
+		setStaffEdits(({ [roomId]: _, ...others }) => others);
+	};
 
 	const hasScoredAssignments = assignments.some(
 		(assignment) => assignment.scores.length > 0
@@ -70,8 +68,8 @@ export function RoomManagement({
 
 	const toLayoutRoom = (room: LayoutRoomInput): LayoutRoomInput => ({
 		id: room.id,
-		roomLink: links[room.id] ?? room.roomLink ?? "",
-		staffIds: staff[room.id] ?? room.staffIds ?? [],
+		roomLink: room.roomLink ?? "",
+		staffIds: room.staffIds ?? [],
 		teamIds: room.teamIds ?? [],
 		teamTimeSlots: room.teamTimeSlots ?? {}
 	});
@@ -121,15 +119,25 @@ export function RoomManagement({
 			return;
 		}
 		refresh(() => {
+			if (roomId) clearEdits(roomId);
 			setBusyRoomId(null);
 			setMessage(successMessage);
 		});
 	};
 
-	const saveRoom = async (roomId: string) => {
+	// Saves only this room's edits; other rooms keep their saved values.
+	const saveRoom = async (room: Room) => {
 		await persistRooms({
-			nextRooms: rooms,
-			roomId,
+			nextRooms: rooms.map((candidate) =>
+				candidate.id === room.id
+					? {
+							...candidate,
+							roomLink: linkFor(candidate),
+							staffIds: staffFor(candidate)
+						}
+					: candidate
+			),
+			roomId: room.id,
 			successMessage: "Room details saved."
 		});
 	};
@@ -229,13 +237,13 @@ export function RoomManagement({
 									<Input
 										className="h-12"
 										onChange={(event) =>
-											setLinks((current) => ({
+											setLinkEdits((current) => ({
 												...current,
 												[room.id]: event.target.value
 											}))
 										}
 										placeholder="https://..."
-										value={links[room.id] ?? ""}
+										value={linkFor(room)}
 									/>
 								</Field>
 							</div>
@@ -251,11 +259,11 @@ export function RoomManagement({
 											key={judge.id}
 										>
 											<Checkbox
-												checked={(staff[room.id] ?? []).includes(judge.id)}
+												checked={staffFor(room).includes(judge.id)}
 												id={`room-${room.id}-judge-${judge.id}`}
 												onCheckedChange={(checked) => {
-													setStaff((current) => {
-														const selected = current[room.id] ?? [];
+													setStaffEdits((current) => {
+														const selected = current[room.id] ?? room.staffIds;
 														return {
 															...current,
 															[room.id]: checked
@@ -283,7 +291,7 @@ export function RoomManagement({
 										busyRoomId === room.id ||
 										hasScoredAssignments
 									}
-									onClick={() => void saveRoom(room.id)}
+									onClick={() => void saveRoom(room)}
 									title={
 										hasScoredAssignments
 											? "Scored rounds cannot be changed."

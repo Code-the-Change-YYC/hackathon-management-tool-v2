@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AutoRefresh } from "@/app/components/AutoRefresh";
 import { JudgingView } from "@/app/components/admin/judging/JudgingView";
 import { byNameThenId } from "@/app/components/admin/judging/judgingShared";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
@@ -34,17 +35,20 @@ export default async function JudgingPage() {
 	);
 
 	return (
-		<JudgingView
-			activeRoundId={settings?.currentRoundId ?? null}
-			assignments={assignments}
-			criteria={criteria}
-			judges={users
-				.filter((user) => user.role === Role.JUDGE)
-				.sort(byNameThenId)}
-			layouts={layouts}
-			rankings={rankings}
-			rounds={rounds}
-			teams={teams.slice().sort(byNameThenId)}
-		/>
+		<>
+			<AutoRefresh />
+			<JudgingView
+				activeRoundId={settings?.currentRoundId ?? null}
+				assignments={assignments}
+				criteria={criteria}
+				judges={users
+					.filter((user) => user.role === Role.JUDGE)
+					.sort(byNameThenId)}
+				layouts={layouts}
+				rankings={rankings}
+				rounds={rounds}
+				teams={teams.slice().sort(byNameThenId)}
+			/>
+		</>
 	);
 }
