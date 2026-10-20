@@ -47,25 +47,29 @@ export function ScheduleView({ events }: { events: AdminEvent[] }) {
 	}
 
 	return (
-		<div className="flex min-h-svh flex-1 flex-col gap-6 overflow-y-auto bg-white p-6">
+		<div className="flex flex-col gap-6 p-6">
 			<PageHeader
 				description="View all hackathon events and activities"
 				title="Schedule"
 			/>
 			<section
 				aria-labelledby="full-schedule-title"
-				className="flex flex-col gap-5"
+				className="flex flex-col gap-4"
 			>
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h2
-						className="font-medium text-dark-grey text-lg"
+						className="font-medium text-[22px] leading-7"
 						id="full-schedule-title"
 					>
 						Full Schedule
 					</h2>
-					<Button onClick={() => setEditing("new")} size="sm">
-						<AddLine data-icon="inline-start" />
+					<Button
+						className="h-8 rounded-full px-3"
+						onClick={() => setEditing("new")}
+						size="sm"
+					>
 						Add event
+						<AddLine data-icon="inline-end" />
 					</Button>
 				</div>
 				<Schedule
