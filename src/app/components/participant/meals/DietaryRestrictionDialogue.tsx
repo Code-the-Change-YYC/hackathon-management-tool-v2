@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { DietaryRestrictionsField } from "@/app/components/forms/DietaryRestrictionsField";
 import { Button } from "@/app/components/ui/button";
@@ -13,6 +12,7 @@ import {
 	DialogHeader,
 	DialogTitle
 } from "@/app/components/ui/dialog";
+import { useRefresh } from "@/hooks/use-refresh";
 import type { DietaryRestriction } from "@/lib/validation/signup";
 import { api } from "@/trpc/react";
 
@@ -37,8 +37,7 @@ export function DietaryRestrictionDialogue({
 	currentRestrictions,
 	onCloseAction
 }: DietaryRestrictionDialogueProps) {
-	const router = useRouter();
-	const [isRefreshing, startTransition] = useTransition();
+	const { isRefreshing, refresh } = useRefresh();
 	const [draftRestrictions, setDraftRestrictions] =
 		useState<DietaryRestriction[]>(currentRestrictions);
 	const [dialogueMode, setDialogueMode] = useState<DialogueMode>("edit");
@@ -79,8 +78,7 @@ export function DietaryRestrictionDialogue({
 			});
 			toast.success("Dietary restrictions updated");
 			// Close once the refreshed restrictions are ready so nothing flickers.
-			startTransition(() => {
-				router.refresh();
+			refresh(() => {
 				onCloseAction();
 			});
 		} catch {

@@ -20,7 +20,7 @@ vi.mock("@/trpc/server", () => ({
 		scores: { getMineReleased: async () => ({ released: false, rounds: [] }) }
 	}
 }));
-vi.mock("@/app/components/participant/AutoRefresh", () => ({
+vi.mock("@/app/components/AutoRefresh", () => ({
 	AutoRefresh: () => null
 }));
 vi.mock("@/app/components/participant/judging/JudgingView", () => ({

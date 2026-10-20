@@ -1,25 +1,24 @@
-import { render, renderHook, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { JudgeRoundStats } from "@/app/components/judges/JudgeRoundStats";
-import { JudgeScheduleEvent } from "@/app/components/judges/JudgeScheduleEvent";
-import { JudgeTeamCard } from "@/app/components/judges/JudgeTeamCard";
-import {
-	JudgeUserProvider,
-	useJudgeUser
-} from "@/app/components/judges/JudgeUserProvider";
+import { DashboardView } from "@/app/components/judge/dashboard/DashboardView";
+import { JudgeRoundStats } from "@/app/components/judge/dashboard/JudgeRoundStats";
+import { JudgeTeamCard } from "@/app/components/judge/dashboard/JudgeTeamCard";
 import {
 	type Criterion,
 	getAssignmentTotal,
 	getDraftScore,
+	getMeetingLink,
+	getRoomName,
 	getScoreOptions,
 	isAssignmentScored,
 	type JudgeAssignment,
 	sortAssignments
-} from "@/app/components/judges/judgePortal";
+} from "@/app/components/judge/judgePortal";
+import { JudgeScheduleEvent } from "@/app/components/judge/schedule/JudgeScheduleEvent";
 import {
 	groupScheduleByDate,
 	inferDuration
-} from "@/app/components/judges/judgeSchedule";
+} from "@/app/components/judge/schedule/judgeSchedule";
 
 const now = new Date("2026-09-19T10:00:00Z");
 const main: Criterion = {
@@ -285,22 +284,56 @@ describe("judge portal scoring contract", () => {
 	});
 });
 
-describe("judge user context", () => {
-	it("provides the signed-in judge without a query provider", () => {
-		const { result } = renderHook(useJudgeUser, {
-			wrapper: ({ children }) => (
-				<JudgeUserProvider userId="judge" userName="Dara">
-					{children}
-				</JudgeUserProvider>
-			)
+describe("judge room summary", () => {
+	it("uses the earliest assignment's room and the first meeting link", () => {
+		const later = assignment({
+			id: "later",
+			timeSlot: new Date(now.getTime() + 60 * 60_000),
+			room: {
+				...assignment().room,
+				id: "later-room",
+				name: "Room 2",
+				roomLink: "https://example.com/room-2"
+			}
 		});
-		expect(result.current).toEqual({ userId: "judge", userName: "Dara" });
+		const earlier = assignment({ id: "earlier" });
+		expect(getRoomName([later, earlier])).toBe("Room 1");
+		expect(getMeetingLink([later, earlier])).toBe("https://example.com/room-2");
+		expect(getRoomName([])).toBeNull();
+		expect(getMeetingLink([])).toBe("");
+	});
+});
+
+describe("judge dashboard", () => {
+	it("shows an empty state before any teams are assigned", () => {
+		render(
+			<DashboardView
+				activeRoundId={null}
+				assignments={[]}
+				criteria={[main]}
+				rounds={[]}
+				userName="Dara"
+			/>
+		);
+		expect(screen.getByText("No room assigned yet")).toBeVisible();
+		expect(screen.getByText("No teams assigned yet")).toBeVisible();
 	});
 
-	it("fails clearly when the judge provider is missing", () => {
-		expect(() => renderHook(useJudgeUser)).toThrow(
-			"Judge portal user context is missing."
+	it("lists the active round's teams with their room", () => {
+		render(
+			<DashboardView
+				activeRoundId="round"
+				assignments={[assignment()]}
+				criteria={[main]}
+				rounds={[assignment().room.round]}
+				userName="Dara"
+			/>
 		);
+		expect(
+			screen.getByRole("heading", { name: "Teams · Round 1" })
+		).toBeVisible();
+		expect(screen.getByText("You’ve been assigned to Room 1")).toBeVisible();
+		expect(screen.getByRole("heading", { name: "Team" })).toBeVisible();
 	});
 });
 

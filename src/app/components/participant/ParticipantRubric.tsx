@@ -6,7 +6,7 @@ import {
 	getScoreFillClass,
 	getScoreTextColor,
 	sortCriteria
-} from "@/app/components/judges/judgePortal";
+} from "@/app/components/judge/judgePortal";
 import {
 	Accordion,
 	AccordionContent,

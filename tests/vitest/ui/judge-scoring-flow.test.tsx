@@ -1,14 +1,15 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { JudgeScorePage } from "@/app/components/judges/JudgeScorePage";
+import type {
+	Criterion,
+	JudgeAssignment
+} from "@/app/components/judge/judgePortal";
+import { ScoreView } from "@/app/components/judge/score/ScoreView";
 
 const mocks = vi.hoisted(() => ({
 	push: vi.fn(),
 	confirm: vi.fn(),
-	mutate: vi.fn(),
-	invalidate: vi.fn(),
-	portal: vi.fn(),
-	query: vi.fn()
+	mutate: vi.fn()
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock("@/app/components/ConfirmAlertDialog", () => ({
@@ -17,25 +18,10 @@ vi.mock("@/app/components/ConfirmAlertDialog", () => ({
 }));
 vi.mock("@/trpc/react", () => ({
 	api: {
-		useUtils: () => ({
-			scores: {
-				getByAssignment: { invalidate: mocks.invalidate },
-				getByRound: { invalidate: mocks.invalidate },
-				getJudgeTotals: { invalidate: mocks.invalidate }
-			},
-			judgingAssignments: { getByJudge: { invalidate: mocks.invalidate } }
-		}),
 		scores: {
-			getByAssignment: { useQuery: mocks.query },
 			createMany: { useMutation: () => ({ mutateAsync: mocks.mutate }) }
 		}
 	}
-}));
-vi.mock("@/app/components/judges/JudgeUserProvider", () => ({
-	useJudgeUser: () => ({ userId: "judge-a" })
-}));
-vi.mock("@/app/components/judges/useJudgePortalData", () => ({
-	useJudgePortalData: mocks.portal
 }));
 const main = {
 	id: "main",
@@ -52,27 +38,28 @@ const sidepot = {
 	maxScore: 5,
 	isSidepot: true
 };
-function assignment(id = "assignment-a") {
+function assignment(
+	id = "assignment-a",
+	scores: { criteriaId: string; value: number }[] = []
+) {
 	return {
 		id,
 		team: { id: "team", name: id, teamCode: "TEAM" },
 		room: { roundId: "round", round: { id: "round", name: "Round 1" } },
 		timeSlot: null,
-		scores: []
-	};
+		scores
+	} as unknown as JudgeAssignment;
+}
+function scoreView(
+	item: JudgeAssignment = assignment(),
+	criteria: Criterion[] = [main, sidepot] as Criterion[]
+) {
+	return <ScoreView assignment={item} criteria={criteria} key={item.id} />;
 }
 beforeEach(() => {
 	vi.resetAllMocks();
 	mocks.confirm.mockResolvedValue(true);
 	mocks.mutate.mockResolvedValue([]);
-	mocks.invalidate.mockResolvedValue(undefined);
-	mocks.portal.mockReturnValue({
-		assignments: [assignment(), assignment("assignment-b")],
-		criteria: [main, sidepot],
-		isLoading: false,
-		error: null
-	});
-	mocks.query.mockReturnValue({ data: [], isLoading: false, error: null });
 });
 function review() {
 	fireEvent.click(screen.getByRole("button", { name: "Next" }));
@@ -80,22 +67,21 @@ function review() {
 }
 describe("judge scoring flow", () => {
 	it("only shows and submits criteria for the assignment's round", async () => {
-		mocks.portal.mockReturnValue({
-			assignments: [assignment()],
-			criteria: [
-				{ ...main, roundIds: ["round"] },
-				{ ...main, id: "final", name: "Final round only", roundIds: ["final"] },
-				sidepot
-			],
-			isLoading: false,
-			error: null
-		});
-		mocks.query.mockReturnValue({
-			data: [{ criteriaId: "final", value: 9 }],
-			isLoading: false,
-			error: null
-		});
-		render(<JudgeScorePage assignmentId="assignment-a" />);
+		render(
+			scoreView(
+				assignment("assignment-a", [{ criteriaId: "final", value: 9 }]),
+				[
+					{ ...main, roundIds: ["round"] },
+					{
+						...main,
+						id: "final",
+						name: "Final round only",
+						roundIds: ["final"]
+					},
+					sidepot
+				] as Criterion[]
+			)
+		);
 		expect(screen.queryByText("Final round only")).not.toBeInTheDocument();
 		fireEvent.click(screen.getByRole("radio", { name: "8 out of 10" }));
 		review();
@@ -109,7 +95,7 @@ describe("judge scoring flow", () => {
 		]);
 	});
 	it("requires a main score, allows an unscored sidepot, and submits only selected scores", async () => {
-		render(<JudgeScorePage assignmentId="assignment-a" />);
+		render(scoreView());
 		expect(screen.getAllByRole("radio")).toHaveLength(10);
 		review();
 		expect(
@@ -126,7 +112,7 @@ describe("judge scoring flow", () => {
 		]);
 	});
 	it("keeps sidepot scores out of the main total and saves a deliberate zero", async () => {
-		render(<JudgeScorePage assignmentId="assignment-a" />);
+		render(scoreView());
 		fireEvent.click(screen.getByRole("radio", { name: "7 out of 10" }));
 		fireEvent.click(screen.getByRole("button", { name: "Next" }));
 		fireEvent.click(screen.getByRole("radio", { name: "5 out of 5" }));
@@ -145,7 +131,7 @@ describe("judge scoring flow", () => {
 	});
 	it("retains edits after a failed submission and allows retry", async () => {
 		mocks.mutate.mockRejectedValueOnce(new Error("Connection failed"));
-		render(<JudgeScorePage assignmentId="assignment-a" />);
+		render(scoreView());
 		fireEvent.click(screen.getByRole("radio", { name: "6 out of 10" }));
 		review();
 		fireEvent.click(screen.getByRole("button", { name: "Submit scores" }));
@@ -158,37 +144,19 @@ describe("judge scoring flow", () => {
 		expect(mocks.mutate).toHaveBeenCalledTimes(2);
 	});
 	it("loads existing scores and resets unsaved values when the assignment changes", () => {
-		mocks.query.mockReturnValue({
-			data: [{ criteriaId: "main", value: 4 }],
-			isLoading: false,
-			error: null
-		});
-		const { rerender } = render(<JudgeScorePage assignmentId="assignment-a" />);
+		const { rerender } = render(
+			scoreView(assignment("assignment-a", [{ criteriaId: "main", value: 4 }]))
+		);
 		expect(screen.getByRole("radio", { name: "4 out of 10" })).toBeChecked();
 		fireEvent.click(screen.getByRole("radio", { name: "9 out of 10" }));
-		mocks.query.mockReturnValue({ data: [], isLoading: false, error: null });
-		rerender(<JudgeScorePage assignmentId="assignment-b" />);
+		rerender(scoreView(assignment("assignment-b")));
 		expect(
 			screen.getByRole("radio", { name: "9 out of 10" })
 		).not.toBeChecked();
 	});
-	it("blocks scoring while saved scores are loading or cannot be fetched", () => {
-		mocks.query.mockReturnValue({ isLoading: true, error: null });
-		const { rerender } = render(<JudgeScorePage assignmentId="assignment-a" />);
-		expect(screen.queryByRole("radio")).not.toBeInTheDocument();
-		mocks.query.mockReturnValue({
-			isLoading: false,
-			error: new Error("Network error")
-		});
-		rerender(<JudgeScorePage assignmentId="assignment-a" />);
-		expect(
-			screen.getByRole("heading", { name: "Unable to load scoring" })
-		).toBeVisible();
-		expect(screen.queryByRole("radio")).not.toBeInTheDocument();
-	});
 	it("confirms discarding edits when leaving through the breadcrumb", async () => {
 		mocks.confirm.mockResolvedValue(false);
-		render(<JudgeScorePage assignmentId="assignment-a" />);
+		render(scoreView());
 		fireEvent.click(screen.getByRole("radio", { name: "8 out of 10" }));
 		fireEvent.click(screen.getByRole("link", { name: "Dashboard" }));
 		await waitFor(() => expect(mocks.confirm).toHaveBeenCalled());

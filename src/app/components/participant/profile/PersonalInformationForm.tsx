@@ -1,8 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
 import { useForm, useFormState, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { ComboboxField } from "@/app/components/forms/ComboboxField";
@@ -15,6 +13,7 @@ import { Button } from "@/app/components/ui/button";
 import { FieldGroup } from "@/app/components/ui/field";
 import { getCountryFlag } from "@/app/components/ui/phone-input";
 import { Spinner } from "@/app/components/ui/spinner";
+import { useRefresh } from "@/hooks/use-refresh";
 import { COUNTRY_CODES, getCountryName } from "@/lib/countries";
 import {
 	asksForMajor,
@@ -42,8 +41,7 @@ export function PersonalInformationForm({
 	profile: Profile;
 	onDone: () => void;
 }) {
-	const router = useRouter();
-	const [isRefreshing, startTransition] = useTransition();
+	const { isRefreshing, refresh } = useRefresh();
 	const updateProfile = api.users.updateProfile.useMutation();
 	const form = useForm<ProfileInput, unknown, ProfileValues>({
 		defaultValues: getProfileDefaults(profile),
@@ -74,8 +72,7 @@ export function PersonalInformationForm({
 			onSuccess: () => {
 				toast.success("Profile updated");
 				// Leave edit mode once the refreshed profile is ready so nothing flickers.
-				startTransition(() => {
-					router.refresh();
+				refresh(() => {
 					onDone();
 				});
 			}

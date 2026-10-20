@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { TeamsView } from "@/app/components/admin/teams/TeamsView";
 import type { Team } from "@/app/components/admin/teams/types";
+import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
+import { Role } from "@/types/types";
 
 export const metadata: Metadata = {
-	title: "Teams"
+	title: "Teams | Hack the Change"
 };
 
 // TODO: guard with `requireRole([Role.ADMIN])` and load teams from the
@@ -176,6 +178,8 @@ const MOCK_TEAMS: Team[] = [
 	}
 ];
 
-export default function AdminTeamsPage() {
+export default async function AdminTeamsPage() {
+	await requireRole([Role.ADMIN]);
+
 	return <TeamsView teams={MOCK_TEAMS} />;
 }
