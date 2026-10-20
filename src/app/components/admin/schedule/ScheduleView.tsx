@@ -19,10 +19,17 @@ import {
 	DropdownMenuTrigger
 } from "@/app/components/ui/dropdown-menu";
 import { useCurrentTime } from "@/hooks/use-current-time";
+import type { HackathonDates } from "@/lib/validation/event";
 import { api } from "@/trpc/react";
 import { type AdminEvent, EventDialog } from "./EventDialog";
 
-export function ScheduleView({ events }: { events: AdminEvent[] }) {
+export function ScheduleView({
+	events,
+	hackathonDates
+}: {
+	events: AdminEvent[];
+	hackathonDates: HackathonDates | null;
+}) {
 	const now = useCurrentTime();
 	const router = useRouter();
 	const [editing, setEditing] = useState<AdminEvent | "new" | null>(null);
@@ -109,6 +116,7 @@ export function ScheduleView({ events }: { events: AdminEvent[] }) {
 			{editing && (
 				<EventDialog
 					event={editing === "new" ? undefined : editing}
+					hackathonDates={hackathonDates}
 					key={editing === "new" ? "new" : editing.id}
 					onClose={() => setEditing(null)}
 				/>

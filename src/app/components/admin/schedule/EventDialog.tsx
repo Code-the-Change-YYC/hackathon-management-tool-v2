@@ -31,13 +31,14 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { toDateInputValue, toTimeInputValue } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import {
+	createEventFormSchema,
 	EMPTY_EVENT_FORM,
 	EVENT_DESCRIPTION_MAX_LENGTH,
 	EVENT_LOCATION_MAX_LENGTH,
 	EVENT_TITLE_MAX_LENGTH,
 	type EventFormInput,
 	type EventFormValues,
-	eventFormSchema
+	type HackathonDates
 } from "@/lib/validation/event";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { EVENT_TYPES, EventStatus } from "@/types/types";
@@ -64,15 +65,17 @@ function toFormInput(event?: AdminEvent): EventFormInput {
 
 export function EventDialog({
 	event,
+	hackathonDates,
 	onClose
 }: {
 	event?: AdminEvent;
+	hackathonDates: HackathonDates | null;
 	onClose: () => void;
 }) {
 	const router = useRouter();
 	const form = useForm<EventFormInput, unknown, EventFormValues>({
 		defaultValues: toFormInput(event),
-		resolver: zodResolver(eventFormSchema)
+		resolver: zodResolver(createEventFormSchema(hackathonDates))
 	});
 	const callbacks = {
 		onSuccess: () => {
@@ -148,6 +151,8 @@ export function EventDialog({
 							control={form.control}
 							disabled={isPending}
 							label="Date"
+							max={hackathonDates?.end}
+							min={hackathonDates?.start}
 							name="date"
 						/>
 						<div className="grid gap-4 sm:grid-cols-2">

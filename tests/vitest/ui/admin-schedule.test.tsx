@@ -85,20 +85,20 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("admin schedule", () => {
 	it("shows an empty state", () => {
-		render(<ScheduleView events={[]} />);
+		render(<ScheduleView events={[]} hackathonDates={null} />);
 		expect(
 			screen.getByText("No events have been scheduled yet")
 		).toBeInTheDocument();
 	});
 
 	it("marks hidden events and shows their location", () => {
-		render(<ScheduleView events={[lunch]} />);
+		render(<ScheduleView events={[lunch]} hackathonDates={null} />);
 		expect(screen.getByText("Hidden")).toBeInTheDocument();
 		expect(screen.getByText("Dining Hall")).toBeInTheDocument();
 	});
 
 	it("validates and adds an event in Calgary time", async () => {
-		render(<ScheduleView events={[]} />);
+		render(<ScheduleView events={[]} hackathonDates={null} />);
 		fireEvent.click(screen.getByRole("button", { name: "Add event" }));
 		submit();
 		expect(await screen.findByText("Enter a title.")).toBeInTheDocument();
@@ -140,7 +140,7 @@ describe("admin schedule", () => {
 	});
 
 	it("edits an existing event", async () => {
-		render(<ScheduleView events={[lunch]} />);
+		render(<ScheduleView events={[lunch]} hackathonDates={null} />);
 		openMenu("Lunch");
 		fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
 		expect(screen.getByLabelText("Title")).toHaveValue("Lunch");
@@ -169,8 +169,41 @@ describe("admin schedule", () => {
 		);
 	});
 
+	it("keeps the date within the hackathon", async () => {
+		render(
+			<ScheduleView
+				events={[lunch]}
+				hackathonDates={{ start: "2026-11-08", end: "2026-11-09" }}
+			/>
+		);
+		openMenu("Lunch");
+		fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		expect(
+			await screen.findByText(
+				"Choose a date during the hackathon, November 8, 2026 to November 9, 2026."
+			)
+		).toBeInTheDocument();
+		expect(mocks.update).not.toHaveBeenCalled();
+
+		fireEvent.click(screen.getByRole("button", { name: /^Date / }));
+		expect(
+			screen.getByRole("button", { name: /November 7th, 2026/ })
+		).toBeDisabled();
+		fireEvent.click(screen.getByRole("button", { name: /November 8th, 2026/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await waitFor(() =>
+			expect(mocks.update).toHaveBeenCalledWith(
+				expect.objectContaining({
+					startTime: new Date("2026-11-08T13:00:00-06:00"),
+					endTime: new Date("2026-11-08T14:00:00-06:00")
+				})
+			)
+		);
+	});
+
 	it("deletes only after confirming", async () => {
-		render(<ScheduleView events={[lunch]} />);
+		render(<ScheduleView events={[lunch]} hackathonDates={null} />);
 		openMenu("Lunch");
 		fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
 		fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));

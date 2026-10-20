@@ -20,6 +20,11 @@ import {
 
 const DATE_KEY_FORMAT = "yyyy-MM-dd";
 
+function parseDateKey(value?: string) {
+	const day = parse(value ?? "", DATE_KEY_FORMAT, new Date());
+	return isValid(day) ? day : undefined;
+}
+
 type DateFieldProps<
 	TFieldValues extends FieldValues,
 	TName extends FieldPath<TFieldValues>,
@@ -29,6 +34,8 @@ type DateFieldProps<
 	name: TName;
 	label: string;
 	disabled?: boolean;
+	min?: string;
+	max?: string;
 };
 
 // Edits a "yyyy-MM-dd" string, like a date input. The calendar works on plain
@@ -42,15 +49,18 @@ export function DateField<
 	control,
 	name,
 	label,
-	disabled
+	disabled,
+	min,
+	max
 }: DateFieldProps<TFieldValues, TName, TTransformedValues>) {
 	const { field, fieldState } = useController({ control, name });
 	const [open, setOpen] = useState(false);
 	const id = useId();
 	const labelId = `${id}-label`;
 	const valueId = `${id}-value`;
-	const day = parse(String(field.value ?? ""), DATE_KEY_FORMAT, new Date());
-	const selected = isValid(day) ? day : undefined;
+	const selected = parseDateKey(field.value);
+	const firstDay = parseDateKey(min);
+	const lastDay = parseDateKey(max);
 
 	return (
 		<Field data-disabled={disabled} data-invalid={fieldState.invalid}>
@@ -80,7 +90,11 @@ export function DateField<
 				</PopoverTrigger>
 				<PopoverContent align="start" className="w-auto overflow-hidden p-0">
 					<Calendar
-						defaultMonth={selected}
+						defaultMonth={selected ?? firstDay}
+						disabled={[
+							...(firstDay ? [{ before: firstDay }] : []),
+							...(lastDay ? [{ after: lastDay }] : [])
+						]}
 						mode="single"
 						onSelect={(date) => {
 							field.onChange(date ? format(date, DATE_KEY_FORMAT) : "");
