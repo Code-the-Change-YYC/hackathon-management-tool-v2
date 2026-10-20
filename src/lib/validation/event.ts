@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { formatFullDate, fromDateTimeLocalValue } from "@/lib/datetime";
+import {
+	formatFullDate,
+	fromDateTimeLocalValue,
+	toDateInputValue
+} from "@/lib/datetime";
 import { eventNavigationUrlSchema } from "@/lib/participant-events";
 import { EVENT_TYPES, EventStatus, EventType } from "@/types/types";
 
@@ -13,6 +17,34 @@ const timeField = (message: string) =>
 // The hackathon's first and last days, as "yyyy-MM-dd" in Calgary time.
 export type HackathonDates = { start: string; end: string };
 
+export function toHackathonDates(
+	settings: { startDate: Date | null; endDate: Date | null } | null
+): HackathonDates | null {
+	if (!settings?.startDate || !settings.endDate) return null;
+	return {
+		start: toDateInputValue(settings.startDate),
+		end: toDateInputValue(settings.endDate)
+	};
+}
+
+// Date keys sort the same as the days they name.
+export function isDuringHackathon(
+	date: string,
+	{ start, end }: HackathonDates
+) {
+	return date >= start && date <= end;
+}
+
+export function outsideHackathonMessage({ start, end }: HackathonDates) {
+	const first = parseDate(start);
+	const last = parseDate(end);
+	const range =
+		first && last
+			? `${formatFullDate(first)} to ${formatFullDate(last)}`
+			: `${start} to ${end}`;
+	return `Choose a date during the hackathon, ${range}.`;
+}
+
 function parseDate(value: string) {
 	return fromDateTimeLocalValue(`${value}T00:00`);
 }
@@ -23,17 +55,9 @@ function dateField(hackathonDates: HackathonDates | null) {
 		.refine((value) => parseDate(value) !== null, "Choose a date.");
 	if (!hackathonDates) return date;
 
-	const { start, end } = hackathonDates;
-	const first = parseDate(start);
-	const last = parseDate(end);
-	const range =
-		first && last
-			? `${formatFullDate(first)} to ${formatFullDate(last)}`
-			: `${start} to ${end}`;
-	// Date keys sort the same as the days they name.
 	return date.refine(
-		(value) => !parseDate(value) || (value >= start && value <= end),
-		`Choose a date during the hackathon, ${range}.`
+		(value) => !parseDate(value) || isDuringHackathon(value, hackathonDates),
+		outsideHackathonMessage(hackathonDates)
 	);
 }
 

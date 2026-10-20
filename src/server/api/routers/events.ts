@@ -1,19 +1,25 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, eq } from "drizzle-orm";
 import { z } from "zod";
+import { formatDateKey, isSameCalgaryDay } from "@/lib/datetime";
 import { eventNavigationUrlSchema } from "@/lib/participant-events";
 import {
 	EVENT_DESCRIPTION_MAX_LENGTH,
 	EVENT_LOCATION_MAX_LENGTH,
-	EVENT_TITLE_MAX_LENGTH
+	EVENT_TITLE_MAX_LENGTH,
+	isDuringHackathon,
+	outsideHackathonMessage,
+	toHackathonDates
 } from "@/lib/validation/event";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
+import type { db as dbType } from "@/server/db";
 import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
+import { hackathonSettings } from "@/server/db/schema";
 import {
 	createEventTicketToken,
 	hashEventTicketToken
@@ -43,7 +49,27 @@ const eventInputSchema = z
 	.refine((data) => data.endTime > data.startTime, {
 		message: "End time must be after start time.",
 		path: ["endTime"]
+	})
+	.refine((data) => isSameCalgaryDay(data.startTime, data.endTime), {
+		message: "End time must be on the same day as the start time.",
+		path: ["endTime"]
 	});
+
+async function assertDuringHackathon(db: typeof dbType, startTime: Date) {
+	const settings = await db.query.hackathonSettings.findFirst({
+		where: eq(hackathonSettings.id, 1)
+	});
+	const hackathonDates = toHackathonDates(settings ?? null);
+	if (
+		hackathonDates &&
+		!isDuringHackathon(formatDateKey(startTime), hackathonDates)
+	) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: outsideHackathonMessage(hackathonDates)
+		});
+	}
+}
 
 const eventIdSchema = z.object({ id: z.string().uuid() });
 
@@ -62,14 +88,16 @@ export const eventsRouter = createTRPCRouter({
 	addEvent: adminProcedure
 		.input(eventInputSchema)
 		.mutation(async ({ input, ctx }) => {
+			await assertDuringHackathon(ctx.db, input.startTime);
 			const [newEvent] = await ctx.db.insert(event).values(input).returning();
 			return newEvent;
 		}),
 
 	updateEvent: adminProcedure
 		.input(eventInputSchema.and(eventIdSchema))
-		.mutation(({ ctx, input: { id, ...values } }) =>
-			ctx.db.transaction(async (tx) => {
+		.mutation(async ({ ctx, input: { id, ...values } }) => {
+			await assertDuringHackathon(ctx.db, values.startTime);
+			return ctx.db.transaction(async (tx) => {
 				const [updated] = await tx
 					.update(event)
 					.set(values)
@@ -81,8 +109,8 @@ export const eventsRouter = createTRPCRouter({
 					.set({ expiresAt: updated.endTime })
 					.where(eq(eventTicket.eventId, id));
 				return updated;
-			})
-		),
+			});
+		}),
 
 	deleteEvent: adminProcedure
 		.input(eventIdSchema)

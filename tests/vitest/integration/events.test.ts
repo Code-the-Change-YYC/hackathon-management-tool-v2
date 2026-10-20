@@ -2,12 +2,19 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/server/db";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
+import { hackathonSettings } from "@/server/db/schema";
 import { EventStatus, EventType, Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
 import { createAuthenticatedCaller } from "../helpers/auth";
 
 const hour = 60 * 60 * 1000;
-const start = new Date(Date.now() + 24 * hour);
+// Calgary is UTC-6: the hackathon runs Nov 7, 8 AM to Nov 8, 8 PM.
+const hackathon = {
+	startDate: new Date("2026-11-07T14:00:00Z"),
+	endDate: new Date("2026-11-09T02:00:00Z")
+};
+// Nov 7, noon in Calgary.
+const start = new Date("2026-11-07T18:00:00Z");
 const input = {
 	title: "Test trivia",
 	description: "Bring a friend.",
@@ -22,6 +29,7 @@ const input = {
 type Session = Awaited<ReturnType<typeof createAuthenticatedCaller>>;
 let admin: Session;
 let participant: Session;
+let originalSettings: typeof hackathonSettings.$inferSelect | undefined;
 const createdIds: string[] = [];
 
 async function addEvent(overrides: Partial<typeof input> = {}) {
@@ -38,9 +46,25 @@ beforeAll(async () => {
 	assertE2EDatabaseSafety();
 	admin = await createAuthenticatedCaller({ role: Role.ADMIN });
 	participant = await createAuthenticatedCaller({ role: Role.PARTICIPANT });
+	originalSettings = await db.query.hackathonSettings.findFirst({
+		where: eq(hackathonSettings.id, 1)
+	});
+	await db
+		.insert(hackathonSettings)
+		.values({ id: 1, ...hackathon })
+		.onConflictDoUpdate({ target: hackathonSettings.id, set: hackathon });
 });
 
 afterAll(async () => {
+	assertE2EDatabaseSafety();
+	if (originalSettings) {
+		await db
+			.update(hackathonSettings)
+			.set(originalSettings)
+			.where(eq(hackathonSettings.id, 1));
+	} else {
+		await db.delete(hackathonSettings).where(eq(hackathonSettings.id, 1));
+	}
 	if (createdIds.length) {
 		await db.delete(event).where(inArray(event.id, createdIds));
 	}
@@ -73,10 +97,62 @@ describe("events admin mutations", () => {
 		["an unsafe link", { navigationUrl: "javascript:alert(1)" }],
 		["a blank title", { title: "   " }],
 		["a long title", { title: "x".repeat(121) }],
-		["an unknown type", { type: "party" as EventType }]
+		["an unknown type", { type: "party" as EventType }],
+		[
+			"an end after midnight",
+			// Nov 7, 11 PM to Nov 8, 1 AM in Calgary.
+			{
+				startTime: new Date("2026-11-08T05:00:00Z"),
+				endTime: new Date("2026-11-08T07:00:00Z")
+			}
+		],
+		[
+			"a day before the hackathon",
+			{
+				startTime: new Date("2026-11-06T18:00:00Z"),
+				endTime: new Date("2026-11-06T19:00:00Z")
+			}
+		],
+		[
+			"a day after the hackathon",
+			{
+				startTime: new Date("2026-11-09T18:00:00Z"),
+				endTime: new Date("2026-11-09T19:00:00Z")
+			}
+		]
 	])("rejects %s", async (_, overrides) => {
 		await expect(
 			admin.caller.events.addEvent({ ...input, ...overrides })
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+	});
+
+	it("accepts the hackathon's last day", async () => {
+		// Nov 8, 6 to 8 PM in Calgary.
+		await expect(
+			addEvent({
+				startTime: new Date("2026-11-09T00:00:00Z"),
+				endTime: new Date("2026-11-09T02:00:00Z")
+			})
+		).resolves.toMatchObject({ title: input.title });
+	});
+
+	it("rejects moving an event outside the hackathon or across midnight", async () => {
+		const created = await addEvent();
+		const update = (times: { startTime: Date; endTime: Date }) =>
+			admin.caller.events.updateEvent({ ...input, id: created.id, ...times });
+
+		await expect(
+			update({
+				startTime: new Date("2026-11-10T18:00:00Z"),
+				endTime: new Date("2026-11-10T19:00:00Z")
+			})
+		).rejects.toMatchObject({
+			code: "BAD_REQUEST",
+			message:
+				"Choose a date during the hackathon, November 7, 2026 to November 8, 2026."
+		});
+		await expect(
+			update({ startTime: start, endTime: new Date("2026-11-08T18:00:00Z") })
 		).rejects.toMatchObject({ code: "BAD_REQUEST" });
 	});
 
