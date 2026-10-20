@@ -23,7 +23,7 @@ function EventDetailsItem({ icon, label }: EventDetailProps) {
 	);
 }
 
-const EVENT_LOCATION_LINK = "https://share.google/YAkQs91U42vi1x1t4";
+const EVENT_LOCATION_LINK = "https://maps.app.goo.gl/4GxvdhXNyAgz474K7";
 
 export default function EventDetails() {
 	return (
@@ -40,12 +40,12 @@ export default function EventDetails() {
 						target="_blank"
 					>
 						<Image
-							alt="University of Calgary engineering building"
+							alt="University of Calgary ICT building"
 							className="h-full w-full object-cover"
 							fill
 							loading="eager"
 							sizes="(min-width: 1024px) 40vw, 100vw"
-							src="/svgs/landingPage/event_room.jpg"
+							src="/svgs/landingPage/ict_build.jpg"
 						/>
 					</Link>
 
