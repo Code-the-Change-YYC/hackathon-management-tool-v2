@@ -8,7 +8,8 @@ export const metadata: Metadata = {
 	title: "Teams | Hack the Change"
 };
 
-// TODO: load teams from the teams router once the backend for this screen exists.
+// TODO: guard with `requireRole([Role.ADMIN])` and load teams from the
+// teams router once the backend for this screen exists.
 const MOCK_TEAMS: Team[] = [
 	{
 		rank: 1,
