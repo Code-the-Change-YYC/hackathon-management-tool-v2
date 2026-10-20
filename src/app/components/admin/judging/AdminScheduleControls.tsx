@@ -64,7 +64,7 @@ export function AdminScheduleControls({
 						No passed teams yet.{" "}
 						<Link
 							className="text-primary underline-offset-4 hover:underline"
-							href="/admin#teams"
+							href="/admin/teams"
 						>
 							Prescreen teams
 						</Link>{" "}
