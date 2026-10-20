@@ -1,18 +1,21 @@
+import type { ReactNode } from "react";
 import { formatDateKey, formatLongDate } from "@/lib/datetime";
 import { range } from "@/lib/utils";
 import { ScheduleItem, type ScheduleItemData } from "./ScheduleItem";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
 import { Skeleton } from "./ui/skeleton";
 
-export type ScheduleGroup = {
+export type ScheduleGroup<T extends ScheduleItemData = ScheduleItemData> = {
 	key: string;
 	label: string;
-	items: ScheduleItemData[];
+	items: T[];
 };
 
 // TODO: do this grouping logic in the procedure instead
-export function groupScheduleItemsByDate(items: ScheduleItemData[]) {
-	return items.reduce<ScheduleGroup[]>((groups, item) => {
+export function groupScheduleItemsByDate<T extends ScheduleItemData>(
+	items: T[]
+) {
+	return items.reduce<ScheduleGroup<T>[]>((groups, item) => {
 		const key = formatDateKey(item.startTime);
 		const existingGroup = groups.find((group) => group.key === key);
 
@@ -31,21 +34,23 @@ export function groupScheduleItemsByDate(items: ScheduleItemData[]) {
 	}, []);
 }
 
-interface ScheduleProps {
-	items: ScheduleItemData[];
+interface ScheduleProps<T extends ScheduleItemData> {
+	items: T[];
 	now: Date;
 	emptyTitle: string;
 	emptyDescription: string;
 	showGroupLabels?: boolean;
+	actions?: (item: T) => ReactNode;
 }
 
-export function Schedule({
+export function Schedule<T extends ScheduleItemData>({
 	items,
 	now,
 	emptyTitle,
 	emptyDescription,
-	showGroupLabels = true
-}: ScheduleProps) {
+	showGroupLabels = true,
+	actions
+}: ScheduleProps<T>) {
 	const groupedItems = groupScheduleItemsByDate(items);
 
 	if (groupedItems.length === 0) {
@@ -66,7 +71,12 @@ export function Schedule({
 					{showGroupLabels && <h3 className="font-medium">{group.label}</h3>}
 					<ol className="flex flex-col gap-6">
 						{group.items.map((item) => (
-							<ScheduleItem item={item} key={item.id} now={now} />
+							<ScheduleItem
+								actions={actions?.(item)}
+								item={item}
+								key={item.id}
+								now={now}
+							/>
 						))}
 					</ol>
 				</div>

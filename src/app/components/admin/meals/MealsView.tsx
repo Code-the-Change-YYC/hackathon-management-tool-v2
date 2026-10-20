@@ -44,7 +44,7 @@ export function MealsView({
 					<Schedule
 						emptyDescription="Check back soon for meal times."
 						emptyTitle="No meals have been scheduled yet"
-						items={meals.map((meal) => ({ ...meal, eventType: meal.type }))}
+						items={meals}
 						now={now}
 					/>
 				</CardContent>

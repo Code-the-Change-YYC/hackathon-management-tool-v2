@@ -1,54 +1,127 @@
 "use client";
 
+import { AddLine, Delete2Line, Edit2Line, More1Line } from "@mingcute/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+	ConfirmAlertDialog,
+	useConfirmDialog
+} from "@/app/components/ConfirmAlertDialog";
 import PageHeader from "@/app/components/PageHeader";
 import { Schedule } from "@/app/components/Schedule";
+import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger
+} from "@/app/components/ui/dropdown-menu";
 import { useCurrentTime } from "@/hooks/use-current-time";
-import type { RouterOutputs } from "@/trpc/react";
-import { EventDetailsForm } from "./EventDetailsForm";
+import type { HackathonDates } from "@/lib/validation/event";
+import { api } from "@/trpc/react";
+import { type AdminEvent, EventDialog } from "./EventDialog";
 
-type Event = RouterOutputs["events"]["getAllEvents"][number];
-
-export function ScheduleView({ events }: { events: Event[] }) {
+export function ScheduleView({
+	events,
+	hackathonDates
+}: {
+	events: AdminEvent[];
+	hackathonDates: HackathonDates | null;
+}) {
 	const now = useCurrentTime();
+	const router = useRouter();
+	const [editing, setEditing] = useState<AdminEvent | "new" | null>(null);
+	const { confirm, dialogProps } = useConfirmDialog();
+	const deleteEvent = api.events.deleteEvent.useMutation({
+		onSuccess: () => {
+			toast.success("Event deleted.");
+			router.refresh();
+		},
+		onError: () =>
+			toast.error("We couldn’t delete this event. Please try again.")
+	});
+
+	async function requestDelete(event: AdminEvent) {
+		const confirmed = await confirm({
+			title: `Delete ${event.title}?`,
+			description:
+				"It will be removed from the schedule along with any check-ins. This can’t be undone.",
+			confirmLabel: "Delete event",
+			destructive: true
+		});
+		if (confirmed) deleteEvent.mutate({ id: event.id });
+	}
 
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				description="View all hackathon events and activities"
+				description="Manage hackathon events and activities."
 				title="Schedule"
 			/>
-			<Card>
-				<CardHeader>
-					<h2 className="font-medium text-xl">Event Schedule</h2>
-				</CardHeader>
-				<CardContent>
-					<Schedule
-						emptyDescription="Check back soon for event times."
-						emptyTitle="No events have been scheduled yet"
-						items={events.map((event) => ({
-							...event,
-							eventType: event.type
-						}))}
-						now={now}
-					/>
-				</CardContent>
-			</Card>
-			{events.length > 0 && (
-				<section
-					aria-labelledby="event-details-title"
-					className="flex flex-col gap-4"
-				>
-					<h2 className="font-medium text-xl" id="event-details-title">
-						Locations and Directions
-					</h2>
-					<div className="flex flex-col gap-3">
-						{events.map((event) => (
-							<EventDetailsForm event={event} key={event.id} />
-						))}
-					</div>
-				</section>
+			<section aria-labelledby="full-schedule-title">
+				<Card>
+					<CardHeader className="flex flex-wrap items-center justify-between gap-3">
+						<h2
+							className="font-medium text-[22px] leading-7"
+							id="full-schedule-title"
+						>
+							Full Schedule
+						</h2>
+						<Button onClick={() => setEditing("new")} size="sm">
+							Add event
+							<AddLine data-icon="inline-end" />
+						</Button>
+					</CardHeader>
+					<CardContent>
+						<Schedule
+							actions={(event) => (
+								<DropdownMenu>
+									<DropdownMenuTrigger
+										render={
+											<Button
+												aria-label={`Manage ${event.title}`}
+												className="shrink-0"
+												size="icon-sm"
+												variant="ghost"
+											/>
+										}
+									>
+										<More1Line />
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end" className="w-36">
+										<DropdownMenuItem onClick={() => setEditing(event)}>
+											<Edit2Line />
+											Edit
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => requestDelete(event)}
+											variant="destructive"
+										>
+											<Delete2Line />
+											Delete
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							)}
+							emptyDescription="Add an event to start building the schedule."
+							emptyTitle="No events have been scheduled yet"
+							items={events}
+							now={now}
+						/>
+					</CardContent>
+				</Card>
+			</section>
+			{editing && (
+				<EventDialog
+					event={editing === "new" ? undefined : editing}
+					hackathonDates={hackathonDates}
+					key={editing === "new" ? "new" : editing.id}
+					onClose={() => setEditing(null)}
+				/>
 			)}
+			<ConfirmAlertDialog {...dialogProps} />
 		</div>
 	);
 }

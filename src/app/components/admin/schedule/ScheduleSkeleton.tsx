@@ -2,7 +2,6 @@ import PageHeader from "@/app/components/PageHeader";
 import { ScheduleItemsSkeleton } from "@/app/components/Schedule";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { range } from "@/lib/utils";
 
 export function ScheduleSkeleton() {
 	return (
@@ -16,23 +15,14 @@ export function ScheduleSkeleton() {
 				title="Schedule"
 			/>
 			<Card>
-				<CardHeader>
-					<h2 className="font-medium text-xl">Event Schedule</h2>
+				<CardHeader className="flex flex-wrap items-center justify-between gap-3">
+					<h2 className="font-medium text-[22px] leading-7">Full Schedule</h2>
+					<Skeleton className="h-9 w-28 rounded-md" />
 				</CardHeader>
 				<CardContent>
 					<ScheduleItemsSkeleton groups={2} />
 				</CardContent>
 			</Card>
-			<div className="flex flex-col gap-4">
-				<h2 className="font-medium text-xl">Locations and Directions</h2>
-				<div className="flex flex-col gap-3">
-					{range(3).map((index) => (
-						<div className="rounded-lg border p-4" key={index}>
-							<Skeleton className="my-1 h-4 w-72 max-w-full" />
-						</div>
-					))}
-				</div>
-			</div>
 		</section>
 	);
 }
