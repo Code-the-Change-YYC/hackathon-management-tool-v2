@@ -23,14 +23,23 @@ export const hackathonSettingsRouter = createTRPCRouter({
 	// Update hackathon settings (admin only)
 	update: adminProcedure
 		.input(
-			z.object({
-				startDate: z.date().optional(),
-				endDate: z.date().optional(),
-				submissionDeadline: z.date().optional().nullable(),
-				judgingPhase: z.enum(JUDGING_PHASES).optional(),
-				isActive: z.boolean().optional(),
-				currentRoundId: z.string().uuid().optional().nullable()
-			})
+			z
+				.object({
+					startDate: z.date().optional(),
+					endDate: z.date().optional(),
+					submissionDeadline: z.date().optional().nullable(),
+					judgingPhase: z.enum(JUDGING_PHASES).optional(),
+					isActive: z.boolean().optional(),
+					currentRoundId: z.string().uuid().optional().nullable()
+				})
+				.refine(
+					({ startDate, endDate }) =>
+						!(startDate && endDate) || endDate > startDate,
+					{
+						message: "The end date must be after the start date.",
+						path: ["endDate"]
+					}
+				)
 		)
 		.mutation(async ({ ctx, input }) => {
 			const [updated] = await ctx.db

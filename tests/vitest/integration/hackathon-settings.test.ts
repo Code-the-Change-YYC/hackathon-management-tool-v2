@@ -143,3 +143,14 @@ describe("hackathonSettings.resetHackathon", () => {
 		}
 	});
 });
+
+describe("hackathonSettings.update", () => {
+	it("rejects an end date that is not after the start date", async () => {
+		const api = await caller();
+		const startDate = new Date("2026-11-07T06:00:00Z");
+
+		await expect(
+			api.hackathonSettings.update({ startDate, endDate: startDate })
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+	});
+});

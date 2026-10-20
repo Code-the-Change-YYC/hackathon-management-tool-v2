@@ -1,298 +1,235 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import PageHeader from "@/app/components/PageHeader";
 import { Button } from "@/app/components/ui/button";
+import { Checkbox } from "@/app/components/ui/checkbox";
+import { Field, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { RESET_CONFIRMATION_PHRASE } from "@/lib/constants";
 import { fromDateInputValue, toDateInputValue } from "@/lib/datetime";
 import { api } from "@/trpc/react";
-import PageHeader from "../../PageHeader";
-import { Field, FieldLabel } from "../../ui/field";
-import { Input } from "../../ui/input";
-import { HackathonDatesSection } from "./HackathonDatesSection";
-import { HackathonResetSection } from "./HackathonResetSection";
-import { ScoringSection } from "./ScoringSection";
+
+type Action = "create" | "reset";
+
+const RESET_FIELDS = [
+	{ key: "users", label: "Reset Users" },
+	{ key: "teams", label: "Reset Teams" },
+	{ key: "rooms", label: "Reset Rooms" },
+	{ key: "scores", label: "Reset Scores" }
+] as const;
+
+type ResetSelection = Record<(typeof RESET_FIELDS)[number]["key"], boolean>;
+
+const NO_RESETS: ResetSelection = {
+	users: false,
+	teams: false,
+	rooms: false,
+	scores: false
+};
+
+const ACTIONS = [
+	{ value: "create", label: "Create hackathon" },
+	{ value: "reset", label: "Reset hackathon" }
+] as const;
+
+const sectionTitle = "font-medium text-xl";
 
 export default function AdminControlsView() {
 	const utils = api.useUtils();
-
-	const { data: criteriaData = [], isLoading: criteriaLoading } =
-		api.criteria.getAll.useQuery();
-
 	const { data: settings } = api.hackathonSettings.get.useQuery();
-
+	const [action, setAction] = useState<Action | null>(null);
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
-	const [selectedAction, setSelectedAction] = useState<"create" | "reset" | "">(
-		""
-	);
-
-	const [resetUsers, setResetUsers] = useState(false);
-	const [resetTeams, setResetTeams] = useState(false);
-	const [resetRooms, setResetRooms] = useState(false);
-	const [resetScores, setResetScores] = useState(false);
+	const [resets, setResets] = useState(NO_RESETS);
 	const [confirmation, setConfirmation] = useState("");
-	const scoresAreImplicitlyReset = resetTeams || resetRooms;
-	const willResetScores = resetScores || scoresAreImplicitlyReset;
 
 	useEffect(() => {
-		if (!settings) return;
-
-		setStartDate(toDateInputValue(settings.startDate));
-		setEndDate(toDateInputValue(settings.endDate));
+		setStartDate(toDateInputValue(settings?.startDate));
+		setEndDate(toDateInputValue(settings?.endDate));
 	}, [settings]);
 
-	const createCriteriaMutation = api.criteria.create.useMutation({
+	const createHackathon = api.hackathonSettings.update.useMutation({
 		onSuccess: async () => {
-			await utils.criteria.getAll.invalidate();
-		}
-	});
-
-	const deleteCriteriaMutation = api.criteria.delete.useMutation({
-		onSuccess: async () => {
-			await utils.criteria.getAll.invalidate();
-		}
-	});
-
-	const updateSettingsMutation = api.hackathonSettings.update.useMutation({
-		onSuccess: async () => {
+			toast.success("Hackathon successfully created");
 			await utils.hackathonSettings.get.invalidate();
-		}
+		},
+		onError: () => toast.error("We couldn’t create the hackathon.")
+	});
+	const resetHackathon = api.hackathonSettings.resetHackathon.useMutation({
+		onSuccess: async () => {
+			toast.success("Hackathon successfully reset");
+			setAction(null);
+			setResets(NO_RESETS);
+			setConfirmation("");
+			await utils.invalidate();
+		},
+		onError: () => toast.error("We couldn’t reset the hackathon.")
 	});
 
-	const resetHackathonMutation =
-		api.hackathonSettings.resetHackathon.useMutation({
-			onSuccess: async () => {
-				await utils.invalidate();
-			}
-		});
+	const scoresIncluded = resets.teams || resets.rooms;
+	const selection = { ...resets, scores: resets.scores || scoresIncluded };
+	const start = fromDateInputValue(startDate, settings?.startDate);
+	const end = fromDateInputValue(endDate, settings?.endDate);
+	const datesInvalid = Boolean(start && end && end <= start);
+	const isPending = createHackathon.isPending || resetHackathon.isPending;
+	const canSubmit =
+		action === "create"
+			? Boolean(start && end) && !datesInvalid
+			: action === "reset" &&
+				Object.values(selection).some(Boolean) &&
+				confirmation.trim() === RESET_CONFIRMATION_PHRASE;
 
-	const mainCriteria = criteriaData.filter((criterion) => !criterion.isSidepot);
-	const sidepots = criteriaData.filter((criterion) => criterion.isSidepot);
-
-	const hasResetSelection =
-		resetUsers || resetTeams || resetRooms || resetScores;
-
-	const handleCreateCriteria = useCallback(
-		async (name: string, isSidepot: boolean) => {
-			try {
-				const [result] = await createCriteriaMutation.mutateAsync({
-					name,
-					isSidepot
-				});
-
-				toast.success("Created");
-				return result ?? null;
-			} catch (error) {
-				console.error(error);
-				toast.error("Failed to create");
-				return null;
-			}
-		},
-		[createCriteriaMutation]
-	);
-
-	const handleDeleteCriteria = useCallback(
-		(id: string) => {
-			return deleteCriteriaMutation.mutateAsync({ id });
-		},
-		[deleteCriteriaMutation]
-	);
-
-	const handleCreateHackathon = useCallback(async () => {
-		// Keep any start and end times already set in the hackathon settings.
-		const start = fromDateInputValue(startDate, settings?.startDate);
-		const end = fromDateInputValue(endDate, settings?.endDate);
-
-		if (!start || !end) {
-			toast.error("Both hackathon dates are required.");
-			return;
-		}
-
-		if (end <= start) {
-			toast.error("The end date must be after the start date.");
-			return;
-		}
-
-		try {
-			await updateSettingsMutation.mutateAsync({
+	function submit() {
+		if (action === "create" && start && end) {
+			createHackathon.mutate({
 				startDate: start,
 				endDate: end,
 				isActive: true
 			});
-
-			toast.success("Hackathon successfully created");
-		} catch (error) {
-			console.error(error);
-			toast.error("Failed to create hackathon");
-		}
-	}, [
-		endDate,
-		settings?.endDate,
-		settings?.startDate,
-		startDate,
-		updateSettingsMutation
-	]);
-
-	const handleResetHackathon = useCallback(async () => {
-		if (!hasResetSelection) {
-			toast.error("Select at least one field to reset.");
-			return;
-		}
-
-		if (confirmation !== RESET_CONFIRMATION_PHRASE) {
-			toast.error("Incorrect confirmation text.");
-			return;
-		}
-
-		try {
-			await resetHackathonMutation.mutateAsync({
-				confirmation,
-				users: resetUsers,
-				teams: resetTeams,
-				rooms: resetRooms,
-				scores: willResetScores
+		} else if (action === "reset") {
+			resetHackathon.mutate({
+				...selection,
+				confirmation: RESET_CONFIRMATION_PHRASE
 			});
-			toast.success("Hackathon successfully reset.");
-
-			setSelectedAction("");
-			setResetUsers(false);
-			setResetTeams(false);
-			setResetRooms(false);
-			setResetScores(false);
-			setConfirmation("");
-		} catch (error) {
-			console.error(error);
-			toast.error("Failed to reset hackathon");
 		}
-	}, [
-		hasResetSelection,
-		resetHackathonMutation,
-		resetUsers,
-		resetTeams,
-		resetRooms,
-		willResetScores,
-		confirmation
-	]);
-
-	const canSubmit =
-		selectedAction === "create"
-			? Boolean(startDate && endDate)
-			: selectedAction === "reset"
-				? hasResetSelection && confirmation === RESET_CONFIRMATION_PHRASE
-				: false;
-
-	if (criteriaLoading) {
-		return (
-			<div className="flex h-screen items-center justify-center">
-				Loading...
-			</div>
-		);
 	}
 
 	return (
-		<div className="flex w-fill flex-col gap-6 p-6">
+		<div className="flex min-h-svh flex-1 flex-col gap-12 bg-white p-6">
 			<PageHeader
-				description="Reset hackathon, edit scoring components"
+				description="Create or reset the hackathon"
 				title="Admin Controls"
 			/>
 
-			<div className="flex flex-col gap-21">
-				<div className="flex flex-col gap-16">
-					<div className="flex flex-col gap-4">
-						<p className="font-medium text-[22px] leading-7">
-							Set Scoring Categories
-						</p>
-
-						<div className="flex w-full flex-col gap-16 md:flex-row">
-							<ScoringSection
-								handleCreate={handleCreateCriteria}
-								handleDelete={handleDeleteCriteria}
-								items={mainCriteria}
-								name="Scoring Components"
-								placeholder="Idea, Effectiveness, Presentation, etc."
-								sidepot={false}
-							/>
-
-							<ScoringSection
-								handleCreate={handleCreateCriteria}
-								handleDelete={handleDeleteCriteria}
-								items={sidepots}
-								name="Scoring Sidepots"
-								placeholder="Creativity, Best UI, Use of AI, etc."
-								sidepot
-							/>
-						</div>
-					</div>
-				</div>
-
-				<HackathonDatesSection
-					endDate={endDate}
-					onEndDateChange={setEndDate}
-					onStartDateChange={setStartDate}
-					selectedAction={selectedAction}
-					startDate={startDate}
-				/>
-
-				<HackathonResetSection
-					onActionChange={(value) => {
-						setSelectedAction(value);
-						if (value === "create") {
-							setResetUsers(false);
-							setResetTeams(false);
-							setResetRooms(false);
-							setResetScores(false);
-							setConfirmation("");
-						}
-					}}
-					onResetRoomsChange={setResetRooms}
-					onResetScoresChange={setResetScores}
-					onResetTeamsChange={setResetTeams}
-					onResetUsersChange={setResetUsers}
-					resetRooms={resetRooms}
-					resetTeams={resetTeams}
-					resetUsers={resetUsers}
-					scoresAreImplicitlyReset={scoresAreImplicitlyReset}
-					selectedAction={selectedAction}
-					willResetScores={willResetScores}
-				/>
-
-				<div className="grid w-full grid-cols-[100%] grid-rows-[max-content_max-content_max-content] justify-end gap-x-4 gap-y-2 pr-4 md:grid-cols-[max-content]">
-					<Field>
-						<FieldLabel className="w-full pl-4 font-regular text-[14px] leading-5">
-							Enter "{RESET_CONFIRMATION_PHRASE}" to confirm reset
-						</FieldLabel>
-
+			<section aria-labelledby="dates-title" className="flex flex-col gap-4">
+				<h2 className={sectionTitle} id="dates-title">
+					Set Hackathon Dates
+				</h2>
+				<div className="grid gap-4 md:grid-cols-2 md:gap-16">
+					<Field data-invalid={datesInvalid}>
+						<FieldLabel htmlFor="hackathon-start">Start Date</FieldLabel>
 						<Input
-							className="row-start-2 w-fill rounded-[12px] border py-3 pr-3 pl-4 text-4 leading-6 md:w-100"
-							onChange={(event) => setConfirmation(event.target.value)}
-							placeholder={RESET_CONFIRMATION_PHRASE}
-							type="text"
-							value={confirmation}
+							disabled={action !== "create"}
+							id="hackathon-start"
+							onChange={(event) => setStartDate(event.target.value)}
+							type="date"
+							value={startDate}
 						/>
 					</Field>
-
-					<Button
-						className="row-start-3 justify-self-end md:row-start-2"
-						disabled={
-							!canSubmit ||
-							updateSettingsMutation.isPending ||
-							resetHackathonMutation.isPending
-						}
-						onClick={() => {
-							if (selectedAction === "create") {
-								void handleCreateHackathon();
-							} else if (selectedAction === "reset") {
-								void handleResetHackathon();
-							}
-						}}
-						type="button"
-					>
-						<p className="font-medium text-4 text-white leading-6">
-							Submit Changes
-						</p>
-					</Button>
+					<Field data-invalid={datesInvalid}>
+						<FieldLabel htmlFor="hackathon-end">End Date</FieldLabel>
+						<Input
+							aria-describedby="hackathon-dates-error"
+							aria-invalid={datesInvalid}
+							disabled={action !== "create"}
+							id="hackathon-end"
+							onChange={(event) => setEndDate(event.target.value)}
+							type="date"
+							value={endDate}
+						/>
+						{datesInvalid && (
+							<p
+								className="text-destructive text-sm"
+								id="hackathon-dates-error"
+							>
+								The end date must be after the start date.
+							</p>
+						)}
+					</Field>
 				</div>
+			</section>
+
+			<div className="grid gap-12 md:grid-cols-2 md:gap-16">
+				<section aria-labelledby="action-title" className="flex flex-col gap-4">
+					<h2 className={sectionTitle} id="action-title">
+						Hackathon Action
+					</h2>
+					<RadioGroup
+						aria-labelledby="action-title"
+						onValueChange={(value) => {
+							setAction(value);
+							setResets(NO_RESETS);
+							setConfirmation("");
+						}}
+						value={action}
+					>
+						{ACTIONS.map(({ value, label }) => (
+							<label
+								className="flex h-12 items-center gap-4"
+								htmlFor={`action-${value}`}
+								key={value}
+							>
+								<RadioGroupItem
+									className="size-5"
+									id={`action-${value}`}
+									value={value}
+								/>
+								{label}
+							</label>
+						))}
+					</RadioGroup>
+				</section>
+
+				<section aria-labelledby="reset-title" className="flex flex-col gap-4">
+					<h2 className={sectionTitle} id="reset-title">
+						Reset Fields
+					</h2>
+					<div className="flex flex-col gap-2">
+						{RESET_FIELDS.map(({ key, label }) => {
+							const included = key === "scores" && scoresIncluded;
+							return (
+								<label
+									className="flex min-h-12 items-center gap-4 p-2"
+									htmlFor={`reset-${key}`}
+									key={key}
+								>
+									<Checkbox
+										checked={selection[key]}
+										disabled={action !== "reset" || included}
+										id={`reset-${key}`}
+										onCheckedChange={(checked) =>
+											setResets({ ...resets, [key]: checked === true })
+										}
+									/>
+									<span className="flex flex-col">
+										{label}
+										{included && (
+											<span className="text-muted-foreground text-sm">
+												Included with teams or rooms
+											</span>
+										)}
+									</span>
+								</label>
+							);
+						})}
+					</div>
+				</section>
+			</div>
+
+			<div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-end">
+				<Field className="md:w-100">
+					<FieldLabel htmlFor="reset-confirmation">
+						Enter “{RESET_CONFIRMATION_PHRASE}” to confirm reset
+					</FieldLabel>
+					<Input
+						autoComplete="off"
+						disabled={action !== "reset"}
+						id="reset-confirmation"
+						onChange={(event) => setConfirmation(event.target.value)}
+						placeholder={RESET_CONFIRMATION_PHRASE}
+						value={confirmation}
+					/>
+				</Field>
+				<Button
+					className="self-end"
+					disabled={!canSubmit || isPending}
+					onClick={submit}
+				>
+					Submit Changes
+				</Button>
 			</div>
 		</div>
 	);
