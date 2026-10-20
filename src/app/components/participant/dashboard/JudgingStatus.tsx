@@ -2,7 +2,7 @@
 
 import { ArrowRightLine, CheckLine } from "@mingcute/react";
 import Link from "next/link";
-import { Button } from "@/app/components/ui/button";
+import { buttonVariants } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import {
@@ -129,17 +129,13 @@ export function JudgingStatus({
 					<h2 className="font-medium text-xl" id="judging-title">
 						Judging Status
 					</h2>
-					<Button
-						nativeButton={false}
-						render={
-							<Link href="/participant/judging">
-								View judging info
-								<ArrowRightLine className="size-5" data-icon="inline-end" />
-							</Link>
-						}
-						size="sm"
-						variant="ghost"
-					/>
+					<Link
+						className={buttonVariants({ size: "sm", variant: "ghost" })}
+						href="/participant/judging"
+					>
+						View judging info
+						<ArrowRightLine className="size-5" data-icon="inline-end" />
+					</Link>
 				</div>
 				<p aria-live="polite" className="text-grey-600 text-sm/5">
 					{label}
