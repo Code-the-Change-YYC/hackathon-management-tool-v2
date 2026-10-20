@@ -13,6 +13,9 @@ export type Sponsor = {
 	url: string | undefined;
 	id: string;
 	image: string;
+	width: number;
+	height: number;
+	scale?: number;
 	name: string;
 };
 

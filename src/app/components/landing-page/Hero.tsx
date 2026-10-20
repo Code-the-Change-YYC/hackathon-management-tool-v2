@@ -10,7 +10,13 @@ import Countdown from "./Countdown";
 
 const EVENT_BLURB =
 	"Hack the Change is a two-day, in-person, for-charity event focused on developing innovative tech solutions for a better world, and Calgary's first MLH supported Hackathon!";
-const BG_IMAGE = "/svgs/landingPage/countdown_bg.svg";
+const BG_IMAGE = "/svgs/landingPage/hero_bg.webp";
+const BG_BLUR =
+	"data:image/webp;base64,UklGRkQAAABXRUJQVlA4IDgAAAAQAgCdASoQAAkAAoBCJYwCdH8AGBwWq6gAAP74CbZ+OkGkjSSL5De1D2AhDlWKBeO4/A12kAAAAA==";
+// The section is taller than the image's aspect ratio, so object-cover renders
+// the image wider than the viewport: about 1740px wide from md up
+const BG_SIZES =
+	"(max-width: 639px) 260vw, (max-width: 767px) 130vw, (max-width: 1740px) 1740px, 100vw";
 const CTA_BUTTON_STYLES =
 	"h-15 w-40 rounded-3xl border-5 border-white bg-awesomer-purple font-semibold text-white transition-opacity hover:bg-awesomer-purple hover:opacity-70";
 
@@ -25,9 +31,12 @@ export default function Hero() {
 		<section className="relative mt-16 w-full overflow-x-hidden px-4 sm:px-12 md:mt-22 lg:px-24">
 			<Image
 				alt=""
+				blurDataURL={BG_BLUR}
 				className="pointer-events-none object-cover"
 				fill
-				priority
+				placeholder="blur"
+				preload
+				sizes={BG_SIZES}
 				src={BG_IMAGE}
 			/>
 
