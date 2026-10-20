@@ -45,7 +45,7 @@ export default function EventDetails() {
 							fill
 							loading="eager"
 							sizes="(min-width: 1024px) 40vw, 100vw"
-							src="/svgs/landingPage/event_room.jpg"
+							src="/svgs/landingPage/ict_build.jpg"
 						/>
 					</Link>
 
