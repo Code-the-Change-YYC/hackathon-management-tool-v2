@@ -47,7 +47,7 @@ export function ScheduleView({ events }: { events: AdminEvent[] }) {
 	}
 
 	return (
-		<div className="flex flex-col gap-6 p-6">
+		<div className="flex flex-col gap-6">
 			<PageHeader
 				description="View all hackathon events and activities"
 				title="Schedule"

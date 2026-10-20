@@ -20,8 +20,9 @@ export function AdminScheduleControls({
 	schedule: ReturnType<typeof useAdminJudgingSchedule>;
 }) {
 	const {
+		rounds,
 		selectedRoundId,
-		setSelectedRoundId,
+		selectRound,
 		selectedRoomId,
 		setSelectedRoomId,
 		roomCount,
@@ -32,11 +33,6 @@ export function AdminScheduleControls({
 		setSlotMinutes,
 		assignmentMessage,
 		setAssignmentMessage,
-		roundsQuery,
-		layoutQuery,
-		assignmentsQuery,
-		usersQuery,
-		teamsQuery,
 		rooms,
 		judges,
 		eligibleTeams,
@@ -45,18 +41,14 @@ export function AdminScheduleControls({
 		visibleAssignments,
 		unscheduledCount,
 		readiness,
-		generateSchedule,
-		handleAutoAssign,
-		queryError
+		isGenerating,
+		handleAutoAssign
 	} = schedule;
 	return (
 		<>
-			{" "}
 			<section className="flex flex-col gap-4" id="assign-teams">
 				<div>
-					<h2 className="m-0 font-medium text-[22px] leading-7">
-						Assign teams to rooms
-					</h2>
+					<h2 className="font-medium text-xl">Assign teams to rooms</h2>
 					<p className="mt-1 mb-0 text-muted-foreground text-sm">
 						This creates the rooms and places prescreen-passed teams into time
 						slots.
@@ -67,14 +59,12 @@ export function AdminScheduleControls({
 						Add a round above first.
 					</p>
 				) : null}
-				{selectedRoundId &&
-				!teamsQuery.isLoading &&
-				eligibleTeams.length === 0 ? (
+				{selectedRoundId && eligibleTeams.length === 0 ? (
 					<p className="m-0 text-muted-foreground text-sm">
 						No passed teams yet.{" "}
 						<Link
 							className="text-primary underline-offset-4 hover:underline"
-							href="/admin#teams"
+							href="/admin/teams"
 						>
 							Prescreen teams
 						</Link>{" "}
@@ -118,6 +108,10 @@ export function AdminScheduleControls({
 				<Field className="max-w-xs gap-2">
 					<FieldLabel htmlFor="judging-slot-duration">Slot duration</FieldLabel>
 					<Select
+						items={SLOT_MINUTES_OPTIONS.map((minutes) => ({
+							value: String(minutes),
+							label: `${minutes} minutes`
+						}))}
 						onValueChange={(value) => {
 							const duration = SLOT_MINUTES_OPTIONS.find(
 								(option) => String(option) === value
@@ -145,20 +139,11 @@ export function AdminScheduleControls({
 
 				<div className="flex flex-col items-end gap-2">
 					<Button
-						disabled={
-							!selectedRoundId ||
-							generateSchedule.isPending ||
-							roundsQuery.isLoading ||
-							layoutQuery.isLoading ||
-							assignmentsQuery.isLoading ||
-							usersQuery.isLoading ||
-							teamsQuery.isLoading ||
-							!readiness.canAssign
-						}
+						disabled={!selectedRoundId || isGenerating || !readiness.canAssign}
 						onClick={() => void handleAutoAssign()}
 						type="button"
 					>
-						{generateSchedule.isPending ? "Assigning…" : "Assign to rooms"}
+						{isGenerating ? "Assigning…" : "Assign to rooms"}
 					</Button>
 					<p
 						aria-live="polite"
@@ -166,17 +151,13 @@ export function AdminScheduleControls({
 					>
 						{assignmentMessage ||
 							readiness.blockingReason ||
-							(usersQuery.isLoading || teamsQuery.isLoading
-								? "Checking assignment capacity…"
-								: `${eligibleTeams.length} passed teams · ${judges.length} judges available`)}
+							`${eligibleTeams.length} passed teams · ${judges.length} judges available`}
 					</p>
 				</div>
 			</section>
 			<section className="flex flex-col gap-4" id="judging-schedule">
 				<div>
-					<h2 className="m-0 font-medium text-[22px] leading-7">
-						Judging schedule
-					</h2>
+					<h2 className="font-medium text-xl">Judging schedule</h2>
 					<p className="mt-1 mb-0 text-muted-foreground text-sm">
 						The grid updates after you assign teams to rooms.
 					</p>
@@ -188,7 +169,11 @@ export function AdminScheduleControls({
 							Room Selection
 						</FieldLabel>
 						<Select
-							disabled={!selectedRoundId || layoutQuery.isLoading}
+							disabled={!selectedRoundId}
+							items={[
+								{ value: "all", label: "All" },
+								...rooms.map((room) => ({ value: room.id, label: room.name }))
+							]}
 							onValueChange={(value) => {
 								if (value) setSelectedRoomId(value);
 							}}
@@ -212,12 +197,12 @@ export function AdminScheduleControls({
 					<Field className="w-full gap-2 sm:w-64">
 						<FieldLabel htmlFor="judging-round-filter">Round</FieldLabel>
 						<Select
-							disabled={roundsQuery.isLoading}
+							items={rounds.map((round) => ({
+								value: round.id,
+								label: round.name
+							}))}
 							onValueChange={(value) => {
-								if (!value) return;
-								setSelectedRoundId(value);
-								setSelectedRoomId("all");
-								setAssignmentMessage("");
+								if (value) selectRound(value);
 							}}
 							value={selectedRoundId}
 						>
@@ -226,7 +211,7 @@ export function AdminScheduleControls({
 							</SelectTrigger>
 							<SelectContent>
 								<SelectGroup>
-									{(roundsQuery.data ?? []).map((round) => (
+									{rounds.map((round) => (
 										<SelectItem key={round.id} value={round.id}>
 											{round.name}
 										</SelectItem>
@@ -237,25 +222,14 @@ export function AdminScheduleControls({
 					</Field>
 				</div>
 
-				{queryError ? (
-					<p className="m-0 rounded-xl bg-destructive/10 px-4 py-3 text-destructive">
-						Schedule data could not be loaded: {queryError.message}
-					</p>
-				) : (
-					<AdminScheduleGrid
-						assignments={visibleAssignments}
-						isLoading={
-							roundsQuery.isLoading ||
-							layoutQuery.isLoading ||
-							assignmentsQuery.isLoading
-						}
-						key={`${selectedRoundId}:${selectedRoomId}:${slotMinutes}`}
-						rooms={visibleRooms}
-						roundEnd={selectedRound?.endTime}
-						roundStart={selectedRound?.startTime}
-						slotMinutes={slotMinutes}
-					/>
-				)}
+				<AdminScheduleGrid
+					assignments={visibleAssignments}
+					key={`${selectedRoundId}:${selectedRoomId}:${slotMinutes}`}
+					rooms={visibleRooms}
+					roundEnd={selectedRound?.endTime}
+					roundStart={selectedRound?.startTime}
+					slotMinutes={slotMinutes}
+				/>
 
 				{unscheduledCount > 0 ? (
 					<p className="m-0 text-muted-foreground text-sm">

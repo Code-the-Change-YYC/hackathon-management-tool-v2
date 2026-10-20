@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AutoRefresh } from "@/app/components/participant/AutoRefresh";
+import { AutoRefresh } from "@/app/components/AutoRefresh";
 import { DashboardView } from "@/app/components/participant/dashboard/DashboardView";
 import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";

@@ -8,7 +8,9 @@ export const metadata: Metadata = {
 	title: "Schedule | Hack the Change"
 };
 
-export default async function AdminSchedulePage() {
+export default async function SchedulePage() {
 	await requireRole([Role.ADMIN]);
-	return <ScheduleView events={await api.events.getAllEvents()} />;
+	const events = await api.events.getAllEvents();
+
+	return <ScheduleView events={events} />;
 }

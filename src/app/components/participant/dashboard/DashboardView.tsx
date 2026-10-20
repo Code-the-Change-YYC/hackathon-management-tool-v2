@@ -4,7 +4,7 @@ import { ArrowRightLine } from "@mingcute/react";
 import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
 import { Schedule } from "@/app/components/Schedule";
-import { Button } from "@/app/components/ui/button";
+import { buttonVariants } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import {
@@ -61,17 +61,13 @@ export function DashboardView({
 					<CardHeader>
 						<div className="flex flex-wrap items-center justify-between gap-1">
 							<h2 className="font-medium text-xl">Upcoming Events</h2>
-							<Button
-								nativeButton={false}
-								render={
-									<Link href="/participant/schedule">
-										View full schedule
-										<ArrowRightLine className="size-5" data-icon="inline-end" />
-									</Link>
-								}
-								size="sm"
-								variant="ghost"
-							/>
+							<Link
+								className={buttonVariants({ size: "sm", variant: "ghost" })}
+								href="/participant/schedule"
+							>
+								View full schedule
+								<ArrowRightLine className="size-5" data-icon="inline-end" />
+							</Link>
 						</div>
 					</CardHeader>
 					<CardContent>
