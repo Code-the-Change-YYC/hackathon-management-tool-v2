@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { CheckboxField } from "@/app/components/forms/CheckboxField";
+import { DateField } from "@/app/components/forms/DateField";
 import { TextField } from "@/app/components/forms/TextField";
 import {
 	EVENT_TYPE_THEMES,
@@ -27,7 +28,7 @@ import {
 } from "@/app/components/ui/field";
 import { RadioGroup } from "@/app/components/ui/radio-group";
 import { Textarea } from "@/app/components/ui/textarea";
-import { toDateTimeLocalValue } from "@/lib/datetime";
+import { toDateInputValue, toTimeInputValue } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import {
 	EMPTY_EVENT_FORM,
@@ -41,6 +42,9 @@ import {
 import { api, type RouterOutputs } from "@/trpc/react";
 import { EVENT_TYPES, EventStatus } from "@/types/types";
 
+const TIME_INPUT_CLASS_NAME =
+	"appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none";
+
 export type AdminEvent = RouterOutputs["events"]["getAllEvents"][number];
 
 function toFormInput(event?: AdminEvent): EventFormInput {
@@ -52,8 +56,9 @@ function toFormInput(event?: AdminEvent): EventFormInput {
 		published: event.status === EventStatus.ACTIVE,
 		location: event.location ?? "",
 		navigationUrl: event.navigationUrl ?? "",
-		startTime: toDateTimeLocalValue(event.startTime),
-		endTime: toDateTimeLocalValue(event.endTime)
+		date: toDateInputValue(event.startTime),
+		startTime: toTimeInputValue(event.startTime),
+		endTime: toTimeInputValue(event.endTime)
 	};
 }
 
@@ -89,7 +94,7 @@ export function EventDialog({
 			onOpenChange={(open) => !open && onClose()}
 			open
 		>
-			<DialogContent className="max-h-[calc(100svh-2rem)] overflow-y-auto sm:max-w-xl">
+			<DialogContent className="sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle>{event ? "Edit event" : "Add event"}</DialogTitle>
 				</DialogHeader>
@@ -114,7 +119,7 @@ export function EventDialog({
 							<FieldLabel id="event-type-label">Type</FieldLabel>
 							<RadioGroup
 								aria-labelledby="event-type-label"
-								className="grid-cols-4"
+								className="grid-cols-2 sm:grid-cols-4"
 								disabled={isPending}
 								onValueChange={(type) => form.setValue("type", type)}
 								value={eventType}
@@ -122,33 +127,48 @@ export function EventDialog({
 								{EVENT_TYPES.map((type) => (
 									<Radio.Root
 										className={cn(
-											"flex min-w-0 flex-col items-center gap-1.5 rounded-lg border-2 border-transparent p-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring data-checked:font-medium data-disabled:opacity-50",
+											"flex min-w-0 cursor-pointer items-center gap-1.5 rounded-lg border border-input p-1.5 pr-2 text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-checked:font-medium data-disabled:opacity-50 data-checked:ring-1",
 											EVENT_TYPE_THEMES[type].selectedClassName
 										)}
 										key={type}
 										value={type}
 									>
-										<EventTypeIcon className="size-12 p-2.5" type={type} />
-										{EVENT_TYPE_THEMES[type].label}
+										<EventTypeIcon
+											className="size-7 rounded-md p-1.5"
+											type={type}
+										/>
+										<span className="truncate">
+											{EVENT_TYPE_THEMES[type].label}
+										</span>
 									</Radio.Root>
 								))}
 							</RadioGroup>
 						</Field>
+						<DateField
+							control={form.control}
+							disabled={isPending}
+							label="Date"
+							name="date"
+						/>
 						<div className="grid gap-4 sm:grid-cols-2">
 							<TextField
+								className={TIME_INPUT_CLASS_NAME}
 								control={form.control}
 								disabled={isPending}
 								label="Starts"
 								name="startTime"
-								type="datetime-local"
+								type="time"
 							/>
 							<TextField
+								className={TIME_INPUT_CLASS_NAME}
 								control={form.control}
 								disabled={isPending}
 								label="Ends"
 								name="endTime"
-								type="datetime-local"
+								type="time"
 							/>
+						</div>
+						<div className="grid gap-4 sm:grid-cols-2">
 							<TextField
 								control={form.control}
 								disabled={isPending}
@@ -160,7 +180,7 @@ export function EventDialog({
 							<TextField
 								control={form.control}
 								disabled={isPending}
-								label="Directions or meeting URL"
+								label="URL (optional)"
 								name="navigationUrl"
 								placeholder="https://"
 								type="url"
@@ -185,12 +205,12 @@ export function EventDialog({
 							Show on the participant schedule
 						</CheckboxField>
 					</FieldGroup>
-					<DialogFooter className="sm:flex-row">
-						<Button onClick={onClose} type="button" variant="ghost">
-							Cancel
-						</Button>
+					<DialogFooter>
 						<Button disabled={isPending} type="submit">
 							{event ? "Save changes" : "Add event"}
+						</Button>
+						<Button onClick={onClose} type="button" variant="outline">
+							Cancel
 						</Button>
 					</DialogFooter>
 				</form>

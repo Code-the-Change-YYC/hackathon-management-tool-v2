@@ -11,6 +11,7 @@ import {
 import PageHeader from "@/app/components/PageHeader";
 import { Schedule } from "@/app/components/Schedule";
 import { Button } from "@/app/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -49,64 +50,61 @@ export function ScheduleView({ events }: { events: AdminEvent[] }) {
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				description="View all hackathon events and activities"
+				description="Manage hackathon events and activities."
 				title="Schedule"
 			/>
-			<section
-				aria-labelledby="full-schedule-title"
-				className="flex flex-col gap-4"
-			>
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h2
-						className="font-medium text-[22px] leading-7"
-						id="full-schedule-title"
-					>
-						Full Schedule
-					</h2>
-					<Button
-						className="h-8 rounded-full px-3"
-						onClick={() => setEditing("new")}
-						size="sm"
-					>
-						Add event
-						<AddLine data-icon="inline-end" />
-					</Button>
-				</div>
-				<Schedule
-					actions={(event) => (
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={
-									<Button
-										aria-label={`Manage ${event.title}`}
-										className="shrink-0"
-										size="icon-sm"
-										variant="ghost"
-									/>
-								}
-							>
-								<More1Line />
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-36">
-								<DropdownMenuItem onClick={() => setEditing(event)}>
-									<Edit2Line />
-									Edit
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={() => requestDelete(event)}
-									variant="destructive"
-								>
-									<Delete2Line />
-									Delete
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					)}
-					emptyDescription="Add an event to start building the schedule."
-					emptyTitle="No events have been scheduled yet"
-					items={events}
-					now={now}
-				/>
+			<section aria-labelledby="full-schedule-title">
+				<Card>
+					<CardHeader className="flex flex-wrap items-center justify-between gap-3">
+						<h2
+							className="font-medium text-[22px] leading-7"
+							id="full-schedule-title"
+						>
+							Full Schedule
+						</h2>
+						<Button onClick={() => setEditing("new")} size="sm">
+							Add event
+							<AddLine data-icon="inline-end" />
+						</Button>
+					</CardHeader>
+					<CardContent>
+						<Schedule
+							actions={(event) => (
+								<DropdownMenu>
+									<DropdownMenuTrigger
+										render={
+											<Button
+												aria-label={`Manage ${event.title}`}
+												className="shrink-0"
+												size="icon-sm"
+												variant="ghost"
+											/>
+										}
+									>
+										<More1Line />
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end" className="w-36">
+										<DropdownMenuItem onClick={() => setEditing(event)}>
+											<Edit2Line />
+											Edit
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => requestDelete(event)}
+											variant="destructive"
+										>
+											<Delete2Line />
+											Delete
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							)}
+							emptyDescription="Add an event to start building the schedule."
+							emptyTitle="No events have been scheduled yet"
+							items={events}
+							now={now}
+						/>
+					</CardContent>
+				</Card>
 			</section>
 			{editing && (
 				<EventDialog

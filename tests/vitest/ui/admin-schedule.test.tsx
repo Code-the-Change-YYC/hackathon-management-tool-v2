@@ -55,6 +55,20 @@ function change(label: string, value: string) {
 	fireEvent.change(screen.getByLabelText(label), { target: { value } });
 }
 
+async function pickDay(label: string, day: RegExp) {
+	fireEvent.click(
+		screen.getByRole("button", { name: new RegExp(`^${label} `) })
+	);
+	for (
+		let month = 0;
+		month < 24 && !screen.queryByRole("button", { name: day });
+		month++
+	) {
+		fireEvent.click(await screen.findByRole("button", { name: /next month/i }));
+	}
+	fireEvent.click(screen.getByRole("button", { name: day }));
+}
+
 function submit() {
 	fireEvent.click(
 		within(screen.getByRole("dialog")).getByRole("button", {
@@ -88,13 +102,17 @@ describe("admin schedule", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Add event" }));
 		submit();
 		expect(await screen.findByText("Enter a title.")).toBeInTheDocument();
+		expect(screen.getByText("Choose a date.")).toBeInTheDocument();
+		expect(screen.getByText("Choose a start time.")).toBeInTheDocument();
+		expect(screen.getByText("Choose an end time.")).toBeInTheDocument();
 		expect(mocks.add).not.toHaveBeenCalled();
 
 		change("Title", "  Trivia  ");
 		change("Description", "Win prizes");
-		change("Starts", "2026-11-07T14:00");
-		change("Ends", "2026-11-07T13:00");
-		change("Directions or meeting URL", "javascript:alert(1)");
+		await pickDay("Date", /November 7th, 2026/);
+		change("Starts", "14:00");
+		change("Ends", "13:00");
+		change("URL (optional)", "javascript:alert(1)");
 		submit();
 		expect(
 			await screen.findByText("End time must be after start time.")
@@ -103,8 +121,8 @@ describe("admin schedule", () => {
 			screen.getByText("Use an HTTP or HTTPS URL.", { exact: false })
 		).toBeInTheDocument();
 
-		change("Ends", "2026-11-07T15:00");
-		change("Directions or meeting URL", "");
+		change("Ends", "15:00");
+		change("URL (optional)", "");
 		fireEvent.click(screen.getByRole("radio", { name: "Ceremony" }));
 		submit();
 		await waitFor(() =>
@@ -127,7 +145,11 @@ describe("admin schedule", () => {
 		fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
 		expect(screen.getByLabelText("Title")).toHaveValue("Lunch");
 		expect(screen.getByRole("radio", { name: "Food" })).toBeChecked();
-		expect(screen.getByLabelText("Starts")).toHaveValue("2026-11-07T13:00");
+		expect(screen.getByLabelText("Date")).toHaveTextContent(
+			"Saturday, November 7, 2026"
+		);
+		expect(screen.getByLabelText("Starts")).toHaveValue("13:00");
+		expect(screen.getByLabelText("Ends")).toHaveValue("14:00");
 		expect(
 			screen.getByRole("checkbox", { name: "Show on the participant schedule" })
 		).not.toBeChecked();

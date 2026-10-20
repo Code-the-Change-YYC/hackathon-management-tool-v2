@@ -30,7 +30,8 @@ export const EVENT_TYPE_THEMES = {
 		Icon: HamburgerLine,
 		badgeClassName: "bg-dark-pink",
 		previewClassName: "bg-pastel-pink",
-		selectedClassName: "data-checked:border-dark-pink",
+		selectedClassName:
+			"data-checked:border-dark-pink data-checked:ring-dark-pink",
 		iconColor: "var(--color-dark-pink)"
 	},
 	[EventType.ACTIVITY]: {
@@ -38,7 +39,8 @@ export const EVENT_TYPE_THEMES = {
 		Icon: TrophyLine,
 		badgeClassName: "bg-emerald-green",
 		previewClassName: "bg-mint-green",
-		selectedClassName: "data-checked:border-emerald-green",
+		selectedClassName:
+			"data-checked:border-emerald-green data-checked:ring-emerald-green",
 		iconColor: "var(--color-dark-green)"
 	},
 	[EventType.PROJECT]: {
@@ -46,7 +48,8 @@ export const EVENT_TYPE_THEMES = {
 		Icon: LaptopLine,
 		badgeClassName: "bg-grapefruit",
 		previewClassName: "bg-fuzzy-peach",
-		selectedClassName: "data-checked:border-grapefruit",
+		selectedClassName:
+			"data-checked:border-grapefruit data-checked:ring-grapefruit",
 		iconColor: "var(--color-grapefruit)"
 	},
 	[EventType.CEREMONY]: {
@@ -54,7 +57,8 @@ export const EVENT_TYPE_THEMES = {
 		Icon: AnnouncementLine,
 		badgeClassName: "bg-awesomer-purple",
 		previewClassName: "bg-lilac-purple",
-		selectedClassName: "data-checked:border-awesomer-purple",
+		selectedClassName:
+			"data-checked:border-awesomer-purple data-checked:ring-awesomer-purple",
 		iconColor: "var(--color-awesomer-purple)"
 	}
 } satisfies Record<EventType, unknown>;
