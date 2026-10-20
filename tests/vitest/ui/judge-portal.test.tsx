@@ -153,6 +153,7 @@ function score(criteriaId: string, value: number) {
 	return {
 		id: criteriaId,
 		assignmentId: "assignment",
+		judgeId: "judge",
 		criteriaId,
 		value,
 		createdAt: now
