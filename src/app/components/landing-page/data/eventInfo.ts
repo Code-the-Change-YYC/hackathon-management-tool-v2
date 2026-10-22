@@ -15,7 +15,7 @@ export const eventInfoItems: EventInfoItem[] = [
 	{
 		id: "location",
 		icon: LocationLine,
-		label: "University of Calgary - ICT 102"
+		label: "University of Calgary - ICT 102 (to be confirmed)"
 	},
 	{ id: "public", icon: HeartLine, label: "Public" },
 	{
