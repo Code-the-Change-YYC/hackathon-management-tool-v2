@@ -1,10 +1,13 @@
+// Type-only, so client components that import from this file don't bundle
+// drizzle-orm and the database schema
 import type {
 	OrganizationInsertType,
 	OrganizationSelectType,
+	PRESCREEN_STATUS_VALUES,
+	PROGRAMS,
 	UserInsertType,
 	UserSelectType
 } from "@/server/db/auth-schema";
-import { PRESCREEN_STATUS_VALUES, PROGRAMS } from "@/server/db/auth-schema";
 
 export type User = UserSelectType;
 export type UserInsert = UserInsertType;
@@ -12,7 +15,6 @@ export type UserInsert = UserInsertType;
 export type Organization = OrganizationSelectType;
 export type OrganizationInsert = OrganizationInsertType;
 
-export { PRESCREEN_STATUS_VALUES, PROGRAMS };
 export type Program = (typeof PROGRAMS)[number];
 export type PrescreenStatus = (typeof PRESCREEN_STATUS_VALUES)[number];
 
