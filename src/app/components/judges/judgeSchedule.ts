@@ -1,29 +1,10 @@
-import { differenceInMinutes } from "date-fns";
 import { formatDateKey } from "@/lib/datetime";
-import { type JudgeAssignment, sortAssignments } from "./judgePortal";
-
-export function inferDuration(
-	assignment: JudgeAssignment,
-	assignments: JudgeAssignment[]
-) {
-	const assignmentTime = assignment.timeSlot;
-	if (!assignmentTime) return 20;
-	const nextAssignment = assignments
-		.filter(
-			(candidate) =>
-				candidate.room.id === assignment.room.id &&
-				candidate.timeSlot &&
-				candidate.timeSlot > assignmentTime
-		)
-		.sort(sortAssignments)[0];
-
-	if (!nextAssignment?.timeSlot) return 20;
-	const minutes = differenceInMinutes(nextAssignment.timeSlot, assignmentTime, {
-		roundingMethod: "round"
-	});
-	if (minutes <= 0 || minutes > 120) return 20;
-	return minutes;
-}
+import {
+	type Criterion,
+	isAssignmentScored,
+	type JudgeAssignment,
+	sortAssignments
+} from "./judgePortal";
 
 export function groupScheduleByDate(assignments: JudgeAssignment[]) {
 	const groups = new Map<string, JudgeAssignment[]>();
@@ -35,4 +16,44 @@ export function groupScheduleByDate(assignments: JudgeAssignment[]) {
 		else groups.set(key, [assignment]);
 	}
 	return Array.from(groups.values());
+}
+
+export function getScheduleRounds(
+	rounds: JudgeAssignment["room"]["round"][],
+	assignments: JudgeAssignment[]
+) {
+	// Assignment metadata keeps a newly assigned round visible between refreshes.
+	const byId = new Map(
+		[...assignments.map((assignment) => assignment.room.round), ...rounds].map(
+			(round) => [round.id, round]
+		)
+	);
+	return [...byId.values()].sort(
+		(a, b) =>
+			a.startTime.getTime() - b.startTime.getTime() || a.id.localeCompare(b.id)
+	);
+}
+
+export function getScheduleSummary(
+	assignments: JudgeAssignment[],
+	criteria: Criterion[],
+	activeRoundId: string,
+	currentTime: Date
+) {
+	const outstanding = assignments
+		.filter(
+			(assignment) =>
+				assignment.room.roundId === activeRoundId &&
+				!isAssignmentScored(assignment, criteria)
+		)
+		.sort(sortAssignments);
+	return {
+		outstandingCount: outstanding.length,
+		needsScoring: outstanding.find(
+			(assignment) => !assignment.timeSlot || assignment.timeSlot <= currentTime
+		),
+		nextScheduled: outstanding.find(
+			(assignment) => assignment.timeSlot && assignment.timeSlot > currentTime
+		)
+	};
 }

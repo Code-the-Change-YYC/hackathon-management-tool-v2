@@ -81,6 +81,31 @@ export function isAssignmentScored(
 	);
 }
 
+export function getAssignmentScoreStatus(
+	assignment: JudgeAssignment,
+	criteria: Criterion[]
+) {
+	if (isAssignmentScored(assignment, criteria)) return "Scores recorded";
+	const applicableIds = new Set(
+		getAssignmentCriteria(assignment, criteria).map((criterion) => criterion.id)
+	);
+	return assignment.scores.some((score) => applicableIds.has(score.criteriaId))
+		? "Partially scored"
+		: "Not scored";
+}
+
+export function canScoreAssignment(
+	assignment: JudgeAssignment,
+	criteria: Criterion[],
+	currentTime: Date
+) {
+	return (
+		isAssignmentScored(assignment, criteria) ||
+		!assignment.timeSlot ||
+		assignment.timeSlot <= currentTime
+	);
+}
+
 export function getAssignmentTotal(
 	assignment: JudgeAssignment,
 	criteria: Criterion[],

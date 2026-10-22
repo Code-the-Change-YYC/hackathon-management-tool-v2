@@ -9,15 +9,26 @@ import {
 	sortCriteria
 } from "./judgePortal";
 
-export function useJudgePortalData() {
+export function useJudgePortalData({
+	refetchInterval = false
+}: {
+	refetchInterval?: number | false;
+} = {}) {
 	const { userId } = useJudgeUser();
-	const settingsQuery = api.hackathonSettings.get.useQuery();
-	const roundsQuery = api.judgingRounds.getAll.useQuery();
+	const queryOptions = { refetchInterval, refetchIntervalInBackground: false };
+	const settingsQuery = api.hackathonSettings.get.useQuery(
+		undefined,
+		queryOptions
+	);
+	const roundsQuery = api.judgingRounds.getAll.useQuery(
+		undefined,
+		queryOptions
+	);
 	const assignmentsQuery = api.judgingAssignments.getByJudge.useQuery(
 		{ judgeId: userId },
-		{ enabled: Boolean(userId) }
+		{ ...queryOptions, enabled: Boolean(userId) }
 	);
-	const criteriaQuery = api.criteria.getAll.useQuery();
+	const criteriaQuery = api.criteria.getAll.useQuery(undefined, queryOptions);
 
 	const assignments = useMemo(
 		() => (assignmentsQuery.data ?? []).slice().sort(sortAssignments),
@@ -58,6 +69,17 @@ export function useJudgePortalData() {
 		roundsQuery.error ??
 		assignmentsQuery.error ??
 		criteriaQuery.error;
+	const queries = [settingsQuery, roundsQuery, assignmentsQuery, criteriaQuery];
+	const hasData = queries.every((query) => query.data !== undefined);
+	// The oldest timestamp is the point through which every query is current.
+	const updatedAt = hasData
+		? Math.min(...queries.map((query) => query.dataUpdatedAt))
+		: null;
+	const refresh = async () => {
+		await Promise.all(
+			queries.map((query) => query.refetch({ throwOnError: false }))
+		);
+	};
 
 	return {
 		activeRoundId: settingsQuery.data?.currentRoundId ?? "",
@@ -66,6 +88,10 @@ export function useJudgePortalData() {
 		error,
 		firstMeetingLink,
 		isLoading,
+		hasData,
+		isRefreshing: queries.some((query) => query.isFetching),
+		refresh,
+		updatedAt,
 		roomLabelSummary,
 		roomLabels,
 		roomSummary,

@@ -9,6 +9,8 @@ import {
 } from "@/app/components/judges/JudgeUserProvider";
 import {
 	type Criterion,
+	canScoreAssignment,
+	getAssignmentScoreStatus,
 	getAssignmentTotal,
 	getDraftScore,
 	getScoreOptions,
@@ -17,8 +19,9 @@ import {
 	sortAssignments
 } from "@/app/components/judges/judgePortal";
 import {
-	groupScheduleByDate,
-	inferDuration
+	getScheduleRounds,
+	getScheduleSummary,
+	groupScheduleByDate
 } from "@/app/components/judges/judgeSchedule";
 
 const now = new Date("2026-09-19T10:00:00Z");
@@ -48,50 +51,51 @@ describe("judge schedule", () => {
 		expect(groupScheduleByDate([])).toEqual([]);
 	});
 
-	it("estimates duration from the next slot in the same room", () => {
-		const team = assignment();
-		const next = assignment({
-			timeSlot: new Date(now.getTime() + 30 * 60_000)
+	it("orders unique round tabs chronologically and includes newly assigned rounds", () => {
+		const first = assignment();
+		const finals = {
+			...first.room.round,
+			id: "finals",
+			name: "Finals",
+			startTime: new Date(now.getTime() + 60_000)
+		};
+		const second = assignment({
+			id: "second",
+			room: { ...first.room, roundId: "finals", round: finals }
 		});
-		const otherRoom = assignment({
-			room: { ...team.room, id: "other" },
-			timeSlot: new Date(now.getTime() + 5 * 60_000)
-		});
-		expect(inferDuration(team, [otherRoom, next, team])).toBe(30);
-		expect(inferDuration(team, [team])).toBe(20);
-		expect(
-			inferDuration(team, [
-				assignment({ timeSlot: new Date(now.getTime() + 121 * 60_000) })
-			])
-		).toBe(20);
+		const input = [second, first, first];
+		const renamed = { ...first.room.round, name: "Updated preliminary" };
+		expect(getScheduleRounds([renamed], input)).toEqual([renamed, finals]);
+		expect(input[0]).toBe(second);
 	});
 
-	it("updates timing status at the start and labels inferred duration", () => {
+	it("opens scoring at the scheduled time without claiming the presentation started", () => {
 		const team = assignment();
 		const { rerender } = render(
 			<JudgeScheduleEvent
 				assignment={team}
 				criteria={[main]}
 				currentTime={new Date(now.getTime() - 60_000)}
-				duration={20}
 			/>
 		);
-		expect(screen.getByText("In 1 min")).toBeInTheDocument();
-		expect(screen.getByText("Estimated 20 min")).toBeInTheDocument();
-		expect(screen.getByText("Round 1")).toBeInTheDocument();
-		expect(screen.getByRole("link")).toHaveAttribute(
-			"href",
-			"/judge/score/assignment"
-		);
+		expect(screen.getByText(/In 1 min/)).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Score team for Team" })
+		).toBeDisabled();
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 		rerender(
 			<JudgeScheduleEvent
 				assignment={team}
 				criteria={[main]}
 				currentTime={now}
-				duration={20}
 			/>
 		);
-		expect(screen.getByText("Started")).toBeInTheDocument();
+		expect(screen.getByText("Scheduled time reached")).toBeInTheDocument();
+		expect(screen.getByText("Not scored")).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Score team for Team" })
+		).toHaveAttribute("href", "/judge/score/assignment");
+		expect(screen.queryByText(/Estimated|Started/)).not.toBeInTheDocument();
 	});
 
 	it("shows scored status and a saved zero total", () => {
@@ -100,11 +104,89 @@ describe("judge schedule", () => {
 				assignment={assignment({ scores: [score("main", 0)] })}
 				criteria={[main]}
 				currentTime={now}
-				duration={20}
 			/>
 		);
-		expect(screen.getByText("Scored")).toBeInTheDocument();
-		expect(screen.getByText("0/10")).toBeInTheDocument();
+		expect(screen.getByText("Scores recorded")).toBeInTheDocument();
+		expect(screen.getByText("Main score: 0/10")).toBeInTheDocument();
+		expect(screen.getByText("Scheduled time reached")).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Edit scores for Team" })
+		).toBeInTheDocument();
+	});
+
+	it("distinguishes partial applicable scores from stale criteria", () => {
+		const criteria = [main, { ...main, id: "second" }];
+		expect(
+			getAssignmentScoreStatus(
+				assignment({ scores: [score("main", 0)] }),
+				criteria
+			)
+		).toBe("Partially scored");
+		expect(
+			getAssignmentScoreStatus(
+				assignment({ scores: [score("removed", 5)] }),
+				criteria
+			)
+		).toBe("Not scored");
+	});
+
+	it("uses the same availability rule for future, due, unscheduled and scored teams", () => {
+		const future = assignment({ timeSlot: new Date(now.getTime() + 60_000) });
+		expect(canScoreAssignment(future, [main], now)).toBe(false);
+		expect(canScoreAssignment(assignment(), [main], now)).toBe(true);
+		expect(
+			canScoreAssignment(assignment({ timeSlot: null }), [main], now)
+		).toBe(true);
+		expect(
+			canScoreAssignment({ ...future, scores: [score("main", 0)] }, [main], now)
+		).toBe(true);
+	});
+
+	it("summarizes only the explicitly active round and keeps backlog separate from the next team", () => {
+		const due = assignment();
+		const future = assignment({
+			id: "future",
+			timeSlot: new Date(now.getTime() + 60_000)
+		});
+		const other = assignment({
+			id: "other",
+			room: { ...due.room, roundId: "finals" }
+		});
+		const completed = assignment({ id: "done", scores: [score("main", 0)] });
+		const unscheduled = assignment({ id: "unscheduled", timeSlot: null });
+		const input = [other, future, unscheduled, completed, due];
+		expect(getScheduleSummary(input, [main], "round", now)).toEqual({
+			outstandingCount: 3,
+			needsScoring: due,
+			nextScheduled: future
+		});
+		expect(getScheduleSummary(input, [main], "", now)).toEqual({
+			outstandingCount: 0,
+			needsScoring: undefined,
+			nextScheduled: undefined
+		});
+		expect(input[0]).toBe(other);
+	});
+
+	it("shows unscheduled teams as actionable and rejects unsafe meeting URLs", () => {
+		const team = assignment({ timeSlot: null });
+		render(
+			<JudgeScheduleEvent
+				assignment={{
+					...team,
+					room: { ...team.room, roomLink: "javascript:alert(1)" }
+				}}
+				criteria={[main]}
+				currentTime={now}
+			/>
+		);
+		expect(screen.getByText("Time not assigned")).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Score team for Team" })
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("link", { name: /Join meeting/ })
+		).not.toBeInTheDocument();
 	});
 });
 
@@ -325,15 +407,16 @@ describe("dashboard cards", () => {
 					assignment={team}
 					criteria={criteria}
 					currentTime={now}
-					duration={20}
 				/>
 			)
 		);
-		expect(screen.getByText("Scored")).toBeInTheDocument();
+		expect(
+			screen.getByText(kind === "team" ? "Scored" : "Scores recorded")
+		).toBeInTheDocument();
 		expect(
 			kind === "team"
 				? screen.getByText("Total").parentElement
-				: screen.getByText("7/10")
+				: screen.getByText("Main score: 7/10")
 		).toHaveTextContent("7/10");
 		expect(screen.queryByText("Final criterion")).not.toBeInTheDocument();
 	});
