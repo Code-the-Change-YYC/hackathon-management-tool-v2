@@ -234,6 +234,7 @@ function assignment(overrides: Partial<JudgeAssignment> = {}): JudgeAssignment {
 function score(criteriaId: string, value: number) {
 	return {
 		id: criteriaId,
+		judgeId: "judge",
 		assignmentId: "assignment",
 		criteriaId,
 		value,
@@ -242,82 +243,42 @@ function score(criteriaId: string, value: number) {
 }
 
 describe("judge portal scoring contract", () => {
-	it("scopes completion and totals to the assignment round", () => {
+	it("uses the same rubric for every round, including previously scoped criteria", () => {
 		const criteria = [
 			{ ...main, roundIds: ["round"] },
-			{ ...main, id: "final", name: "Final criterion", roundIds: ["final"] }
+			{ ...main, id: "final", roundIds: ["final"] }
 		];
-		const team = assignment({ scores: [score("main", 7), score("final", 10)] });
-		expect(isAssignmentScored(team, criteria)).toBe(true);
-		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 7, max: 10 });
-		expect(
-			isAssignmentScored(assignment({ scores: [score("final", 10)] }), criteria)
-		).toBe(false);
-	});
-
-	it("keeps shared criteria and applicable sidepots while ignoring other rounds", () => {
-		const criteria = [
-			{ ...main, roundIds: ["round"] },
-			{ ...main, id: "shared", roundIds: [] },
-			{ ...sidepot, roundIds: ["round"] },
-			{ ...sidepot, id: "other-sidepot", roundIds: ["final"] }
-		];
-		const team = assignment({
-			scores: [
-				score("main", 7),
-				score("shared", 0),
-				score("sidepot", 4),
-				score("other-sidepot", 10)
-			]
-		});
-		expect(isAssignmentScored(team, criteria)).toBe(true);
-		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 7, max: 20 });
-		expect(getAssignmentTotal(team, criteria, true)).toEqual({
-			total: 11,
-			max: 30
-		});
 		expect(
 			isAssignmentScored(assignment({ scores: [score("main", 7)] }), criteria)
 		).toBe(false);
+		const team = assignment({ scores: [score("main", 7), score("final", 10)] });
+		expect(isAssignmentScored(team, criteria)).toBe(true);
+		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 17, max: 20 });
 	});
-
-	it("does not let scores from unavailable criteria complete a sidepot-only round", () => {
-		const criteria = [
-			{ ...sidepot, roundIds: ["round"] },
-			{ ...main, roundIds: ["final"] }
-		];
-		expect(
-			isAssignmentScored(assignment({ scores: [score("main", 10)] }), criteria)
-		).toBe(false);
-		expect(
-			isAssignmentScored(
-				assignment({ scores: [score("sidepot", 0)] }),
-				criteria
-			)
-		).toBe(true);
-	});
-	it("counts saved zero as scored and does not require optional sidepots", () => {
+	it("requires every criterion, including an explicit zero for a sidepot", () => {
 		expect(
 			isAssignmentScored(assignment({ scores: [score("main", 0)] }), [
 				main,
 				sidepot
 			])
+		).toBe(false);
+		expect(
+			isAssignmentScored(
+				assignment({ scores: [score("main", 0), score("sidepot", 0)] }),
+				[main, sidepot]
+			)
 		).toBe(true);
 		expect(
-			isAssignmentScored(assignment({ scores: [score("sidepot", 10)] }), [
-				main,
+			isAssignmentScored(assignment({ scores: [score("removed", 10)] }), [
 				sidepot
 			])
 		).toBe(false);
-	});
-
-	it("keeps the existing completion rule when no main criteria exist", () => {
-		expect(isAssignmentScored(assignment(), [sidepot])).toBe(false);
 		expect(
 			isAssignmentScored(assignment({ scores: [score("sidepot", 0)] }), [
 				sidepot
 			])
 		).toBe(true);
+		expect(isAssignmentScored(assignment(), [])).toBe(false);
 	});
 
 	it("excludes sidepots and removed criteria from main totals", () => {
@@ -394,7 +355,7 @@ describe("dashboard cards", () => {
 			{ ...main, roundIds: ["round"] },
 			{ ...main, id: "final", name: "Final criterion", roundIds: ["final"] }
 		];
-		const team = assignment({ scores: [score("main", 7)] });
+		const team = assignment({ scores: [score("main", 7), score("final", 10)] });
 		render(
 			kind === "team" ? (
 				<JudgeTeamCard
@@ -416,9 +377,8 @@ describe("dashboard cards", () => {
 		expect(
 			kind === "team"
 				? screen.getByText("Total").parentElement
-				: screen.getByText("Main score: 7/10")
-		).toHaveTextContent("7/10");
-		expect(screen.queryByText("Final criterion")).not.toBeInTheDocument();
+				: screen.getByText("Main score: 17/20")
+		).toHaveTextContent("17/20");
 	});
 	it("disables future assignments and enables scoring when the slot starts", () => {
 		const team = assignment();

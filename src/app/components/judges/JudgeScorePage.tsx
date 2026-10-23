@@ -1,837 +1,565 @@
 "use client";
 
-import { ArrowLeftLine, ArrowRightLine } from "@mingcute/react";
+import { ArrowLeftLine, ArrowRightLine, CheckLine } from "@mingcute/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
-import {
-	ConfirmAlertDialog,
-	useConfirmDialog
-} from "@/app/components/ConfirmAlertDialog";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Badge } from "@/app/components/ui/badge";
-import { Button } from "@/app/components/ui/button";
-import { criterionAppliesToRound, getRubricBands } from "@/lib/judging";
+import { Button, buttonVariants } from "@/app/components/ui/button";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle
+} from "@/app/components/ui/empty";
+import {
+	Field,
+	FieldDescription,
+	FieldGroup,
+	FieldLabel
+} from "@/app/components/ui/field";
+import { ToggleGroup, ToggleGroupItem } from "@/app/components/ui/toggle-group";
+import { useCurrentTime } from "@/hooks/use-current-time";
+import { getRubricBands } from "@/lib/judging";
 import { cn } from "@/lib/utils";
-import { api } from "@/trpc/react";
 import { useJudgeUser } from "./JudgeUserProvider";
 import {
 	type Criterion,
+	canScoreAssignment,
 	formatTime,
 	getBandDescription,
 	getCriterionDescription,
-	getDraftScore,
-	getScoreFillClass,
 	getScoreOptions,
-	getScoreTextColor,
-	getScoreTone,
 	getTeamCode,
-	hasDraftScore,
 	type JudgeAssignment
 } from "./judgePortal";
 import { LoadingCard } from "./LoadingCard";
 import { useJudgePortalData } from "./useJudgePortalData";
+import { useJudgeScorecard } from "./useJudgeScorecard";
 
-function ScoreStatusChip({
-	active,
+function ScoreMessage({
+	title,
+	children,
+	onRetry
+}: {
+	title: string;
+	children: ReactNode;
+	onRetry?: () => void;
+}) {
+	return (
+		<Empty className="mx-auto max-w-xl py-16">
+			<EmptyHeader>
+				<EmptyTitle>
+					<h1 className="m-0 font-semibold text-xl">{title}</h1>
+				</EmptyTitle>
+				<EmptyDescription>{children}</EmptyDescription>
+			</EmptyHeader>
+			<div className="flex flex-wrap justify-center gap-3">
+				{onRetry ? (
+					<Button onClick={onRetry} variant="outline">
+						Try again
+					</Button>
+				) : null}
+				<Link
+					className={buttonVariants({ variant: "outline" })}
+					href="/judge/schedule"
+				>
+					Back to schedule
+				</Link>
+			</div>
+		</Empty>
+	);
+}
+
+function CriterionScore({
 	criterion,
 	score,
-	sidepotComplete
-}: {
-	active: boolean;
-	criterion?: Criterion;
-	score?: number;
-	sidepotComplete?: boolean;
-}) {
-	if (!criterion) {
-		return (
-			<Badge
-				className={cn(
-					"h-auto rounded-full px-3 py-1 text-base leading-6",
-					active
-						? "bg-foreground text-background hover:bg-foreground/90"
-						: sidepotComplete
-							? "border-transparent bg-purple-50 text-auth-focus hover:bg-purple-50"
-							: "text-grey-400"
-				)}
-				variant={active || sidepotComplete ? "default" : "outline"}
-			>
-				Side pots
-				<span className="flex items-center gap-1">
-					<span className="size-1.5 rounded-full bg-current" />
-					<span className="size-1.5 rounded-full bg-current opacity-70" />
-				</span>
-			</Badge>
-		);
-	}
-
-	if (active) {
-		return (
-			<Badge className="h-auto rounded-full bg-foreground px-3 py-1 text-background text-base leading-6 hover:bg-foreground/90">
-				{criterion.name}
-			</Badge>
-		);
-	}
-
-	if (score === undefined) {
-		return (
-			<Badge
-				className="h-auto rounded-full px-3 py-1 text-base text-grey-400 leading-6"
-				variant="outline"
-			>
-				{criterion.name}
-			</Badge>
-		);
-	}
-
-	return (
-		<Badge
-			className={cn(
-				"h-auto rounded-full px-3 py-1 text-base leading-6",
-				getScoreTone(score, criterion.maxScore)
-			)}
-			variant="outline"
-		>
-			{criterion.name}
-			<span>{score}</span>
-		</Badge>
-	);
-}
-
-function ScoreTotal({
-	criteria,
-	scores
-}: {
-	criteria: Criterion[];
-	scores: Record<string, number>;
-}) {
-	const total = criteria.reduce(
-		(sum, criterion) => sum + (getDraftScore(scores, criterion.id) ?? 0),
-		0
-	);
-	const max = criteria.reduce((sum, criterion) => sum + criterion.maxScore, 0);
-
-	return (
-		<div className="flex flex-col items-end text-center font-medium">
-			<p className="m-0 text-[0px] text-black leading-none">
-				<span className="text-[22px] leading-7">{total}</span>
-				<span className="text-grey-400 text-sm leading-5">/{max}</span>
-			</p>
-			<p className="m-0 text-[#434343] text-[9px] uppercase leading-3.5">
-				Total
-			</p>
-		</div>
-	);
-}
-
-function ScoreTopBar({
-	activeStep,
-	assignment,
-	criteria,
-	mainCriteria,
-	scores,
-	sidepotCriteria
-}: {
-	activeStep: number;
-	assignment: JudgeAssignment;
-	criteria: Criterion[];
-	mainCriteria: Criterion[];
-	scores: Record<string, number>;
-	sidepotCriteria: Criterion[];
-}) {
-	const sidepotStepActive = activeStep >= mainCriteria.length;
-	const sidepotsComplete =
-		sidepotCriteria.length > 0 &&
-		sidepotCriteria.every((criterion) => hasDraftScore(scores, criterion.id));
-
-	return (
-		<header className="border-grey-300 border-b bg-[#fafafa] px-6 py-4 sm:px-8">
-			<nav className="mb-3 flex items-center gap-1 text-xs leading-4">
-				<Link
-					className="text-grey-400 transition hover:text-grey-600"
-					href="/judge"
-				>
-					Dashboard
-				</Link>
-				<span className="text-grey-400">/</span>
-				<span className="font-medium text-[#ec1245]">Score</span>
-			</nav>
-			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-				<div className="flex min-w-0 flex-1 flex-col gap-4 lg:flex-row lg:items-center">
-					<div className="min-w-43">
-						<h1 className="m-0 truncate font-semibold text-base text-black leading-6">
-							{assignment.team.name}
-						</h1>
-						<div className="mt-0 flex flex-wrap items-center gap-1 text-[11px] text-auth-placeholder leading-4">
-							<span>Team ID: {getTeamCode(assignment)}</span>
-							<span aria-hidden="true">•</span>
-							<span>{formatTime(assignment.timeSlot)}</span>
-							<span aria-hidden="true">•</span>
-							<span>{assignment.room.round.name}</span>
-						</div>
-					</div>
-
-					<div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 lg:pl-7">
-						{mainCriteria.map((criterion, index) => (
-							<ScoreStatusChip
-								active={activeStep === index}
-								criterion={criterion}
-								key={criterion.id}
-								score={getDraftScore(scores, criterion.id)}
-							/>
-						))}
-						{sidepotCriteria.length > 0 ? (
-							<ScoreStatusChip
-								active={sidepotStepActive}
-								sidepotComplete={sidepotsComplete}
-							/>
-						) : null}
-					</div>
-				</div>
-
-				<ScoreTotal criteria={criteria} scores={scores} />
-			</div>
-		</header>
-	);
-}
-
-function ScoreButtonGroup({
-	criterion,
-	includeZero,
 	onChange,
-	value
+	disabled
 }: {
 	criterion: Criterion;
-	includeZero: boolean;
-	onChange: (value: number) => void;
-	value?: number;
-}) {
-	return (
-		<div className="flex flex-wrap gap-3">
-			{getScoreOptions(criterion, includeZero, value).map((option) => {
-				const selected = value === option;
-				return (
-					<button
-						aria-pressed={selected}
-						className={`flex h-14 w-15.5 items-center justify-center rounded-lg border font-medium text-base transition ${
-							selected
-								? `border-transparent ${getScoreFillClass(
-										option,
-										criterion.maxScore
-									)}`
-								: "border-grey-200 bg-white text-grey-600 hover:border-purple-500 hover:bg-purple-50"
-						}`}
-						key={option}
-						onClick={() => onChange(option)}
-						type="button"
-					>
-						{option}
-					</button>
-				);
-			})}
-		</div>
-	);
-}
-
-function RubricBandCard({
-	band,
-	criterion,
-	selected
-}: {
-	band: ReturnType<typeof getRubricBands>[number];
-	criterion: Criterion;
-	selected: boolean;
-}) {
-	const toneValue = band.max;
-	return (
-		<article
-			className={`rounded-lg border p-3 ${
-				selected
-					? getScoreTone(toneValue, criterion.maxScore)
-					: "border-grey-200 bg-white"
-			}`}
-		>
-			<div className="mb-2 flex items-center gap-2">
-				<p
-					className={`m-0 text-2xl leading-8 ${getScoreTextColor(
-						toneValue,
-						criterion.maxScore
-					)}`}
-				>
-					{band.range}
-				</p>
-				<p className="m-0 font-medium text-grey-800 text-xs uppercase leading-4">
-					{band.label}
-				</p>
-			</div>
-			<p className="m-0 text-[13px] text-grey-800 leading-4.5">
-				{getBandDescription(criterion, band.label)}
-			</p>
-		</article>
-	);
-}
-
-function RubricBandGrid({
-	criterion,
-	includeZero,
-	selectedScore
-}: {
-	criterion: Criterion;
-	includeZero: boolean;
-	selectedScore?: number;
-}) {
-	return (
-		<div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1">
-			{getRubricBands(criterion.maxScore, includeZero).map((band) => (
-				<RubricBandCard
-					band={band}
-					criterion={criterion}
-					key={`${criterion.id}-${band.range}`}
-					selected={
-						selectedScore !== undefined &&
-						selectedScore >= band.min &&
-						selectedScore <= band.max
-					}
-				/>
-			))}
-		</div>
-	);
-}
-
-function StepActions({
-	canSubmit,
-	disabledSubmitLabel,
-	isLastStep,
-	isPending,
-	onNext,
-	onPrevious,
-	onSubmit
-}: {
-	canSubmit: boolean;
-	disabledSubmitLabel: string;
-	isLastStep: boolean;
-	isPending: boolean;
-	onNext: () => void;
-	onPrevious: () => void;
-	onSubmit: () => void;
-}) {
-	return (
-		<div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
-			<Button onClick={onPrevious} type="button" variant="outline">
-				<ArrowLeftLine data-icon="inline-start" />
-				Prev
-			</Button>
-
-			{isLastStep ? (
-				<Button
-					className="sm:min-w-79.5"
-					disabled={!canSubmit || isPending}
-					onClick={onSubmit}
-					type="button"
-					variant={canSubmit ? "default" : "secondary"}
-				>
-					{isPending
-						? "Submitting…"
-						: canSubmit
-							? "Submit score"
-							: disabledSubmitLabel}
-				</Button>
-			) : (
-				<Button onClick={onNext} type="button">
-					Next
-					<ArrowRightLine data-icon="inline-end" />
-				</Button>
-			)}
-		</div>
-	);
-}
-
-function MainCriterionStep({
-	criterion,
-	onScoreChange,
-	score
-}: {
-	criterion: Criterion;
-	onScoreChange: (criterionId: string, score: number) => void;
 	score?: number;
+	onChange: (value: number | undefined) => void;
+	disabled: boolean;
 }) {
+	const bands = getRubricBands(criterion.maxScore, criterion.isSidepot);
+	const selectedBand = bands.find(
+		(band) => score !== undefined && score >= band.min && score <= band.max
+	);
 	return (
-		<div className="grid w-full gap-6 xl:grid-cols-[minmax(0,728px)_263px]">
-			<section className="flex min-w-0 flex-col gap-8 xl:pr-4">
-				<div className="flex flex-col gap-6">
-					<h2 className="m-0 font-semibold text-[#1a1a1a] text-[28px] leading-9">
+		<section
+			aria-labelledby={`criterion-${criterion.id}`}
+			className="flex flex-col gap-6"
+		>
+			<div className="flex flex-col gap-3">
+				<div className="flex flex-wrap items-center gap-3">
+					<h2
+						className="m-0 break-words font-semibold text-xl"
+						id={`criterion-${criterion.id}`}
+					>
 						{criterion.name}
 					</h2>
-					<p className="m-0 text-base text-grey-800 leading-6">
-						{getCriterionDescription(criterion)}
-					</p>
+					{criterion.isSidepot ? (
+						<Badge variant="secondary">Side pot</Badge>
+					) : null}
 				</div>
-
-				<div className="flex flex-col gap-3">
-					<p className="m-0 font-medium text-[#434343] text-sm uppercase leading-5">
-						Score
-					</p>
-					<ScoreButtonGroup
-						criterion={criterion}
-						includeZero={false}
-						onChange={(value) => onScoreChange(criterion.id, value)}
-						value={score}
-					/>
-				</div>
-
-				<div className="xl:hidden">
-					<RubricBandGrid
-						criterion={criterion}
-						includeZero={false}
-						selectedScore={score}
-					/>
-				</div>
-			</section>
-
-			<aside className="hidden border-[#eceae5] border-l pl-4 xl:block">
-				<RubricBandGrid
-					criterion={criterion}
-					includeZero={false}
-					selectedScore={score}
-				/>
-			</aside>
-		</div>
-	);
-}
-
-function SidepotBadge({
-	criterion,
-	score
-}: {
-	criterion: Criterion;
-	score?: number;
-}) {
-	const scored = score !== undefined;
-	return (
-		<Badge
-			className={cn(
-				"h-auto gap-1.5 rounded-full px-2 py-1 text-[11px]",
-				scored
-					? getScoreTone(score, criterion.maxScore)
-					: "border-grey-400 bg-background text-foreground"
-			)}
-			variant="outline"
-		>
-			<span className="size-1.5 rounded-full bg-current" />
-			<span className="font-medium">{criterion.name}</span>
-			<Badge
-				className={cn(
-					"h-auto rounded-full px-2 py-px font-semibold text-[10px]",
-					scored
-						? getScoreFillClass(score, criterion.maxScore)
-						: "bg-grey-400 text-white hover:bg-grey-400"
-				)}
-			>
-				{scored ? `${score}/${criterion.maxScore}` : `/${criterion.maxScore}`}
-			</Badge>
-		</Badge>
-	);
-}
-
-function ScoreTile({
-	criterion,
-	score
-}: {
-	criterion: Criterion;
-	score?: number;
-}) {
-	return (
-		<div className="flex w-16 flex-col items-center gap-0.5 px-1 text-center">
-			<p
-				className={`m-0 font-medium text-base leading-6 ${
-					score === undefined
-						? "text-grey-400"
-						: getScoreTextColor(score, criterion.maxScore)
-				}`}
-			>
-				{score ?? "–"}
-			</p>
-			<p className="m-0 truncate text-[9px] text-grey-800 uppercase leading-3.5">
-				{criterion.name}
-			</p>
-		</div>
-	);
-}
-
-function ScoreSummaryCard({
-	criteria,
-	mainCriteria,
-	scores,
-	sidepotCriteria
-}: {
-	criteria: Criterion[];
-	mainCriteria: Criterion[];
-	scores: Record<string, number>;
-	sidepotCriteria: Criterion[];
-}) {
-	return (
-		<section className="rounded-[10px] bg-white px-3 py-4">
-			<h3 className="m-0 font-medium text-base text-black leading-6">
-				Score Summary
-			</h3>
-			<div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-center">
-				<div className="flex flex-wrap gap-3">
-					{sidepotCriteria.map((criterion) => (
-						<SidepotBadge
-							criterion={criterion}
-							key={criterion.id}
-							score={getDraftScore(scores, criterion.id)}
-						/>
-					))}
-				</div>
-				<div className="flex flex-1 flex-col gap-3 border-grey-200 border-t pt-3 lg:flex-row lg:items-center lg:border-t-0 lg:border-l lg:pt-0 lg:pl-4">
-					<div className="flex flex-1 flex-wrap justify-between gap-2">
-						{mainCriteria.map((criterion) => (
-							<ScoreTile
-								criterion={criterion}
-								key={criterion.id}
-								score={getDraftScore(scores, criterion.id)}
-							/>
-						))}
-					</div>
-					<div className="border-grey-200 border-t pt-2 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-4">
-						<ScoreTotal criteria={criteria} scores={scores} />
-					</div>
-				</div>
-			</div>
-		</section>
-	);
-}
-
-function SidepotCriterionCard({
-	criterion,
-	onScoreChange,
-	score
-}: {
-	criterion: Criterion;
-	onScoreChange: (criterionId: string, score: number) => void;
-	score?: number;
-}) {
-	return (
-		<article className="overflow-hidden rounded-xl border border-grey-300 bg-white">
-			<header className="flex items-center justify-between border-grey-100 border-b bg-grey-50 px-5 py-4">
-				<div className="flex items-center gap-2.5">
-					<span className="size-2.5 rounded-full bg-[#ec1245]" />
-					<div>
-						<h3 className="m-0 font-medium text-[#1a1a1a] text-base leading-6">
-							{criterion.name}
-						</h3>
-						<p className="m-0 text-grey-400 text-xs leading-4">Sidepot</p>
-					</div>
-				</div>
-				<div className="text-right font-medium">
-					{score === undefined ? (
-						<p className="m-0 text-[11px] text-auth-placeholder leading-3.5">
-							Not yet scored
-						</p>
-					) : (
-						<>
-							<p className="m-0 text-[0px] text-black leading-none">
-								<span className="text-[22px] leading-7">{score}</span>
-								<span className="text-grey-400 text-sm leading-5">
-									/{criterion.maxScore}
-								</span>
-							</p>
-							<p className="m-0 text-[#434343] text-[9px] leading-3.5">
-								Scored
-							</p>
-						</>
-					)}
-				</div>
-			</header>
-			<div className="border-grey-100 border-b px-5 py-3">
-				<p className="m-0 text-grey-800 text-xs leading-4 sm:text-sm sm:leading-5">
+				<p className="m-0 max-w-prose whitespace-pre-line break-words text-muted-foreground text-sm leading-relaxed">
 					{getCriterionDescription(criterion)}
 				</p>
+				{!criterion.description.trim() ? (
+					<p className="m-0 text-muted-foreground text-xs">
+						No criterion-specific description has been provided. General
+						guidance is shown.
+					</p>
+				) : null}
 			</div>
-			<div className="flex flex-col gap-4 p-4">
-				<ScoreButtonGroup
-					criterion={criterion}
-					includeZero
-					onChange={(value) => onScoreChange(criterion.id, value)}
-					value={score}
-				/>
-				<RubricBandGrid
-					criterion={criterion}
-					includeZero
-					selectedScore={score}
-				/>
-			</div>
-		</article>
-	);
-}
-
-function SidepotsStep({
-	criteria,
-	mainCriteria,
-	onScoreChange,
-	scores,
-	sidepotCriteria
-}: {
-	criteria: Criterion[];
-	mainCriteria: Criterion[];
-	onScoreChange: (criterionId: string, score: number) => void;
-	scores: Record<string, number>;
-	sidepotCriteria: Criterion[];
-}) {
-	return (
-		<section className="flex flex-col gap-6">
-			<div className="flex flex-col gap-3">
-				<h2 className="m-0 font-semibold text-[#1a1a1a] text-[28px] leading-9">
-					Side pots
-				</h2>
-				<p className="m-0 text-base text-grey-800 leading-6">
-					Please grade the side pots according to their own rubric.
+			<FieldGroup>
+				<Field>
+					<FieldLabel id={`score-label-${criterion.id}`}>
+						Your score{" "}
+						<span className="text-muted-foreground">
+							/ {criterion.maxScore}
+						</span>
+					</FieldLabel>
+					<ToggleGroup
+						aria-labelledby={`score-label-${criterion.id}`}
+						className="max-w-full flex-wrap gap-2"
+						disabled={disabled}
+						onValueChange={(values) => {
+							onChange(
+								typeof values[0] === "string" ? Number(values[0]) : undefined
+							);
+						}}
+						value={score === undefined ? [] : [String(score)]}
+						variant="score"
+					>
+						{getScoreOptions(criterion, criterion.isSidepot, score).map(
+							(value) => (
+								<ToggleGroupItem
+									aria-label={`${value} points`}
+									className="min-h-11 min-w-11"
+									key={value}
+									value={String(value)}
+								>
+									{value}
+								</ToggleGroupItem>
+							)
+						)}
+					</ToggleGroup>
+					<FieldDescription>
+						{criterion.isSidepot
+							? "Choose 0 if there is no evidence for this side pot. Side pots are separate from the main score."
+							: "Select the score that best matches the project's evidence. Select it again to clear."}
+					</FieldDescription>
+				</Field>
+			</FieldGroup>
+			<div aria-live="polite" className="rounded-lg bg-muted/50 p-4">
+				<p className="m-0 font-medium text-sm">
+					{selectedBand
+						? `${selectedBand.label} · ${selectedBand.range} points`
+						: score === 0
+							? "0 points selected"
+							: "Rubric at a glance"}
+				</p>
+				<p className="mt-1 mb-0 max-w-prose text-muted-foreground text-sm leading-relaxed">
+					{selectedBand
+						? getBandDescription(criterion, selectedBand.label)
+						: "Use the score ranges below to match the team's work to the rubric. Your selection will appear here."}
 				</p>
 			</div>
-
-			{sidepotCriteria.length > 0 ? (
-				<div className="flex flex-col gap-4">
-					{sidepotCriteria.map((criterion) => (
-						<SidepotCriterionCard
-							criterion={criterion}
-							key={criterion.id}
-							onScoreChange={onScoreChange}
-							score={getDraftScore(scores, criterion.id)}
-						/>
+			<details className="rounded-lg border border-border">
+				<summary className="cursor-pointer rounded-lg px-4 py-3 font-medium text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
+					View all score ranges
+				</summary>
+				<dl className="m-0 border-border border-t px-4">
+					{bands.map((band) => (
+						<div
+							className={cn(
+								"grid grid-cols-[6rem_minmax(0,1fr)] gap-4 not-last:border-border not-last:border-b py-3 sm:grid-cols-[9rem_minmax(0,1fr)]",
+								selectedBand === band && "bg-muted/50"
+							)}
+							key={band.label}
+						>
+							<dt className="flex flex-col gap-1">
+								<span className="font-medium text-sm tabular-nums">
+									{band.range} pts
+								</span>
+								<span className="text-muted-foreground text-xs">
+									{band.label}
+								</span>
+							</dt>
+							<dd className="m-0 break-words text-muted-foreground text-sm leading-relaxed">
+								{getBandDescription(criterion, band.label)}
+							</dd>
+						</div>
 					))}
-				</div>
-			) : (
-				<div className="rounded-2xl border border-grey-300 border-dashed bg-white p-8 text-center text-grey-600">
-					No sidepot criteria have been published for this event.
-				</div>
-			)}
-
-			<ScoreSummaryCard
-				criteria={criteria}
-				mainCriteria={mainCriteria}
-				scores={scores}
-				sidepotCriteria={sidepotCriteria}
-			/>
+				</dl>
+			</details>
 		</section>
 	);
 }
 
-function ScorePageMessage({
-	description,
-	title
+function ScoreReview({
+	criteria,
+	scores,
+	onEdit,
+	disabled
 }: {
-	description: ReactNode;
-	title: string;
+	criteria: Criterion[];
+	scores: Record<string, number>;
+	onEdit: (index: number) => void;
+	disabled: boolean;
 }) {
 	return (
-		<div className="flex min-h-[calc(100vh-57px)] items-center justify-center px-6 py-12 lg:min-h-screen">
-			<div className="max-w-md rounded-2xl border border-grey-300 bg-white p-6 text-center shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-				<h1 className="m-0 font-semibold text-[28px] leading-9">{title}</h1>
-				<p className="mt-3 mb-0 text-base text-grey-600 leading-6">
-					{description}
+		<section
+			aria-labelledby="score-review-heading"
+			className="flex flex-col gap-5"
+		>
+			<div>
+				<h2 className="m-0 font-semibold text-xl" id="score-review-heading">
+					Review your scores
+				</h2>
+				<p className="mt-2 mb-0 text-muted-foreground text-sm">
+					Check each assessment before submitting. These are your individual
+					scores.
 				</p>
-				<Link
-					className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-purple-500 px-4 font-medium text-white transition hover:bg-[#6044ed]"
-					href="/judge"
-				>
-					Back to dashboard
-				</Link>
 			</div>
+			{[false, true].map((isSidepot) => {
+				const group = criteria.filter(
+					(criterion) => criterion.isSidepot === isSidepot
+				);
+				return group.length ? (
+					<div className="flex flex-col gap-2" key={String(isSidepot)}>
+						<h3 className="m-0 font-medium text-sm">
+							{isSidepot ? "Side pots · scored separately" : "Main criteria"}
+						</h3>
+						<div className="divide-y divide-border rounded-lg border border-border">
+							{group.map((criterion) => (
+								<div
+									className="flex items-center gap-3 px-4 py-3"
+									key={criterion.id}
+								>
+									<div className="min-w-0 flex-1">
+										<p className="m-0 break-words font-medium text-sm">
+											{criterion.name}
+										</p>
+										<p className="mt-1 mb-0 text-muted-foreground text-xs">
+											{Object.hasOwn(scores, criterion.id)
+												? `${scores[criterion.id]} / ${criterion.maxScore} points`
+												: "Not scored yet"}
+										</p>
+									</div>
+									<Button
+										aria-label={`Edit ${criterion.name}`}
+										disabled={disabled}
+										onClick={() =>
+											onEdit(
+												criteria.findIndex((item) => item.id === criterion.id)
+											)
+										}
+										size="sm"
+										variant="ghost"
+									>
+										Edit
+									</Button>
+								</div>
+							))}
+						</div>
+					</div>
+				) : null;
+			})}
+		</section>
+	);
+}
+
+function JudgeScorecard({
+	assignment,
+	criteria,
+	assignments
+}: {
+	assignment: JudgeAssignment;
+	criteria: Criterion[];
+	assignments: JudgeAssignment[];
+}) {
+	const { userName } = useJudgeUser();
+	const currentTime = useCurrentTime();
+	const card = useJudgeScorecard(assignment, criteria);
+	const [step, setStep] = useState(0);
+	const focusTarget = useRef<HTMLDivElement>(null);
+	const priorStep = useRef(step);
+	useEffect(() => {
+		if (priorStep.current !== step) {
+			focusTarget.current?.focus();
+			priorStep.current = step;
+		}
+	}, [step]);
+	const active = criteria[step];
+	const reviewing = step >= criteria.length;
+	const saving = card.status === "saving";
+	const main = criteria.filter((criterion) => !criterion.isSidepot);
+	const mainTotal = main.reduce(
+		(sum, criterion) => sum + (card.scores[criterion.id] ?? 0),
+		0
+	);
+	const mainMax = main.reduce((sum, criterion) => sum + criterion.maxScore, 0);
+	const answered = criteria.filter((criterion) =>
+		Object.hasOwn(card.scores, criterion.id)
+	).length;
+	const next = assignments.find(
+		(item) =>
+			item.id !== assignment.id &&
+			item.room.roundId === assignment.room.roundId &&
+			!criteria.every((criterion) =>
+				item.scores.some((score) => score.criteriaId === criterion.id)
+			) &&
+			canScoreAssignment(item, criteria, currentTime)
+	);
+
+	if (card.status === "saved")
+		return (
+			<ScoreMessage title="Your scores have been submitted">
+				<span className="flex flex-col gap-3">
+					<span>
+						{assignment.team.name} · {assignment.room.round.name}
+					</span>
+					<span>
+						{main.length
+							? `Your main score: ${mainTotal}/${mainMax}. Side pots are recorded separately.`
+							: "Your side-pot scores have been recorded."}
+					</span>
+					<span>
+						Your assessment is saved independently. Final results average the
+						submitted judge scorecards.
+					</span>
+					{next ? (
+						<Link className={buttonVariants()} href={`/judge/score/${next.id}`}>
+							Score {next.team.name}
+						</Link>
+					) : null}
+				</span>
+			</ScoreMessage>
+		);
+	if (card.scoresQuery.isError)
+		return (
+			<ScoreMessage
+				onRetry={() => {
+					void card.scoresQuery.refetch();
+				}}
+				title="Your saved scores could not be loaded"
+			>
+				Try again before editing so you don't overwrite an existing assessment.
+			</ScoreMessage>
+		);
+	if (!card.initialized) return <LoadingCard label="Loading your scorecard…" />;
+	if (!canScoreAssignment(assignment, criteria, currentTime))
+		return (
+			<ScoreMessage title="Scoring has not opened yet">
+				You can score this team from {formatTime(assignment.timeSlot)}. Your
+				draft will be kept on this device.
+			</ScoreMessage>
+		);
+
+	return (
+		<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-8">
+			<header className="flex flex-col gap-4 border-border border-b pb-5">
+				<div className="flex flex-wrap items-start justify-between gap-4">
+					<div className="min-w-0">
+						<Link
+							className="inline-flex items-center gap-1 text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
+							href="/judge/schedule"
+						>
+							<ArrowLeftLine aria-hidden className="size-4" /> Schedule
+						</Link>
+						<h1 className="mt-3 mb-1 break-words font-semibold text-2xl">
+							{assignment.team.name}
+						</h1>
+						<p className="m-0 text-muted-foreground text-sm">
+							Team {getTeamCode(assignment)} · {assignment.room.round.name} ·{" "}
+							{formatTime(assignment.timeSlot)}
+						</p>
+					</div>
+					{main.length ? (
+						<div className="text-right">
+							<p className="m-0 text-muted-foreground text-sm">
+								Your main score
+							</p>
+							<p className="mt-1 mb-0 font-semibold text-xl tabular-nums">
+								{mainTotal}
+								<span className="font-normal text-base text-muted-foreground">
+									{" "}
+									/ {mainMax}
+								</span>
+							</p>
+						</div>
+					) : (
+						<Badge variant="secondary">Side-pot scoring</Badge>
+					)}
+				</div>
+				<div className="flex flex-wrap items-center justify-between gap-2 text-muted-foreground text-xs">
+					<span>Scoring as {userName} · Your individual assessment</span>
+					<output>
+						{card.dirty
+							? card.storageAvailable
+								? "Draft saved on this device · Not submitted"
+								: "Draft not saved · Keep this page open"
+							: card.scoresQuery.data?.length
+								? "Your submitted scores · Changes require resubmission"
+								: "No scores submitted yet"}
+					</output>
+				</div>
+			</header>
+			<nav aria-label="Scoring progress" className="flex flex-col gap-3">
+				<p className="m-0 text-muted-foreground text-sm">
+					{answered} of {criteria.length} criteria scored
+				</p>
+				<ol className="m-0 flex list-none flex-wrap gap-2 p-0">
+					{criteria.map((criterion, index) => (
+						<li className="min-w-0 max-w-full" key={criterion.id}>
+							<Button
+								aria-current={step === index ? "step" : undefined}
+								className="h-auto min-h-9 max-w-full whitespace-normal text-left"
+								disabled={saving}
+								onClick={() => setStep(index)}
+								size="sm"
+								variant={step === index ? "default" : "outline"}
+							>
+								{Object.hasOwn(card.scores, criterion.id) ? (
+									<CheckLine aria-hidden data-icon="inline-start" />
+								) : null}
+								<span className="min-w-0 break-words">{criterion.name}</span>
+								<span className="shrink-0 tabular-nums">
+									{card.scores[criterion.id] ?? "–"}/{criterion.maxScore}
+								</span>
+							</Button>
+						</li>
+					))}
+					<li>
+						<Button
+							aria-current={reviewing ? "step" : undefined}
+							disabled={saving}
+							onClick={() => setStep(criteria.length)}
+							size="sm"
+							variant={reviewing ? "default" : "outline"}
+						>
+							Review
+						</Button>
+					</li>
+				</ol>
+			</nav>
+			{card.notice ? (
+				<output className="m-0 rounded-lg bg-muted px-4 py-3 text-sm">
+					{card.notice}
+				</output>
+			) : null}
+			<div className="outline-none" ref={focusTarget} tabIndex={-1}>
+				{active && !reviewing ? (
+					<CriterionScore
+						criterion={active}
+						disabled={saving}
+						key={active.id}
+						onChange={(value) => card.updateScore(active.id, value)}
+						score={card.scores[active.id]}
+					/>
+				) : (
+					<ScoreReview
+						criteria={criteria}
+						disabled={saving}
+						onEdit={setStep}
+						scores={card.scores}
+					/>
+				)}
+			</div>
+			{card.error ? (
+				<div
+					className="rounded-lg border border-destructive/30 px-4 py-3 text-destructive text-sm"
+					role="alert"
+				>
+					{card.error} Your answers are still here. Try submitting again.
+				</div>
+			) : null}
+			<footer className="flex flex-col gap-3 border-border border-t pt-5">
+				{reviewing && !card.complete ? (
+					<p className="m-0 text-muted-foreground text-sm">
+						Score the remaining {criteria.length - answered}{" "}
+						{criteria.length - answered === 1 ? "criterion" : "criteria"} before
+						submitting. Use Edit to return to an unanswered item.
+					</p>
+				) : null}
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<Button
+						disabled={saving || step === 0}
+						onClick={() => setStep((value) => Math.max(0, value - 1))}
+						variant="outline"
+					>
+						<ArrowLeftLine data-icon="inline-start" />
+						Previous
+					</Button>
+					{reviewing ? (
+						<Button
+							disabled={saving || !card.complete}
+							onClick={() => {
+								void card.submit();
+							}}
+						>
+							{saving
+								? "Submitting your scores…"
+								: card.scoresQuery.data?.length
+									? "Update my scores"
+									: "Submit my scores"}
+						</Button>
+					) : (
+						<Button
+							onClick={() =>
+								setStep((value) => Math.min(criteria.length, value + 1))
+							}
+						>
+							{step === criteria.length - 1
+								? "Review scores"
+								: "Next criterion"}
+							<ArrowRightLine data-icon="inline-end" />
+						</Button>
+					)}
+				</div>
+			</footer>
 		</div>
 	);
 }
 
 export function JudgeScorePage({ assignmentId }: { assignmentId: string }) {
-	const { userId } = useJudgeUser();
-	const router = useRouter();
-	const { confirm, dialogProps } = useConfirmDialog();
 	const data = useJudgePortalData();
-	const utils = api.useUtils();
-	const assignment = data.assignments.find((item) => item.id === assignmentId);
-	const scoresQuery = api.scores.getByAssignment.useQuery(
-		{ assignmentId },
-		{ enabled: Boolean(assignment) }
-	);
-	const createMany = api.scores.createMany.useMutation();
-	const [activeStep, setActiveStep] = useState(0);
-	const [draftScores, setDraftScores] = useState<Record<string, number>>({});
-	const [draftDirty, setDraftDirty] = useState(false);
-	const [message, setMessage] = useState("");
-
-	const criteria = useMemo(
-		() =>
-			data.criteria.filter(
-				(criterion) =>
-					!assignment ||
-					criterionAppliesToRound(criterion, assignment.room.roundId)
-			),
-		[data.criteria, assignment]
-	);
-	const mainCriteria = useMemo(
-		() => criteria.filter((criterion) => !criterion.isSidepot),
-		[criteria]
-	);
-	const sidepotCriteria = useMemo(
-		() => criteria.filter((criterion) => criterion.isSidepot),
-		[criteria]
-	);
-	const hasSidepotStep = sidepotCriteria.length > 0;
-	const totalSteps = mainCriteria.length + (hasSidepotStep ? 1 : 0);
-	const requiredCriteria = criteria;
-	const selectedCount = requiredCriteria.filter((criterion) =>
-		hasDraftScore(draftScores, criterion.id)
-	).length;
-	const selectedSidepotCount = sidepotCriteria.filter((criterion) =>
-		hasDraftScore(draftScores, criterion.id)
-	).length;
-	const allScoresSelected =
-		requiredCriteria.length > 0 && selectedCount === requiredCriteria.length;
-	const disabledSubmitLabel =
-		sidepotCriteria.length > 0 && selectedSidepotCount < sidepotCriteria.length
-			? `Score all side pots to submit (${selectedSidepotCount} of ${sidepotCriteria.length} done)`
-			: `Score all criteria to submit (${selectedCount} of ${requiredCriteria.length} done)`;
-	const activeCriterion =
-		activeStep < mainCriteria.length ? mainCriteria[activeStep] : undefined;
-	const isLastStep = totalSteps === 0 || activeStep >= totalSteps - 1;
-
-	useEffect(() => {
-		if (!(assignment && !draftDirty)) return;
-		const nextScores: Record<string, number> = {};
-		for (const score of scoresQuery.data ?? assignment.scores) {
-			nextScores[score.criteriaId] = score.value;
-		}
-		setDraftScores(nextScores);
-	}, [assignment, draftDirty, scoresQuery.data]);
-
-	const updateScore = (criterionId: string, score: number) => {
-		setDraftDirty(true);
-		setDraftScores((current) => ({ ...current, [criterionId]: score }));
-	};
-
-	const submitScores = async () => {
-		if (!(assignment && allScoresSelected)) return;
-		setMessage("");
-
-		try {
-			await createMany.mutateAsync(
-				requiredCriteria.map((criterion) => ({
-					assignmentId: assignment.id,
-					criteriaId: criterion.id,
-					score: draftScores[criterion.id] ?? 0
-				}))
-			);
-			await Promise.all([
-				utils.scores.getByAssignment.invalidate({
-					assignmentId: assignment.id
-				}),
-				utils.scores.getByRound.invalidate({
-					roundId: assignment.room.round.id
-				}),
-				utils.judgingAssignments.getByJudge.invalidate({ judgeId: userId })
-			]);
-			router.push("/judge");
-		} catch (error) {
-			setMessage(
-				error instanceof Error ? error.message : "Scores could not be saved."
-			);
-		}
-	};
-
-	if (data.error) {
+	const { userId } = useJudgeUser();
+	if (data.isLoading) return <LoadingCard label="Loading scoring workspace…" />;
+	if (data.error)
 		return (
-			<ScorePageMessage
-				description={`Judging data could not be loaded: ${data.error.message}`}
+			<ScoreMessage
+				onRetry={() => {
+					void data.refresh();
+				}}
 				title="Unable to load scoring"
-			/>
+			>
+				Judging data could not be loaded. Your device draft will remain
+				available.
+			</ScoreMessage>
 		);
-	}
-
-	if (data.isLoading) {
-		return <LoadingCard label="Loading scoring workspace…" />;
-	}
-
-	if (!assignment) {
+	const assignment = data.assignments.find((item) => item.id === assignmentId);
+	if (!assignment)
 		return (
-			<ScorePageMessage
-				description="This assignment could not be found for your judging account."
-				title="Assignment unavailable"
-			/>
+			<ScoreMessage title="Assignment unavailable">
+				This team is not assigned to your judging account.
+			</ScoreMessage>
 		);
-	}
-
-	if (criteria.length === 0) {
+	if (!data.criteria.length)
 		return (
-			<ScorePageMessage
-				description="No judging criteria have been published yet."
-				title="No criteria available"
-			/>
+			<ScoreMessage title="No criteria available">
+				Organizers need to publish the judging criteria before you can score
+				this team.
+			</ScoreMessage>
 		);
-	}
-
 	return (
-		<div className="min-h-screen bg-grey-50">
-			<ConfirmAlertDialog {...dialogProps} />
-			<ScoreTopBar
-				activeStep={activeStep}
-				assignment={assignment}
-				criteria={criteria}
-				mainCriteria={mainCriteria}
-				scores={draftScores}
-				sidepotCriteria={sidepotCriteria}
-			/>
-			<div className="mx-auto flex w-full max-w-267.75 flex-col gap-6 px-4 py-6 sm:px-8 lg:px-6">
-				{activeCriterion ? (
-					<MainCriterionStep
-						criterion={activeCriterion}
-						onScoreChange={updateScore}
-						score={getDraftScore(draftScores, activeCriterion.id)}
-					/>
-				) : (
-					<SidepotsStep
-						criteria={criteria}
-						mainCriteria={mainCriteria}
-						onScoreChange={updateScore}
-						scores={draftScores}
-						sidepotCriteria={sidepotCriteria}
-					/>
-				)}
-
-				{message ? (
-					<p className="m-0 rounded-xl bg-red-50 px-4 py-3 text-red-700 text-sm">
-						{message}
-					</p>
-				) : null}
-
-				<StepActions
-					canSubmit={allScoresSelected}
-					disabledSubmitLabel={disabledSubmitLabel}
-					isLastStep={isLastStep}
-					isPending={createMany.isPending}
-					onNext={() =>
-						setActiveStep((current) => Math.min(current + 1, totalSteps - 1))
-					}
-					onPrevious={async () => {
-						if (activeStep === 0) {
-							if (
-								draftDirty &&
-								!(await confirm({
-									title: "Leave scoring?",
-									description:
-										"You have unsaved score changes that will be lost.",
-									confirmLabel: "Leave",
-									destructive: true
-								}))
-							) {
-								return;
-							}
-							router.push("/judge");
-						} else {
-							setActiveStep((current) => Math.max(0, current - 1));
-						}
-					}}
-					onSubmit={submitScores}
-				/>
-			</div>
-		</div>
+		<JudgeScorecard
+			assignment={assignment}
+			assignments={data.assignments}
+			criteria={data.criteria}
+			key={`${userId}:${assignmentId}`}
+		/>
 	);
 }

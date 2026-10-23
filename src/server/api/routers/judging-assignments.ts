@@ -8,6 +8,7 @@ import {
 import {
 	adminProcedure,
 	createTRPCRouter,
+	judgeProcedure,
 	protectedProcedure
 } from "@/server/api/trpc";
 import { member, organization } from "@/server/db/auth-schema";
@@ -15,7 +16,8 @@ import {
 	hackathonSettings,
 	judgingAssignments,
 	judgingRoomStaff,
-	judgingRooms
+	judgingRooms,
+	scores
 } from "@/server/db/schema";
 
 async function attachRoomNames<T extends { room: { id: string } }>(
@@ -112,7 +114,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		}),
 
 	// Get assignments for a specific room staff user
-	getByJudge: protectedProcedure
+	getByJudge: judgeProcedure
 		.input(z.object({ judgeId: z.string() }))
 		.query(async ({ ctx, input }) => {
 			if (
@@ -138,7 +140,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 							round: true
 						}
 					},
-					scores: true
+					scores: { where: eq(scores.judgeId, input.judgeId) }
 				},
 				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
 			});

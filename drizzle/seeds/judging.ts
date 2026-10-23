@@ -131,6 +131,7 @@ export async function seedJudging({ judges, teams }: SeedJudgingInput) {
 				if (assignment && team.slug !== "team-6") {
 					await db.insert(scores).values(
 						criteriaList.map((criterion) => ({
+							judgeId: judge.id,
 							assignmentId: assignment.id,
 							criteriaId: criterion.id,
 							value: Math.floor(Math.random() * (criterion.maxScore + 1))

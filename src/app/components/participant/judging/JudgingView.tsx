@@ -13,7 +13,6 @@ import {
 } from "@/app/components/ui/empty";
 import { ToggleGroup, ToggleGroupItem } from "@/app/components/ui/toggle-group";
 import { useCurrentTime } from "@/hooks/use-current-time";
-import { criterionAppliesToRound } from "@/lib/judging";
 import {
 	type DashboardEvent,
 	eventNavigationUrlSchema,
@@ -83,13 +82,7 @@ function RoundRubric({
 	const roundId = available.has(selected)
 		? selected
 		: (rounds.find((round) => available.has(round.id))?.id ?? "");
-	const filtered = roundId
-		? criteria.filter((criterion) =>
-				criterionAppliesToRound(criterion, roundId)
-			)
-		: rounds.length
-			? []
-			: criteria;
+	const filtered = criteria;
 	const roundScores = scores?.filter((score) => score.roundId === roundId);
 	const values = scores
 		? Object.fromEntries(
@@ -120,6 +113,26 @@ function RoundRubric({
 			key={roundId}
 			scores={values}
 		>
+			{scores ? (
+				<p className="m-0 text-muted-foreground text-sm">
+					Average main score:{" "}
+					{Number(
+						criteria
+							.filter((criterion) => !criterion.isSidepot)
+							.reduce(
+								(sum, criterion) => sum + (values?.[criterion.id] ?? 0),
+								0
+							)
+							.toFixed(2)
+					)}{" "}
+					/{" "}
+					{criteria
+						.filter((criterion) => !criterion.isSidepot)
+						.reduce((sum, criterion) => sum + criterion.maxScore, 0)}
+					. Scores are averaged across submitted judge scorecards; side pots are
+					separate.
+				</p>
+			) : null}
 			<RoundFilter
 				available={available}
 				label={scores ? "Team score round" : "Rubric round"}

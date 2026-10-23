@@ -1,5 +1,4 @@
 import { formatTime as formatClockTime, formatLongDate } from "@/lib/datetime";
-import { criterionAppliesToRound } from "@/lib/judging";
 import type { RouterOutputs } from "@/trpc/react";
 
 export type JudgeAssignment =
@@ -57,27 +56,21 @@ export function getCriteriaScore(
 }
 
 export function getAssignmentCriteria(
-	assignment: JudgeAssignment,
+	_assignment: JudgeAssignment,
 	criteria: Criterion[]
 ) {
-	return criteria.filter((criterion) =>
-		criterionAppliesToRound(criterion, assignment.room.roundId)
-	);
+	return criteria;
 }
 
 export function isAssignmentScored(
 	assignment: JudgeAssignment,
 	criteria: Criterion[]
 ) {
-	const applicable = getAssignmentCriteria(assignment, criteria);
-	const mainCriteria = applicable.filter((criterion) => !criterion.isSidepot);
-	if (mainCriteria.length === 0) {
-		return applicable.some((criterion) =>
+	return (
+		criteria.length > 0 &&
+		criteria.every((criterion) =>
 			assignment.scores.some((score) => score.criteriaId === criterion.id)
-		);
-	}
-	return mainCriteria.every((criterion) =>
-		assignment.scores.some((score) => score.criteriaId === criterion.id)
+		)
 	);
 }
 

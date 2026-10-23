@@ -17,7 +17,7 @@ export function ResultsManagement() {
 
 	return (
 		<ManagementSection
-			description="Live team totals after scores are submitted."
+			description="Average main score across submitted judge scorecards and rounds. Side pots are excluded. Results remain provisional while scorecards are outstanding."
 			id="results-management"
 			title="Results"
 		>
@@ -28,7 +28,10 @@ export function ResultsManagement() {
 							Rank
 						</TableHead>
 						<TableHead className="px-3 py-3">Team</TableHead>
-						<TableHead className="px-3 py-3 text-right">Total score</TableHead>
+						<TableHead className="px-3 py-3 text-right">
+							Average score
+						</TableHead>
+						<TableHead className="px-3 py-3 text-right">Scorecards</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -41,7 +44,17 @@ export function ResultsManagement() {
 								{team.name}
 							</TableCell>
 							<TableCell className="px-3 py-4 text-right">
-								{Number(team.totalScore)}
+								{team.submittedScorecards
+									? Number(Number(team.totalScore).toFixed(2))
+									: "—"}
+							</TableCell>
+							<TableCell className="px-3 py-4 text-right tabular-nums">
+								{team.submittedScorecards}/{team.expectedScorecards}
+								{team.legacyScores ? (
+									<span className="block text-muted-foreground text-xs">
+										{team.legacyScores} legacy scores excluded
+									</span>
+								) : null}
 							</TableCell>
 						</TableRow>
 					))}

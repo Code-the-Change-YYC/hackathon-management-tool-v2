@@ -51,15 +51,15 @@ describe("participant judging information", () => {
 		expect(screen.queryByText(/7.5/)).not.toBeInTheDocument();
 		expect(screen.getByText("Hackathon updates coming soon")).toBeVisible();
 	});
-	it("disables unavailable rounds and filters published criteria", () => {
+	it("disables unavailable rounds while keeping the shared rubric visible", () => {
 		render(view());
 		const filter = screen.getByRole("group", { name: "Rubric round" });
 		expect(
 			within(filter).getByRole("button", { name: "Round 2" })
 		).toBeDisabled();
-		expect(screen.queryByText("Technical execution")).not.toBeInTheDocument();
+		expect(screen.getByText("Technical execution")).toBeVisible();
 	});
-	it("unlocks completed rounds and changes rubric criteria", () => {
+	it("keeps shared rubric criteria when switching available rounds", () => {
 		render(view({ settings: { ...settings, currentRoundId: "round-1" } }));
 		fireEvent.click(
 			within(screen.getByRole("group", { name: "Rubric round" })).getByRole(
@@ -100,7 +100,7 @@ describe("participant judging information", () => {
 		expect(screen.getByText("1:00 PM")).toBeVisible();
 		expect(screen.queryByText(/ongoing now/)).not.toBeInTheDocument();
 	});
-	it("keeps round controls available when a round has no criteria", () => {
+	it("shows previously scoped criteria as part of the shared rubric", () => {
 		render(
 			view({
 				criteria: [

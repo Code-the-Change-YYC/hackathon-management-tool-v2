@@ -38,7 +38,7 @@ export default function ScoreTable() {
 				filter: true
 			},
 			{
-				headerName: "Total Score",
+				headerName: "Average Main Score",
 				field: "totalScore",
 				sort: "desc", // 👈 default descending
 				filter: "agNumberColumnFilter",

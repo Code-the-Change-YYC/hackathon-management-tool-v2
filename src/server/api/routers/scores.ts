@@ -1,14 +1,14 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { criterionAppliesToRound } from "@/lib/judging";
+import { submittedScorecards } from "@/server/api/judging-results";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	judgeProcedure,
 	protectedProcedure
 } from "@/server/api/trpc";
-import { member, organization } from "@/server/db/auth-schema";
+import { member } from "@/server/db/auth-schema";
 import {
 	hackathonSettings,
 	judgingAssignments,
@@ -18,6 +18,36 @@ import {
 	scores
 } from "@/server/db/schema";
 import { criteria } from "@/server/db/scores-schema";
+
+async function requireAssignmentAccess(
+	ctx: {
+		db: typeof import("@/server/db").db;
+		session: { user: { id: string; role?: string | null } };
+	},
+	assignmentId: string
+) {
+	const assignment = await ctx.db.query.judgingAssignments.findFirst({
+		where: eq(judgingAssignments.id, assignmentId),
+		with: { room: { with: { staff: true } } }
+	});
+	if (!assignment)
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Assignment not found."
+		});
+	if (
+		ctx.session.user.role !== "admin" &&
+		!assignment.room.staff.some(
+			(staff) => staff.staffId === ctx.session.user.id
+		)
+	) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "You are not assigned to score this team."
+		});
+	}
+	return assignment;
+}
 
 export const scoresRouter = createTRPCRouter({
 	// Resolve membership on the server; unreleased results never reach the client.
@@ -45,12 +75,19 @@ export const scoresRouter = createTRPCRouter({
 			)
 			.innerJoin(judgingRooms, eq(judgingAssignments.roomId, judgingRooms.id))
 			.innerJoin(judgingRounds, eq(judgingRooms.roundId, judgingRounds.id))
+			.innerJoin(
+				sql`${submittedScorecards} AS submitted`,
+				and(
+					eq(scores.assignmentId, sql`submitted.assignment_id`),
+					eq(scores.judgeId, sql`submitted.judge_id`)
+				)
+			)
 			.where(eq(judgingAssignments.teamId, membership.organizationId))
 			.groupBy(judgingRounds.id, scores.criteriaId);
 		return { released: true, rounds: rows };
 	}),
 	// Get all scores
-	getAll: judgeProcedure.query(async ({ ctx }) => {
+	getAll: adminProcedure.query(async ({ ctx }) => {
 		const allScores = await ctx.db.query.scores.findMany({
 			with: {
 				assignment: {
@@ -73,8 +110,12 @@ export const scoresRouter = createTRPCRouter({
 	getByAssignment: judgeProcedure
 		.input(z.object({ assignmentId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
+			await requireAssignmentAccess(ctx, input.assignmentId);
 			const assignmentScores = await ctx.db.query.scores.findMany({
-				where: eq(scores.assignmentId, input.assignmentId),
+				where: and(
+					eq(scores.assignmentId, input.assignmentId),
+					eq(scores.judgeId, ctx.session.user.id)
+				),
 				with: {
 					assignment: {
 						with: {
@@ -92,7 +133,7 @@ export const scoresRouter = createTRPCRouter({
 		}),
 
 	// Get scores by team ID (across all rounds and judges)
-	getByTeam: judgeProcedure
+	getByTeam: adminProcedure
 		.input(z.object({ teamId: z.string() }))
 		.query(async ({ ctx, input }) => {
 			const teamScores = await ctx.db.query.scores.findMany({
@@ -149,45 +190,33 @@ export const scoresRouter = createTRPCRouter({
 							round: true
 						}
 					},
-					scores: true
+					scores: { where: eq(scores.judgeId, ctx.session.user.id) }
 				},
 				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
 			});
 		}),
 
-	// Get aggregated scores by team (useful for leaderboards)
-	getAggregatedByTeam: judgeProcedure
-		.input(
-			z.object({
-				roundId: z.string().uuid().optional()
-			})
-		)
+	// Organizer-only averages; judges never receive other judges' assessments.
+	getAggregatedByTeam: adminProcedure
+		.input(z.object({ roundId: z.string().uuid().optional() }))
 		.query(async ({ ctx, input }) => {
-			const results = await ctx.db
-				.select({
-					teamId: judgingAssignments.teamId,
-					teamName: organization.name,
-
-					normalTotal: sql<number>`SUM(CASE WHEN ${criteria.isSidepot} = false THEN ${scores.value} ELSE 0 END)`,
-					normalAvg: sql<number>`AVG(CASE WHEN ${criteria.isSidepot} = false THEN ${scores.value} ELSE NULL END)`,
-
-					sidepotTotal: sql<number>`SUM(CASE WHEN ${criteria.isSidepot} = true THEN ${scores.value} ELSE 0 END)`,
-					sidepotAvg: sql<number>`AVG(CASE WHEN ${criteria.isSidepot} = true THEN ${scores.value} ELSE NULL END)`
-				})
-				.from(scores)
-				.innerJoin(
-					judgingAssignments,
-					eq(scores.assignmentId, judgingAssignments.id)
-				)
-				.innerJoin(judgingRooms, eq(judgingAssignments.roomId, judgingRooms.id))
-				.innerJoin(organization, eq(judgingAssignments.teamId, organization.id))
-				.innerJoin(criteria, eq(scores.criteriaId, criteria.id))
-				.where(
-					input.roundId ? eq(judgingRooms.roundId, input.roundId) : undefined
-				)
-				.groupBy(judgingAssignments.teamId, organization.name);
-
-			return results;
+			const result = await ctx.db.execute(sql`
+    SELECT o.id AS "teamId", o.name AS "teamName",
+     AVG(card.main_score)::float8 AS "normalAvg",
+     AVG(card.sidepot_score)::float8 AS "sidepotAvg",
+     COUNT(*)::int AS "submittedScorecards"
+    FROM ${submittedScorecards} card
+    INNER JOIN hackathon_organization o ON o.id = card.team_id
+    ${input.roundId ? sql`WHERE card.round_id = ${input.roundId}` : sql``}
+    GROUP BY o.id, o.name
+   `);
+			return result as unknown as {
+				teamId: string;
+				teamName: string;
+				normalAvg: number;
+				sidepotAvg: number;
+				submittedScorecards: number;
+			}[];
 		}),
 
 	// Submit a score
@@ -227,50 +256,54 @@ export const scoresRouter = createTRPCRouter({
 				});
 			}
 
-			const assignment = await ctx.db.query.judgingAssignments.findFirst({
-				where: eq(judgingAssignments.id, assignmentId),
-				with: {
-					room: {
-						with: {
-							staff: true
-						}
-					}
-				}
-			});
-
-			if (!assignment) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Assignment not found."
-				});
-			}
-
-			const isAdmin = ctx.session.user.role === "admin";
-			const isAssignedJudge = assignment.room.staff.some(
-				(member) => member.staffId === ctx.session.user.id
-			);
-			if (!(isAdmin || isAssignedJudge)) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "You are not assigned to score this team."
-				});
-			}
-
-			const criteriaIds = [...new Set(input.map((item) => item.criteriaId))];
-			const criteriaRows = await ctx.db.query.criteria.findMany({
-				where: inArray(criteria.id, criteriaIds)
-			});
+			const assignment = await requireAssignmentAccess(ctx, assignmentId);
+			// Submission identity always comes from the authenticated session.
 			if (
-				criteriaRows.some(
-					(criterion) =>
-						!criterionAppliesToRound(criterion, assignment.room.roundId)
+				!assignment.room.staff.some(
+					(staff) => staff.staffId === ctx.session.user.id
 				)
 			) {
 				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Criterion is not available for this judging round."
+					code: "FORBIDDEN",
+					message: "Only assigned judges can submit a scorecard."
 				});
 			}
+			const criteriaIds = new Set(input.map((item) => item.criteriaId));
+			const criteriaRows = await ctx.db.query.criteria.findMany();
+			if (criteriaIds.size !== input.length) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Each criterion must be scored exactly once."
+				});
+			}
+			if (
+				criteriaRows.length !== input.length ||
+				criteriaRows.some((criterion) => !criteriaIds.has(criterion.id))
+			) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"Complete every criterion in the current rubric before submitting."
+				});
+			}
+			if (
+				assignment.timeSlot &&
+				assignment.timeSlot > new Date() &&
+				ctx.session.user.role !== "admin"
+			) {
+				const existing = await ctx.db.query.scores.findFirst({
+					where: and(
+						eq(scores.assignmentId, assignmentId),
+						eq(scores.judgeId, ctx.session.user.id)
+					)
+				});
+				if (!existing)
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message: "Scoring opens at the team's scheduled time."
+					});
+			}
+
 			const maxScoreByCriteriaId = new Map(
 				criteriaRows.map((row) => [row.id, row.maxScore])
 			);
@@ -295,13 +328,14 @@ export const scoresRouter = createTRPCRouter({
 				.insert(scores)
 				.values(
 					input.map((item) => ({
+						judgeId: ctx.session.user.id,
 						assignmentId: item.assignmentId,
 						criteriaId: item.criteriaId,
 						value: item.score
 					}))
 				)
 				.onConflictDoUpdate({
-					target: [scores.assignmentId, scores.criteriaId],
+					target: [scores.assignmentId, scores.criteriaId, scores.judgeId],
 					set: { value: sql`excluded.value` }
 				})
 				.returning();
@@ -318,10 +352,35 @@ export const scoresRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+			const existing = await ctx.db.query.scores.findFirst({
+				where: eq(scores.id, input.id)
+			});
+			if (!existing || existing.judgeId !== ctx.session.user.id) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "You can only edit your own scores."
+				});
+			}
+			await requireAssignmentAccess(ctx, existing.assignmentId);
+			const criterion = await ctx.db.query.criteria.findFirst({
+				where: eq(criteria.id, existing.criteriaId)
+			});
+			if (
+				!criterion ||
+				input.score === undefined ||
+				input.score > criterion.maxScore
+			) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Choose a score within the criterion's range."
+				});
+			}
 			const [updated] = await ctx.db
 				.update(scores)
 				.set({ value: input.score })
-				.where(eq(scores.id, input.id))
+				.where(
+					and(eq(scores.id, input.id), eq(scores.judgeId, ctx.session.user.id))
+				)
 				.returning();
 			return updated;
 		}),
