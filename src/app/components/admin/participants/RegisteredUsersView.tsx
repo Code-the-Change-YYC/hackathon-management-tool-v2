@@ -202,10 +202,7 @@ export function RegisteredUsersView({
 	return (
 		<>
 			<div className="flex flex-col gap-6">
-				<PageHeader
-					description="View all participants"
-					title="Registered Users"
-				/>
+				<PageHeader description="View all participants" title="Users" />
 
 				<ParticipantsToolbar
 					filters={filters}
