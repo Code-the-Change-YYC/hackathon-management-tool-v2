@@ -14,8 +14,8 @@ const valid = [
 	{ assignmentId, criteriaId: sideId, score: 0 }
 ];
 const rubric = [
-	{ id: mainId, maxScore: 10, roundIds: ["other-round"] },
-	{ id: sideId, maxScore: 5, roundIds: [] }
+	{ id: mainId, maxScore: 10, isSidepot: false, roundIds: ["other-round"] },
+	{ id: sideId, maxScore: 5, isSidepot: true, roundIds: [] }
 ];
 const db = {
 	query: {
@@ -122,17 +122,15 @@ describe("individual scorecard API", () => {
 		);
 		expect(query.params).toEqual([assignmentId, "judge-a"]);
 	});
-	it("hides raw scores and aggregated results from judges", async () => {
-		await expect(caller().getAll()).rejects.toMatchObject({
-			code: "FORBIDDEN"
-		});
-		await expect(caller().getByTeam({ teamId: "team" })).rejects.toMatchObject({
-			code: "FORBIDDEN"
-		});
+	it("scopes raw scores to the current judge and keeps team averages organizer-only", async () => {
+		await caller().getAll();
+		const where = db.query.scores.findMany.mock.lastCall?.[0].where;
+		expect(new PgDialect().sqlToQuery(where).params).toEqual(["judge-a"]);
 		await expect(caller().getAggregatedByTeam({})).rejects.toMatchObject({
 			code: "FORBIDDEN"
 		});
 	});
+
 	it("enforces scheduled availability while allowing later updates", async () => {
 		db.query.judgingAssignments.findFirst.mockResolvedValue({
 			timeSlot: new Date(Date.now() + 3600000),
@@ -146,14 +144,15 @@ describe("individual scorecard API", () => {
 		await expect(caller().createMany(valid)).resolves.toEqual([]);
 	});
 	it("prevents editing another judge's score through the single-score endpoint", async () => {
-		db.query.scores.findFirst.mockResolvedValue({
-			judgeId: "judge-b",
-			assignmentId,
-			criteriaId: mainId
-		});
+		db.query.scores.findFirst.mockResolvedValue(undefined);
 		await expect(
 			caller().update({ id: mainId, score: 2 })
-		).rejects.toMatchObject({ code: "FORBIDDEN" });
+		).rejects.toMatchObject({ code: "NOT_FOUND" });
+		const where = db.query.scores.findFirst.mock.lastCall?.[0].where;
+		expect(new PgDialect().sqlToQuery(where).params).toEqual([
+			mainId,
+			"judge-a"
+		]);
 		expect(db.update).not.toHaveBeenCalled();
 	});
 });

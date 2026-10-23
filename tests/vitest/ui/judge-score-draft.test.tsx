@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Criterion } from "@/app/components/judges/judgePortal";
-import { useJudgeScoreDraft } from "@/app/components/judges/useJudgeScoreDraft";
+import type { Criterion } from "@/app/components/judge/judgePortal";
+import { useJudgeScoreDraft } from "@/app/components/judge/score/useJudgeScoreDraft";
 
 const criteria: [Criterion] = [
 	{

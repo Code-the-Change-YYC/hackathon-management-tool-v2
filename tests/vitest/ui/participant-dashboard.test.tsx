@@ -32,7 +32,7 @@ describe("participant dashboard page", () => {
 			screen.getByText("The submission deadline will be announced soon.")
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: "View full schedule" })
+			screen.getByRole("link", { name: "View full schedule" })
 		).toHaveAttribute("href", "/participant/schedule");
 	});
 	it("only shows the current event navigation button for safe URLs", () => {
@@ -48,7 +48,7 @@ describe("participant dashboard page", () => {
 			screen.getByRole("heading", { name: "Trivia ongoing now!" })
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: "Navigate there" })
+			screen.getByRole("link", { name: "Navigate there" })
 		).toHaveAttribute("href", "https://example.com/directions");
 		rerender(
 			<DashboardView
@@ -59,7 +59,7 @@ describe("participant dashboard page", () => {
 			/>
 		);
 		expect(
-			screen.queryByRole("button", { name: "Navigate there" })
+			screen.queryByRole("link", { name: "Navigate there" })
 		).not.toBeInTheDocument();
 	});
 	it("keeps the banner slot with placeholder copy when no current event exists", () => {
@@ -80,7 +80,7 @@ describe("participant dashboard page", () => {
 			)
 		).toBeInTheDocument();
 		expect(
-			screen.queryByRole("button", { name: "Navigate there" })
+			screen.queryByRole("link", { name: "Navigate there" })
 		).not.toBeInTheDocument();
 	});
 });

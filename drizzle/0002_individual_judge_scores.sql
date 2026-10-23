@@ -1,14 +1,20 @@
--- Keep historical panel scores unattributed. They cannot safely be assigned
--- to individual judges and are excluded from individual-score averages.
-ALTER TABLE "hackathon_score" ADD COLUMN "judge_id" text;
+-- Compatibility upgrade for databases older than main's individual-score schema.
+-- Existing attributed scores and historical unattributed panel scores are preserved.
+ALTER TABLE "hackathon_score" ADD COLUMN IF NOT EXISTS "judge_id" text;
 --> statement-breakpoint
-ALTER TABLE "hackathon_score" ADD CONSTRAINT "hackathon_score_judge_id_hackathon_user_id_fk"
-  FOREIGN KEY ("judge_id") REFERENCES "public"."hackathon_user"("id") ON DELETE cascade;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'hackathon_score'::regclass
+      AND conname = 'hackathon_score_judge_id_hackathon_user_id_fk'
+  ) THEN
+    ALTER TABLE "hackathon_score"
+      ADD CONSTRAINT "hackathon_score_judge_id_hackathon_user_id_fk"
+      FOREIGN KEY ("judge_id") REFERENCES "public"."hackathon_user"("id") ON DELETE restrict;
+  END IF;
+END $$;
 --> statement-breakpoint
-DROP INDEX "one_score_per_criteria_per_assignment";
+DROP INDEX IF EXISTS "one_score_per_criteria_per_assignment";
 --> statement-breakpoint
-CREATE UNIQUE INDEX "one_score_per_criteria_per_judge_assignment"
+CREATE UNIQUE INDEX IF NOT EXISTS "one_score_per_judge_per_criteria_per_assignment"
   ON "hackathon_score" ("assignment_id", "criteria_id", "judge_id");
---> statement-breakpoint
-CREATE UNIQUE INDEX "one_legacy_score_per_criteria_assignment"
-  ON "hackathon_score" ("assignment_id", "criteria_id") WHERE "judge_id" IS NULL;

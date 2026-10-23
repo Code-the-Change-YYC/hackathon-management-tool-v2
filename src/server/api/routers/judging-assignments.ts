@@ -8,7 +8,6 @@ import {
 import {
 	adminProcedure,
 	createTRPCRouter,
-	judgeProcedure,
 	protectedProcedure
 } from "@/server/api/trpc";
 import { member, organization } from "@/server/db/auth-schema";
@@ -114,7 +113,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		}),
 
 	// Get assignments for a specific room staff user
-	getByJudge: judgeProcedure
+	getByJudge: protectedProcedure
 		.input(z.object({ judgeId: z.string() }))
 		.query(async ({ ctx, input }) => {
 			if (

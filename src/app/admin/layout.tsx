@@ -1,6 +1,9 @@
 import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
+import { resolveAvatarSrc } from "@/lib/avatars";
+import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
+import PageContainer from "../components/PageContainer";
 import type { NavGroup } from "../components/sidebar/AppSidebar";
 import {
 	AppSidebar,
@@ -12,7 +15,7 @@ export default async function AdminLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	await requireRole([Role.ADMIN]);
+	const { user } = await requireRole([Role.ADMIN]);
 
 	const ADMIN_NAV_GROUPS: NavGroup[] = [
 		{
@@ -43,10 +46,16 @@ export default async function AdminLayout({
 
 	return (
 		<SidebarProvider>
-			<AppSidebar navGroups={ADMIN_NAV_GROUPS} userName="Admin User" />
+			<AppSidebar
+				avatarUrl={resolveAvatarSrc(user.image)}
+				navGroups={ADMIN_NAV_GROUPS}
+				userName={
+					user.firstName || getNameParts(user.name).firstName || "Admin"
+				}
+			/>
 			<SidebarInset>
 				<AppSidebarTriggerHeader />
-				{children}
+				<PageContainer>{children}</PageContainer>
 			</SidebarInset>
 		</SidebarProvider>
 	);

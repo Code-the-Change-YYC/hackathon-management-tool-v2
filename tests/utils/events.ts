@@ -7,7 +7,12 @@ export type EventFixtureInput = Pick<
 	typeof event.$inferInsert,
 	"endTime" | "startTime" | "title"
 > &
-	Partial<Pick<typeof event.$inferInsert, "status">>;
+	Partial<
+		Pick<
+			typeof event.$inferInsert,
+			"description" | "location" | "status" | "type"
+		>
+	>;
 
 export type EventFixture = typeof event.$inferSelect;
 

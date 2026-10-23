@@ -4,6 +4,8 @@ Each submitted score belongs to the authenticated judge, assignment, and
 criterion. Submitting again updates that judge's scorecard without changing
 another judge's assessment. Judges receive only their own scores.
 
+Main criteria use the existing 1–10 scale; side pots accept zero through their configured maximum.
+
 Every scorecard must answer the entire shared rubric, including an explicit zero
 where appropriate for a side pot. A single database statement saves the complete
 scorecard. Unfinished drafts remain on the judge's device, scoped to their account
@@ -26,9 +28,10 @@ not 30. A side-pot score does not change that main average.
 
 ## Existing databases
 
-Apply `0002_individual_judge_scores.sql` once before deploying this code against
-an existing database. It adds `judge_id` and replaces the old assignment-wide
-unique index with the judge-specific index. The repository also supports schema
+Main already defines individual score ownership. For an older database without
+that schema, `0002_individual_judge_scores.sql` is an idempotent compatibility
+upgrade: it adds `judge_id` if missing and replaces the old assignment-wide unique
+index with main's judge-specific index. The repository also supports schema
 pushes through `pnpm db:push`; review the proposed changes before applying them.
 The focused SQL migration avoids unrelated schema changes.
 

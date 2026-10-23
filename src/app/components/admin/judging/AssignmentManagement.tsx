@@ -7,6 +7,12 @@ import {
 	useConfirmDialog
 } from "@/app/components/ConfirmAlertDialog";
 import { Button } from "@/app/components/ui/button";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle
+} from "@/app/components/ui/empty";
 import { Field, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -25,6 +31,7 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
+import { useRefresh } from "@/hooks/use-refresh";
 import {
 	formatDateTime,
 	fromDateTimeLocalValue,
@@ -32,31 +39,31 @@ import {
 } from "@/lib/datetime";
 import type { SlotMinutes } from "@/lib/judging";
 import { tryCatch } from "@/lib/utils";
-import { api, type RouterOutputs } from "@/trpc/react";
-import { ManagementSection } from "./judgingShared";
+import { api } from "@/trpc/react";
+import {
+	type Assignment,
+	ManagementSection,
+	type Room,
+	type Round,
+	type Team
+} from "./judgingShared";
 
 export function AssignmentManagement({
-	roundId,
+	round,
+	rooms,
+	assignments,
+	eligibleTeams,
 	slotMinutes
 }: {
-	roundId: string;
+	round: Round | undefined;
+	rooms: Room[];
+	assignments: Assignment[];
+	eligibleTeams: Team[];
 	slotMinutes: SlotMinutes;
 }) {
 	const { confirm, dialogProps } = useConfirmDialog();
-	const utils = api.useUtils();
-	const assignmentsQuery = api.judgingAssignments.getByRound.useQuery(
-		{ roundId },
-		{ enabled: Boolean(roundId) }
-	);
-	const layoutQuery = api.judgingRooms.getLayoutByRound.useQuery(
-		{ roundId },
-		{ enabled: Boolean(roundId) }
-	);
-	const roundsQuery = api.judgingRounds.getAll.useQuery();
-	const teamsQuery = api.teams.getAll.useQuery();
-	const eligibleTeams = (teamsQuery.data ?? []).filter(
-		(team) => team.prescreenStatus === "passed"
-	);
+	const { isRefreshing, refresh } = useRefresh();
+	const roundId = round?.id ?? "";
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [teamId, setTeamId] = useState("");
 	const [roomId, setRoomId] = useState("");
@@ -69,30 +76,15 @@ export function AssignmentManagement({
 		setRoomId("");
 		setTimeSlot("");
 	};
-	const invalidate = async () => {
-		await Promise.all([
-			utils.judgingAssignments.getByRound.invalidate({ roundId }),
-			utils.judgingRooms.getLayoutByRound.invalidate({ roundId }),
-			utils.teams.getRankings.invalidate()
-		]);
-	};
 	const createAssignment = api.judgingAssignments.create.useMutation();
 	const updateAssignment = api.judgingAssignments.update.useMutation();
 	const deleteAssignment = api.judgingAssignments.delete.useMutation();
+	const isSaving =
+		createAssignment.isPending || updateAssignment.isPending || isRefreshing;
 
 	const submit = async () => {
-		if (
-			!teamId ||
-			!roomId ||
-			!timeSlot ||
-			createAssignment.isPending ||
-			updateAssignment.isPending
-		)
-			return;
+		if (!teamId || !roomId || !timeSlot || isSaving) return;
 		setMessage("");
-		const selectedRound = roundsQuery.data?.find(
-			(round) => round.id === roundId
-		);
 		const parsedTimeSlot = fromDateTimeLocalValue(timeSlot);
 		if (!parsedTimeSlot) {
 			setMessage("Choose a valid time slot.");
@@ -100,20 +92,20 @@ export function AssignmentManagement({
 		}
 		const parsedTime = parsedTimeSlot.getTime();
 		if (
-			selectedRound &&
-			(parsedTime < selectedRound.startTime.getTime() ||
-				parsedTime >= selectedRound.endTime.getTime())
+			round &&
+			(parsedTime < round.startTime.getTime() ||
+				parsedTime >= round.endTime.getTime())
 		) {
 			setMessage("Time slot must be inside the selected judging round.");
 			return;
 		}
-		if (!layoutQuery.data?.rooms.some((room) => room.id === roomId)) {
+		if (!rooms.some((room) => room.id === roomId)) {
 			setMessage("Choose a room from the selected round.");
 			return;
 		}
 		const slotStart = parsedTime;
 		const slotEnd = addMinutes(slotStart, slotMinutes).getTime();
-		const teamAlreadyAssigned = (assignmentsQuery.data ?? []).some(
+		const teamAlreadyAssigned = assignments.some(
 			(assignment) =>
 				assignment.id !== editingId && assignment.teamId === teamId
 		);
@@ -121,7 +113,7 @@ export function AssignmentManagement({
 			setMessage("That team is already assigned in this round.");
 			return;
 		}
-		const roomSlotTaken = (assignmentsQuery.data ?? []).some((assignment) => {
+		const roomSlotTaken = assignments.some((assignment) => {
 			if (
 				assignment.id === editingId ||
 				assignment.room.id !== roomId ||
@@ -138,13 +130,9 @@ export function AssignmentManagement({
 		}
 		const values = { roomId, teamId, timeSlot: parsedTimeSlot };
 		const { error } = await tryCatch(
-			(editingId
+			editingId
 				? updateAssignment.mutateAsync({ id: editingId, ...values })
 				: createAssignment.mutateAsync(values)
-			).then(async () => {
-				resetForm();
-				await invalidate();
-			})
 		);
 		if (error) {
 			setMessage(
@@ -154,11 +142,12 @@ export function AssignmentManagement({
 			);
 			return;
 		}
-		setMessage(editingId ? "Assignment updated." : "Assignment created.");
+		refresh(() => {
+			resetForm();
+			setMessage(editingId ? "Assignment updated." : "Assignment created.");
+		});
 	};
-	const removeAssignment = async (
-		assignment: RouterOutputs["judgingAssignments"]["getByRound"][number]
-	) => {
+	const removeAssignment = async (assignment: Assignment) => {
 		if (deleteAssignment.isPending || assignment.scores.length > 0) return;
 		if (
 			!(await confirm({
@@ -171,7 +160,7 @@ export function AssignmentManagement({
 			return;
 		setMessage("");
 		const { error } = await tryCatch(
-			deleteAssignment.mutateAsync({ id: assignment.id }).then(invalidate)
+			deleteAssignment.mutateAsync({ id: assignment.id })
 		);
 		if (error) {
 			setMessage(
@@ -179,12 +168,10 @@ export function AssignmentManagement({
 			);
 			return;
 		}
-		setMessage("Assignment deleted.");
+		refresh(() => setMessage("Assignment deleted."));
 	};
 
-	const roomNames = new Map(
-		(layoutQuery.data?.rooms ?? []).map((room) => [room.id, room.name])
-	);
+	const roomNames = new Map(rooms.map((room) => [room.id, room.name]));
 
 	return (
 		<ManagementSection
@@ -197,6 +184,10 @@ export function AssignmentManagement({
 					<FieldLabel>Team</FieldLabel>
 					<Select
 						disabled={!roundId}
+						items={eligibleTeams.map((team) => ({
+							value: team.id,
+							label: team.name
+						}))}
 						onValueChange={(value) => {
 							if (value != null) setTeamId(value);
 						}}
@@ -220,6 +211,7 @@ export function AssignmentManagement({
 					<FieldLabel>Room</FieldLabel>
 					<Select
 						disabled={!roundId}
+						items={rooms.map((room) => ({ value: room.id, label: room.name }))}
 						onValueChange={(value) => {
 							if (value != null) setRoomId(value);
 						}}
@@ -230,7 +222,7 @@ export function AssignmentManagement({
 						</SelectTrigger>
 						<SelectContent>
 							<SelectGroup>
-								{(layoutQuery.data?.rooms ?? []).map((room) => (
+								{rooms.map((room) => (
 									<SelectItem key={room.id} value={room.id}>
 										{room.name}
 									</SelectItem>
@@ -251,13 +243,7 @@ export function AssignmentManagement({
 				</Field>
 				<div className="flex gap-2">
 					<Button
-						disabled={
-							!teamId ||
-							!roomId ||
-							!timeSlot ||
-							createAssignment.isPending ||
-							updateAssignment.isPending
-						}
+						disabled={!teamId || !roomId || !timeSlot || isSaving}
 						onClick={() => void submit()}
 						type="button"
 					>
@@ -283,7 +269,7 @@ export function AssignmentManagement({
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{(assignmentsQuery.data ?? []).map((assignment) => {
+						{assignments.map((assignment) => {
 							const isScored = assignment.scores.length > 0;
 							return (
 								<TableRow key={assignment.id}>
@@ -326,7 +312,9 @@ export function AssignmentManagement({
 												Edit
 											</Button>
 											<Button
-												disabled={isScored || deleteAssignment.isPending}
+												disabled={
+													isScored || deleteAssignment.isPending || isRefreshing
+												}
 												onClick={() => void removeAssignment(assignment)}
 												size="sm"
 												title={
@@ -347,13 +335,16 @@ export function AssignmentManagement({
 					</TableBody>
 				</Table>
 			</div>
-			{roundId &&
-			!assignmentsQuery.isLoading &&
-			!assignmentsQuery.data?.length ? (
-				<p className="py-5 text-center text-muted-foreground">
-					No assignments exist for this round.
-				</p>
-			) : null}
+			{roundId && assignments.length === 0 && (
+				<Empty>
+					<EmptyHeader>
+						<EmptyTitle>No assignments yet</EmptyTitle>
+						<EmptyDescription>
+							Assign teams to rooms above, or add one team here.
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
+			)}
 			<p
 				aria-live="polite"
 				className="mt-3 mb-0 min-h-5 text-muted-foreground text-sm"

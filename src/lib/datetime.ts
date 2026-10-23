@@ -58,6 +58,12 @@ export function fromDateTimeLocalValue(value: string) {
 	return isValid(date) ? new Date(date.getTime()) : null;
 }
 
+export function toTimeInputValue(value?: Date | null) {
+	return value && isValid(value)
+		? format(value, TIME_INPUT_FORMAT, { in: calgary })
+		: "";
+}
+
 export function toDateInputValue(value?: Date | null) {
 	return value && isValid(value) ? formatDateKey(value) : "";
 }

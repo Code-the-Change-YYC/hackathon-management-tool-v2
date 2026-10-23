@@ -15,5 +15,5 @@ export const submittedScorecards = sql`(
   WHERE s.judge_id IS NOT NULL
   GROUP BY a.id, a.team_id, r.round_id, s.judge_id
   HAVING COUNT(*) = (SELECT COUNT(*) FROM hackathon_criteria)
-    AND BOOL_AND(s.value >= 0 AND s.value <= c.max_score)
+    AND BOOL_AND(s.value >= CASE WHEN c.is_sidepot THEN 0 ELSE 1 END AND s.value <= c.max_score)
 )`;

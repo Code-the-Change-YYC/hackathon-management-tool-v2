@@ -60,7 +60,8 @@ export default function Prizes() {
 						titleHighlight="Prizes"
 					/>
 					<p className="font-medium text-dark-grey text-lg md:text-xl">
-						$10,000 in prizes for the top three teams.
+						$10,000 in prizes for the top three teams. Half of each prize is
+						donated to charity.
 					</p>
 				</div>
 

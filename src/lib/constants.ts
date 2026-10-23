@@ -4,7 +4,7 @@ export const EVENT_NAME = "Hack the Change";
 export const EVENT_YEAR = "2026";
 
 export const DASHBOARD_HREFS: Record<Role, string> = {
-	[Role.ADMIN]: "/admin",
+	[Role.ADMIN]: "/admin/controls",
 	[Role.JUDGE]: "/judge",
 	[Role.PARTICIPANT]: "/participant"
 };
