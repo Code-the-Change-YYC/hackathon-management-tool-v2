@@ -27,8 +27,6 @@ import { ManagementSection } from "./judgingShared";
 export function CriteriaManagement() {
 	const { confirm, dialogProps } = useConfirmDialog();
 	const utils = api.useUtils();
-	const roundsQuery = api.judgingRounds.getAll.useQuery();
-	const [roundIds, setRoundIds] = useState<string[]>([]);
 	const criteriaQuery = api.criteria.getAll.useQuery();
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [name, setName] = useState("");
@@ -42,7 +40,6 @@ export function CriteriaManagement() {
 
 	const resetForm = () => {
 		setEditingId(null);
-		setRoundIds([]);
 		setName("");
 		setMaxScore(10);
 		setIsSidepot(false);
@@ -51,7 +48,7 @@ export function CriteriaManagement() {
 		if (!name.trim() || createCriterion.isPending || updateCriterion.isPending)
 			return;
 		setMessage("");
-		const values = { roundIds, isSidepot, maxScore, name: name.trim() };
+		const values = { roundIds: [], isSidepot, maxScore, name: name.trim() };
 		const { error } = await tryCatch(
 			(editingId
 				? updateCriterion.mutateAsync({ id: editingId, ...values })
@@ -156,29 +153,9 @@ export function CriteriaManagement() {
 				</div>
 			</div>
 
-			<fieldset className="mt-4 flex flex-wrap gap-4">
-				<legend className="mb-2 text-sm">
-					Apply to rounds (none selected means all rounds)
-				</legend>
-				{(roundsQuery.data ?? []).map((round) => (
-					<Field key={round.id} orientation="horizontal">
-						<Checkbox
-							checked={roundIds.includes(round.id)}
-							id={`criterion-round-${round.id}`}
-							onCheckedChange={(checked) =>
-								setRoundIds((ids) =>
-									checked
-										? [...ids, round.id]
-										: ids.filter((id) => id !== round.id)
-								)
-							}
-						/>
-						<FieldLabel htmlFor={`criterion-round-${round.id}`}>
-							{round.name}
-						</FieldLabel>
-					</Field>
-				))}
-			</fieldset>
+			<p className="mt-4 text-muted-foreground text-sm">
+				The same rubric is used for every judging round.
+			</p>
 			<div className="mt-6">
 				<Table className="min-w-155">
 					<TableHeader>
@@ -207,7 +184,6 @@ export function CriteriaManagement() {
 											onClick={() => {
 												setEditingId(criterion.id);
 												setName(criterion.name);
-												setRoundIds(criterion.roundIds ?? []);
 												setMaxScore(criterion.maxScore);
 												setIsSidepot(criterion.isSidepot);
 												setMessage("");

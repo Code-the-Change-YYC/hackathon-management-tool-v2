@@ -40,10 +40,14 @@ describe("judge rubric", () => {
 	it("renders saved descriptions and opens the first ordered criterion without mutating input", () => {
 		const criteria = [sidepot, innovation, impact];
 		render(<JudgeRubric criteria={criteria} />);
-		const buttons = screen.getAllByRole("button");
-		expect(buttons[0]).toHaveTextContent("Impact");
-		expect(buttons[0]).toHaveAttribute("aria-expanded", "true");
-		expect(buttons[1]).toHaveAttribute("aria-expanded", "false");
+		expect(screen.getByRole("button", { name: /Impact/ })).toHaveAttribute(
+			"aria-expanded",
+			"true"
+		);
+		expect(screen.getByRole("button", { name: /Innovation/ })).toHaveAttribute(
+			"aria-expanded",
+			"false"
+		);
 		expect(screen.getByText(/Assess originality/)).toHaveTextContent(
 			"Reward a useful new approach."
 		);
@@ -57,6 +61,10 @@ describe("judge rubric", () => {
 		fireEvent.click(trigger);
 		expect(trigger).toHaveAttribute("aria-expanded", "true");
 		expect(await screen.findByText("0–2 pts")).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /Innovation/ })).toHaveAttribute(
+			"aria-expanded",
+			"true"
+		);
 	});
 
 	it("keeps the existing fallback when a description is empty", () => {
@@ -71,8 +79,73 @@ describe("judge rubric", () => {
 	it("shows an empty state without an accordion", () => {
 		render(<JudgeRubric criteria={[]} />);
 		expect(
-			screen.getByText("No judging criteria have been published yet.")
+			screen.getByText("No judging criteria configured")
 		).toBeInTheDocument();
 		expect(screen.queryByRole("button")).not.toBeInTheDocument();
+	});
+
+	it("separates main and side-pot criteria and excludes side pots from the main maximum", () => {
+		render(<JudgeRubric criteria={[sidepot, innovation, impact]} />);
+		expect(
+			screen.getByRole("heading", { name: "Main judging criteria" })
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Side pots" })
+		).toBeInTheDocument();
+		expect(
+			screen.getByText("2 main criteria · 20 maximum points · 1 side pot")
+		).toBeInTheDocument();
+	});
+
+	it("expands all criteria for comparison and preserves collapsed choices across updates", () => {
+		const { rerender } = render(
+			<JudgeRubric criteria={[innovation, impact, sidepot]} />
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+		for (const name of [/Innovation/, /Impact/, /Best AI/])
+			expect(screen.getByRole("button", { name })).toHaveAttribute(
+				"aria-expanded",
+				"true"
+			);
+		fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
+		rerender(
+			<JudgeRubric
+				criteria={[
+					{ ...innovation, description: "Updated description" },
+					impact,
+					sidepot
+				]}
+			/>
+		);
+		for (const name of [/Innovation/, /Impact/, /Best AI/])
+			expect(screen.getByRole("button", { name })).toHaveAttribute(
+				"aria-expanded",
+				"false"
+			);
+	});
+
+	it("shows missing-description guidance and handles side-pot-only rubrics", () => {
+		render(<JudgeRubric criteria={[{ ...sidepot, description: " " }]} />);
+		expect(
+			screen.getByText(/No criterion-specific description has been provided/)
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(/Assess how well this project meets the Best AI sidepot/)
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("heading", { name: "Main judging criteria" })
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByText("No main judging criteria configured · 1 side pot")
+		).toBeInTheDocument();
+	});
+
+	it("opens the first criterion when previously empty data becomes available", () => {
+		const { rerender } = render(<JudgeRubric criteria={[]} />);
+		rerender(<JudgeRubric criteria={[impact]} />);
+		expect(screen.getByRole("button", { name: /Impact/ })).toHaveAttribute(
+			"aria-expanded",
+			"true"
+		);
 	});
 });

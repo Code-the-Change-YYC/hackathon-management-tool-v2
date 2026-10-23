@@ -114,7 +114,7 @@ export function ParticipantRubric({
 								<span className="max-w-24 shrink-0 text-right font-medium text-[11px]/4 uppercase">
 									{criterion.isSidepot ? "Sidepot · " : ""}
 									{value !== undefined
-										? `${Number(value.toFixed(1))} / `
+										? `${Number(value.toFixed(2))} / `
 										: criterion.isSidepot
 											? "0–"
 											: "1–"}
