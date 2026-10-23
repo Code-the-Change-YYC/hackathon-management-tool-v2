@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AutoRefresh } from "@/app/components/participant/AutoRefresh";
+import { AutoRefresh } from "@/app/components/AutoRefresh";
 import { ScheduleView } from "@/app/components/participant/schedule/ScheduleView";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";

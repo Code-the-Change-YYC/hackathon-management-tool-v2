@@ -2,6 +2,7 @@
 
 import { differenceInMinutes, isAfter, isWithinInterval } from "date-fns";
 import Image from "next/image";
+import { useCurrentTime } from "@/hooks/use-current-time";
 import { formatTime } from "@/lib/datetime";
 import type { RouterOutputs } from "@/trpc/react";
 import { EventTicketStatus } from "@/types/types";
@@ -56,7 +57,7 @@ interface MealTicketProps {
 
 export function MealTicket({ displayName, ticket }: MealTicketProps) {
 	const ticketMealName = ticket?.event.title ?? "Meal";
-	const ticketDescription = getTicketDescription(ticket, new Date());
+	const ticketDescription = getTicketDescription(ticket, useCurrentTime());
 
 	return (
 		<section

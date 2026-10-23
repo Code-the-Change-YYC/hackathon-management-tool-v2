@@ -7,6 +7,12 @@ import {
 } from "@/app/components/ConfirmAlertDialog";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle
+} from "@/app/components/ui/empty";
 import { Field, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -17,19 +23,14 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
+import { useRefresh } from "@/hooks/use-refresh";
 import { tryCatch } from "@/lib/utils";
-import { api, type RouterOutputs } from "@/trpc/react";
+import { api } from "@/trpc/react";
+import { type Criterion, ManagementSection } from "./judgingShared";
 
-type Criterion = RouterOutputs["criteria"]["getAll"][number];
-
-import { ManagementSection } from "./judgingShared";
-
-export function CriteriaManagement() {
+export function CriteriaManagement({ criteria }: { criteria: Criterion[] }) {
 	const { confirm, dialogProps } = useConfirmDialog();
-	const utils = api.useUtils();
-	const roundsQuery = api.judgingRounds.getAll.useQuery();
-	const [roundIds, setRoundIds] = useState<string[]>([]);
-	const criteriaQuery = api.criteria.getAll.useQuery();
+	const { isRefreshing, refresh } = useRefresh();
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [name, setName] = useState("");
 	const [maxScore, setMaxScore] = useState(10);
@@ -42,24 +43,21 @@ export function CriteriaManagement() {
 
 	const resetForm = () => {
 		setEditingId(null);
-		setRoundIds([]);
 		setName("");
 		setMaxScore(10);
 		setIsSidepot(false);
 	};
+	const isSaving =
+		createCriterion.isPending || updateCriterion.isPending || isRefreshing;
+
 	const submit = async () => {
-		if (!name.trim() || createCriterion.isPending || updateCriterion.isPending)
-			return;
+		if (!name.trim() || isSaving) return;
 		setMessage("");
-		const values = { roundIds, isSidepot, maxScore, name: name.trim() };
-		const { error } = await tryCatch(
-			(editingId
+		const values = { roundIds: [], isSidepot, maxScore, name: name.trim() };
+		const { error } = await tryCatch<unknown>(
+			editingId
 				? updateCriterion.mutateAsync({ id: editingId, ...values })
 				: createCriterion.mutateAsync(values)
-			).then(async () => {
-				resetForm();
-				await utils.criteria.getAll.invalidate();
-			})
 		);
 		if (error) {
 			setMessage(
@@ -67,7 +65,10 @@ export function CriteriaManagement() {
 			);
 			return;
 		}
-		setMessage(editingId ? "Criterion updated." : "Criterion created.");
+		refresh(() => {
+			resetForm();
+			setMessage(editingId ? "Criterion updated." : "Criterion created.");
+		});
 	};
 	const removeCriterion = async (criterion: Criterion) => {
 		if (deleteCriterion.isPending) return;
@@ -82,13 +83,7 @@ export function CriteriaManagement() {
 			return;
 		setMessage("");
 		const { error } = await tryCatch(
-			deleteCriterion.mutateAsync({ id: criterion.id }).then(async () => {
-				await Promise.all([
-					utils.criteria.getAll.invalidate(),
-					utils.teams.getRankings.invalidate()
-				]);
-				resetForm();
-			})
+			deleteCriterion.mutateAsync({ id: criterion.id })
 		);
 		if (error) {
 			setMessage(
@@ -96,7 +91,10 @@ export function CriteriaManagement() {
 			);
 			return;
 		}
-		setMessage("Criterion deleted.");
+		refresh(() => {
+			resetForm();
+			setMessage("Criterion deleted.");
+		});
 	};
 
 	return (
@@ -138,11 +136,7 @@ export function CriteriaManagement() {
 				</div>
 				<div className="flex gap-2">
 					<Button
-						disabled={
-							!name.trim() ||
-							createCriterion.isPending ||
-							updateCriterion.isPending
-						}
+						disabled={!name.trim() || isSaving}
 						onClick={() => void submit()}
 						type="button"
 					>
@@ -156,29 +150,9 @@ export function CriteriaManagement() {
 				</div>
 			</div>
 
-			<fieldset className="mt-4 flex flex-wrap gap-4">
-				<legend className="mb-2 text-sm">
-					Apply to rounds (none selected means all rounds)
-				</legend>
-				{(roundsQuery.data ?? []).map((round) => (
-					<Field key={round.id} orientation="horizontal">
-						<Checkbox
-							checked={roundIds.includes(round.id)}
-							id={`criterion-round-${round.id}`}
-							onCheckedChange={(checked) =>
-								setRoundIds((ids) =>
-									checked
-										? [...ids, round.id]
-										: ids.filter((id) => id !== round.id)
-								)
-							}
-						/>
-						<FieldLabel htmlFor={`criterion-round-${round.id}`}>
-							{round.name}
-						</FieldLabel>
-					</Field>
-				))}
-			</fieldset>
+			<p className="mt-4 text-muted-foreground text-sm">
+				The same rubric is used for every judging round.
+			</p>
 			<div className="mt-6">
 				<Table className="min-w-155">
 					<TableHeader>
@@ -190,7 +164,7 @@ export function CriteriaManagement() {
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{(criteriaQuery.data ?? []).map((criterion) => (
+						{criteria.map((criterion) => (
 							<TableRow key={criterion.id}>
 								<TableCell className="px-3 py-4 font-medium">
 									{criterion.name}
@@ -207,7 +181,6 @@ export function CriteriaManagement() {
 											onClick={() => {
 												setEditingId(criterion.id);
 												setName(criterion.name);
-												setRoundIds(criterion.roundIds ?? []);
 												setMaxScore(criterion.maxScore);
 												setIsSidepot(criterion.isSidepot);
 												setMessage("");
@@ -219,7 +192,7 @@ export function CriteriaManagement() {
 											Edit
 										</Button>
 										<Button
-											disabled={deleteCriterion.isPending}
+											disabled={deleteCriterion.isPending || isRefreshing}
 											onClick={() => void removeCriterion(criterion)}
 											size="sm"
 											type="button"
@@ -233,6 +206,16 @@ export function CriteriaManagement() {
 						))}
 					</TableBody>
 				</Table>
+				{criteria.length === 0 && (
+					<Empty>
+						<EmptyHeader>
+							<EmptyTitle>No judging criteria yet</EmptyTitle>
+							<EmptyDescription>
+								Add the categories judges will score above.
+							</EmptyDescription>
+						</EmptyHeader>
+					</Empty>
+				)}
 			</div>
 			<p
 				aria-live="polite"

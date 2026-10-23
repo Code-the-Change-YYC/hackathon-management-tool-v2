@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AutoRefresh } from "@/app/components/participant/AutoRefresh";
+import { AutoRefresh } from "@/app/components/AutoRefresh";
 import { JudgingView } from "@/app/components/participant/judging/JudgingView";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";

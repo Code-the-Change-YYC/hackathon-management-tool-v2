@@ -1,8 +1,7 @@
 "use client";
 
 import { Edit2Line } from "@mingcute/react";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	Avatar,
@@ -20,6 +19,7 @@ import {
 import { FieldLabel } from "@/app/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Spinner } from "@/app/components/ui/spinner";
+import { useRefresh } from "@/hooks/use-refresh";
 import {
 	AVATAR_IDS,
 	AVATAR_LABELS,
@@ -35,11 +35,10 @@ export function AvatarPicker({
 }: {
 	currentAvatarSrc: string;
 }) {
-	const router = useRouter();
 	const currentAvatarId = getAvatarId(currentAvatarSrc);
 	const [open, setOpen] = useState(false);
 	const [selectedAvatarId, setSelectedAvatarId] = useState(currentAvatarId);
-	const [isRefreshing, startTransition] = useTransition();
+	const { isRefreshing, refresh } = useRefresh();
 	const updateAvatar = api.users.updateAvatar.useMutation();
 
 	const isSaving = updateAvatar.isPending || isRefreshing;
@@ -70,8 +69,7 @@ export function AvatarPicker({
 				onSuccess: () => {
 					toast.success("Profile picture was updated");
 					// Close once the refreshed avatar is ready so nothing flickers.
-					startTransition(() => {
-						router.refresh();
+					refresh(() => {
 						setOpen(false);
 					});
 				}

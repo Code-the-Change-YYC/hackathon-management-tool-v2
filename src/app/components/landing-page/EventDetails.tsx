@@ -12,8 +12,8 @@ function EventDetailsItem({ icon, label }: EventDetailProps) {
 	const Icon = icon;
 
 	return (
-		<div className="group flex items-center gap-3 rounded-3xl bg-white/50 p-3 md:gap-4 md:p-4">
-			<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-dark-pink transition-transform duration-300 group-hover:scale-110 md:h-16 md:w-16">
+		<div className="flex items-center gap-3 rounded-3xl bg-white/50 p-3 md:gap-4 md:p-4">
+			<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-dark-pink md:h-16 md:w-16">
 				<Icon aria-hidden="true" size={24} />
 			</div>
 			<span className="font-semibold text-base text-dark-grey md:text-xl">
@@ -23,7 +23,7 @@ function EventDetailsItem({ icon, label }: EventDetailProps) {
 	);
 }
 
-const EVENT_LOCATION_LINK = "https://share.google/YAkQs91U42vi1x1t4";
+const EVENT_LOCATION_LINK = "https://maps.app.goo.gl/4GxvdhXNyAgz474K7";
 
 export default function EventDetails() {
 	return (
@@ -40,12 +40,11 @@ export default function EventDetails() {
 						target="_blank"
 					>
 						<Image
-							alt="University of Calgary engineering building"
+							alt="University of Calgary ICT building"
 							className="h-full w-full object-cover"
 							fill
-							loading="eager"
 							sizes="(min-width: 1024px) 40vw, 100vw"
-							src="/svgs/landingPage/event_room.jpg"
+							src="/svgs/landingPage/ict_build.jpg"
 						/>
 					</Link>
 

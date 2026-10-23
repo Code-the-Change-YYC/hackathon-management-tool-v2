@@ -8,6 +8,8 @@ import {
 import Link from "next/link";
 import type { MingCuteIcon } from "@/types/landingPage";
 
+const CTC_WEBSITE_URL = "https://www.codethechangeyyc.ca/";
+
 const SOCIAL_LINKS: { label: string; href: string; icon: MingCuteIcon }[] = [
 	{
 		label: "Facebook",
@@ -57,7 +59,15 @@ export default function Footer() {
 				</div>
 
 				<p className="font-medium text-sm text-white/80">
-					Copyright © Code The Change YYC
+					Copyright ©{" "}
+					<Link
+						className="text-white/80! underline transition-opacity hover:opacity-75"
+						href={CTC_WEBSITE_URL}
+						rel="noopener noreferrer"
+						target="_blank"
+					>
+						Code The Change YYC
+					</Link>
 				</p>
 			</div>
 		</footer>
