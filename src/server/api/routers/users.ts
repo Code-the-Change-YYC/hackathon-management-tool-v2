@@ -56,7 +56,7 @@ export const usersRouter = createTRPCRouter({
 		});
 		return users;
 	}),
-	getTeamsTableInformation: adminProcedure.query(async ({ ctx }) => {
+	getUserWithTeam: adminProcedure.query(async ({ ctx }) => {
 		const rows = await ctx.db.query.user.findMany({
 			orderBy: [desc(user.createdAt)],
 			columns: {

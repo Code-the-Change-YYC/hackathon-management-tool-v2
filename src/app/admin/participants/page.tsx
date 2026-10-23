@@ -244,7 +244,7 @@ export const metadata: Metadata = {
 export default async function AdminParticipantsPage() {
 	await requireRole([Role.ADMIN]);
 
-	const participants = await api.users.getTeamsTableInformation();
+	const participants = await api.users.getUserWithTeam();
 
 	return <RegisteredUsersView participants={participants} />;
 }
