@@ -63,24 +63,24 @@ function matchesFilters(participant: Participant, filters: ParticipantFilters) {
 	if (filters.food.length === 1) {
 		const wantsRegistered = filters.food[0] === "registered";
 
-		if (participant.wantsFood !== wantsRegistered) {
+		if (participant.registeredForFood !== wantsRegistered) {
 			return false;
 		}
 	}
 
-	if (!participant.school) {
+	if (!participant.institution) {
 		return false;
 	}
 	if (
 		filters.institutions.length > 0 &&
-		!filters.institutions.includes(participant.school)
+		!filters.institutions.includes(participant.institution)
 	) {
 		return false;
 	}
 
 	if (
 		filters.majors.length > 0 &&
-		!(participant.program && filters.majors.includes(participant.program))
+		!(participant.major && filters.majors.includes(participant.major))
 	) {
 		return false;
 	}

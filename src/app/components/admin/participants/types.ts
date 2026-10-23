@@ -13,9 +13,9 @@ export type Participant = {
 	role: Role | null;
 	teamId: string | null;
 	teamName: string | null;
-	school: string | null;
-	program: string | null;
-	wantsFood: boolean | null;
+	institution: string | null;
+	major: string | null;
+	registeredForFood: boolean | null;
 };
 
 export type FoodFilter = "registered" | "not-registered";

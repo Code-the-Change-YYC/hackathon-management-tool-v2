@@ -90,7 +90,10 @@ export const usersRouter = createTRPCRouter({
 				...person,
 				role: getRole(person.role),
 				teamId: team?.id ?? null,
-				teamName: team?.name ?? null
+				teamName: team?.name ?? null,
+				institution: person.school,
+				major: person.program,
+				registeredForFood: person.wantsFood
 			};
 		});
 	}),
