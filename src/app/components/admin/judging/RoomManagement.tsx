@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import {
 	ConfirmAlertDialog,
 	useConfirmDialog
@@ -9,73 +9,67 @@ import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle
+} from "@/app/components/ui/empty";
+import {
 	Field,
 	FieldLabel,
 	FieldLegend,
 	FieldSet
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import { useRefresh } from "@/hooks/use-refresh";
 import { tryCatch } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
 import {
-	byNameThenId,
+	type Assignment,
+	type Judge,
 	type LayoutRoomInput,
-	ManagementSection
+	ManagementSection,
+	type Room
 } from "./judgingShared";
 
-export function RoomManagement({ roundId }: { roundId: string }) {
+export function RoomManagement({
+	roundId,
+	rooms,
+	assignments,
+	judges
+}: {
+	roundId: string;
+	rooms: Room[];
+	assignments: Assignment[];
+	judges: Judge[];
+}) {
 	const { confirm, dialogProps } = useConfirmDialog();
-	const utils = api.useUtils();
-	const layoutQuery = api.judgingRooms.getLayoutByRound.useQuery(
-		{ roundId },
-		{ enabled: Boolean(roundId) }
-	);
-	const assignmentsQuery = api.judgingAssignments.getByRound.useQuery(
-		{ roundId },
-		{ enabled: Boolean(roundId) }
-	);
-	const usersQuery = api.users.getAll.useQuery();
-	const judges = useMemo(
-		() =>
-			(usersQuery.data ?? [])
-				.filter((person) => person.role === "judge")
-				.sort(byNameThenId),
-		[usersQuery.data]
-	);
-	const [links, setLinks] = useState<Record<string, string>>({});
-	const [staff, setStaff] = useState<Record<string, string[]>>({});
+	const { refresh } = useRefresh();
+	// Unsaved edits by room ID. Rooms without an edit show their saved values,
+	// so a refresh after another save on the page keeps these edits.
+	const [linkEdits, setLinkEdits] = useState<Record<string, string>>({});
+	const [staffEdits, setStaffEdits] = useState<Record<string, string[]>>({});
 	const [message, setMessage] = useState("");
 	const [busyRoomId, setBusyRoomId] = useState<string | null>(null);
 	const saveLayout = api.judgingRooms.saveLayoutByRound.useMutation();
 
-	useEffect(() => {
-		const nextLinks: Record<string, string> = {};
-		const nextStaff: Record<string, string[]> = {};
-		for (const room of layoutQuery.data?.rooms ?? []) {
-			nextLinks[room.id] = room.roomLink ?? "";
-			nextStaff[room.id] = room.staffIds;
-		}
-		setLinks(nextLinks);
-		setStaff(nextStaff);
-	}, [layoutQuery.data]);
+	const linkFor = (room: Room) => linkEdits[room.id] ?? room.roomLink ?? "";
+	const staffFor = (room: Room) => staffEdits[room.id] ?? room.staffIds;
 
-	const invalidate = async () => {
-		await Promise.all([
-			utils.judgingRooms.getLayoutByRound.invalidate({ roundId }),
-			utils.judgingAssignments.getByRound.invalidate({ roundId }),
-			utils.judgingAssignments.getAll.invalidate()
-		]);
+	const clearEdits = (roomId: string) => {
+		setLinkEdits(({ [roomId]: _, ...others }) => others);
+		setStaffEdits(({ [roomId]: _, ...others }) => others);
 	};
-	const hasScoredAssignments = (assignmentsQuery.data ?? []).some(
+
+	const hasScoredAssignments = assignments.some(
 		(assignment) => assignment.scores.length > 0
 	);
-	const rooms = layoutQuery.data?.rooms ?? [];
 
 	const toLayoutRoom = (room: LayoutRoomInput): LayoutRoomInput => ({
 		id: room.id,
-		roomLink: links[room.id] ?? room.roomLink ?? "",
-		staffIds: staff[room.id] ?? room.staffIds ?? [],
+		roomLink: room.roomLink ?? "",
+		staffIds: room.staffIds ?? [],
 		teamIds: room.teamIds ?? [],
 		teamTimeSlots: room.teamTimeSlots ?? {}
 	});
@@ -97,7 +91,7 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 			return;
 		}
 		if (
-			(assignmentsQuery.data?.length ?? 0) > 0 &&
+			assignments.length > 0 &&
 			!(await confirm({
 				title: "Replace room layout?",
 				description:
@@ -112,27 +106,38 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 		setBusyRoomId(roomId ?? "layout");
 		setMessage("");
 		const { error } = await tryCatch(
-			saveLayout
-				.mutateAsync({
-					layout: { rooms: nextRooms.map(toLayoutRoom) },
-					roundId
-				})
-				.then(invalidate)
+			saveLayout.mutateAsync({
+				layout: { rooms: nextRooms.map(toLayoutRoom) },
+				roundId
+			})
 		);
-		setBusyRoomId(null);
 		if (error) {
+			setBusyRoomId(null);
 			setMessage(
 				error instanceof Error ? error.message : "Room layout update failed."
 			);
 			return;
 		}
-		setMessage(successMessage);
+		refresh(() => {
+			if (roomId) clearEdits(roomId);
+			setBusyRoomId(null);
+			setMessage(successMessage);
+		});
 	};
 
-	const saveRoom = async (roomId: string) => {
+	// Saves only this room's edits; other rooms keep their saved values.
+	const saveRoom = async (room: Room) => {
 		await persistRooms({
-			nextRooms: rooms,
-			roomId,
+			nextRooms: rooms.map((candidate) =>
+				candidate.id === room.id
+					? {
+							...candidate,
+							roomLink: linkFor(candidate),
+							staffIds: staffFor(candidate)
+						}
+					: candidate
+			),
+			roomId: room.id,
 			successMessage: "Room details saved."
 		});
 	};
@@ -171,12 +176,7 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 						: "Select a round to manage its rooms."}
 				</p>
 				<Button
-					disabled={
-						!roundId ||
-						saveLayout.isPending ||
-						hasScoredAssignments ||
-						layoutQuery.isLoading
-					}
+					disabled={!roundId || saveLayout.isPending || hasScoredAssignments}
 					onClick={async () => {
 						await persistRooms({
 							nextRooms: [
@@ -237,13 +237,13 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 									<Input
 										className="h-12"
 										onChange={(event) =>
-											setLinks((current) => ({
+											setLinkEdits((current) => ({
 												...current,
 												[room.id]: event.target.value
 											}))
 										}
 										placeholder="https://..."
-										value={links[room.id] ?? ""}
+										value={linkFor(room)}
 									/>
 								</Field>
 							</div>
@@ -259,11 +259,11 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 											key={judge.id}
 										>
 											<Checkbox
-												checked={(staff[room.id] ?? []).includes(judge.id)}
+												checked={staffFor(room).includes(judge.id)}
 												id={`room-${room.id}-judge-${judge.id}`}
 												onCheckedChange={(checked) => {
-													setStaff((current) => {
-														const selected = current[room.id] ?? [];
+													setStaffEdits((current) => {
+														const selected = current[room.id] ?? room.staffIds;
 														return {
 															...current,
 															[room.id]: checked
@@ -291,7 +291,7 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 										busyRoomId === room.id ||
 										hasScoredAssignments
 									}
-									onClick={() => void saveRoom(room.id)}
+									onClick={() => void saveRoom(room)}
 									title={
 										hasScoredAssignments
 											? "Scored rounds cannot be changed."
@@ -307,11 +307,16 @@ export function RoomManagement({ roundId }: { roundId: string }) {
 				))}
 			</div>
 
-			{roundId && !layoutQuery.isLoading && rooms.length === 0 ? (
-				<p className="rounded-xl border border-border border-dashed p-6 text-center text-muted-foreground">
-					This round has no rooms yet.
-				</p>
-			) : null}
+			{roundId && rooms.length === 0 && (
+				<Empty>
+					<EmptyHeader>
+						<EmptyTitle>No rooms yet</EmptyTitle>
+						<EmptyDescription>
+							Assign teams to rooms above, or add a room here.
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
+			)}
 			<p
 				aria-live="polite"
 				className="mt-3 mb-0 min-h-5 text-muted-foreground text-sm"

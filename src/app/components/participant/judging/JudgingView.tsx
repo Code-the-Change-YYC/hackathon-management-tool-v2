@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Banner from "@/app/components/Banner";
-import type { Criterion } from "@/app/components/judges/judgePortal";
+import type { Criterion } from "@/app/components/judge/judgePortal";
 import PageHeader from "@/app/components/PageHeader";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import {
