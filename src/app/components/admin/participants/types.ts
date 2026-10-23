@@ -7,15 +7,15 @@ import { Role } from "@/types/types";
  */
 export type Participant = {
 	id: string;
-	firstName: string;
-	lastName: string;
+	firstName: string | null;
+	lastName: string | null;
 	email: string;
-	role: Role;
+	role: Role | null;
 	teamId: string | null;
 	teamName: string | null;
-	institution: string;
-	major: string | null;
-	registeredForFood: boolean;
+	school: string | null;
+	program: string | null;
+	wantsFood: boolean | null;
 };
 
 export type FoodFilter = "registered" | "not-registered";

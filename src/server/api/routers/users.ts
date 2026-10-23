@@ -34,12 +34,65 @@ import { user } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
 import { applyInvitedRole } from "./invitations";
 
+function getRole(role: string | null) {
+	if (role === null) return null;
+
+	switch (role.toLocaleLowerCase()) {
+		case "admin":
+			return Role.ADMIN;
+		case "judge":
+			return Role.JUDGE;
+		case "participant":
+			return Role.PARTICIPANT;
+		default:
+			return null;
+	}
+}
+
 export const usersRouter = createTRPCRouter({
 	getAll: adminProcedure.query(async ({ ctx }) => {
 		const users = await ctx.db.query.user.findMany({
 			orderBy: [desc(user.createdAt)]
 		});
 		return users;
+	}),
+	getTeamsTableInformation: adminProcedure.query(async ({ ctx }) => {
+		const rows = await ctx.db.query.user.findMany({
+			orderBy: [desc(user.createdAt)],
+			columns: {
+				id: true,
+				firstName: true,
+				lastName: true,
+				email: true,
+				role: true,
+				school: true,
+				program: true,
+				wantsFood: true
+			},
+			with: {
+				members: {
+					with: {
+						organization: {
+							columns: {
+								id: true,
+								name: true
+							}
+						}
+					}
+				}
+			}
+		});
+
+		return rows.map(({ members, ...person }) => {
+			const team = members[0]?.organization;
+
+			return {
+				...person,
+				role: getRole(person.role),
+				teamId: team?.id ?? null,
+				teamName: team?.name ?? null
+			};
+		});
 	}),
 	updateUserDietaryRestrictions: protectedProcedure
 		.input(

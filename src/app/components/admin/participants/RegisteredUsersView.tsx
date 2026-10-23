@@ -49,10 +49,13 @@ function matchesSearch(participant: Participant, search: string) {
 		participant.email,
 		participant.teamId ?? "",
 		participant.teamName ?? ""
-	].some((value) => value.toLowerCase().includes(needle));
+	].some((value) => (value ?? "").toLowerCase().includes(needle));
 }
 
 function matchesFilters(participant: Participant, filters: ParticipantFilters) {
+	if (!participant.role) {
+		return false;
+	}
 	if (filters.roles.length > 0 && !filters.roles.includes(participant.role)) {
 		return false;
 	}
@@ -60,21 +63,24 @@ function matchesFilters(participant: Participant, filters: ParticipantFilters) {
 	if (filters.food.length === 1) {
 		const wantsRegistered = filters.food[0] === "registered";
 
-		if (participant.registeredForFood !== wantsRegistered) {
+		if (participant.wantsFood !== wantsRegistered) {
 			return false;
 		}
 	}
 
+	if (!participant.school) {
+		return false;
+	}
 	if (
 		filters.institutions.length > 0 &&
-		!filters.institutions.includes(participant.institution)
+		!filters.institutions.includes(participant.school)
 	) {
 		return false;
 	}
 
 	if (
 		filters.majors.length > 0 &&
-		!(participant.major && filters.majors.includes(participant.major))
+		!(participant.program && filters.majors.includes(participant.program))
 	) {
 		return false;
 	}
@@ -89,13 +95,13 @@ function compareParticipants(
 ) {
 	switch (sort) {
 		case "role-asc":
-			return a.role.localeCompare(b.role);
+			return (a.role ?? "").localeCompare(b.role ?? "");
 		case "role-desc":
-			return b.role.localeCompare(a.role);
+			return (b.role ?? "").localeCompare(a.role ?? "");
 		case "name-asc":
-			return a.firstName.localeCompare(b.firstName);
+			return (a.firstName ?? "").localeCompare(b.firstName ?? "");
 		case "name-desc":
-			return b.firstName.localeCompare(a.firstName);
+			return (b.firstName ?? "").localeCompare(a.firstName ?? "");
 		default:
 			return 0;
 	}
