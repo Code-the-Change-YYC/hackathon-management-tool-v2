@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MealsView } from "@/app/components/admin/meals/MealsView";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
-import { EventStatus, Role } from "@/types/types";
+import { Role } from "@/types/types";
 
 export const metadata: Metadata = {
 	title: "Meals | Hack the Change"
@@ -10,23 +10,18 @@ export const metadata: Metadata = {
 
 export default async function MealsPage() {
 	await requireRole([Role.ADMIN]);
-	const [meals, ticketsScanned, dietary] = await Promise.all([
+	const [meals, nextMeal, ticketsScanned, dietary] = await Promise.all([
 		api.meals.getAllMeals(),
+		api.meals.getNextMeal(),
 		api.events.getMealAttendanceCount(),
 		api.users.getDietaryAnalytics()
 	]);
-	const now = new Date();
-	const scannableMeals = meals.filter(
-		(meal) => meal.status === EventStatus.ACTIVE && meal.endTime > now
-	);
-	const scannerMealId =
-		scannableMeals[Math.floor(Math.random() * scannableMeals.length)]?.id;
 
 	return (
 		<MealsView
 			dietary={dietary}
 			meals={meals}
-			scannerMealId={scannerMealId}
+			scannerMealId={nextMeal?.id}
 			ticketsScanned={ticketsScanned}
 		/>
 	);

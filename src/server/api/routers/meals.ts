@@ -1,4 +1,4 @@
-import { and, asc, eq, gte } from "drizzle-orm";
+import { and, asc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
@@ -60,7 +60,7 @@ export const mealsRouter = createTRPCRouter({
 			where: and(
 				eq(event.type, EventType.FOOD),
 				eq(event.status, EventStatus.ACTIVE),
-				gte(event.endTime, new Date())
+				gt(event.endTime, new Date())
 			),
 			orderBy: [asc(event.startTime)]
 		});
