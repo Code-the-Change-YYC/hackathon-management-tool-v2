@@ -36,6 +36,7 @@ export default function MealAttendees({
 			{attendees.map((attendee) => (
 				<li
 					className="rounded-md border border-medium-grey p-2"
+					data-attendee-id={attendee.userId}
 					key={attendee.id}
 				>
 					<div className="font-medium">{attendee.userName}</div>
