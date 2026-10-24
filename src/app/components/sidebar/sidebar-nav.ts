@@ -15,8 +15,6 @@ import {
 	LinkLine,
 	QuestionFill,
 	QuestionLine,
-	Settings3Fill,
-	Settings3Line,
 	TaskFill,
 	TaskLine,
 	User3Fill,
@@ -33,7 +31,6 @@ export const NAV_ICONS = {
 	question: { line: QuestionLine, fill: QuestionFill },
 	discord: { line: DiscordLine, fill: DiscordFill },
 	user: { line: User3Line, fill: User3Fill },
-	settings: { line: Settings3Line, fill: Settings3Fill },
 	code: { line: CodeLine, fill: CodeFill }
 } as const;
 

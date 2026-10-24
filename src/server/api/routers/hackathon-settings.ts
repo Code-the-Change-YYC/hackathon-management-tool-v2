@@ -1,15 +1,19 @@
-import { and, eq, isNull, ne, or } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { RESET_CONFIRMATION_PHRASE } from "@/lib/constants";
 import { JUDGING_PHASES } from "@/lib/judging";
+import {
+	countEventsOutside,
+	eventsOutsideMessage,
+	hackathonDatesSchema
+} from "@/lib/validation/hackathon-dates";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	publicProcedure
 } from "@/server/api/trpc";
-import { organization, user } from "@/server/db/auth-schema";
-import { hackathonSettings, judgingRooms, scores } from "@/server/db/schema";
-import { Role } from "@/types/types";
+import { event } from "@/server/db/event-schema";
+import { hackathonSettings } from "@/server/db/schema";
 
 export const hackathonSettingsRouter = createTRPCRouter({
 	// Get current hackathon settings
@@ -24,11 +28,7 @@ export const hackathonSettingsRouter = createTRPCRouter({
 	update: adminProcedure
 		.input(
 			z.object({
-				startDate: z.date().optional(),
-				endDate: z.date().optional(),
-				submissionDeadline: z.date().optional().nullable(),
 				judgingPhase: z.enum(JUDGING_PHASES).optional(),
-				isActive: z.boolean().optional(),
 				currentRoundId: z.string().uuid().optional().nullable()
 			})
 		)
@@ -47,54 +47,29 @@ export const hackathonSettingsRouter = createTRPCRouter({
 			return updated;
 		}),
 
-	// Reset hackathon tables (admin only)
-	resetHackathon: adminProcedure
-		.input(
-			z
-				.object({
-					confirmation: z.literal(RESET_CONFIRMATION_PHRASE),
-					users: z.boolean().default(false),
-					teams: z.boolean().default(false),
-					rooms: z.boolean().default(false),
-					scores: z.boolean().default(false)
-				})
-				.refine(
-					({ users, teams, rooms, scores }) =>
-						users || teams || rooms || scores,
-					{ message: "Select at least one reset field." }
-				)
-		)
+	// Update the hackathon's start, end and submission deadline (admin only)
+	updateDates: adminProcedure
+		.input(hackathonDatesSchema)
 		.mutation(async ({ ctx, input }) => {
-			return ctx.db.transaction(async (tx) => {
-				// Rooms and teams own the assignments that scores belong to, so
-				// deleting either also explicitly resets scores.
-				const shouldResetScores = input.scores || input.rooms || input.teams;
+			const events = await ctx.db
+				.select({ startTime: event.startTime })
+				.from(event);
+			const { before, after } = countEventsOutside(
+				events.map(({ startTime }) => startTime),
+				input
+			);
+			if (before + after > 0) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: eventsOutsideMessage(before + after)
+				});
+			}
 
-				if (shouldResetScores) {
-					await tx.delete(scores);
-				}
-
-				if (input.rooms) {
-					await tx.delete(judgingRooms);
-				}
-
-				if (input.teams) {
-					await tx.delete(organization);
-				}
-
-				if (input.users) {
-					// Reset users while preserving admins and judges
-					await tx
-						.delete(user)
-						.where(
-							or(
-								isNull(user.role),
-								and(ne(user.role, Role.ADMIN), ne(user.role, Role.JUDGE))
-							)
-						);
-				}
-
-				return { success: true };
-			});
+			const [updated] = await ctx.db
+				.insert(hackathonSettings)
+				.values({ id: 1, ...input })
+				.onConflictDoUpdate({ target: hackathonSettings.id, set: input })
+				.returning();
+			return updated;
 		})
 });
