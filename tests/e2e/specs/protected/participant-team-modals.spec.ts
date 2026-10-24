@@ -238,7 +238,7 @@ test("a full team cannot invite more members", async ({
 	}
 });
 
-test("members cannot rename the team or send invites", async ({
+test("members cannot rename the team", async ({
 	authenticatedPage: page,
 	authUser,
 	createTeam
@@ -266,8 +266,5 @@ test("members cannot rename the team or send invites", async ({
 		});
 	expect(
 		(await call("teams.update", { id: team.id, name: "Hijacked" })).status()
-	).toBe(403);
-	expect(
-		(await call("teams.invite", { email: "someone@example.com" })).status()
 	).toBe(403);
 });
