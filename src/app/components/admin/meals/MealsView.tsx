@@ -69,7 +69,7 @@ export function MealsView({
 			<MealAnalytics dietary={dietary} ticketsScanned={ticketsScanned} />
 			{isScannerOpen && scannerMealId && (
 				<Dialog onOpenChange={setIsScannerOpen} open>
-					<DialogContent className="sm:max-w-xl lg:max-w-4xl">
+					<DialogContent className="h-[min(90dvh,48rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-xl lg:max-w-4xl">
 						<DialogHeader>
 							<DialogTitle>Scan meal tickets</DialogTitle>
 							<DialogDescription>
