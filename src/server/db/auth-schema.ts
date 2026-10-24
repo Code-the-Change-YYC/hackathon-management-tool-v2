@@ -24,7 +24,6 @@ import {
 	boolean,
 	index,
 	integer,
-	pgTableCreator,
 	text,
 	timestamp,
 	uniqueIndex
@@ -34,6 +33,7 @@ import {
 	LEVELS_OF_STUDY,
 	PROGRAMS
 } from "@/lib/validation/signup";
+import { createTable } from "./table";
 
 export {
 	DIETARY_RESTRICTIONS,
@@ -44,8 +44,6 @@ export {
 
 const MEMBER_ROLE_VALUES = ["owner", "member", "admin"] as const;
 export const PRESCREEN_STATUS_VALUES = ["pending", "passed", "failed"] as const;
-
-export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
 export const user = createTable("user", {
 	id: text("id").primaryKey(),

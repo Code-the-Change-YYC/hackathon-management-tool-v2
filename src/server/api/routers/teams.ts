@@ -37,13 +37,13 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
+import { hackathonSettings } from "@/server/db/admin-schema";
 import {
 	invitation,
 	member,
 	organization,
 	user
 } from "@/server/db/auth-schema";
-import { hackathonSettings } from "@/server/db/schema";
 import { MEMBER_ROLES, type TeamRanking } from "@/types/types";
 
 type TeamMetadata = {

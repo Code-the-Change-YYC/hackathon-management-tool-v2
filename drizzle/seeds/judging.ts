@@ -1,13 +1,14 @@
 import { getEventDate } from "drizzle/seedUtils";
 import { db } from "@/server/db";
+import { hackathonSettings } from "@/server/db/admin-schema";
 import {
-	hackathonSettings,
+	criteria,
 	judgingAssignments,
 	judgingRoomStaff,
 	judgingRooms,
-	judgingRounds
-} from "@/server/db/schema";
-import { criteria, scores } from "@/server/db/scores-schema";
+	judgingRounds,
+	scores
+} from "@/server/db/judging-schema";
 import type { Organization, User } from "@/types/types";
 
 type SeedJudgingInput = {

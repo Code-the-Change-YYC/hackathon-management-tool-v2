@@ -7,8 +7,7 @@ import {
 	publicProcedure
 } from "@/server/api/trpc";
 import type { db } from "@/server/db";
-import { judgingRounds } from "@/server/db/schema";
-import { criteria } from "@/server/db/scores-schema";
+import { criteria, judgingRounds } from "@/server/db/judging-schema";
 
 async function validateRounds(database: typeof db, roundIds?: string[]) {
 	if (!roundIds?.length) return;

@@ -9,16 +9,16 @@ import {
 	judgeProcedure,
 	protectedProcedure
 } from "@/server/api/trpc";
+import { hackathonSettings } from "@/server/db/admin-schema";
 import { member, organization } from "@/server/db/auth-schema";
 import {
-	hackathonSettings,
+	criteria,
 	judgingAssignments,
 	judgingRoomStaff,
 	judgingRooms,
 	judgingRounds,
 	scores
-} from "@/server/db/schema";
-import { criteria } from "@/server/db/scores-schema";
+} from "@/server/db/judging-schema";
 
 type ScoreContext = Awaited<ReturnType<typeof createTRPCContext>>;
 

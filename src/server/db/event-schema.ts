@@ -2,7 +2,6 @@ import { relations, sql } from "drizzle-orm";
 import {
 	check,
 	index,
-	pgTableCreator,
 	text,
 	timestamp,
 	unique,
@@ -15,8 +14,7 @@ import {
 	EventType
 } from "@/types/types";
 import { user } from "./auth-schema";
-
-export const createTable = pgTableCreator((name) => `hackathon_${name}`);
+import { createTable } from "./table";
 
 export const event = createTable(
 	"event",

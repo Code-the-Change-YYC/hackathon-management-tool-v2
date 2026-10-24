@@ -2,11 +2,12 @@ import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { member } from "@/server/db/auth-schema";
 import {
+	criteria,
 	judgingAssignments,
 	judgingRooms,
-	judgingRounds
-} from "@/server/db/schema";
-import { criteria, scores } from "@/server/db/scores-schema";
+	judgingRounds,
+	scores
+} from "@/server/db/judging-schema";
 import type { User } from "@/types/types";
 import { Role } from "@/types/types";
 import { TeamFixtureTracker } from "../../../utils/teams";

@@ -5,7 +5,7 @@ import { asc } from "drizzle-orm";
 import { tryCatch } from "@/lib/utils";
 import { fetchContentful } from "@/server/contentful";
 import { db } from "@/server/db";
-import { criteria } from "@/server/db/scores-schema";
+import { criteria } from "@/server/db/judging-schema";
 import { mapJudges } from "./components/landing-page/data/judges";
 import { mapPastHackathonWinners } from "./components/landing-page/data/winners";
 

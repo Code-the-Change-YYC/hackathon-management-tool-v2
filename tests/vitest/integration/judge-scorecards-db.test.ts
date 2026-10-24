@@ -4,12 +4,13 @@ import { describe, expect, it } from "vitest";
 import { db } from "@/server/db";
 import { organization } from "@/server/db/auth-schema";
 import {
+	criteria,
 	judgingAssignments,
 	judgingRoomStaff,
 	judgingRooms,
-	judgingRounds
-} from "@/server/db/schema";
-import { criteria, scores } from "@/server/db/scores-schema";
+	judgingRounds,
+	scores
+} from "@/server/db/judging-schema";
 import { Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
 import { createAuthenticatedCaller } from "../helpers/auth";

@@ -5,7 +5,7 @@ import { criteriaRouter } from "@/server/api/routers/criteria";
 import { judgingAssignmentsRouter } from "@/server/api/routers/judging-assignments";
 import { scoresRouter } from "@/server/api/routers/scores";
 import { createTRPCContext } from "@/server/api/trpc";
-import { scores } from "@/server/db/scores-schema";
+import { scores } from "@/server/db/judging-schema";
 
 const mocks = vi.hoisted(() => ({
 	session: vi.fn(),

@@ -7,7 +7,7 @@ import {
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
-import { judgingRounds } from "@/server/db/schema";
+import { judgingRounds } from "@/server/db/judging-schema";
 
 export const judgingRoundsRouter = createTRPCRouter({
 	// Get all judging rounds

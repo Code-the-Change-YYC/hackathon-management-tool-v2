@@ -10,14 +10,14 @@ import {
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
+import { hackathonSettings } from "@/server/db/admin-schema";
 import { member, organization } from "@/server/db/auth-schema";
 import {
-	hackathonSettings,
 	judgingAssignments,
 	judgingRoomStaff,
 	judgingRooms,
 	scores
-} from "@/server/db/schema";
+} from "@/server/db/judging-schema";
 
 async function attachRoomNames<T extends { room: { id: string } }>(
 	db: Parameters<typeof getRoomDisplayNames>[0],

@@ -17,9 +17,9 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
+import { hackathonSettings } from "@/server/db/admin-schema";
 import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
-import { hackathonSettings } from "@/server/db/schema";
 import {
 	createEventTicketToken,
 	hashEventTicketToken
