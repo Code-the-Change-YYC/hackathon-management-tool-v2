@@ -31,10 +31,12 @@ export default async function JudgingCriteria() {
 				)}
 
 				{criteria.length > 0 && (
-					<ol className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8">
+					// Two columns built from four tracks, so an odd last card can sit
+					// centred across the middle two
+					<ol className="grid grid-cols-1 gap-6 md:grid-cols-4 lg:gap-8">
 						{criteria.map((criterion, index) => (
 							<li
-								className="flex flex-col gap-3 rounded-[30px] bg-white p-6 shadow-[8px_8px_0_0_var(--color-dark-green)] md:p-8"
+								className="flex flex-col gap-3 rounded-[30px] bg-white p-6 shadow-[8px_8px_0_0_var(--color-dark-green)] md:col-span-2 md:p-8 md:last:odd:col-start-2"
 								key={criterion.id}
 							>
 								<div className="flex items-center justify-between gap-4">

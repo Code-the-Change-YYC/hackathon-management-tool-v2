@@ -1,7 +1,7 @@
 import { Alarm2Line, ArrowRightLine, LocationLine } from "@mingcute/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Button } from "@/app/components/ui/button";
+import { Button, buttonVariants } from "@/app/components/ui/button";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { formatTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
@@ -93,14 +93,17 @@ export default function Banner({
 					}
 				</div>
 				{href ? (
-					<Button
-						className={cn("z-1 shadow", colors[colour].button)}
-						nativeButton={false}
-						render={<Link href={href} />}
+					<Link
+						className={cn(
+							buttonVariants(),
+							"z-1 shadow",
+							colors[colour].button
+						)}
+						href={href}
 					>
 						{buttonText}
 						<ArrowRightLine data-icon="inline-end" />
-					</Button>
+					</Link>
 				) : (
 					onClick && (
 						<Button

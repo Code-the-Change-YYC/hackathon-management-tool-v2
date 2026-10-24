@@ -47,7 +47,7 @@ describe("participant schedule", () => {
 		expect(screen.getAllByText("Happening now!")).toHaveLength(2);
 		expect(screen.getByText("Trivia description")).toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: "Navigate there" })
+			screen.getByRole("link", { name: "Navigate there" })
 		).toHaveAttribute("href", "https://example.com/directions");
 	});
 	it("transitions from upcoming to ongoing to completed without a page reload", () => {
@@ -72,7 +72,6 @@ describe("participant schedule", () => {
 	it("groups events by Calgary day", () => {
 		const item = (id: string, date: string) => ({
 			...event(id, EventType.FOOD, 0, 1),
-			eventType: EventType.FOOD,
 			startTime: new Date(date)
 		});
 		const groups = groupScheduleItemsByDate([
@@ -103,7 +102,7 @@ describe("participant schedule", () => {
 		).toBeInTheDocument();
 		expect(screen.getByText("Location TBA")).toBeInTheDocument();
 		expect(
-			screen.queryByRole("button", { name: "Navigate there" })
+			screen.queryByRole("link", { name: "Navigate there" })
 		).not.toBeInTheDocument();
 	});
 	it("shows an empty state when nothing is scheduled", () => {

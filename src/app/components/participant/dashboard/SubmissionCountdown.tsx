@@ -1,19 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import { useCurrentTime } from "@/hooks/use-current-time";
 import { countdownParts, formatDashboardDate } from "@/lib/participant-events";
 import { range } from "@/lib/utils";
-
-// Ticks every second, unlike the shared useCurrentTime, so the seconds tile stays live.
-function useSecondTick() {
-	const [now, setNow] = useState(() => new Date());
-	useEffect(() => {
-		const interval = window.setInterval(() => setNow(new Date()), 1000);
-		return () => window.clearInterval(interval);
-	}, []);
-	return now;
-}
 
 export function SubmissionCountdown({
 	deadline,
@@ -22,7 +12,8 @@ export function SubmissionCountdown({
 	deadline: Date | null;
 	startDate: Date | null;
 }) {
-	const now = useSecondTick();
+	// Ticks every second so the seconds tile stays live.
+	const now = useCurrentTime(1000);
 	const beforeStart = !!startDate && now < startDate;
 	const target = beforeStart ? startDate : deadline;
 	const expired = !!target && now >= target;
@@ -45,8 +36,6 @@ export function SubmissionCountdown({
 				</p>
 			</div>
 			{parts && (
-				// The server renders a few seconds earlier than hydration, so the
-				// ticking values can't match.
 				<div
 					aria-label={
 						expired
@@ -55,7 +44,6 @@ export function SubmissionCountdown({
 					}
 					className="flex justify-between gap-1 px-2 py-3 tabular-nums"
 					role="timer"
-					suppressHydrationWarning
 				>
 					{parts.map((value, index) => (
 						<div
@@ -63,10 +51,7 @@ export function SubmissionCountdown({
 							key={["Days", "Hours", "Minutes", "Seconds"][index]}
 						>
 							<div className="flex min-w-0 flex-1 flex-col items-center">
-								<span
-									className="text-[32px]/11 sm:text-4xl/11"
-									suppressHydrationWarning
-								>
+								<span className="text-[32px]/11 sm:text-4xl/11">
 									{String(value).padStart(2, "0")}
 								</span>
 								<span className="font-medium text-[11px]/4 uppercase">

@@ -9,7 +9,7 @@ export default async function Winners() {
 		<SectionWrapper bgColor="bg-pinky-peach">
 			<div className="flex w-full flex-col gap-10 md:gap-12">
 				<SectionTitle
-					title="Last Year's"
+					title="Previous"
 					titleColor="text-awesomer-purple"
 					titleHighlight="Winners"
 					titlePrefixColor="text-dark-grey"

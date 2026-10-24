@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import AdminControlsView from "@/app/components/admin/reset/AdminControlsView";
+import { ControlsView } from "@/app/components/admin/controls/ControlsView";
 import { RESET_CONFIRMATION_PHRASE } from "@/lib/constants";
 
 const mocks = vi.hoisted(() => ({
@@ -9,11 +10,12 @@ const mocks = vi.hoisted(() => ({
 	settings: null as null | { startDate: Date; endDate: Date }
 }));
 
+vi.mock("@/hooks/use-refresh", () => ({
+	useRefresh: () => ({ isRefreshing: false, refresh: vi.fn() })
+}));
 vi.mock("@/trpc/react", () => ({
 	api: {
-		useUtils: () => ({}),
 		hackathonSettings: {
-			get: { useQuery: () => ({ data: mocks.settings }) },
 			update: {
 				useMutation: () => ({ mutate: mocks.update, isPending: false })
 			},
@@ -23,6 +25,13 @@ vi.mock("@/trpc/react", () => ({
 		}
 	}
 }));
+
+function renderControls() {
+	const settings = mocks.settings as ComponentProps<
+		typeof ControlsView
+	>["settings"];
+	render(<ControlsView settings={settings} />);
+}
 
 const submit = () => screen.getByRole("button", { name: "Submit Changes" });
 
@@ -37,7 +46,7 @@ beforeEach(() => {
 
 describe("admin controls", () => {
 	it("leaves scoring criteria to the judging page", () => {
-		render(<AdminControlsView />);
+		renderControls();
 		expect(
 			screen.queryByText("Set Scoring Categories")
 		).not.toBeInTheDocument();
@@ -49,7 +58,7 @@ describe("admin controls", () => {
 			startDate: new Date("2026-11-07T15:00:00Z"),
 			endDate: new Date("2026-11-08T23:00:00Z")
 		};
-		render(<AdminControlsView />);
+		renderControls();
 		expect(screen.getByLabelText("Start Date")).toBeDisabled();
 
 		fireEvent.click(screen.getByRole("radio", { name: "Create hackathon" }));
@@ -72,7 +81,7 @@ describe("admin controls", () => {
 	});
 
 	it("needs a selection and the phrase before resetting", async () => {
-		render(<AdminControlsView />);
+		renderControls();
 		fireEvent.click(screen.getByRole("radio", { name: "Reset hackathon" }));
 		change(
 			`Enter “${RESET_CONFIRMATION_PHRASE}” to confirm reset`,
@@ -101,7 +110,7 @@ describe("admin controls", () => {
 	});
 
 	it("rejects the wrong phrase and clears choices when switching action", () => {
-		render(<AdminControlsView />);
+		renderControls();
 		fireEvent.click(screen.getByRole("radio", { name: "Reset hackathon" }));
 		fireEvent.click(screen.getByRole("checkbox", { name: /Reset Users/ }));
 		change(

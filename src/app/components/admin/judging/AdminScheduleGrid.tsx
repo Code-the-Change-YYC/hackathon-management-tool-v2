@@ -3,13 +3,17 @@ import { ArrowLeftLine, ArrowRightLine } from "@mingcute/react";
 import { addMinutes, differenceInMinutes } from "date-fns";
 import { type CSSProperties, useMemo, useState } from "react";
 import { Button } from "@/app/components/ui/button";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle
+} from "@/app/components/ui/empty";
 import { formatTime } from "@/lib/datetime";
 import type { SlotMinutes } from "@/lib/judging";
 import { cn } from "@/lib/utils";
-import type { RouterOutputs } from "@/trpc/react";
+import type { Assignment, Room } from "./judgingShared";
 
-type Assignment = RouterOutputs["judgingAssignments"]["getByRound"][number];
-type Room = RouterOutputs["judgingRooms"]["getLayoutByRound"]["rooms"][number];
 const SLOTS_PER_PAGE = 48;
 function buildTimeSlots(
 	startTime: Date,
@@ -28,14 +32,12 @@ function buildTimeSlots(
 
 export function AdminScheduleGrid({
 	assignments,
-	isLoading,
 	rooms,
 	roundEnd,
 	roundStart,
 	slotMinutes
 }: {
 	assignments: Assignment[];
-	isLoading: boolean;
 	rooms: Room[];
 	roundEnd?: Date;
 	roundStart?: Date;
@@ -54,31 +56,29 @@ export function AdminScheduleGrid({
 	const pageStart = safeSlotPage * SLOTS_PER_PAGE;
 	const visibleSlots = slots.slice(pageStart, pageStart + SLOTS_PER_PAGE);
 
-	if (isLoading) {
-		return (
-			<div
-				aria-live="polite"
-				className="flex min-h-56 items-center justify-center rounded-2xl bg-muted text-muted-foreground"
-			>
-				Loading schedule…
-			</div>
-		);
-	}
-
 	if (!roundStart || !roundEnd) {
 		return (
-			<div className="flex min-h-48 items-center justify-center rounded-2xl border border-border border-dashed px-6 text-center text-muted-foreground">
-				Create or select a judging round above to view its schedule.
-			</div>
+			<Empty className="min-h-48 border">
+				<EmptyHeader>
+					<EmptyTitle>No round selected</EmptyTitle>
+					<EmptyDescription>
+						Create or select a judging round above to view its schedule.
+					</EmptyDescription>
+				</EmptyHeader>
+			</Empty>
 		);
 	}
 
 	if (rooms.length === 0) {
 		return (
-			<div className="flex min-h-48 items-center justify-center rounded-2xl border border-border border-dashed px-6 text-center text-muted-foreground">
-				No rooms yet. Use Assign to rooms above to create rooms and place passed
-				teams.
-			</div>
+			<Empty className="min-h-48 border">
+				<EmptyHeader>
+					<EmptyTitle>No rooms yet</EmptyTitle>
+					<EmptyDescription>
+						Use Assign to rooms above to create rooms and place passed teams.
+					</EmptyDescription>
+				</EmptyHeader>
+			</Empty>
 		);
 	}
 

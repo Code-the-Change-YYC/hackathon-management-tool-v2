@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
 	ConfirmAlertDialog,
@@ -8,6 +8,12 @@ import {
 } from "@/app/components/ConfirmAlertDialog";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle
+} from "@/app/components/ui/empty";
 import {
 	Field,
 	FieldError,
@@ -23,6 +29,7 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
+import { useRefresh } from "@/hooks/use-refresh";
 import {
 	formatDateTime,
 	fromDateTimeLocalValue,
@@ -30,20 +37,25 @@ import {
 } from "@/lib/datetime";
 import { api } from "@/trpc/react";
 
-import { ManagementSection } from "./judgingShared";
+import {
+	type Assignment,
+	ManagementSection,
+	type Round
+} from "./judgingShared";
 
 export function RoundManagement({
-	onSelectRound,
-	selectedRoundId
+	rounds,
+	activeRoundId,
+	assignments,
+	onSelectRound
 }: {
+	rounds: Round[];
+	activeRoundId: string | null;
+	assignments: Assignment[];
 	onSelectRound: (roundId: string) => void;
-	selectedRoundId: string;
 }) {
 	const { confirm, dialogProps } = useConfirmDialog();
-	const utils = api.useUtils();
-	const roundsQuery = api.judgingRounds.getAll.useQuery();
-	const settingsQuery = api.hackathonSettings.get.useQuery();
-	const allAssignmentsQuery = api.judgingAssignments.getAll.useQuery();
+	const { isRefreshing, refresh } = useRefresh();
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const {
 		register,
@@ -61,52 +73,40 @@ export function RoundManagement({
 		reset({ name: "", startTime: "", endTime: "" });
 	};
 
-	const invalidate = async () => {
-		await Promise.all([
-			utils.judgingRounds.getAll.invalidate(),
-			utils.hackathonSettings.get.invalidate(),
-			utils.judgingRooms.getLayoutByRound.invalidate(),
-			utils.judgingAssignments.getAll.invalidate(),
-			utils.judgingAssignments.getByRound.invalidate()
-		]);
-	};
-
 	const createRound = api.judgingRounds.create.useMutation({
 		onError: (error) => setMessage(error.message),
-		onSuccess: async (round) => {
-			await invalidate();
-			onSelectRound(round?.id ?? "");
-			resetForm();
-			setMessage("Judging round created.");
-		}
+		onSuccess: (round) =>
+			refresh(() => {
+				onSelectRound(round?.id ?? "");
+				resetForm();
+				setMessage("Judging round created.");
+			})
 	});
 	const updateRound = api.judgingRounds.update.useMutation({
 		onError: (error) => setMessage(error.message),
-		onSuccess: async () => {
-			await invalidate();
-			resetForm();
-			setMessage("Judging round updated.");
-		}
+		onSuccess: () =>
+			refresh(() => {
+				resetForm();
+				setMessage("Judging round updated.");
+			})
 	});
 	const deleteRound = api.judgingRounds.delete.useMutation({
 		onError: (error) => setMessage(error.message),
-		onSuccess: async (_, variables) => {
-			await invalidate();
-			if (selectedRoundId === variables.id) onSelectRound("");
-			setMessage("Judging round deleted.");
-		}
+		onSuccess: () => refresh(() => setMessage("Judging round deleted."))
 	});
 	const setActiveRound = api.hackathonSettings.update.useMutation({
 		onError: (error) => setMessage(error.message),
-		onSuccess: async (_, variables) => {
-			await invalidate();
-			onSelectRound(variables.currentRoundId ?? "");
-			setMessage("Active round updated.");
-		}
+		onSuccess: (_, variables) =>
+			refresh(() => {
+				onSelectRound(variables.currentRoundId ?? "");
+				setMessage("Active round updated.");
+			})
 	});
+	const isSaving =
+		createRound.isPending || updateRound.isPending || isRefreshing;
 
 	const submit = handleSubmit(({ name, startTime, endTime }) => {
-		if (createRound.isPending || updateRound.isPending) return;
+		if (isSaving) return;
 		setMessage("");
 		const parsedStartTime = fromDateTimeLocalValue(startTime);
 		const parsedEndTime = fromDateTimeLocalValue(endTime);
@@ -122,15 +122,11 @@ export function RoundManagement({
 			createRound.mutate(values);
 		}
 	});
-	const scoredRoundIds = useMemo(() => {
-		const ids = new Set<string>();
-		for (const assignment of allAssignmentsQuery.data ?? []) {
-			if (assignment.scores.length > 0) {
-				ids.add(assignment.room.round.id);
-			}
-		}
-		return ids;
-	}, [allAssignmentsQuery.data]);
+	const scoredRoundIds = new Set(
+		assignments
+			.filter((assignment) => assignment.scores.length > 0)
+			.map((assignment) => assignment.room.round.id)
+	);
 
 	return (
 		<ManagementSection
@@ -197,10 +193,7 @@ export function RoundManagement({
 						<FieldError errors={[errors.endTime]} />
 					</Field>
 					<div className="flex gap-2">
-						<Button
-							disabled={createRound.isPending || updateRound.isPending}
-							type="submit"
-						>
+						<Button disabled={isSaving} type="submit">
 							{editingId ? "Save round" : "Add round"}
 						</Button>
 						{editingId ? (
@@ -224,8 +217,8 @@ export function RoundManagement({
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{(roundsQuery.data ?? []).map((round) => {
-							const isActive = settingsQuery.data?.currentRoundId === round.id;
+						{rounds.map((round) => {
+							const isActive = activeRoundId === round.id;
 							const hasScores = scoredRoundIds.has(round.id);
 							return (
 								<TableRow key={round.id}>
@@ -249,7 +242,7 @@ export function RoundManagement({
 										<div className="flex justify-end gap-2">
 											{!isActive ? (
 												<Button
-													disabled={setActiveRound.isPending}
+													disabled={setActiveRound.isPending || isRefreshing}
 													onClick={() =>
 														setActiveRound.mutate({
 															currentRoundId: round.id
@@ -285,7 +278,9 @@ export function RoundManagement({
 												Edit
 											</Button>
 											<Button
-												disabled={hasScores || deleteRound.isPending}
+												disabled={
+													hasScores || deleteRound.isPending || isRefreshing
+												}
 												onClick={async () => {
 													if (hasScores) {
 														setMessage(
@@ -324,6 +319,16 @@ export function RoundManagement({
 						})}
 					</TableBody>
 				</Table>
+				{rounds.length === 0 && (
+					<Empty>
+						<EmptyHeader>
+							<EmptyTitle>No judging rounds yet</EmptyTitle>
+							<EmptyDescription>
+								Add a round above to start scheduling judging.
+							</EmptyDescription>
+						</EmptyHeader>
+					</Empty>
+				)}
 			</div>
 			<p
 				aria-live="polite"
