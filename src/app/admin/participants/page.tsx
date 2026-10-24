@@ -5,7 +5,7 @@ import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
 
 export const metadata: Metadata = {
-	title: "Registered Users | Hack the Change"
+	title: "Users | Hack the Change"
 };
 
 export default async function AdminParticipantsPage() {
