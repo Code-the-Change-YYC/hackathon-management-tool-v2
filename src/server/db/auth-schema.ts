@@ -89,6 +89,8 @@ export const user = createTable("user", {
 		.notNull()
 });
 
+// Only used by Better Auth. One row per signed-in device. The token is in the
+// session cookie.
 export const session = createTable(
 	"session",
 	{
@@ -110,6 +112,8 @@ export const session = createTable(
 	(table) => [index("session_userId_idx").on(table.userId)]
 );
 
+// Only used by Better Auth. One row per login method per user: the password
+// hash for email sign-ups, or the Google account and its tokens.
 export const account = createTable(
 	"account",
 	{
@@ -134,6 +138,8 @@ export const account = createTable(
 	(table) => [index("account_userId_idx").on(table.userId)]
 );
 
+// Only used by Better Auth. Better Auth stores the emailed sign-up and password
+// reset codes here.
 export const verification = createTable(
 	"verification",
 	{
