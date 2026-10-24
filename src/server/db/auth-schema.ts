@@ -155,6 +155,7 @@ export const verification = createTable(
 	(table) => [index("verification_identifier_idx").on(table.identifier)]
 );
 
+// TODO: It would make more sense for this table to be called "team"
 export const organization = createTable("organization", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
@@ -175,6 +176,7 @@ export const organization = createTable("organization", {
 	prescreenedAt: timestamp("prescreened_at")
 });
 
+// TODO: It would be more clear if this table was called "team_member"
 export const member = createTable(
 	"member",
 	{

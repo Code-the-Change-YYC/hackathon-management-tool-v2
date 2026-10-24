@@ -75,6 +75,8 @@ export const judgingAssignments = createTable("judging_assignment", {
 		.notNull()
 });
 
+// TODO: It would be better to name this table "judging_criterion". "criteria" is
+// plural which doesn't match any of the other table names.
 export const criteria = createTable("criteria", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
@@ -86,6 +88,7 @@ export const criteria = createTable("criteria", {
 	isSidepot: boolean("is_sidepot").default(false).notNull()
 });
 
+// TODO: It would be more clear if this table was called "judging_score"
 export const scores = createTable(
 	"score",
 	{
