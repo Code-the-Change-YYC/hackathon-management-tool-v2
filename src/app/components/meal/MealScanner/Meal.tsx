@@ -44,7 +44,7 @@ export default function Meal({ mealId }: { mealId: string }) {
 	return (
 		<div className="grid min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-4 lg:grid-cols-2 lg:grid-rows-1 lg:gap-6">
 			<div className="h-full min-w-0 rounded-xl border border-light-grey bg-white p-4 sm:p-6">
-				<div className="mx-auto w-full max-w-sm overflow-hidden rounded-lg md:max-w-md lg:max-w-full">
+				<div className="mx-auto w-full max-w-60 overflow-hidden rounded-lg sm:max-w-72 lg:max-w-80">
 					<MealScanner
 						eventId={mealId}
 						onScanResult={(userId, alreadyCheckedIn) => {
