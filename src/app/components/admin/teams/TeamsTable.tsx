@@ -46,7 +46,7 @@ function getBooleanElement(bool: boolean | null) {
 		case false:
 			return <CloseFill aria-label="Failed" size={10} />;
 		default:
-			return <p>N/A</p>;
+			return <p>n/a</p>;
 	}
 }
 
@@ -57,7 +57,7 @@ function getPrescreenElement(status: Team["prescreen"]) {
 		case "failed":
 			return <CloseFill aria-label="Failed" size={10} />;
 		default:
-			return <p>N/A</p>;
+			return <p>n/a</p>;
 	}
 }
 
@@ -72,7 +72,7 @@ function getRoundTwoElement(
 		case "rejected":
 			return <CloseFill aria-label="Rejected" size={10} />;
 		default:
-			return <p>N/A</p>;
+			return <p>n/a</p>;
 	}
 }
 
@@ -149,7 +149,7 @@ export function TeamsTable({
 									{getRoundTwoElement(team.round2)}
 								</div>
 							</TableCell>
-							<TableCell>{team.feedback}</TableCell>
+							<TableCell>{team.feedback ?? "n/a"}</TableCell>
 							<TableCell>{team.members}</TableCell>
 							<TableCell className="pr-4 text-right">
 								<DropdownMenu>
