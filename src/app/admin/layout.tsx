@@ -23,7 +23,7 @@ export default async function AdminLayout({
 			items: [
 				{ title: "Schedule", href: "/admin/schedule", icon: "calendar" },
 				{
-					title: "Registered Users",
+					title: "Users",
 					href: "/admin/participants",
 					icon: "user"
 				},
