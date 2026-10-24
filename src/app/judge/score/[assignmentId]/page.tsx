@@ -25,8 +25,11 @@ export default async function ScorePage({
 	return (
 		<ScoreView
 			assignment={assignments.find(({ id }) => id === assignmentId) ?? null}
+			assignments={assignments}
 			criteria={criteria}
-			key={assignmentId}
+			key={`${user.id}:${assignmentId}`}
+			userId={user.id}
+			userName={user.firstName || user.name || "Judge"}
 		/>
 	);
 }

@@ -252,25 +252,22 @@ describe("individual judge scorecards", () => {
 			scores.judgeId
 		]);
 	});
-	it("rejects another round's criterion on both score creation and update", async () => {
-		const otherRoundCriterion = { ...mainCriterion, roundIds: [assignmentId] };
-		mocks.query.criteria.findMany.mockResolvedValue([otherRoundCriterion]);
+	it("uses shared criteria for creation and update despite historical round metadata", async () => {
+		const sharedCriterion = { ...mainCriterion, roundIds: [assignmentId] };
+		mocks.query.criteria.findMany.mockResolvedValue([sharedCriterion]);
 		mocks.query.scores.findFirst.mockResolvedValue({
 			assignmentId,
-			criteria: otherRoundCriterion
+			criteria: sharedCriterion
 		});
 		const api = await caller();
-		await expect(api.createMany(input())).rejects.toMatchObject({
-			code: "BAD_REQUEST",
-			message: "Criterion is not available for this judging round."
-		});
-		await expect(api.update({ id: scoreId, score: 8 })).rejects.toMatchObject({
-			code: "BAD_REQUEST",
-			message: "Criterion is not available for this judging round."
-		});
-		expect(mocks.insert).not.toHaveBeenCalled();
-		expect(mocks.update).not.toHaveBeenCalled();
+		await expect(api.createMany(input())).resolves.toEqual([]);
+		await expect(
+			api.update({ id: scoreId, score: 8 })
+		).resolves.toBeUndefined();
+		expect(mocks.insert).toHaveBeenCalledOnce();
+		expect(mocks.update).toHaveBeenCalledOnce();
 	});
+
 	it("accepts a criterion assigned to the current judging round", async () => {
 		mocks.query.criteria.findMany.mockResolvedValue([
 			{ ...mainCriterion, roundIds: [roundId] }

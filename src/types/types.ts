@@ -70,6 +70,9 @@ export type TeamRanking = {
 	id: string;
 	name: string;
 	totalScore: number;
+	submittedScorecards: number;
+	expectedScorecards: number;
+	legacyScores: number;
 };
 
 export const ALL_ROLES: Role[] = [Role.ADMIN, Role.JUDGE, Role.PARTICIPANT];
