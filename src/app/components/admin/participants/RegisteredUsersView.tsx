@@ -17,6 +17,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { useRefresh } from "@/hooks/use-refresh";
 import { authClient } from "@/server/better-auth/client";
 import PageHeader from "../../PageHeader";
+import { Card, CardContent } from "../../ui/card";
 import { EditParticipantDialog } from "./EditParticipantDialog";
 import { InviteUserDialog } from "./InviteUserDialog";
 import { ParticipantsTable } from "./ParticipantsTable";
@@ -230,44 +231,47 @@ export function RegisteredUsersView({
 		<>
 			<div className="flex flex-col gap-6">
 				<PageHeader description="View all participants" title="Users" />
+				<Card>
+					<CardContent className="flex flex-col gap-6">
+						<ParticipantsToolbar
+							filters={filters}
+							onCopyEmails={handleCopyEmails}
+							onDownloadCsv={handleDownloadCsv}
+							onEmail={() => setEmailOpen(true)}
+							onFiltersChange={setFilters}
+							onInvite={() => setInviteOpen(true)}
+							onSearchChange={setSearch}
+							onSortChange={setSort}
+							search={search}
+							sort={sort}
+						/>
 
-				<ParticipantsToolbar
-					filters={filters}
-					onCopyEmails={handleCopyEmails}
-					onDownloadCsv={handleDownloadCsv}
-					onEmail={() => setEmailOpen(true)}
-					onFiltersChange={setFilters}
-					onInvite={() => setInviteOpen(true)}
-					onSearchChange={setSearch}
-					onSortChange={setSort}
-					search={search}
-					sort={sort}
-				/>
+						<div className="flex flex-wrap items-center gap-2">
+							<span className="text-muted-foreground text-sm">
+								Showing {visibleParticipants.length.toLocaleString()} of{" "}
+								{participants.length.toLocaleString()} users
+							</span>
+							{activeChips.map((chip) => (
+								<Badge
+									aria-label={`Remove filter: ${chip.label}`}
+									className="h-7 cursor-pointer rounded-md px-3 font-medium"
+									key={chip.key}
+									render={<button onClick={chip.onRemove} type="button" />}
+									variant="accent"
+								>
+									{chip.label}
+									<CloseFill />
+								</Badge>
+							))}
+						</div>
 
-				<div className="flex flex-wrap items-center gap-2">
-					<span className="text-muted-foreground text-sm">
-						Showing {visibleParticipants.length.toLocaleString()} of{" "}
-						{participants.length.toLocaleString()} users
-					</span>
-					{activeChips.map((chip) => (
-						<Badge
-							aria-label={`Remove filter: ${chip.label}`}
-							className="h-7 cursor-pointer rounded-md px-3 font-medium"
-							key={chip.key}
-							render={<button onClick={chip.onRemove} type="button" />}
-							variant="accent"
-						>
-							{chip.label}
-							<CloseFill />
-						</Badge>
-					))}
-				</div>
-
-				<ParticipantsTable
-					onDelete={setDeleting}
-					onEdit={setEditing}
-					participants={visibleParticipants}
-				/>
+						<ParticipantsTable
+							onDelete={setDeleting}
+							onEdit={setEditing}
+							participants={visibleParticipants}
+						/>
+					</CardContent>
+				</Card>
 			</div>
 
 			<InviteUserDialog onOpenChange={setInviteOpen} open={inviteOpen} />
