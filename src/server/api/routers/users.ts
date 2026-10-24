@@ -87,7 +87,10 @@ export const usersRouter = createTRPCRouter({
 			const team = members[0]?.organization;
 
 			return {
-				...person,
+				id: person.id,
+				firstName: person.firstName,
+				lastName: person.lastName,
+				email: person.email,
 				role: getRole(person.role),
 				teamId: team?.id ?? null,
 				teamName: team?.name ?? null,
@@ -212,25 +215,65 @@ export const usersRouter = createTRPCRouter({
 		}),
 	update: adminProcedure
 		.input(
-			z.object({
-				id: z.string(),
-				name: z.string().min(1).optional(),
-				email: z.string().email().optional(),
-				role: z.string().optional().nullable(),
-				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
-				school: z.string().optional().nullable(),
-				program: z.enum(PROGRAMS).optional().nullable(),
-				completedRegistration: z.boolean().optional(),
-				banned: z.boolean().optional()
-			})
+			z
+				.object({
+					id: z.string(),
+					firstName: z.string().trim().min(1).optional(),
+					lastName: z.string().trim().min(1).optional(),
+					email: z.string().email().optional(),
+					role: z.string().optional().nullable(),
+					dietaryRestrictions: dietaryRestrictionsSchema.optional(),
+					school: z.string().optional().nullable(),
+					program: z.enum(PROGRAMS).optional().nullable(),
+					completedRegistration: z.boolean().optional(),
+					banned: z.boolean().optional()
+				})
+				.superRefine(({ firstName, lastName }, ctx) => {
+					if (firstName !== undefined && lastName === undefined) {
+						ctx.addIssue({
+							code: "custom",
+							path: ["lastName"],
+							message: "Last name is required when first name is provided"
+						});
+					}
+
+					if (lastName !== undefined && firstName === undefined) {
+						ctx.addIssue({
+							code: "custom",
+							path: ["firstName"],
+							message: "First name is required when last name is provided"
+						});
+					}
+				})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id, ...data } = input;
+			const { id, firstName, lastName, ...data } = input;
+
+			const nameFields =
+				firstName !== undefined && lastName !== undefined
+					? {
+							firstName,
+							lastName,
+							name: getFullName(firstName, lastName)
+						}
+					: {};
+
 			const [updated] = await ctx.db
 				.update(user)
-				.set(data)
+				.set({
+					...data,
+					...nameFields
+				})
 				.where(eq(user.id, id))
 				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
 			return updated;
 		}),
 	completeRegistration: protectedProcedure.mutation(async ({ ctx }) => {

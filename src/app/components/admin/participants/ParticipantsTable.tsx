@@ -65,16 +65,20 @@ export function ParticipantsTable({
 	}
 
 	return (
-		<div className="overflow-hidden">
+		<div className="overflow-x-auto">
 			<Table>
 				<TableHeader>
 					<TableRow className="border-none hover:bg-white">
+						<TableHead>ID</TableHead>
 						<TableHead className="pl-4">First Name</TableHead>
 						<TableHead>Last Name</TableHead>
 						<TableHead>Email Address</TableHead>
 						<TableHead>Role</TableHead>
 						<TableHead>Team ID</TableHead>
 						<TableHead>Team Name</TableHead>
+						<TableHead>Institution</TableHead>
+						<TableHead>Major</TableHead>
+						<TableHead>Registered for Food</TableHead>
 						<TableHead className="w-12 pr-4">
 							<span className="sr-only">Actions</span>
 						</TableHead>
@@ -86,20 +90,36 @@ export function ParticipantsTable({
 							className="border-none hover:bg-white"
 							key={participant.id}
 						>
+							<TableCell className="whitespace-nowrap text-muted-foreground">
+								<span title={participant.id}>{participant.id}</span>
+							</TableCell>
 							<TableCell className="pl-4">{participant.firstName}</TableCell>
 							<TableCell>{participant.lastName}</TableCell>
 							<TableCell className="text-muted-foreground">
 								{participant.email}
 							</TableCell>
 							<TableCell>
-								<Badge variant={ROLE_BADGE_VARIANTS[participant.role]}>
-									{ROLE_LABELS[participant.role]}
-								</Badge>
+								{participant.role ? (
+									<Badge variant={ROLE_BADGE_VARIANTS[participant.role]}>
+										{ROLE_LABELS[participant.role]}
+									</Badge>
+								) : (
+									<Badge variant={"secondary"}>N/A</Badge>
+								)}
 							</TableCell>
 							<TableCell className="text-muted-foreground">
 								{participant.teamId ?? "n/a"}
 							</TableCell>
 							<TableCell>{participant.teamName ?? "n/a"}</TableCell>
+							<TableCell>{participant.institution ?? "n/a"}</TableCell>
+							<TableCell>{participant.major ?? "n/a"}</TableCell>
+							<TableCell>
+								{participant.registeredForFood === true
+									? "Yes"
+									: participant.registeredForFood === false
+										? "No"
+										: "n/a"}
+							</TableCell>
 							<TableCell className="pr-4 text-right">
 								<DropdownMenu>
 									<DropdownMenuTrigger

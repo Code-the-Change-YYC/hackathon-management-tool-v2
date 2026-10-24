@@ -14,6 +14,8 @@ import {
 	AlertDialogTitle
 } from "@/app/components/ui/alert-dialog";
 import { Badge } from "@/app/components/ui/badge";
+import { useRefresh } from "@/hooks/use-refresh";
+import { authClient } from "@/server/better-auth/client";
 import PageHeader from "../../PageHeader";
 import { EditParticipantDialog } from "./EditParticipantDialog";
 import { InviteUserDialog } from "./InviteUserDialog";
@@ -53,10 +55,10 @@ function matchesSearch(participant: Participant, search: string) {
 }
 
 function matchesFilters(participant: Participant, filters: ParticipantFilters) {
-	if (!participant.role) {
-		return false;
-	}
-	if (filters.roles.length > 0 && !filters.roles.includes(participant.role)) {
+	if (
+		filters.roles.length > 0 &&
+		(!participant.role || !filters.roles.includes(participant.role))
+	) {
 		return false;
 	}
 
@@ -68,12 +70,10 @@ function matchesFilters(participant: Participant, filters: ParticipantFilters) {
 		}
 	}
 
-	if (!participant.institution) {
-		return false;
-	}
 	if (
 		filters.institutions.length > 0 &&
-		!filters.institutions.includes(participant.institution)
+		(!participant.institution ||
+			!filters.institutions.includes(participant.institution))
 	) {
 		return false;
 	}
@@ -121,6 +121,9 @@ export function RegisteredUsersView({
 	const [emailOpen, setEmailOpen] = useState(false);
 	const [editing, setEditing] = useState<Participant | null>(null);
 	const [deleting, setDeleting] = useState<Participant | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+
+	const { refresh } = useRefresh();
 
 	const visibleParticipants = useMemo(
 		() =>
@@ -195,14 +198,32 @@ export function RegisteredUsersView({
 	}
 
 	function handleDownloadCsv() {
-		// TODO: generate the export server-side once the router exists.
-		toast.success("CSV download started!");
+		window.location.href = "/api/admin/participants/export";
 	}
 
-	function handleDelete() {
-		// TODO: actually delete the user.
-		setDeleting(null);
-		toast.success("User deleted!");
+	async function handleDelete() {
+		if (!deleting || isDeleting) return;
+
+		setIsDeleting(true);
+		try {
+			const { data, error } = await authClient.admin.removeUser({
+				userId: deleting.id
+			});
+
+			if (data?.success) {
+				setDeleting(null);
+				toast.success("User deleted!");
+				refresh();
+			} else {
+				toast.error(error?.message ?? "Unable to delete user.");
+			}
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Unable to delete user."
+			);
+		} finally {
+			setIsDeleting(false);
+		}
 	}
 
 	return (
@@ -280,10 +301,11 @@ export function RegisteredUsersView({
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
 						<AlertDialogAction
+							disabled={isDeleting}
 							onClick={handleDelete}
 							variant="destructive-solid"
 						>
-							Delete user
+							{isDeleting ? "Deleting..." : "Delete user"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
