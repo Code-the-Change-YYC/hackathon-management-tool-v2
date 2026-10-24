@@ -17,7 +17,7 @@ export default function AboutChallenge() {
 				</>
 			}
 			imageAlt="About the challenge"
-			imageSrc="/svgs/landingPage/about_illustration.svg"
+			imageSrc="/svgs/landingPage/about_illustration.webp"
 			paragraphs={[
 				"Hack the Change is a 24-hour event where students from across Canada come together to build innovative software solutions that create positive social impact.",
 				"Whether you are a first-time hacker or a seasoned veteran, the hackathon inspires participants to leverage technology, solve real-world problems, and code a better tomorrow."

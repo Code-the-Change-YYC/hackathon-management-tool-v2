@@ -38,13 +38,19 @@ export const criteriaRouter = createTRPCRouter({
 				name: z.string().min(1),
 				description: z.string().default(""),
 				displayOrder: z.number().int().default(0),
-				maxScore: z.number().int().default(10),
+				maxScore: z.number().int().positive().default(10),
 				roundIds: z.array(z.string().uuid()).default([]),
 				isSidepot: z.boolean().default(false)
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			await validateRounds(ctx.db, input.roundIds);
+			if (!input.isSidepot && input.maxScore !== 10) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Main criteria must have a maximum score of 10."
+				});
+			}
 			return await ctx.db.insert(criteria).values(input).returning();
 		}),
 
@@ -55,7 +61,7 @@ export const criteriaRouter = createTRPCRouter({
 				name: z.string().min(1).optional(),
 				description: z.string().optional(),
 				displayOrder: z.number().int().optional(),
-				maxScore: z.number().optional(),
+				maxScore: z.number().int().positive().optional(),
 				roundIds: z.array(z.string().uuid()).optional(),
 				isSidepot: z.boolean().optional()
 			})
@@ -63,6 +69,23 @@ export const criteriaRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
 			await validateRounds(ctx.db, data.roundIds);
+			const existing = await ctx.db.query.criteria.findFirst({
+				where: eq(criteria.id, id)
+			});
+			if (!existing)
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Criterion not found."
+				});
+			if (
+				!(data.isSidepot ?? existing.isSidepot) &&
+				(data.maxScore ?? existing.maxScore) !== 10
+			) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Main criteria must have a maximum score of 10."
+				});
+			}
 			const [updated] = await ctx.db
 				.update(criteria)
 				.set(data)

@@ -1,14 +1,25 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, eq } from "drizzle-orm";
 import { z } from "zod";
+import { formatDateKey, isSameCalgaryDay } from "@/lib/datetime";
 import { eventNavigationUrlSchema } from "@/lib/participant-events";
+import {
+	EVENT_DESCRIPTION_MAX_LENGTH,
+	EVENT_LOCATION_MAX_LENGTH,
+	EVENT_TITLE_MAX_LENGTH,
+	isDuringHackathon,
+	outsideHackathonMessage,
+	toHackathonDates
+} from "@/lib/validation/event";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
+import type { db as dbType } from "@/server/db";
 import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
+import { hackathonSettings } from "@/server/db/schema";
 import {
 	createEventTicketToken,
 	hashEventTicketToken
@@ -24,17 +35,46 @@ import {
 	Role
 } from "@/types/types";
 
-const eventTimeRangeSchema = z
+const eventInputSchema = z
 	.object({
-		title: z.string().trim().min(1),
-		description: z.string().trim().min(1),
+		title: z.string().trim().min(1).max(EVENT_TITLE_MAX_LENGTH),
+		description: z.string().trim().min(1).max(EVENT_DESCRIPTION_MAX_LENGTH),
+		location: z.string().trim().max(EVENT_LOCATION_MAX_LENGTH).nullable(),
+		navigationUrl: eventNavigationUrlSchema.nullable(),
+		type: z.enum(EVENT_TYPES),
+		status: z.enum(EVENT_STATUSES),
 		startTime: z.coerce.date(),
 		endTime: z.coerce.date()
 	})
 	.refine((data) => data.endTime > data.startTime, {
 		message: "End time must be after start time.",
 		path: ["endTime"]
+	})
+	.refine((data) => isSameCalgaryDay(data.startTime, data.endTime), {
+		message: "End time must be on the same day as the start time.",
+		path: ["endTime"]
 	});
+
+async function assertDuringHackathon(db: typeof dbType, startTime: Date) {
+	const settings = await db.query.hackathonSettings.findFirst({
+		where: eq(hackathonSettings.id, 1)
+	});
+	const hackathonDates = toHackathonDates(settings ?? null);
+	if (
+		hackathonDates &&
+		!isDuringHackathon(formatDateKey(startTime), hackathonDates)
+	) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: outsideHackathonMessage(hackathonDates)
+		});
+	}
+}
+
+const eventIdSchema = z.object({ id: z.string().uuid() });
+
+const eventNotFound = () =>
+	new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
 
 const ticketTokenSchema = z
 	.string()
@@ -46,39 +86,41 @@ function supportsQrTickets(type: EventType) {
 
 export const eventsRouter = createTRPCRouter({
 	addEvent: adminProcedure
-		.input(
-			eventTimeRangeSchema.and(
-				z.object({
-					location: z.string().trim().max(200).optional().nullable(),
-					navigationUrl: eventNavigationUrlSchema.optional().nullable(),
-					type: z.enum(EVENT_TYPES),
-					status: z.enum(EVENT_STATUSES).default(EventStatus.DRAFT)
-				})
-			)
-		)
+		.input(eventInputSchema)
 		.mutation(async ({ input, ctx }) => {
+			await assertDuringHackathon(ctx.db, input.startTime);
 			const [newEvent] = await ctx.db.insert(event).values(input).returning();
 			return newEvent;
 		}),
 
-	updateEventDetails: adminProcedure
-		.input(
-			z.object({
-				id: z.string().uuid(),
-				location: z.string().trim().max(200).nullable(),
-				navigationUrl: eventNavigationUrlSchema.nullable()
-			})
-		)
+	updateEvent: adminProcedure
+		.input(eventInputSchema.and(eventIdSchema))
+		.mutation(async ({ ctx, input: { id, ...values } }) => {
+			await assertDuringHackathon(ctx.db, values.startTime);
+			return ctx.db.transaction(async (tx) => {
+				const [updated] = await tx
+					.update(event)
+					.set(values)
+					.where(eq(event.id, id))
+					.returning();
+				if (!updated) throw eventNotFound();
+				await tx
+					.update(eventTicket)
+					.set({ expiresAt: updated.endTime })
+					.where(eq(eventTicket.eventId, id));
+				return updated;
+			});
+		}),
+
+	deleteEvent: adminProcedure
+		.input(eventIdSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { id, ...details } = input;
-			const [updated] = await ctx.db
-				.update(event)
-				.set(details)
-				.where(eq(event.id, id))
-				.returning();
-			if (!updated)
-				throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
-			return updated;
+			const [deleted] = await ctx.db
+				.delete(event)
+				.where(eq(event.id, input.id))
+				.returning({ id: event.id });
+			if (!deleted) throw eventNotFound();
+			return deleted;
 		}),
 
 	getAllEvents: adminProcedure.query(async ({ ctx }) => {
@@ -95,7 +137,7 @@ export const eventsRouter = createTRPCRouter({
 	}),
 
 	getEvent: adminProcedure
-		.input(z.object({ id: z.string().uuid() }))
+		.input(eventIdSchema)
 		.query(async ({ input, ctx }) => {
 			const selectedEvent = await ctx.db.query.event.findFirst({
 				where: eq(event.id, input.id)
@@ -104,12 +146,7 @@ export const eventsRouter = createTRPCRouter({
 		}),
 
 	setEventStatus: adminProcedure
-		.input(
-			z.object({
-				id: z.string().uuid(),
-				status: z.enum(EVENT_STATUSES)
-			})
-		)
+		.input(eventIdSchema.extend({ status: z.enum(EVENT_STATUSES) }))
 		.mutation(async ({ input, ctx }) => {
 			const [updatedEvent] = await ctx.db
 				.update(event)
@@ -117,12 +154,7 @@ export const eventsRouter = createTRPCRouter({
 				.where(eq(event.id, input.id))
 				.returning();
 
-			if (!updatedEvent) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Event not found."
-				});
-			}
+			if (!updatedEvent) throw eventNotFound();
 
 			return updatedEvent;
 		}),
@@ -139,12 +171,7 @@ export const eventsRouter = createTRPCRouter({
 					where: eq(event.id, input.eventId)
 				});
 
-				if (!ticketEvent) {
-					throw new TRPCError({
-						code: "NOT_FOUND",
-						message: "Event not found."
-					});
-				}
+				if (!ticketEvent) throw eventNotFound();
 
 				if (!supportsQrTickets(ticketEvent.type)) {
 					throw new TRPCError({

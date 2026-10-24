@@ -15,12 +15,12 @@ export const eventInfoItems: EventInfoItem[] = [
 	{
 		id: "location",
 		icon: LocationLine,
-		label: "University of Calgary - ENG 207"
+		label: "University of Calgary - ICT 102 (to be confirmed)"
 	},
 	{ id: "public", icon: HeartLine, label: "Public" },
 	{
 		id: "prizes",
 		icon: GiftLine,
-		label: "$10,000 in Prizes"
+		label: "$10,000+ in Prizes"
 	}
 ];

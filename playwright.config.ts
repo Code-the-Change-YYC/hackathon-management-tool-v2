@@ -20,6 +20,10 @@ export default defineConfig({
 	use: {
 		baseURL,
 		screenshot: "only-on-failure",
+		// page.clock swaps in a fake Date that breaks `extends Date`, so
+		// @date-fns/tz falls back to the browser's zone. Run the browser on
+		// Calgary's fixed UTC-6 (POSIX sign is inverted) to match lib/datetime.ts.
+		timezoneId: "Etc/GMT+6",
 		trace: "retain-on-failure",
 		video: "retain-on-failure"
 	},
@@ -43,6 +47,13 @@ export default defineConfig({
 			name: "chromium",
 			use: {
 				...devices["Desktop Chrome"]
+			}
+		},
+		{
+			name: "mobile",
+			grep: /@responsive/,
+			use: {
+				...devices["Pixel 7"]
 			}
 		}
 	]

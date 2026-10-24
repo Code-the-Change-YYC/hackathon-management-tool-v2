@@ -1,7 +1,5 @@
-import type { ReactNode } from "react";
-
 interface PageHeaderProps {
-	title: ReactNode;
+	title: string;
 	description?: string;
 	className?: string;
 	titleClassName?: string;

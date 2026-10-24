@@ -4,12 +4,12 @@ export const EVENT_NAME = "Hack the Change";
 export const EVENT_YEAR = "2026";
 
 export const DASHBOARD_HREFS: Record<Role, string> = {
-	[Role.ADMIN]: "/admin",
+	[Role.ADMIN]: "/admin/controls",
 	[Role.JUDGE]: "/judge",
 	[Role.PARTICIPANT]: "/participant"
 };
 
-export const DISCORD_URL = "https://discord.gg/codethechangeyyc";
+export const DISCORD_URL = "https://discord.gg/fffqq5ptRX";
 export const DEVPOST_URL = "https://hack-the-change-2026.devpost.com/";
 export const RESET_CONFIRMATION_PHRASE = "i love code the change";
 

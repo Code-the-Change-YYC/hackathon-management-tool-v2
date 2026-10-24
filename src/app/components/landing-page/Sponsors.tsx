@@ -1,6 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Sponsor } from "@/types/landingPage";
 import { sponsors } from "./data/sponsors";
+
+// Gives every logo the same area rather than the same box, so wide and tall
+// logos look equally big
+function getLogoWidth({ width, height, scale = 1 }: Sponsor) {
+	const factor = Math.sqrt(width / height) * scale;
+	return `calc(var(--logo-size) * ${factor.toFixed(3)})`;
+}
 
 export default function Sponsors() {
 	return (
@@ -42,36 +50,44 @@ export default function Sponsors() {
 					</p>
 				</div>
 
-				<div className="grid w-full max-w-4xl grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 xl:max-w-7xl xl:grid-cols-6">
+				<div className="grid w-full max-w-4xl grid-cols-2 gap-x-6 gap-y-8 [--logo-size:4rem] sm:grid-cols-3 xl:max-w-7xl xl:grid-cols-6 sm:[--logo-size:5rem] md:[--logo-size:5.5rem]">
 					{sponsors.map((sponsor) => {
 						const logo = (
-							<div className="group-hover:-translate-y-1 flex size-28 items-center justify-center overflow-hidden rounded-full bg-white transition-all duration-300 sm:size-32 md:size-37.5">
-								<Image
-									alt={sponsor.name}
-									className="h-full w-full scale-75 object-contain"
-									height={150}
-									src={sponsor.image}
-									width={150}
-								/>
-							</div>
+							<Image
+								alt={sponsor.name}
+								className="h-auto w-full"
+								height={sponsor.height}
+								sizes="11rem"
+								src={sponsor.image}
+								width={sponsor.width}
+							/>
 						);
+						const logoClassName =
+							"group-hover:-translate-y-1 block max-w-full transition-transform duration-300";
+						const logoStyle = { width: getLogoWidth(sponsor) };
 
 						return (
 							<div
-								className="group flex flex-col items-center justify-center gap-2"
+								className="group flex flex-col items-center gap-2"
 								key={sponsor.id}
 							>
-								{sponsor.url ? (
-									<Link
-										href={sponsor.url}
-										rel="noopener noreferrer"
-										target="_blank"
-									>
-										{logo}
-									</Link>
-								) : (
-									logo
-								)}
+								<div className="flex h-[calc(var(--logo-size)*1.5)] w-full items-center justify-center">
+									{sponsor.url ? (
+										<Link
+											className={logoClassName}
+											href={sponsor.url}
+											rel="noopener noreferrer"
+											style={logoStyle}
+											target="_blank"
+										>
+											{logo}
+										</Link>
+									) : (
+										<div className={logoClassName} style={logoStyle}>
+											{logo}
+										</div>
+									)}
+								</div>
 								{/* Revealed on hover, so only shown where hovering is common */}
 								<p className="hidden text-center font-medium text-dark-grey text-sm opacity-0 transition-all duration-300 group-hover:opacity-100 lg:block">
 									{sponsor.name}

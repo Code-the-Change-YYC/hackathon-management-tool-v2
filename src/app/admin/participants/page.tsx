@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { RegisteredUsersView } from "@/app/components/admin/participants/RegisteredUsersView";
 import type { Participant } from "@/app/components/admin/participants/types";
+import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
 
 export const metadata: Metadata = {
-	title: "Registered Users"
+	title: "Registered Users | Hack the Change"
 };
 
-// TODO: guard with `requireRole([Role.ADMIN])` and load participants from the
-// users router once the backend for this screen exists.
+// TODO: load participants from the users router once the backend for this screen exists.
 const MOCK_PARTICIPANTS: Participant[] = [
 	{
 		id: "1",
@@ -192,6 +192,8 @@ const MOCK_PARTICIPANTS: Participant[] = [
 	}
 ];
 
-export default function AdminParticipantsPage() {
+export default async function AdminParticipantsPage() {
+	await requireRole([Role.ADMIN]);
+
 	return <RegisteredUsersView participants={MOCK_PARTICIPANTS} />;
 }
