@@ -13,10 +13,12 @@ type Meal = RouterOutputs["meals"]["getAllMeals"][number];
 
 export function MealsView({
 	meals,
+	scannerMealId,
 	ticketsScanned,
 	dietary
 }: {
 	meals: Meal[];
+	scannerMealId?: string;
 	ticketsScanned: number;
 	dietary: RouterOutputs["users"]["getDietaryAnalytics"];
 }) {
@@ -31,8 +33,12 @@ export function MealsView({
 			<Banner
 				buttonText="Open scanner"
 				colour="purple"
-				description="(Recommended for mobile) open this to scan participant meal tickets!"
-				href="/meal"
+				description={
+					scannerMealId
+						? "(Recommended for mobile) open this to scan participant meal tickets!"
+						: "No active meals are available to scan. Create and activate a food event first."
+				}
+				href={scannerMealId ? `/admin/meals/${scannerMealId}/scan` : undefined}
 				image={<ScanMealTicketsImages />}
 				title="Scan meal tickets"
 			/>
