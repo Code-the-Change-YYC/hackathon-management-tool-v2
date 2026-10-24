@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { and, asc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -6,6 +7,7 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import { event } from "@/server/db/event-schema";
+import { createMealScannerLease } from "@/server/lib/event-tickets";
 import { EventStatus, EventType } from "@/types/types";
 
 export const mealsRouter = createTRPCRouter({
@@ -67,6 +69,33 @@ export const mealsRouter = createTRPCRouter({
 
 		return nextMeal ?? null;
 	}),
+
+	beginMealScan: adminProcedure
+		.input(z.object({ eventId: z.string().uuid() }))
+		.mutation(async ({ input, ctx }) => {
+			const meal = await ctx.db.query.event.findFirst({
+				where: and(
+					eq(event.id, input.eventId),
+					eq(event.type, EventType.FOOD),
+					eq(event.status, EventStatus.ACTIVE),
+					gt(event.endTime, new Date())
+				)
+			});
+			if (!meal) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"This meal is no longer available to scan. Try opening the scanner again."
+				});
+			}
+			return {
+				lease: createMealScannerLease(
+					meal.id,
+					ctx.session.user.id,
+					meal.endTime
+				)
+			};
+		}),
 
 	getMeal: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))

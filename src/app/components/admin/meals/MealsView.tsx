@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import Banner from "@/app/components/Banner";
 import MealScannerView from "@/app/components/meal/MealScanner/Meal";
 import PageHeader from "@/app/components/PageHeader";
@@ -14,7 +15,7 @@ import {
 	DialogTitle
 } from "@/app/components/ui/dialog";
 import { useCurrentTime } from "@/hooks/use-current-time";
-import type { RouterOutputs } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import { MealAnalytics } from "./MealAnalytics";
 import ScanMealTicketsImages from "./ScanMealTicketsImages";
 
@@ -32,8 +33,48 @@ export function MealsView({
 	dietary: RouterOutputs["users"]["getDietaryAnalytics"];
 }) {
 	const now = useCurrentTime();
-	const [isScannerOpen, setIsScannerOpen] = useState(false);
-	const scannerMeal = meals.find((meal) => meal.id === scannerMealId);
+	const [openScannerMeal, setOpenScannerMeal] = useState<{
+		id: string;
+		title: string;
+		lease: string;
+	} | null>(null);
+	const openingRef = useRef(false);
+	const beginScan = api.meals.beginMealScan.useMutation();
+	const { data: scannerMeal, refetch } = api.meals.getNextMeal.useQuery(
+		undefined,
+		{
+			initialData: meals.find((meal) => meal.id === scannerMealId) ?? null,
+			refetchInterval: 15_000,
+			refetchOnMount: "always"
+		}
+	);
+
+	const openScanner = async () => {
+		if (openingRef.current) return;
+		openingRef.current = true;
+		try {
+			const { data, error } = await refetch();
+			if (error) {
+				toast.error("Could not check for an available meal. Please try again.");
+			} else if (data) {
+				try {
+					const { lease } = await beginScan.mutateAsync({ eventId: data.id });
+					setOpenScannerMeal({ id: data.id, title: data.title, lease });
+				} catch (error) {
+					toast.error(
+						error instanceof Error
+							? error.message
+							: "Could not open the scanner."
+					);
+					await refetch();
+				}
+			}
+		} catch {
+			toast.error("Could not check for an available meal. Please try again.");
+		} finally {
+			openingRef.current = false;
+		}
+	};
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -42,7 +83,7 @@ export function MealsView({
 				title="Meals"
 			/>
 			<Banner
-				buttonText="Open scanner"
+				buttonText={scannerMeal ? "Open scanner" : "Check for meal"}
 				colour="purple"
 				description={
 					scannerMeal
@@ -50,7 +91,7 @@ export function MealsView({
 						: "No active meals are available to scan. Create and activate a food event first."
 				}
 				image={<ScanMealTicketsImages />}
-				onClick={scannerMealId ? () => setIsScannerOpen(true) : undefined}
+				onClick={openScanner}
 				title="Scan meal tickets"
 			/>
 			<Card>
@@ -67,18 +108,24 @@ export function MealsView({
 				</CardContent>
 			</Card>
 			<MealAnalytics dietary={dietary} ticketsScanned={ticketsScanned} />
-			{isScannerOpen && scannerMealId && (
-				<Dialog onOpenChange={setIsScannerOpen} open>
+			{openScannerMeal && (
+				<Dialog
+					onOpenChange={(open) => {
+						if (!open) setOpenScannerMeal(null);
+					}}
+					open
+				>
 					<DialogContent className="h-[min(90dvh,48rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-xl lg:max-w-4xl">
 						<DialogHeader>
 							<DialogTitle>Scan meal tickets</DialogTitle>
 							<DialogDescription>
-								{scannerMeal
-									? `Meal: ${scannerMeal.title}`
-									: "Scan participant meal tickets."}
+								{`Meal: ${openScannerMeal.title}`}
 							</DialogDescription>
 						</DialogHeader>
-						<MealScannerView mealId={scannerMealId} />
+						<MealScannerView
+							mealId={openScannerMeal.id}
+							scannerLease={openScannerMeal.lease}
+						/>
 					</DialogContent>
 				</Dialog>
 			)}

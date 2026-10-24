@@ -15,9 +15,11 @@ function isEventTicketToken(value: string): boolean {
 
 export default function MealScanner({
 	eventId,
+	scannerLease,
 	onScanResult
 }: {
 	eventId: string;
+	scannerLease?: string;
 	onScanResult: (userId: string, alreadyCheckedIn: boolean) => void;
 }) {
 	const recentScansRef = useRef<Map<string, number>>(new Map());
@@ -46,7 +48,7 @@ export default function MealScanner({
 			}
 
 			redeemTicket.mutate(
-				{ token, eventId },
+				{ token, eventId, scannerLease },
 				{
 					onSuccess: async (result) => {
 						const alreadyCheckedIn = result.status === "already_checked_in";

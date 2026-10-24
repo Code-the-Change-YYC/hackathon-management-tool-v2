@@ -1,5 +1,6 @@
+import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
-import { eventAttendance } from "@/server/db/event-schema";
+import { event, eventAttendance } from "@/server/db/event-schema";
 import { EventStatus, EventType, Role } from "@/types/types";
 import { createTestUser } from "../../../utils/auth";
 import { expect, test } from "../../fixtures/meal-info.fixture";
@@ -95,7 +96,7 @@ test.describe("admin meals", () => {
 		createMeal
 	}) => {
 		const now = Date.now();
-		await createMeal({
+		const draft = await createMeal({
 			title: "Draft only",
 			status: EventStatus.DRAFT,
 			startTime: new Date(now),
@@ -108,8 +109,66 @@ test.describe("admin meals", () => {
 			)
 		).toBeVisible();
 		await expect(
-			page.getByRole("button", { name: "Open scanner" })
-		).toHaveCount(0);
+			page.getByRole("button", { name: "Check for meal" })
+		).toBeVisible();
+		await page.getByRole("button", { name: "Check for meal" }).click();
+		await expect(page.getByRole("dialog")).toHaveCount(0);
+		await db
+			.update(event)
+			.set({ status: EventStatus.ACTIVE })
+			.where(eq(event.id, draft.id));
+		await page.getByRole("button", { name: "Check for meal" }).click();
+		await expect(page.getByRole("dialog")).toContainText(
+			`Meal: ${draft.title}`
+		);
+	});
+
+	// Given eligibility changes after the admin opens the meals page
+	// When the admin opens the scanner
+	// Then the current meal is used without reloading the page.
+	test("refreshes meal eligibility before opening the scanner", async ({
+		authenticatedPage: page,
+		createMeal
+	}) => {
+		const now = Date.now();
+		const first = await createMeal({
+			title: "Finishing breakfast",
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - 10 * minute),
+			endTime: new Date(now + 60 * minute)
+		});
+		const second = await createMeal({
+			title: "Next lunch",
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - 5 * minute),
+			endTime: new Date(now + 120 * minute)
+		});
+		await page.goto(path);
+		await expect(
+			page.getByText(`Open scanner to scan meal tickets for ${first.title}`)
+		).toBeVisible();
+		await db
+			.update(event)
+			.set({ endTime: new Date(now - minute) })
+			.where(eq(event.id, first.id));
+		await page.getByRole("button", { name: "Open scanner" }).click();
+		const dialog = page.getByRole("dialog");
+		await expect(dialog).toContainText(`Meal: ${second.title}`);
+		await db
+			.update(event)
+			.set({ endTime: new Date(now - minute) })
+			.where(eq(event.id, second.id));
+		await expect(dialog).toContainText(`Meal: ${second.title}`);
+		await dialog.getByRole("button", { name: "Close" }).click();
+		await page
+			.getByRole("button", { name: /Open scanner|Check for meal/ })
+			.click();
+		await expect(page.getByRole("dialog")).toHaveCount(0);
+		await expect(
+			page.getByText(
+				"No active meals are available to scan. Create and activate a food event first."
+			)
+		).toBeVisible();
 	});
 
 	// Given an active unended food event exists

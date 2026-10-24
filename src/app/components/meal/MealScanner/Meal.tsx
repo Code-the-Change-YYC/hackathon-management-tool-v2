@@ -10,7 +10,13 @@ import {
 import MealAttendees from "./MealAttendees";
 import MealScanner from "./MealScanner";
 
-export default function Meal({ mealId }: { mealId: string }) {
+export default function Meal({
+	mealId,
+	scannerLease
+}: {
+	mealId: string;
+	scannerLease?: string;
+}) {
 	const [search, setSearch] = useState("");
 	const [scanResult, setScanResult] = useState<{
 		userId: string;
@@ -51,6 +57,7 @@ export default function Meal({ mealId }: { mealId: string }) {
 							setSearch("");
 							setScanResult({ userId, alreadyCheckedIn });
 						}}
+						scannerLease={scannerLease}
 					/>
 				</div>
 			</div>

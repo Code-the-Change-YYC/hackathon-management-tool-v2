@@ -22,7 +22,8 @@ import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import { hackathonSettings } from "@/server/db/schema";
 import {
 	createEventTicketToken,
-	hashEventTicketToken
+	hashEventTicketToken,
+	isValidMealScannerLease
 } from "@/server/lib/event-tickets";
 import {
 	EVENT_STATUSES,
@@ -260,7 +261,8 @@ export const eventsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				eventId: z.string().uuid(),
-				token: ticketTokenSchema
+				token: ticketTokenSchema,
+				scannerLease: z.string().optional()
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -330,7 +332,19 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				if (ticket.expiresAt <= now || ticket.eventEndTime <= now) {
+				const canFinishMealLine =
+					ticket.eventType === EventType.FOOD &&
+					isValidMealScannerLease(
+						input.scannerLease,
+						ticket.eventId,
+						ctx.session.user.id,
+						now,
+						ticket.eventEndTime
+					);
+				if (
+					(ticket.expiresAt <= now || ticket.eventEndTime <= now) &&
+					!canFinishMealLine
+				) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
 						message: "This event ticket has expired."
