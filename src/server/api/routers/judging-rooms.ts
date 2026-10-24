@@ -7,7 +7,6 @@ import type { db as dbType } from "@/server/db";
 import { organization, user } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
-	judgingRoomDisplayName,
 	judgingRoomStaff,
 	judgingRooms,
 	scores
@@ -34,6 +33,11 @@ type DbClient =
 
 function hasPassedPrescreen(team: typeof organization.$inferSelect) {
 	return team.prescreenStatus === "passed";
+}
+
+/** Display label when the DB has no persisted room name column. */
+function judgingRoomDisplayName(index: number) {
+	return `Room ${index + 1}`;
 }
 
 /** Build Room 1..N labels per round (ordered by createdAt). */
