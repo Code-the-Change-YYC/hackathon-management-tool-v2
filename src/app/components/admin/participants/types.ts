@@ -1,21 +1,17 @@
-import { Role } from "@/types/types";
+import { PROGRAMS } from "@/lib/validation/signup";
+import { type Program, Role } from "@/types/types";
 
-/**
- * Shape the Registered Users screen renders. This is intentionally decoupled
- * from the database model so the UI can be built and reviewed before the
- * tRPC routers are wired in.
- */
 export type Participant = {
 	id: string;
-	firstName: string;
-	lastName: string;
+	firstName: string | null;
+	lastName: string | null;
 	email: string;
-	role: Role;
+	role: Role | null;
 	teamId: string | null;
 	teamName: string | null;
-	institution: string;
-	major: string | null;
-	registeredForFood: boolean;
+	institution: string | null;
+	major: Program | null;
+	registeredForFood: boolean | null;
 };
 
 export type FoodFilter = "registered" | "not-registered";
@@ -24,7 +20,7 @@ export type ParticipantFilters = {
 	roles: Role[];
 	food: FoodFilter[];
 	institutions: string[];
-	majors: string[];
+	majors: Program[];
 };
 
 export type SortOption = "role-asc" | "role-desc" | "name-asc" | "name-desc";
@@ -54,11 +50,7 @@ export const INSTITUTION_OPTIONS = [
 	"Other"
 ];
 
-export const MAJOR_OPTIONS = [
-	"Computer Science",
-	"Software Engineering",
-	"Other"
-];
+export const MAJOR_OPTIONS = PROGRAMS;
 
 export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 	{ value: "role-asc", label: "Sort by: role Ascending (A-Z)" },
