@@ -54,7 +54,13 @@ export default function MealScanner({
 							? `${result.participant.name} already checked in at ${formatTime(result.checkedInAt)}.`
 							: `${result.participant.name} checked in at ${formatTime(result.checkedInAt)}.`;
 						if (alreadyCheckedIn) {
-							toast.info(message);
+							toast.error(message, {
+								style: {
+									background: "var(--destructive)",
+									borderColor: "var(--destructive)",
+									color: "var(--primary-foreground)"
+								}
+							});
 						} else {
 							toast.success(message);
 						}

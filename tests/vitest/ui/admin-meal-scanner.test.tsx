@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
 	invalidate: vi.fn(),
 	scrollTo: vi.fn(),
 	success: vi.fn(),
-	info: vi.fn(),
+
 	error: vi.fn()
 }));
 
@@ -39,7 +39,7 @@ vi.mock("@yudiel/react-qr-scanner", () => ({
 }));
 
 vi.mock("sonner", () => ({
-	toast: { success: mocks.success, info: mocks.info, error: mocks.error }
+	toast: { success: mocks.success, error: mocks.error }
 }));
 
 vi.mock("@/trpc/react", () => ({
@@ -133,7 +133,7 @@ describe("admin meal scanner", () => {
 
 	// Given a participant already checked in and is lower in the attendee list
 	// When their ticket is scanned again
-	// Then the original check-in time appears and the list scrolls to that participant.
+	// Then a red toast shows the original check-in time and the list scrolls to that participant.
 	it("scrolls to an already checked-in attendee", async () => {
 		mocks.result = {
 			status: "already_checked_in",
@@ -159,8 +159,15 @@ describe("admin meal scanner", () => {
 				behavior: "smooth"
 			})
 		);
-		expect(mocks.info).toHaveBeenCalledWith(
-			`Sam Patel already checked in at ${formatTime(checkedInAt)}.`
+		expect(mocks.error).toHaveBeenCalledWith(
+			`Sam Patel already checked in at ${formatTime(checkedInAt)}.`,
+			{
+				style: {
+					background: "var(--destructive)",
+					borderColor: "var(--destructive)",
+					color: "var(--primary-foreground)"
+				}
+			}
 		);
 	});
 });
