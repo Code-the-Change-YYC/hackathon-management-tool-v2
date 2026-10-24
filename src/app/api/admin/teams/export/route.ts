@@ -35,27 +35,26 @@ export async function GET(request: Request) {
 
 	const rows = [
 		[
+			"Rank",
 			"ID",
-			"First Name",
-			"Last Name",
-			"Email",
-			"Role",
-			"Team ID",
 			"Team Name",
-			"Institution",
-			"Major",
-			"Registered for Food"
+			"Prescreen",
+			"Round1",
+			"Round2",
+			"Feedback",
+			"Members",
+			"Member Count"
 		],
 		...teams.map((team) => [
 			team.rank,
 			team.id,
 			team.name,
 			team.prescreen,
+			team.round1,
+			team.round2,
 			team.feedback,
 			team.members,
-			team.memberCount,
-			team.round1,
-			team.round2
+			team.memberCount
 		])
 	];
 
