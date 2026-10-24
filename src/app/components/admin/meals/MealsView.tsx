@@ -45,8 +45,8 @@ export function MealsView({
 				buttonText="Open scanner"
 				colour="purple"
 				description={
-					scannerMealId
-						? "(Recommended for mobile) open this to scan participant meal tickets!"
+					scannerMeal
+						? `Open scanner to scan meal tickets for ${scannerMeal.title}`
 						: "No active meals are available to scan. Create and activate a food event first."
 				}
 				image={<ScanMealTicketsImages />}
