@@ -9,17 +9,32 @@ export const metadata: Metadata = {
 	title: "Schedule | Hack the Change"
 };
 
-export default async function SchedulePage() {
+export default async function SchedulePage({
+	searchParams
+}: {
+	searchParams: Promise<{ round?: string }>;
+}) {
 	const { user } = await requireRole([Role.JUDGE, Role.ADMIN]);
-	const [assignments, criteria] = await Promise.all([
-		api.judgingAssignments.getByJudge({ judgeId: user.id }),
-		api.criteria.getAll()
-	]);
+	const [assignments, criteria, rounds, settings, selection] =
+		await Promise.all([
+			api.judgingAssignments.getByJudge({ judgeId: user.id }),
+			api.criteria.getAll(),
+			api.judgingRounds.getAll(),
+			api.hackathonSettings.get(),
+			searchParams
+		]);
 
 	return (
 		<>
 			<AutoRefresh />
-			<ScheduleView assignments={assignments} criteria={criteria} />
+			<ScheduleView
+				activeRoundId={settings?.currentRoundId ?? null}
+				assignments={assignments}
+				criteria={criteria}
+				initialRoundId={selection.round}
+				rounds={rounds}
+				updatedAt={Date.now()}
+			/>
 		</>
 	);
 }

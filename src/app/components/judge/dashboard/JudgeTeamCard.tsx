@@ -13,6 +13,7 @@ import { Skeleton } from "@/app/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
 	type Criterion,
+	canScoreAssignment,
 	formatTime,
 	getAssignmentCriteria,
 	getAssignmentRoomName,
@@ -35,7 +36,7 @@ export function JudgeTeamCard({
 }) {
 	const applicableCriteria = getAssignmentCriteria(assignment, criteria);
 	const scored = isAssignmentScored(assignment, criteria);
-	const canScore = !assignment.timeSlot || assignment.timeSlot <= currentTime;
+	const canScore = canScoreAssignment(assignment, criteria, currentTime);
 	const scoreHref = `/judge/score/${assignment.id}`;
 	const total = getAssignmentTotal(assignment, criteria);
 
