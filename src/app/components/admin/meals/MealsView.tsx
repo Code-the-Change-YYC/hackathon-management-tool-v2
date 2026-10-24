@@ -1,9 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import Banner from "@/app/components/Banner";
+import MealScannerView from "@/app/components/meal/MealScanner/Meal";
 import PageHeader from "@/app/components/PageHeader";
 import { Schedule } from "@/app/components/Schedule";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle
+} from "@/app/components/ui/dialog";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import type { RouterOutputs } from "@/trpc/react";
 import { MealAnalytics } from "./MealAnalytics";
@@ -23,6 +32,8 @@ export function MealsView({
 	dietary: RouterOutputs["users"]["getDietaryAnalytics"];
 }) {
 	const now = useCurrentTime();
+	const [isScannerOpen, setIsScannerOpen] = useState(false);
+	const scannerMeal = meals.find((meal) => meal.id === scannerMealId);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -38,8 +49,8 @@ export function MealsView({
 						? "(Recommended for mobile) open this to scan participant meal tickets!"
 						: "No active meals are available to scan. Create and activate a food event first."
 				}
-				href={scannerMealId ? `/admin/meals/${scannerMealId}/scan` : undefined}
 				image={<ScanMealTicketsImages />}
+				onClick={scannerMealId ? () => setIsScannerOpen(true) : undefined}
 				title="Scan meal tickets"
 			/>
 			<Card>
@@ -56,6 +67,21 @@ export function MealsView({
 				</CardContent>
 			</Card>
 			<MealAnalytics dietary={dietary} ticketsScanned={ticketsScanned} />
+			{isScannerOpen && scannerMealId && (
+				<Dialog onOpenChange={setIsScannerOpen} open>
+					<DialogContent className="sm:max-w-xl lg:max-w-4xl">
+						<DialogHeader>
+							<DialogTitle>Scan meal tickets</DialogTitle>
+							<DialogDescription>
+								{scannerMeal
+									? `Meal: ${scannerMeal.title}`
+									: "Scan participant meal tickets."}
+							</DialogDescription>
+						</DialogHeader>
+						<MealScannerView mealId={scannerMealId} />
+					</DialogContent>
+				</Dialog>
+			)}
 		</div>
 	);
 }
