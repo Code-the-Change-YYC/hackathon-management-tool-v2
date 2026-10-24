@@ -19,7 +19,6 @@ export default async function AdminLayout({
 
 	const ADMIN_NAV_GROUPS: NavGroup[] = [
 		{
-			groupLabel: "Event Management",
 			items: [
 				{ title: "Schedule", href: "/admin/schedule", icon: "calendar" },
 				{
@@ -34,12 +33,6 @@ export default async function AdminLayout({
 					href: "/admin/judging",
 					icon: "task"
 				}
-			]
-		},
-		{
-			groupLabel: "App Management",
-			items: [
-				{ title: "Admin Controls", href: "/admin/controls", icon: "settings" }
 			]
 		}
 	];

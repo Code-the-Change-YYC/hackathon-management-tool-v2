@@ -67,12 +67,3 @@ export function toTimeInputValue(value?: Date | null) {
 export function toDateInputValue(value?: Date | null) {
 	return value && isValid(value) ? formatDateKey(value) : "";
 }
-
-// Moves `existing` to the given day, keeping its time of day (midnight if unset).
-export function fromDateInputValue(value: string, existing?: Date | null) {
-	const time =
-		existing && isValid(existing)
-			? format(existing, TIME_INPUT_FORMAT, { in: calgary })
-			: "00:00";
-	return fromDateTimeLocalValue(`${value}T${time}`);
-}
