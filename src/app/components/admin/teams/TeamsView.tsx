@@ -14,7 +14,10 @@ import {
 	AlertDialogTitle
 } from "@/app/components/ui/alert-dialog";
 import { Badge } from "@/app/components/ui/badge";
+import { useRefresh } from "@/hooks/use-refresh";
+import { api } from "@/trpc/react";
 import PageHeader from "../../PageHeader";
+import { Card, CardContent } from "../../ui/card";
 import { PrescreenDialog } from "./PrescreenDialog";
 import { ReviewFeedbackDialog } from "./ReviewFeedbackDialog";
 import { TeamsTable } from "./TeamsTable";
@@ -48,7 +51,7 @@ function matchesSearch(team: Team, search: string) {
 function matchesFilters(team: Team, filters: FilterOption[]) {
 	if (filters.length === 0) return true;
 
-	if (filters.includes("prescreen") && !team.prescreen) {
+	if (filters.includes("prescreen") && team.prescreen !== "passed") {
 		return false;
 	}
 
@@ -97,6 +100,9 @@ export function TeamsView({ teams }: TeamsViewProps) {
 	const [reviewing, setReviewing] = useState<Team | null>(null);
 	const [prescreening, setPrescreening] = useState<Team | null>(null);
 	const [deleting, setDeleting] = useState<Team | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+
+	const { refresh } = useRefresh();
 
 	const visibleTeams = useMemo(
 		() =>
@@ -129,64 +135,90 @@ export function TeamsView({ teams }: TeamsViewProps) {
 	}
 
 	function handleCopyEmails() {
-		const emails = visibleTeams.map((team) => team.members).join(", ");
+		const emails = visibleTeams
+			.map((team) => team.members)
+			.filter((members) => members !== "")
+			.join(", ");
 
 		void navigator.clipboard?.writeText(emails);
 		toast.success("Emails copied to clipboard!");
 	}
 
 	function handleDownloadCsv() {
-		// TODO: generate the export server-side once the router exists.
 		toast.success("CSV download started!");
+		window.location.href = "/api/admin/teams/export";
 	}
 
-	function handleDelete() {
-		// TODO: actually delete the team.
-		setDeleting(null);
-		toast.success("Team deleted!");
+	const deleteTeamMutation = api.teams.delete.useMutation({
+		onSuccess: () => {
+			setDeleting(null);
+			toast.success("Team deleted!");
+			refresh();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Unable to delete team.");
+		}
+	});
+
+	async function handleDelete() {
+		if (!deleting || isDeleting) return;
+
+		setIsDeleting(true);
+		try {
+			deleteTeamMutation.mutate({ id: deleting.id });
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Unable to delete team."
+			);
+		} finally {
+			setIsDeleting(false);
+		}
 	}
 
 	return (
 		<>
 			<div className="flex flex-col gap-6">
 				<PageHeader description="View all teams" title="Teams" />
+				<Card>
+					<CardContent className="flex flex-col gap-6">
+						<TeamsToolbar
+							filters={filters}
+							onCopyEmails={handleCopyEmails}
+							onDownloadCsv={handleDownloadCsv}
+							onFiltersChange={setFilters}
+							onSearchChange={setSearch}
+							onSortChange={setSort}
+							search={search}
+							sort={sort}
+						/>
 
-				<TeamsToolbar
-					filters={filters}
-					onCopyEmails={handleCopyEmails}
-					onDownloadCsv={handleDownloadCsv}
-					onFiltersChange={setFilters}
-					onSearchChange={setSearch}
-					onSortChange={setSort}
-					search={search}
-					sort={sort}
-				/>
+						<div className="flex flex-wrap items-center gap-2">
+							<span className="text-muted-foreground text-sm">
+								Showing {visibleTeams.length.toLocaleString()} of{" "}
+								{teams.length.toLocaleString()} teams
+							</span>
+							{activeChips.map((chip) => (
+								<Badge
+									aria-label={`Remove filter: ${chip.label}`}
+									className="h-7 cursor-pointer rounded-md px-3 font-medium"
+									key={chip.key}
+									render={<button onClick={chip.onRemove} type="button" />}
+									variant="accent"
+								>
+									{chip.label}
+									<CloseFill />
+								</Badge>
+							))}
+						</div>
 
-				<div className="flex flex-wrap items-center gap-2">
-					<span className="text-muted-foreground text-sm">
-						Showing {visibleTeams.length.toLocaleString()} of{" "}
-						{teams.length.toLocaleString()} teams
-					</span>
-					{activeChips.map((chip) => (
-						<Badge
-							aria-label={`Remove filter: ${chip.label}`}
-							className="h-7 cursor-pointer rounded-md px-3 font-medium"
-							key={chip.key}
-							render={<button onClick={chip.onRemove} type="button" />}
-							variant="accent"
-						>
-							{chip.label}
-							<CloseFill />
-						</Badge>
-					))}
-				</div>
-
-				<TeamsTable
-					onDelete={setDeleting}
-					onPrescreen={setPrescreening}
-					onReview={setReviewing}
-					teams={visibleTeams}
-				/>
+						<TeamsTable
+							onDelete={setDeleting}
+							onPrescreen={setPrescreening}
+							onReview={setReviewing}
+							teams={visibleTeams}
+						/>
+					</CardContent>
+				</Card>
 			</div>
 
 			<PrescreenDialog
@@ -197,14 +229,15 @@ export function TeamsView({ teams }: TeamsViewProps) {
 				}}
 				team={prescreening}
 			/>
-			<ReviewFeedbackDialog
+			{/* TODO: Reimplement after judging issues have been settled (round1, round2, and final round data are not yet in the db, so this dialog is pointless for now) */}
+			{/* <ReviewFeedbackDialog
 				onOpenChange={(open) => {
 					if (!open) {
 						setReviewing(null);
 					}
 				}}
 				team={reviewing}
-			/>
+			/> */}
 
 			<AlertDialog
 				onOpenChange={(open) => {
@@ -229,7 +262,7 @@ export function TeamsView({ teams }: TeamsViewProps) {
 							onClick={handleDelete}
 							variant="destructive-solid"
 						>
-							Delete team
+							{isDeleting ? "Deleting..." : "Delete team"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

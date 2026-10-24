@@ -14,6 +14,8 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle
 } from "@/app/components/ui/alert-dialog";
+import { useRefresh } from "@/hooks/use-refresh";
+import { api } from "@/trpc/react";
 import { Button } from "../../ui/button";
 import {
 	Dialog,
@@ -27,7 +29,7 @@ import type { Team } from "./types";
 type Step = "intro" | "pass-fail" | "result" | "already-screened";
 
 type PrescreenFields = {
-	passed: boolean | null;
+	passed: "pending" | "passed" | "failed" | null;
 	justification: string;
 };
 
@@ -47,6 +49,17 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 	const [step, setStep] = useState<Step>("intro");
 	const [fields, setFields] = useState<PrescreenFields | null>(null);
 	const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+	const { refresh } = useRefresh();
+
+	const saveChangesMutation = api.teams.setPrescreen.useMutation({
+		onSuccess: () => {
+			toast.success("Team prescreening status changed!");
+			refresh(() => onOpenChange(false));
+		},
+		onError: (error) => {
+			toast.error(error.message || "Unable to change team's prescreen status.");
+		}
+	});
 
 	useEffect(() => {
 		if (!team) {
@@ -56,7 +69,7 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 		}
 
 		setFields(toPrescreenFields(team));
-		setStep(team.prescreen === null ? "intro" : "already-screened");
+		setStep(team.prescreen === "pending" ? "intro" : "already-screened");
 	}, [team]);
 
 	if (!(team && fields)) {
@@ -92,13 +105,24 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 	}
 
 	function saveChanges() {
-		// TODO: persist through the teams router.
-		toast.success("Changes saved!");
-		onOpenChange(false);
+		if (
+			!team ||
+			!fields ||
+			fields.passed === null ||
+			fields.passed === "pending"
+		) {
+			return;
+		}
+
+		saveChangesMutation.mutate({
+			teamId: team.id,
+			status: fields.passed === "passed" ? "passed" : "failed",
+			comments: fields.justification.trim()
+		});
 	}
 
 	function handleDecision(passed: boolean) {
-		updateField("passed", passed);
+		updateField("passed", passed ? "passed" : "failed");
 		setStep("result");
 	}
 
@@ -176,7 +200,14 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 								src="/svgs/flagGuy.svg"
 								width={254}
 							/>
-							<Button onClick={() => saveChanges()}>Save and Finish</Button>
+							<Button
+								disabled={saveChangesMutation.isPending || !hasJustification}
+								onClick={saveChanges}
+							>
+								{saveChangesMutation.isPending
+									? "Saving..."
+									: "Save and Finish"}
+							</Button>
 						</div>
 					)}
 
