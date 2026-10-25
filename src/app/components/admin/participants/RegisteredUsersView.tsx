@@ -230,7 +230,7 @@ export function RegisteredUsersView({
 	return (
 		<>
 			<div className="flex flex-col gap-6">
-				<PageHeader description="View all participants" title="Users" />
+				<PageHeader description="View and manage users." title="Users" />
 				<Card>
 					<CardContent className="flex flex-col gap-6">
 						<ParticipantsToolbar
