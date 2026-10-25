@@ -50,7 +50,6 @@ function matchesSearch(participant: Participant, search: string) {
 		participant.firstName,
 		participant.lastName,
 		participant.email,
-		participant.teamId ?? "",
 		participant.teamName ?? ""
 	].some((value) => (value ?? "").toLowerCase().includes(needle));
 }

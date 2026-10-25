@@ -69,12 +69,10 @@ export function ParticipantsTable({
 			<Table>
 				<TableHeader>
 					<TableRow className="border-none hover:bg-white">
-						<TableHead>ID</TableHead>
 						<TableHead className="pl-4">First Name</TableHead>
 						<TableHead>Last Name</TableHead>
 						<TableHead>Email Address</TableHead>
 						<TableHead>Role</TableHead>
-						<TableHead>Team ID</TableHead>
 						<TableHead>Team Name</TableHead>
 						<TableHead>Institution</TableHead>
 						<TableHead>Major</TableHead>
@@ -90,9 +88,6 @@ export function ParticipantsTable({
 							className="border-none hover:bg-white"
 							key={participant.id}
 						>
-							<TableCell className="whitespace-nowrap text-muted-foreground">
-								<span title={participant.id}>{participant.id}</span>
-							</TableCell>
 							<TableCell className="pl-4">{participant.firstName}</TableCell>
 							<TableCell>{participant.lastName}</TableCell>
 							<TableCell className="text-muted-foreground">
@@ -106,9 +101,6 @@ export function ParticipantsTable({
 								) : (
 									<Badge variant={"secondary"}>N/A</Badge>
 								)}
-							</TableCell>
-							<TableCell className="text-muted-foreground">
-								{participant.teamId ?? "n/a"}
 							</TableCell>
 							<TableCell>{participant.teamName ?? "n/a"}</TableCell>
 							<TableCell>{participant.institution ?? "n/a"}</TableCell>

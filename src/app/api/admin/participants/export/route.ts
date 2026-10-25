@@ -48,24 +48,20 @@ export async function GET(request: Request) {
 
 	const rows = [
 		[
-			"ID",
 			"First Name",
 			"Last Name",
 			"Email",
 			"Role",
-			"Team ID",
 			"Team Name",
 			"Institution",
 			"Major",
 			"Registered for Food"
 		],
 		...participants.map((participant) => [
-			participant.id,
 			participant.firstName,
 			participant.lastName,
 			participant.email,
 			participant.role ? roleLabel(participant.role) : "",
-			participant.teamId,
 			participant.teamName,
 			participant.institution,
 			participant.major,

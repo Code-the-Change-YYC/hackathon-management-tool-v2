@@ -7,7 +7,6 @@ export type Participant = {
 	lastName: string | null;
 	email: string;
 	role: Role | null;
-	teamId: string | null;
 	teamName: string | null;
 	institution: string | null;
 	major: Program | null;

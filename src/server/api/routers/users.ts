@@ -74,7 +74,6 @@ export const usersRouter = createTRPCRouter({
 					with: {
 						organization: {
 							columns: {
-								id: true,
 								name: true
 							}
 						}
@@ -92,7 +91,6 @@ export const usersRouter = createTRPCRouter({
 				lastName: person.lastName,
 				email: person.email,
 				role: getRole(person.role),
-				teamId: team?.id ?? null,
 				teamName: team?.name ?? null,
 				institution: person.school,
 				major: person.program,
