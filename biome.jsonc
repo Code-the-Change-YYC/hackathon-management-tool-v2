@@ -6,6 +6,10 @@
 		"useIgnoreFile": true,
 		"clientKind": "git"
 	},
+	// Claude Code worktrees are full repo checkouts with their own root config.
+	"files": {
+		"includes": ["**", "!!**/.claude/worktrees"]
+	},
 	"assist": {
 		"enabled": true,
 		"actions": {
