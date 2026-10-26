@@ -3,6 +3,7 @@
 import { type IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import { useRef } from "react";
 import { toast } from "sonner";
+import { formatTime } from "@/lib/datetime";
 import { api } from "@/trpc/react";
 import { EVENT_TICKET_TOKEN_PATTERN } from "@/types/types";
 
@@ -12,7 +13,15 @@ function isEventTicketToken(value: string): boolean {
 	return EVENT_TICKET_TOKEN_PATTERN.test(value);
 }
 
-export default function MealScanner({ eventId }: { eventId: string }) {
+export default function MealScanner({
+	eventId,
+	scannerLease,
+	onScanResult
+}: {
+	eventId: string;
+	scannerLease?: string;
+	onScanResult: (userId: string, alreadyCheckedIn: boolean) => void;
+}) {
 	const recentScansRef = useRef<Map<string, number>>(new Map());
 	const utils = api.useUtils();
 	const redeemTicket = api.events.redeemEventTicket.useMutation();
@@ -39,13 +48,26 @@ export default function MealScanner({ eventId }: { eventId: string }) {
 			}
 
 			redeemTicket.mutate(
-				{ token, eventId },
+				{ token, eventId, scannerLease },
 				{
-					onSuccess: (result) => {
-						toast.success(
-							`${result.participant.name} checked in successfully.`
-						);
-						void utils.events.getEventAttendees.invalidate({ eventId });
+					onSuccess: async (result) => {
+						const alreadyCheckedIn = result.status === "already_checked_in";
+						const message = alreadyCheckedIn
+							? `${result.participant.name} already checked in at ${formatTime(result.checkedInAt)}.`
+							: `${result.participant.name} checked in at ${formatTime(result.checkedInAt)}.`;
+						if (alreadyCheckedIn) {
+							toast.error(message, {
+								style: {
+									background: "var(--destructive)",
+									borderColor: "var(--destructive)",
+									color: "var(--primary-foreground)"
+								}
+							});
+						} else {
+							toast.success(message);
+						}
+						await utils.events.getEventAttendees.invalidate({ eventId });
+						onScanResult(result.participant.id, alreadyCheckedIn);
 					},
 					onError: (error) => {
 						toast.error(error.message);
