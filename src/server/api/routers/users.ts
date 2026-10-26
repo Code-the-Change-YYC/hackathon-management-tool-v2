@@ -67,7 +67,10 @@ export const usersRouter = createTRPCRouter({
 				role: true,
 				school: true,
 				program: true,
-				wantsFood: true
+				wantsFood: true,
+				createdAt: true,
+				emailVerified: true,
+				completedRegistration: true
 			},
 			with: {
 				members: {
@@ -92,6 +95,9 @@ export const usersRouter = createTRPCRouter({
 				email: person.email,
 				role: getRole(person.role),
 				teamName: team?.name ?? null,
+				signedUpAt: person.createdAt,
+				emailVerified: person.emailVerified,
+				completedRegistration: person.completedRegistration,
 				institution: person.school,
 				major: person.program,
 				registeredForFood: person.wantsFood

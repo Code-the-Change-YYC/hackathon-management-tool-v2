@@ -47,6 +47,9 @@ const participants: Participant[] = [
 		email: "ada@example.com",
 		role: Role.ADMIN,
 		teamName: "Analytical Engines",
+		signedUpAt: new Date("2026-09-01T18:00:00Z"),
+		emailVerified: true,
+		completedRegistration: true,
 		institution: "University of Calgary",
 		major: "computer_science",
 		registeredForFood: true
@@ -58,6 +61,9 @@ const participants: Participant[] = [
 		email: "grace@example.com",
 		role: Role.JUDGE,
 		teamName: null,
+		signedUpAt: new Date("2026-09-02T18:00:00Z"),
+		emailVerified: true,
+		completedRegistration: false,
 		institution: "SAIT",
 		major: "software_engineering",
 		registeredForFood: false
@@ -69,6 +75,9 @@ const participants: Participant[] = [
 		email: "linus@example.com",
 		role: Role.PARTICIPANT,
 		teamName: null,
+		signedUpAt: new Date("2026-09-03T18:00:00Z"),
+		emailVerified: false,
+		completedRegistration: false,
 		institution: null,
 		major: null,
 		registeredForFood: null
@@ -135,6 +144,38 @@ describe("admin users", () => {
 		expect(
 			screen.getByLabelText("Remove filter: Sort by: name Ascending (A-Z)")
 		).toBeInTheDocument();
+	});
+
+	it("filters by email verification and completed registration", async () => {
+		renderUsers();
+
+		fireEvent.click(screen.getByRole("button", { name: "Filter users" }));
+		fireEvent.click(
+			await screen.findByRole("menuitem", { name: "Email verified" })
+		);
+		fireEvent.click(
+			await screen.findByRole("menuitemcheckbox", {
+				name: "Email not verified"
+			})
+		);
+
+		expect(screen.getByText("Showing 1 of 3 users")).toBeInTheDocument();
+		expect(screen.getByText("Linus")).toBeInTheDocument();
+
+		fireEvent.click(
+			screen.getByRole("menuitemcheckbox", { name: "Email not verified" })
+		);
+		fireEvent.click(
+			await screen.findByRole("menuitem", { name: "Completed registration" })
+		);
+		fireEvent.click(
+			await screen.findByRole("menuitemcheckbox", {
+				name: "Completed registration"
+			})
+		);
+
+		expect(screen.getByText("Showing 1 of 3 users")).toBeInTheDocument();
+		expect(screen.getByText("Ada")).toBeInTheDocument();
 	});
 
 	it("edits a user with trimmed names and the selected role", async () => {

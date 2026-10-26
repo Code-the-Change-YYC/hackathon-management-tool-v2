@@ -1,6 +1,13 @@
 "use client";
 
-import { DeleteLine, EditLine, More1Line, User3Line } from "@mingcute/react";
+import {
+	CheckLine,
+	CloseLine,
+	DeleteLine,
+	EditLine,
+	More1Line,
+	User3Line
+} from "@mingcute/react";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -25,6 +32,7 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
+import { formatShortDate } from "@/lib/datetime";
 import { Role } from "@/types/types";
 import { type Participant, ROLE_LABELS } from "./types";
 
@@ -36,6 +44,24 @@ const ROLE_BADGE_VARIANTS: Record<
 	[Role.JUDGE]: "accent",
 	[Role.PARTICIPANT]: "secondary"
 };
+
+function BooleanIcon({ value }: { value: boolean }) {
+	return value ? (
+		<CheckLine
+			aria-label="Yes"
+			className="size-5"
+			color="var(--color-green-700)"
+			role="img"
+		/>
+	) : (
+		<CloseLine
+			aria-label="No"
+			className="size-5"
+			color="var(--color-red-600)"
+			role="img"
+		/>
+	);
+}
 
 type ParticipantsTableProps = {
 	participants: Participant[];
@@ -69,14 +95,17 @@ export function ParticipantsTable({
 			<Table>
 				<TableHeader>
 					<TableRow className="border-none hover:bg-white">
-						<TableHead className="pl-4">First Name</TableHead>
-						<TableHead>Last Name</TableHead>
-						<TableHead>Email Address</TableHead>
-						<TableHead>Role</TableHead>
-						<TableHead>Team Name</TableHead>
-						<TableHead>Institution</TableHead>
-						<TableHead>Major</TableHead>
-						<TableHead>Registered for Food</TableHead>
+						<TableHead className="min-w-36 pl-4">First Name</TableHead>
+						<TableHead className="min-w-36">Last Name</TableHead>
+						<TableHead className="min-w-64">Email Address</TableHead>
+						<TableHead className="min-w-28">Role</TableHead>
+						<TableHead className="min-w-44">Team Name</TableHead>
+						<TableHead className="min-w-36">Sign-up Date</TableHead>
+						<TableHead className="min-w-36">Email Verified</TableHead>
+						<TableHead className="min-w-48">Completed Registration</TableHead>
+						<TableHead className="min-w-52">Institution</TableHead>
+						<TableHead className="min-w-44">Major</TableHead>
+						<TableHead className="min-w-44">Registered for Food</TableHead>
 						<TableHead className="w-12 pr-4">
 							<span className="sr-only">Actions</span>
 						</TableHead>
@@ -88,8 +117,10 @@ export function ParticipantsTable({
 							className="border-none hover:bg-white"
 							key={participant.id}
 						>
-							<TableCell className="pl-4">{participant.firstName}</TableCell>
-							<TableCell>{participant.lastName}</TableCell>
+							<TableCell className="pl-4">
+								{participant.firstName || "-"}
+							</TableCell>
+							<TableCell>{participant.lastName || "-"}</TableCell>
 							<TableCell className="text-muted-foreground">
 								{participant.email}
 							</TableCell>
@@ -103,14 +134,21 @@ export function ParticipantsTable({
 								)}
 							</TableCell>
 							<TableCell>{participant.teamName ?? "n/a"}</TableCell>
+							<TableCell>{formatShortDate(participant.signedUpAt)}</TableCell>
+							<TableCell>
+								<BooleanIcon value={participant.emailVerified} />
+							</TableCell>
+							<TableCell>
+								<BooleanIcon value={participant.completedRegistration} />
+							</TableCell>
 							<TableCell>{participant.institution ?? "n/a"}</TableCell>
 							<TableCell>{participant.major ?? "n/a"}</TableCell>
 							<TableCell>
-								{participant.registeredForFood === true
-									? "Yes"
-									: participant.registeredForFood === false
-										? "No"
-										: "n/a"}
+								{participant.registeredForFood === null ? (
+									"n/a"
+								) : (
+									<BooleanIcon value={participant.registeredForFood} />
+								)}
 							</TableCell>
 							<TableCell className="pr-4 text-right">
 								<DropdownMenu>

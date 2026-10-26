@@ -15,6 +15,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { Badge } from "@/app/components/ui/badge";
 import { useRefresh } from "@/hooks/use-refresh";
+import { downloadParticipantsCsv } from "@/lib/participants-csv";
 import { authClient } from "@/server/better-auth/client";
 import PageHeader from "../../PageHeader";
 import { Card, CardContent } from "../../ui/card";
@@ -24,10 +25,12 @@ import { ParticipantsTable } from "./ParticipantsTable";
 import { ParticipantsToolbar } from "./ParticipantsToolbar";
 import { SendEmailDialog } from "./SendEmailDialog";
 import {
+	EMAIL_VERIFIED_OPTIONS,
 	EMPTY_FILTERS,
 	FOOD_OPTIONS,
 	type Participant,
 	type ParticipantFilters,
+	REGISTRATION_OPTIONS,
 	ROLE_LABELS,
 	SORT_OPTIONS,
 	type SortOption
@@ -66,6 +69,22 @@ function matchesFilters(participant: Participant, filters: ParticipantFilters) {
 		const wantsRegistered = filters.food[0] === "registered";
 
 		if (participant.registeredForFood !== wantsRegistered) {
+			return false;
+		}
+	}
+
+	if (filters.emailVerified.length === 1) {
+		const wantsVerified = filters.emailVerified[0] === "verified";
+
+		if (participant.emailVerified !== wantsVerified) {
+			return false;
+		}
+	}
+
+	if (filters.registration.length === 1) {
+		const wantsCompleted = filters.registration[0] === "completed";
+
+		if (participant.completedRegistration !== wantsCompleted) {
 			return false;
 		}
 	}
@@ -157,6 +176,32 @@ export function RegisteredUsersView({
 					food: current.food.filter((value) => value !== food)
 				}))
 		})),
+		...filters.emailVerified.map((emailVerified) => ({
+			key: `email-verified-${emailVerified}`,
+			label:
+				EMAIL_VERIFIED_OPTIONS.find((option) => option.value === emailVerified)
+					?.label ?? emailVerified,
+			onRemove: () =>
+				setFilters((current) => ({
+					...current,
+					emailVerified: current.emailVerified.filter(
+						(value) => value !== emailVerified
+					)
+				}))
+		})),
+		...filters.registration.map((registration) => ({
+			key: `registration-${registration}`,
+			label:
+				REGISTRATION_OPTIONS.find((option) => option.value === registration)
+					?.label ?? registration,
+			onRemove: () =>
+				setFilters((current) => ({
+					...current,
+					registration: current.registration.filter(
+						(value) => value !== registration
+					)
+				}))
+		})),
 		...filters.institutions.map((institution) => ({
 			key: `institution-${institution}`,
 			label: institution,
@@ -198,7 +243,7 @@ export function RegisteredUsersView({
 	}
 
 	function handleDownloadCsv() {
-		window.location.href = "/api/admin/users/export";
+		downloadParticipantsCsv(visibleParticipants);
 	}
 
 	async function handleDelete() {

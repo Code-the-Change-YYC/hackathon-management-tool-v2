@@ -33,6 +33,10 @@ export function formatFullDate(value: DateValue) {
 	return format(value, "MMMM d, yyyy", { in: calgary });
 }
 
+export function formatShortDate(value: DateValue) {
+	return format(value, "MMM d, yyyy", { in: calgary });
+}
+
 export function formatDateTime(value: DateValue) {
 	return format(value, "MMM d, yyyy, h:mm a", { in: calgary });
 }
