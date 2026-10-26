@@ -34,6 +34,17 @@ export default async function AdminLayout({
 					icon: "task"
 				}
 			]
+		},
+		{
+			groupLabel: "Portal Views",
+			items: [
+				{
+					title: "Participant Dashboard",
+					href: "/participant",
+					icon: "link"
+				},
+				{ title: "Judge Dashboard", href: "/judge", icon: "link" }
+			]
 		}
 	];
 
