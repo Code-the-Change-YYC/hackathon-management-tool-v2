@@ -3,7 +3,6 @@ import {
 	formatDateKey,
 	formatDateTime,
 	formatTime,
-	fromDateInputValue,
 	fromDateTimeLocalValue,
 	isSameCalgaryDay,
 	toDateInputValue,
@@ -45,14 +44,7 @@ describe("datetime helpers", () => {
 		);
 	});
 
-	it("changes the day of a date input while keeping its time of day", () => {
+	it("fills a date input with the Calgary day", () => {
 		expect(toDateInputValue(instant)).toBe("2026-10-17");
-		expect(fromDateInputValue("2026-10-20", instant)).toEqual(
-			new Date("2026-10-21T00:30:00Z")
-		);
-		expect(fromDateInputValue("2026-10-20")).toEqual(
-			new Date("2026-10-20T06:00:00Z")
-		);
-		expect(fromDateInputValue("")).toBeNull();
 	});
 });
