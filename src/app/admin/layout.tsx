@@ -24,7 +24,7 @@ export default async function AdminLayout({
 				{ title: "Schedule", href: "/admin/schedule", icon: "calendar" },
 				{
 					title: "Users",
-					href: "/admin/participants",
+					href: "/admin/users",
 					icon: "user"
 				},
 				{ title: "Teams", href: "/admin/teams", icon: "group" },

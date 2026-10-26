@@ -198,7 +198,7 @@ export function RegisteredUsersView({
 	}
 
 	function handleDownloadCsv() {
-		window.location.href = "/api/admin/participants/export";
+		window.location.href = "/api/admin/users/export";
 	}
 
 	async function handleDelete() {

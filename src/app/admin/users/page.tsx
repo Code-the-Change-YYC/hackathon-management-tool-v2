@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { RegisteredUsersView } from "@/app/components/admin/participants/RegisteredUsersView";
+import { RegisteredUsersView } from "@/app/components/admin/users/RegisteredUsersView";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 import { Role } from "@/types/types";

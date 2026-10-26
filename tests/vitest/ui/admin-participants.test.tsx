@@ -6,8 +6,8 @@ import {
 	within
 } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { RegisteredUsersView } from "@/app/components/admin/participants/RegisteredUsersView";
-import type { Participant } from "@/app/components/admin/participants/types";
+import { RegisteredUsersView } from "@/app/components/admin/users/RegisteredUsersView";
+import type { Participant } from "@/app/components/admin/users/types";
 import { Role } from "@/types/types";
 
 const mocks = vi.hoisted(() => ({
