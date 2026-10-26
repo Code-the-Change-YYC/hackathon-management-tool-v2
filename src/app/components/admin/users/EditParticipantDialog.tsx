@@ -29,6 +29,8 @@ import {
 	SelectTrigger,
 	SelectValue
 } from "@/app/components/ui/select";
+import { useRefresh } from "@/hooks/use-refresh";
+import { api } from "@/trpc/react";
 import type { Role } from "@/types/types";
 import type { Participant } from "./types";
 import { ROLE_OPTIONS } from "./types";
@@ -37,7 +39,7 @@ type EditableFields = {
 	firstName: string;
 	lastName: string;
 	email: string;
-	role: Role;
+	role: Role | null;
 };
 
 type EditParticipantDialogProps = {
@@ -47,8 +49,8 @@ type EditParticipantDialogProps = {
 
 function toEditableFields(participant: Participant): EditableFields {
 	return {
-		firstName: participant.firstName,
-		lastName: participant.lastName,
+		firstName: participant.firstName ?? "",
+		lastName: participant.lastName ?? "",
 		email: participant.email,
 		role: participant.role
 	};
@@ -60,6 +62,14 @@ export function EditParticipantDialog({
 }: EditParticipantDialogProps) {
 	const [fields, setFields] = useState<EditableFields | null>(null);
 	const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+	const { refresh } = useRefresh();
+	const updateUser = api.users.update.useMutation({
+		onSuccess: () => {
+			toast.success("Changes saved!");
+			refresh(() => onOpenChange(false));
+		},
+		onError: (error) => toast.error(error.message)
+	});
 
 	useEffect(() => {
 		setFields(participant ? toEditableFields(participant) : null);
@@ -98,9 +108,24 @@ export function EditParticipantDialog({
 	}
 
 	function saveChanges() {
-		// TODO: persist through the users router.
-		toast.success("Changes saved!");
-		onOpenChange(false);
+		if (!participant || !fields || updateUser.isPending) return;
+
+		const firstName = fields.firstName.trim();
+		const lastName = fields.lastName.trim();
+		const email = fields.email.trim();
+
+		if (!firstName || !lastName) {
+			toast.error("First and last name are required.");
+			return;
+		}
+
+		updateUser.mutate({
+			id: participant.id,
+			firstName,
+			lastName,
+			email,
+			...(fields.role ? { role: fields.role } : {}) // Avoid overwriting when role is null (it might be null if the role value does not match one of the enum values)
+		});
 	}
 
 	return (
@@ -114,6 +139,7 @@ export function EditParticipantDialog({
 						<Field>
 							<FieldLabel htmlFor="edit-first-name">First Name</FieldLabel>
 							<Input
+								disabled={updateUser.isPending}
 								id="edit-first-name"
 								onChange={(event) =>
 									updateField("firstName", event.target.value)
@@ -124,6 +150,7 @@ export function EditParticipantDialog({
 						<Field>
 							<FieldLabel htmlFor="edit-last-name">Last Name</FieldLabel>
 							<Input
+								disabled={updateUser.isPending}
 								id="edit-last-name"
 								onChange={(event) =>
 									updateField("lastName", event.target.value)
@@ -134,6 +161,7 @@ export function EditParticipantDialog({
 						<Field>
 							<FieldLabel htmlFor="edit-email">Email Address</FieldLabel>
 							<Input
+								disabled={updateUser.isPending}
 								id="edit-email"
 								onChange={(event) => updateField("email", event.target.value)}
 								type="email"
@@ -143,6 +171,7 @@ export function EditParticipantDialog({
 						<Field>
 							<FieldLabel htmlFor="edit-role">User Role</FieldLabel>
 							<Select
+								disabled={updateUser.isPending}
 								items={ROLE_OPTIONS}
 								onValueChange={(value) => updateField("role", value as Role)}
 								value={fields.role}
@@ -163,10 +192,13 @@ export function EditParticipantDialog({
 						</Field>
 					</FieldGroup>
 					<div className="flex flex-col gap-2">
-						<Button disabled={!isDirty} onClick={saveChanges}>
-							Save changes
+						<Button
+							disabled={!isDirty || updateUser.isPending}
+							onClick={saveChanges}
+						>
+							{updateUser.isPending ? "Saving..." : "Save changes"}
 						</Button>
-						<Button onClick={() => requestClose(false)} variant="ghost">
+						<Button onClick={() => requestClose(false)} variant="outline">
 							Cancel
 						</Button>
 					</div>

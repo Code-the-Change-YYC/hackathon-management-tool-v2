@@ -56,23 +56,25 @@ export function ParticipantsToolbar({
 					onFiltersChange={onFiltersChange}
 				/>
 				<ParticipantsSortMenu onSortChange={onSortChange} sort={sort} />
-				<Button
+				{/* TODO: Fully implement user invites */}
+				{/* <Button
 					aria-haspopup="dialog"
 					aria-label="Invite a user"
 					onClick={onInvite}
-					size="icon-lg"
-					variant="ghost"
+					size="sm"
+					variant="outline"
 				>
-					<UserAddLine />
-				</Button>
+					<UserAddLine /> Invite user
+				</Button> */}
 				<ParticipantsExportMenu
 					onCopyEmails={onCopyEmails}
 					onDownloadCsv={onDownloadCsv}
 				/>
-				<Button aria-haspopup="dialog" onClick={onEmail} size="sm">
+				{/* TODO: Fully implement emailing users */}
+				{/* <Button aria-haspopup="dialog" onClick={onEmail} size="sm">
 					<MailSendLine data-icon="inline-start" />
 					Email users
-				</Button>
+				</Button> */}
 			</div>
 		</div>
 	);

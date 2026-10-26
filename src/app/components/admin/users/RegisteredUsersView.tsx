@@ -14,17 +14,24 @@ import {
 	AlertDialogTitle
 } from "@/app/components/ui/alert-dialog";
 import { Badge } from "@/app/components/ui/badge";
+import { useRefresh } from "@/hooks/use-refresh";
+import { downloadParticipantsCsv } from "@/lib/participants-csv";
+import { authClient } from "@/server/better-auth/client";
 import PageHeader from "../../PageHeader";
+import { Card, CardContent } from "../../ui/card";
 import { EditParticipantDialog } from "./EditParticipantDialog";
 import { InviteUserDialog } from "./InviteUserDialog";
 import { ParticipantsTable } from "./ParticipantsTable";
 import { ParticipantsToolbar } from "./ParticipantsToolbar";
+import { RegistrationsChartCard } from "./RegistrationsChartCard";
 import { SendEmailDialog } from "./SendEmailDialog";
 import {
+	EMAIL_VERIFIED_OPTIONS,
 	EMPTY_FILTERS,
 	FOOD_OPTIONS,
 	type Participant,
 	type ParticipantFilters,
+	REGISTRATION_OPTIONS,
 	ROLE_LABELS,
 	SORT_OPTIONS,
 	type SortOption
@@ -47,13 +54,15 @@ function matchesSearch(participant: Participant, search: string) {
 		participant.firstName,
 		participant.lastName,
 		participant.email,
-		participant.teamId ?? "",
 		participant.teamName ?? ""
-	].some((value) => value.toLowerCase().includes(needle));
+	].some((value) => (value ?? "").toLowerCase().includes(needle));
 }
 
 function matchesFilters(participant: Participant, filters: ParticipantFilters) {
-	if (filters.roles.length > 0 && !filters.roles.includes(participant.role)) {
+	if (
+		filters.roles.length > 0 &&
+		(!participant.role || !filters.roles.includes(participant.role))
+	) {
 		return false;
 	}
 
@@ -65,9 +74,26 @@ function matchesFilters(participant: Participant, filters: ParticipantFilters) {
 		}
 	}
 
+	if (filters.emailVerified.length === 1) {
+		const wantsVerified = filters.emailVerified[0] === "verified";
+
+		if (participant.emailVerified !== wantsVerified) {
+			return false;
+		}
+	}
+
+	if (filters.registration.length === 1) {
+		const wantsCompleted = filters.registration[0] === "completed";
+
+		if (participant.completedRegistration !== wantsCompleted) {
+			return false;
+		}
+	}
+
 	if (
 		filters.institutions.length > 0 &&
-		!filters.institutions.includes(participant.institution)
+		(!participant.institution ||
+			!filters.institutions.includes(participant.institution))
 	) {
 		return false;
 	}
@@ -89,13 +115,13 @@ function compareParticipants(
 ) {
 	switch (sort) {
 		case "role-asc":
-			return a.role.localeCompare(b.role);
+			return (a.role ?? "").localeCompare(b.role ?? "");
 		case "role-desc":
-			return b.role.localeCompare(a.role);
+			return (b.role ?? "").localeCompare(a.role ?? "");
 		case "name-asc":
-			return a.firstName.localeCompare(b.firstName);
+			return (a.firstName ?? "").localeCompare(b.firstName ?? "");
 		case "name-desc":
-			return b.firstName.localeCompare(a.firstName);
+			return (b.firstName ?? "").localeCompare(a.firstName ?? "");
 		default:
 			return 0;
 	}
@@ -115,6 +141,9 @@ export function RegisteredUsersView({
 	const [emailOpen, setEmailOpen] = useState(false);
 	const [editing, setEditing] = useState<Participant | null>(null);
 	const [deleting, setDeleting] = useState<Participant | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+
+	const { refresh } = useRefresh();
 
 	const visibleParticipants = useMemo(
 		() =>
@@ -146,6 +175,32 @@ export function RegisteredUsersView({
 				setFilters((current) => ({
 					...current,
 					food: current.food.filter((value) => value !== food)
+				}))
+		})),
+		...filters.emailVerified.map((emailVerified) => ({
+			key: `email-verified-${emailVerified}`,
+			label:
+				EMAIL_VERIFIED_OPTIONS.find((option) => option.value === emailVerified)
+					?.label ?? emailVerified,
+			onRemove: () =>
+				setFilters((current) => ({
+					...current,
+					emailVerified: current.emailVerified.filter(
+						(value) => value !== emailVerified
+					)
+				}))
+		})),
+		...filters.registration.map((registration) => ({
+			key: `registration-${registration}`,
+			label:
+				REGISTRATION_OPTIONS.find((option) => option.value === registration)
+					?.label ?? registration,
+			onRemove: () =>
+				setFilters((current) => ({
+					...current,
+					registration: current.registration.filter(
+						(value) => value !== registration
+					)
 				}))
 		})),
 		...filters.institutions.map((institution) => ({
@@ -189,61 +244,80 @@ export function RegisteredUsersView({
 	}
 
 	function handleDownloadCsv() {
-		// TODO: generate the export server-side once the router exists.
-		toast.success("CSV download started!");
+		downloadParticipantsCsv(visibleParticipants);
 	}
 
-	function handleDelete() {
-		// TODO: actually delete the user.
-		setDeleting(null);
-		toast.success("User deleted!");
+	async function handleDelete() {
+		if (!deleting || isDeleting) return;
+
+		setIsDeleting(true);
+		try {
+			const { data, error } = await authClient.admin.removeUser({
+				userId: deleting.id
+			});
+
+			if (data?.success) {
+				setDeleting(null);
+				toast.success("User deleted!");
+				refresh();
+			} else {
+				toast.error(error?.message ?? "Unable to delete user.");
+			}
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Unable to delete user."
+			);
+		} finally {
+			setIsDeleting(false);
+		}
 	}
 
 	return (
 		<>
 			<div className="flex flex-col gap-6">
-				<PageHeader
-					description="View all participants"
-					title="Registered Users"
-				/>
+				<PageHeader description="View and manage users." title="Users" />
+				<RegistrationsChartCard participants={participants} />
+				<Card>
+					<CardContent className="flex flex-col gap-6">
+						<ParticipantsToolbar
+							filters={filters}
+							onCopyEmails={handleCopyEmails}
+							onDownloadCsv={handleDownloadCsv}
+							onEmail={() => setEmailOpen(true)}
+							onFiltersChange={setFilters}
+							onInvite={() => setInviteOpen(true)}
+							onSearchChange={setSearch}
+							onSortChange={setSort}
+							search={search}
+							sort={sort}
+						/>
 
-				<ParticipantsToolbar
-					filters={filters}
-					onCopyEmails={handleCopyEmails}
-					onDownloadCsv={handleDownloadCsv}
-					onEmail={() => setEmailOpen(true)}
-					onFiltersChange={setFilters}
-					onInvite={() => setInviteOpen(true)}
-					onSearchChange={setSearch}
-					onSortChange={setSort}
-					search={search}
-					sort={sort}
-				/>
+						<div className="flex flex-wrap items-center gap-2">
+							<span className="text-muted-foreground text-sm">
+								Showing {visibleParticipants.length.toLocaleString()} of{" "}
+								{participants.length.toLocaleString()} users
+							</span>
+							{activeChips.map((chip) => (
+								<Badge
+									aria-label={`Remove filter: ${chip.label}`}
+									className="h-7 cursor-pointer rounded-md px-3 font-medium"
+									key={chip.key}
+									render={<button onClick={chip.onRemove} type="button" />}
+									variant="accent"
+								>
+									{chip.label}
+									<CloseFill />
+								</Badge>
+							))}
+						</div>
 
-				<div className="flex flex-wrap items-center gap-2">
-					<span className="text-muted-foreground text-sm">
-						Showing {visibleParticipants.length.toLocaleString()} of{" "}
-						{participants.length.toLocaleString()} users
-					</span>
-					{activeChips.map((chip) => (
-						<Badge
-							aria-label={`Remove filter: ${chip.label}`}
-							className="h-7 cursor-pointer rounded-md px-3 font-medium"
-							key={chip.key}
-							render={<button onClick={chip.onRemove} type="button" />}
-							variant="accent"
-						>
-							{chip.label}
-							<CloseFill />
-						</Badge>
-					))}
-				</div>
-
-				<ParticipantsTable
-					onDelete={setDeleting}
-					onEdit={setEditing}
-					participants={visibleParticipants}
-				/>
+						<ParticipantsTable
+							onDelete={setDeleting}
+							onEdit={setEditing}
+							participants={visibleParticipants}
+						/>
+					</CardContent>
+				</Card>
 			</div>
 
 			<InviteUserDialog onOpenChange={setInviteOpen} open={inviteOpen} />
@@ -277,10 +351,11 @@ export function RegisteredUsersView({
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
 						<AlertDialogAction
+							disabled={isDeleting}
 							onClick={handleDelete}
 							variant="destructive-solid"
 						>
-							Delete user
+							{isDeleting ? "Deleting..." : "Delete user"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

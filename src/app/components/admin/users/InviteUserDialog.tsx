@@ -105,7 +105,9 @@ export function InviteUserDialog({
 					>
 						{invite.isPending ? "Inviting..." : "Invite user"}
 					</Button>
-					<DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
+					<DialogClose render={<Button variant="outline" />}>
+						Cancel
+					</DialogClose>
 				</div>
 			</DialogContent>
 		</Dialog>

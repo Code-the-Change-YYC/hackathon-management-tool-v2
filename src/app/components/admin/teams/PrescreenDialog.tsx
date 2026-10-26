@@ -196,7 +196,7 @@ export function PrescreenDialog({ team, onOpenChange }: PrescreenDialogProps) {
 							>
 								Edit result
 							</Button>
-							<Button onClick={() => requestClose(false)} variant="ghost">
+							<Button onClick={() => requestClose(false)} variant="outline">
 								Cancel
 							</Button>
 						</div>

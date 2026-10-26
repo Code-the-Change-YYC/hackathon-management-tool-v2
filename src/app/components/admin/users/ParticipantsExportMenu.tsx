@@ -21,7 +21,7 @@ export function ParticipantsExportMenu({
 }: ParticipantsExportMenuProps) {
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger render={<Button size="sm" variant="ghost" />}>
+			<DropdownMenuTrigger render={<Button size="sm" variant="outline" />}>
 				<FileExportLine data-icon="inline-start" />
 				Export
 			</DropdownMenuTrigger>

@@ -34,12 +34,75 @@ import { user } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
 import { applyInvitedRole } from "./invitations";
 
+function getRole(role: string | null) {
+	if (role === null) return null;
+
+	switch (role.toLocaleLowerCase()) {
+		case "admin":
+			return Role.ADMIN;
+		case "judge":
+			return Role.JUDGE;
+		case "participant":
+			return Role.PARTICIPANT;
+		default:
+			return null;
+	}
+}
+
 export const usersRouter = createTRPCRouter({
 	getAll: adminProcedure.query(async ({ ctx }) => {
 		const users = await ctx.db.query.user.findMany({
 			orderBy: [desc(user.createdAt)]
 		});
 		return users;
+	}),
+	getUserWithTeam: adminProcedure.query(async ({ ctx }) => {
+		const rows = await ctx.db.query.user.findMany({
+			orderBy: [desc(user.createdAt)],
+			columns: {
+				id: true,
+				firstName: true,
+				lastName: true,
+				email: true,
+				role: true,
+				school: true,
+				program: true,
+				wantsFood: true,
+				createdAt: true,
+				emailVerified: true,
+				completedRegistration: true
+			},
+			with: {
+				members: {
+					with: {
+						organization: {
+							columns: {
+								name: true
+							}
+						}
+					}
+				}
+			}
+		});
+
+		return rows.map(({ members, ...person }) => {
+			const team = members[0]?.organization;
+
+			return {
+				id: person.id,
+				firstName: person.firstName,
+				lastName: person.lastName,
+				email: person.email,
+				role: getRole(person.role),
+				teamName: team?.name ?? null,
+				signedUpAt: person.createdAt,
+				emailVerified: person.emailVerified,
+				completedRegistration: person.completedRegistration,
+				institution: person.school,
+				major: person.program,
+				registeredForFood: person.wantsFood
+			};
+		});
 	}),
 	updateUserDietaryRestrictions: protectedProcedure
 		.input(
@@ -156,25 +219,65 @@ export const usersRouter = createTRPCRouter({
 		}),
 	update: adminProcedure
 		.input(
-			z.object({
-				id: z.string(),
-				name: z.string().min(1).optional(),
-				email: z.string().email().optional(),
-				role: z.string().optional().nullable(),
-				dietaryRestrictions: dietaryRestrictionsSchema.optional(),
-				school: z.string().optional().nullable(),
-				program: z.enum(PROGRAMS).optional().nullable(),
-				completedRegistration: z.boolean().optional(),
-				banned: z.boolean().optional()
-			})
+			z
+				.object({
+					id: z.string(),
+					firstName: z.string().trim().min(1).optional(),
+					lastName: z.string().trim().min(1).optional(),
+					email: z.string().email().optional(),
+					role: z.string().optional().nullable(),
+					dietaryRestrictions: dietaryRestrictionsSchema.optional(),
+					school: z.string().optional().nullable(),
+					program: z.enum(PROGRAMS).optional().nullable(),
+					completedRegistration: z.boolean().optional(),
+					banned: z.boolean().optional()
+				})
+				.superRefine(({ firstName, lastName }, ctx) => {
+					if (firstName !== undefined && lastName === undefined) {
+						ctx.addIssue({
+							code: "custom",
+							path: ["lastName"],
+							message: "Last name is required when first name is provided"
+						});
+					}
+
+					if (lastName !== undefined && firstName === undefined) {
+						ctx.addIssue({
+							code: "custom",
+							path: ["firstName"],
+							message: "First name is required when last name is provided"
+						});
+					}
+				})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id, ...data } = input;
+			const { id, firstName, lastName, ...data } = input;
+
+			const nameFields =
+				firstName !== undefined && lastName !== undefined
+					? {
+							firstName,
+							lastName,
+							name: getFullName(firstName, lastName)
+						}
+					: {};
+
 			const [updated] = await ctx.db
 				.update(user)
-				.set(data)
+				.set({
+					...data,
+					...nameFields
+				})
 				.where(eq(user.id, id))
 				.returning();
+
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "User not found"
+				});
+			}
+
 			return updated;
 		}),
 	completeRegistration: protectedProcedure.mutation(async ({ ctx }) => {
