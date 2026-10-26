@@ -89,6 +89,10 @@
 					"correctness": {
 						"useExhaustiveDependencies": "off"
 					},
+					// The chart writes its own color config into a <style> tag.
+					"security": {
+						"noDangerouslySetInnerHtml": "off"
+					},
 					"suspicious": {
 						"noArrayIndexKey": "off",
 						"noDocumentCookie": "off"

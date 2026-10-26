@@ -23,6 +23,7 @@ import { EditParticipantDialog } from "./EditParticipantDialog";
 import { InviteUserDialog } from "./InviteUserDialog";
 import { ParticipantsTable } from "./ParticipantsTable";
 import { ParticipantsToolbar } from "./ParticipantsToolbar";
+import { RegistrationsChartCard } from "./RegistrationsChartCard";
 import { SendEmailDialog } from "./SendEmailDialog";
 import {
 	EMAIL_VERIFIED_OPTIONS,
@@ -275,6 +276,7 @@ export function RegisteredUsersView({
 		<>
 			<div className="flex flex-col gap-6">
 				<PageHeader description="View and manage users." title="Users" />
+				<RegistrationsChartCard participants={participants} />
 				<Card>
 					<CardContent className="flex flex-col gap-6">
 						<ParticipantsToolbar
