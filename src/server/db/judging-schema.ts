@@ -7,14 +7,26 @@ import {
 	uniqueIndex,
 	uuid
 } from "drizzle-orm/pg-core";
+import { JUDGING_ROUND_KINDS } from "@/lib/judging";
 import { organization, user } from "./auth-schema";
 import { createTable } from "./table";
 
+// startTime and endTime bound the window the schedule generator must fit in.
 export const judgingRounds = createTable("judging_round", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
+	kind: text("kind", { enum: JUDGING_ROUND_KINDS }).notNull(),
 	startTime: timestamp("start_time", { withTimezone: true }).notNull(),
 	endTime: timestamp("end_time", { withTimezone: true }).notNull(),
+	// Participants only see their schedule once the round is published.
+	publishedAt: timestamp("published_at", { withTimezone: true }),
+	// Minimum judges per table. null for final round.
+	panelSize: integer("panel_size"),
+	// Computed by the generator for panel rounds and set by an admin for finals.
+	presentationMinutes: integer("presentation_minutes"),
+	changeoverMinutes: integer("changeover_minutes").notNull().default(2),
+	breakMinutes: integer("break_minutes").notNull().default(10),
+	maxBlockMinutes: integer("max_block_minutes").notNull().default(50),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
@@ -24,29 +36,38 @@ export const judgingRounds = createTable("judging_round", {
 		.notNull()
 });
 
-export const judgingRooms = createTable("judging_room", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	roundId: uuid("round_id")
-		.references(() => judgingRounds.id, { onDelete: "cascade" })
-		.notNull(),
-	roomLink: text("room_link").notNull(), // link to the video meeting
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.defaultNow()
-		.notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.defaultNow()
-		.$onUpdate(() => new Date())
-		.notNull()
-});
-
-export const judgingRoomStaff = createTable(
-	"judging_room_staff",
+export const judgingTables = createTable(
+	"judging_table",
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
-		roomId: uuid("room_id")
+		roundId: uuid("round_id")
+			.references(() => judgingRounds.id, { onDelete: "cascade" })
+			.notNull(),
+		tableNumber: integer("table_number").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => new Date())
 			.notNull()
-			.references(() => judgingRooms.id, { onDelete: "cascade" }),
-		staffId: text("staff_id")
+	},
+	(table) => [
+		uniqueIndex("judging_table_round_number_uniq").on(
+			table.roundId,
+			table.tableNumber
+		)
+	]
+);
+
+export const judgingTableJudges = createTable(
+	"judging_table_judge",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		tableId: uuid("table_id")
+			.notNull()
+			.references(() => judgingTables.id, { onDelete: "cascade" }),
+		judgeId: text("judge_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -54,30 +75,42 @@ export const judgingRoomStaff = createTable(
 			.notNull()
 	},
 	(table) => [
-		uniqueIndex("judging_room_judge_room_judge_uniq").on(
-			table.roomId,
-			table.staffId
+		uniqueIndex("judging_table_judge_table_judge_uniq").on(
+			table.tableId,
+			table.judgeId
 		)
 	]
 );
 
-export const judgingAssignments = createTable("judging_assignment", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	teamId: text("team_id")
-		.notNull()
-		.references(() => organization.id, { onDelete: "cascade" }),
-	roomId: uuid("room_id")
-		.notNull()
-		.references(() => judgingRooms.id, { onDelete: "cascade" }),
-	timeSlot: timestamp("time_slot", { withTimezone: true }),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.defaultNow()
-		.notNull()
-});
+// A presentation ends at startsAt plus the round's presentationMinutes.
+export const judgingAssignments = createTable(
+	"judging_assignment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		teamId: text("team_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		tableId: uuid("table_id")
+			.notNull()
+			.references(() => judgingTables.id, { onDelete: "cascade" }),
+		startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+	},
+	(table) => [
+		uniqueIndex("judging_assignment_table_starts_at_uniq").on(
+			table.tableId,
+			table.startsAt
+		),
+		uniqueIndex("judging_assignment_team_table_uniq").on(
+			table.teamId,
+			table.tableId
+		)
+	]
+);
 
-// TODO: It would be better to name this table "judging_criterion". "criteria" is
-// plural which doesn't match any of the other table names.
-export const criteria = createTable("criteria", {
+export const judgingCriteria = createTable("judging_criterion", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
 	description: text("description").notNull().default(""),
@@ -88,9 +121,8 @@ export const criteria = createTable("criteria", {
 	isSidepot: boolean("is_sidepot").default(false).notNull()
 });
 
-// TODO: It would be more clear if this table was called "judging_score"
-export const scores = createTable(
-	"score",
+export const judgingScores = createTable(
+	"judging_score",
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		assignmentId: uuid("assignment_id")
@@ -98,11 +130,10 @@ export const scores = createTable(
 			.references(() => judgingAssignments.id, { onDelete: "cascade" }),
 		criteriaId: uuid("criteria_id")
 			.notNull()
-			.references(() => criteria.id, { onDelete: "cascade" }),
-		// Null preserves historical shared scores whose author is unknown.
-		judgeId: text("judge_id").references(() => user.id, {
-			onDelete: "restrict"
-		}),
+			.references(() => judgingCriteria.id, { onDelete: "cascade" }),
+		judgeId: text("judge_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "restrict" }),
 		value: integer("value").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
@@ -117,32 +148,31 @@ export const scores = createTable(
 	]
 );
 
-// Relations
 export const judgingRoundRelations = relations(judgingRounds, ({ many }) => ({
-	rooms: many(judgingRooms)
+	tables: many(judgingTables)
 }));
 
-export const judgingRoomRelations = relations(
-	judgingRooms,
+export const judgingTableRelations = relations(
+	judgingTables,
 	({ one, many }) => ({
 		round: one(judgingRounds, {
-			fields: [judgingRooms.roundId],
+			fields: [judgingTables.roundId],
 			references: [judgingRounds.id]
 		}),
-		staff: many(judgingRoomStaff),
+		judges: many(judgingTableJudges),
 		assignments: many(judgingAssignments)
 	})
 );
 
-export const judgingRoomStaffRelations = relations(
-	judgingRoomStaff,
+export const judgingTableJudgeRelations = relations(
+	judgingTableJudges,
 	({ one }) => ({
-		room: one(judgingRooms, {
-			fields: [judgingRoomStaff.roomId],
-			references: [judgingRooms.id]
+		table: one(judgingTables, {
+			fields: [judgingTableJudges.tableId],
+			references: [judgingTables.id]
 		}),
-		staff: one(user, {
-			fields: [judgingRoomStaff.staffId],
+		judge: one(user, {
+			fields: [judgingTableJudges.judgeId],
 			references: [user.id]
 		})
 	})
@@ -155,21 +185,21 @@ export const judgingAssignmentRelations = relations(
 			fields: [judgingAssignments.teamId],
 			references: [organization.id]
 		}),
-		room: one(judgingRooms, {
-			fields: [judgingAssignments.roomId],
-			references: [judgingRooms.id]
+		table: one(judgingTables, {
+			fields: [judgingAssignments.tableId],
+			references: [judgingTables.id]
 		}),
-		scores: many(scores)
+		scores: many(judgingScores)
 	})
 );
 
-export const scoreRelations = relations(scores, ({ one }) => ({
+export const judgingScoreRelations = relations(judgingScores, ({ one }) => ({
 	assignment: one(judgingAssignments, {
-		fields: [scores.assignmentId],
+		fields: [judgingScores.assignmentId],
 		references: [judgingAssignments.id]
 	}),
-	criteria: one(criteria, {
-		fields: [scores.criteriaId],
-		references: [criteria.id]
+	criteria: one(judgingCriteria, {
+		fields: [judgingScores.criteriaId],
+		references: [judgingCriteria.id]
 	})
 }));

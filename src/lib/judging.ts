@@ -19,6 +19,13 @@ export const JUDGING_PHASE_LABELS: Record<JudgingPhase, string> = {
 	winners_announced: "Winners announced"
 };
 
+// Panel rounds split judges into tables. A final round has one table of every judge.
+export const JUDGING_ROUND_KINDS = ["panel", "final"] as const;
+export type JudgingRoundKind = (typeof JUDGING_ROUND_KINDS)[number];
+
+// Sidepot criteria keep their own configurable maximum.
+export const MAIN_CRITERION_MAX_SCORE = 5;
+
 /** Slot choices offered by the judging UI; the API accepts any positive duration. */
 export const SLOT_MINUTES_OPTIONS = [15, 30, 60] as const;
 export type SlotMinutes = (typeof SLOT_MINUTES_OPTIONS)[number];
