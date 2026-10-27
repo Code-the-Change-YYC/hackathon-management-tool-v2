@@ -1,30 +1,34 @@
-import { Role } from "@/types/types";
+import { PROGRAMS } from "@/lib/validation/signup";
+import { type Program, Role } from "@/types/types";
 
-/**
- * Shape the Registered Users screen renders. This is intentionally decoupled
- * from the database model so the UI can be built and reviewed before the
- * tRPC routers are wired in.
- */
 export type Participant = {
 	id: string;
-	firstName: string;
-	lastName: string;
+	firstName: string | null;
+	lastName: string | null;
 	email: string;
-	role: Role;
-	teamId: string | null;
+	role: Role | null;
 	teamName: string | null;
-	institution: string;
-	major: string | null;
-	registeredForFood: boolean;
+	signedUpAt: Date;
+	emailVerified: boolean;
+	completedRegistration: boolean;
+	institution: string | null;
+	major: Program | null;
+	registeredForFood: boolean | null;
 };
 
 export type FoodFilter = "registered" | "not-registered";
 
+export type EmailVerifiedFilter = "verified" | "not-verified";
+
+export type RegistrationFilter = "completed" | "not-completed";
+
 export type ParticipantFilters = {
 	roles: Role[];
 	food: FoodFilter[];
+	emailVerified: EmailVerifiedFilter[];
+	registration: RegistrationFilter[];
 	institutions: string[];
-	majors: string[];
+	majors: Program[];
 };
 
 export type SortOption = "role-asc" | "role-desc" | "name-asc" | "name-desc";
@@ -32,6 +36,8 @@ export type SortOption = "role-asc" | "role-desc" | "name-asc" | "name-desc";
 export const EMPTY_FILTERS: ParticipantFilters = {
 	roles: [],
 	food: [],
+	emailVerified: [],
+	registration: [],
 	institutions: [],
 	majors: []
 };
@@ -47,6 +53,22 @@ export const FOOD_OPTIONS: { value: FoodFilter; label: string }[] = [
 	{ value: "not-registered", label: "Not registered for food" }
 ];
 
+export const EMAIL_VERIFIED_OPTIONS: {
+	value: EmailVerifiedFilter;
+	label: string;
+}[] = [
+	{ value: "verified", label: "Email verified" },
+	{ value: "not-verified", label: "Email not verified" }
+];
+
+export const REGISTRATION_OPTIONS: {
+	value: RegistrationFilter;
+	label: string;
+}[] = [
+	{ value: "completed", label: "Completed registration" },
+	{ value: "not-completed", label: "Not completed registration" }
+];
+
 export const INSTITUTION_OPTIONS = [
 	"Mount Royal University",
 	"University of Calgary",
@@ -54,11 +76,7 @@ export const INSTITUTION_OPTIONS = [
 	"Other"
 ];
 
-export const MAJOR_OPTIONS = [
-	"Computer Science",
-	"Software Engineering",
-	"Other"
-];
+export const MAJOR_OPTIONS = PROGRAMS;
 
 export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 	{ value: "role-asc", label: "Sort by: role Ascending (A-Z)" },

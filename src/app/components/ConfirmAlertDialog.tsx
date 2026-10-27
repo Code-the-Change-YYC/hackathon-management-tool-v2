@@ -77,7 +77,7 @@ export function ConfirmAlertDialog({
 					<AlertDialogCancel>Cancel</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={() => onClose(true)}
-						variant={state?.destructive ? "destructive" : "default"}
+						variant={state?.destructive ? "destructive-solid" : "default"}
 					>
 						{state?.confirmLabel ?? "Continue"}
 					</AlertDialogAction>

@@ -14,11 +14,15 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import type { Role } from "@/types/types";
 import {
+	EMAIL_VERIFIED_OPTIONS,
+	type EmailVerifiedFilter,
 	FOOD_OPTIONS,
 	type FoodFilter,
 	INSTITUTION_OPTIONS,
 	MAJOR_OPTIONS,
 	type ParticipantFilters,
+	REGISTRATION_OPTIONS,
+	type RegistrationFilter,
 	ROLE_OPTIONS
 } from "./types";
 
@@ -78,6 +82,52 @@ export function ParticipantsFilterMenu({
 										onFiltersChange({
 											...filters,
 											food: toggle<FoodFilter>(filters.food, option.value)
+										})
+									}
+								>
+									{option.label}
+								</DropdownMenuCheckboxItem>
+							))}
+						</DropdownMenuSubContent>
+					</DropdownMenuSub>
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger>Email verified</DropdownMenuSubTrigger>
+						<DropdownMenuSubContent>
+							{EMAIL_VERIFIED_OPTIONS.map((option) => (
+								<DropdownMenuCheckboxItem
+									checked={filters.emailVerified.includes(option.value)}
+									key={option.value}
+									onCheckedChange={() =>
+										onFiltersChange({
+											...filters,
+											emailVerified: toggle<EmailVerifiedFilter>(
+												filters.emailVerified,
+												option.value
+											)
+										})
+									}
+								>
+									{option.label}
+								</DropdownMenuCheckboxItem>
+							))}
+						</DropdownMenuSubContent>
+					</DropdownMenuSub>
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger>
+							Completed registration
+						</DropdownMenuSubTrigger>
+						<DropdownMenuSubContent>
+							{REGISTRATION_OPTIONS.map((option) => (
+								<DropdownMenuCheckboxItem
+									checked={filters.registration.includes(option.value)}
+									key={option.value}
+									onCheckedChange={() =>
+										onFiltersChange({
+											...filters,
+											registration: toggle<RegistrationFilter>(
+												filters.registration,
+												option.value
+											)
 										})
 									}
 								>

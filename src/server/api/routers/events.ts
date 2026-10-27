@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { formatDateKey, isSameCalgaryDay } from "@/lib/datetime";
 import { eventNavigationUrlSchema } from "@/lib/participant-events";
@@ -22,7 +22,8 @@ import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
 	createEventTicketToken,
-	hashEventTicketToken
+	hashEventTicketToken,
+	isValidMealScannerLease
 } from "@/server/lib/event-tickets";
 import {
 	EVENT_STATUSES,
@@ -260,7 +261,8 @@ export const eventsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				eventId: z.string().uuid(),
-				token: ticketTokenSchema
+				token: ticketTokenSchema,
+				scannerLease: z.string().optional()
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -330,7 +332,19 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				if (ticket.expiresAt <= now || ticket.eventEndTime <= now) {
+				const canFinishMealLine =
+					ticket.eventType === EventType.FOOD &&
+					isValidMealScannerLease(
+						input.scannerLease,
+						ticket.eventId,
+						ctx.session.user.id,
+						now,
+						ticket.eventEndTime
+					);
+				if (
+					(ticket.expiresAt <= now || ticket.eventEndTime <= now) &&
+					!canFinishMealLine
+				) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
 						message: "This event ticket has expired."
@@ -348,16 +362,24 @@ export const eventsRouter = createTRPCRouter({
 					})
 					.returning();
 
-				if (!record) {
-					throw new TRPCError({
-						code: "CONFLICT",
-						message: "Participant is already checked in for this event."
-					});
+				const attendance =
+					record ??
+					(await tx.query.eventAttendance.findFirst({
+						where: and(
+							eq(eventAttendance.userId, ticket.userId),
+							eq(eventAttendance.eventId, ticket.eventId)
+						)
+					}));
+				if (!attendance) {
+					throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 				}
 
 				return {
-					attendanceId: record.id,
-					checkedInAt: record.createdAt,
+					status: record
+						? ("checked_in" as const)
+						: ("already_checked_in" as const),
+					attendanceId: attendance.id,
+					checkedInAt: attendance.createdAt,
 					participant: {
 						id: ticket.userId,
 						name: ticket.participantName,
@@ -387,7 +409,7 @@ export const eventsRouter = createTRPCRouter({
 				.from(eventAttendance)
 				.innerJoin(user, eq(eventAttendance.userId, user.id))
 				.where(eq(eventAttendance.eventId, input.eventId))
-				.orderBy(eventAttendance.updatedAt);
+				.orderBy(desc(eventAttendance.createdAt), desc(eventAttendance.id));
 		}),
 
 	getMealAttendanceCount: adminProcedure.query(async ({ ctx }) => {
