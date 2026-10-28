@@ -46,9 +46,7 @@ export function isScoringOpen(assignment: JudgeAssignment, currentTime: Date) {
 }
 
 export function getTeamCode(assignment: JudgeAssignment) {
-	return (
-		assignment.team.teamCode ?? assignment.team.id.slice(0, 4).toUpperCase()
-	);
+	return assignment.team.teamCode ?? "------";
 }
 
 export function getAssignmentRoomName(assignment: JudgeAssignment) {
@@ -65,15 +63,6 @@ export function sortAssignments(a: JudgeAssignment, b: JudgeAssignment) {
 export function getRoomName(assignments: JudgeAssignment[]) {
 	const first = assignments.slice().sort(sortAssignments)[0];
 	return first ? getAssignmentRoomName(first) : null;
-}
-
-export function getMeetingLink(assignments: JudgeAssignment[]) {
-	return (
-		assignments
-			.slice()
-			.sort(sortAssignments)
-			.find((assignment) => assignment.room.roomLink)?.room.roomLink ?? ""
-	);
 }
 
 export function getCriteriaScore(

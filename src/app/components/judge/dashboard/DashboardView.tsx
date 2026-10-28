@@ -14,13 +14,11 @@ import { useCurrentTime } from "@/hooks/use-current-time";
 import type { JudgingRound } from "@/lib/participant-judging";
 import {
 	type Criterion,
-	getMeetingLink,
 	getRoomName,
 	isAssignmentScored,
 	type JudgeAssignment,
 	sortAssignments
 } from "../judgePortal";
-import { JoinMeetingButton } from "./JoinMeetingButton";
 import { JudgeNextTeam } from "./JudgeNextTeam";
 import { JudgeTeamRow } from "./JudgeTeamRow";
 
@@ -83,17 +81,14 @@ export function DashboardView({
 
 	return (
 		<div className="flex flex-col gap-6">
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-				<PageHeader
-					description={
-						roomName && shownRound
-							? `You’re judging in ${roomName} for the ${shownRound.name}.`
-							: "No room assigned yet."
-					}
-					title={`Hi, ${userName}!`}
-				/>
-				<JoinMeetingButton href={getMeetingLink(shownAssignments)} />
-			</div>
+			<PageHeader
+				description={
+					roomName && shownRound
+						? `You’re judging in ${roomName} for the ${shownRound.name}.`
+						: "No room assigned yet."
+				}
+				title={`Hi, ${userName}!`}
+			/>
 
 			{roundStats.length > 1 && (
 				<ToggleGroup

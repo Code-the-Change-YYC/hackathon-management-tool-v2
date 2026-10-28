@@ -1,14 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { DashboardView } from "@/app/components/judge/dashboard/DashboardView";
-import { JoinMeetingButton } from "@/app/components/judge/dashboard/JoinMeetingButton";
 import { JudgeNextTeam } from "@/app/components/judge/dashboard/JudgeNextTeam";
 import { JudgeTeamRow } from "@/app/components/judge/dashboard/JudgeTeamRow";
 import {
 	type Criterion,
 	getAssignmentTotal,
 	getDraftScore,
-	getMeetingLink,
 	getRoomName,
 	getScoreOptions,
 	isAssignmentScored,
@@ -286,22 +284,15 @@ describe("judge portal scoring contract", () => {
 });
 
 describe("judge room summary", () => {
-	it("uses the earliest assignment's room and the first meeting link", () => {
+	it("uses the earliest assignment's room", () => {
 		const later = assignment({
 			id: "later",
 			timeSlot: new Date(now.getTime() + 60 * 60_000),
-			room: {
-				...assignment().room,
-				id: "later-room",
-				name: "Room 2",
-				roomLink: "https://example.com/room-2"
-			}
+			room: { ...assignment().room, id: "later-room", name: "Room 2" }
 		});
 		const earlier = assignment({ id: "earlier" });
 		expect(getRoomName([later, earlier])).toBe("Room 1");
-		expect(getMeetingLink([later, earlier])).toBe("https://example.com/room-2");
 		expect(getRoomName([])).toBeNull();
-		expect(getMeetingLink([])).toBe("");
 	});
 });
 
@@ -380,18 +371,14 @@ describe("judge dashboard", () => {
 			/>
 		);
 		expect(screen.getByText("All 1 teams scored")).toBeVisible();
-		expect(
-			screen.queryByRole("link", { name: /Join meeting/ })
-		).not.toBeInTheDocument();
 		fireEvent.click(screen.getByRole("button", { name: /Finals/ }));
 		expect(screen.getByRole("heading", { name: "Finalist" })).toBeVisible();
 		expect(
 			screen.getByText("You’re judging in Room 2 for the Finals.")
 		).toBeVisible();
-		expect(screen.getByRole("link", { name: /Join meeting/ })).toHaveAttribute(
-			"href",
-			"https://example.com/finals"
-		);
+		expect(
+			screen.queryByRole("link", { name: /Join meeting/ })
+		).not.toBeInTheDocument();
 	});
 });
 
@@ -499,9 +486,16 @@ describe("judge next team", () => {
 		expect(screen.getByRole("button", { name: /Opens at/ })).toBeDisabled();
 		expect(screen.getByText(/In 5 min/)).toBeInTheDocument();
 	});
+});
 
-	it("rejects unsafe meeting links", () => {
-		render(<JoinMeetingButton href="javascript:alert(1)" />);
-		expect(screen.queryByRole("link")).not.toBeInTheDocument();
+describe("team code", () => {
+	it("never invents an ID when a team has no code", () => {
+		const team = assignment({
+			team: { ...assignment().team, teamCode: null }
+		});
+		render(
+			<JudgeTeamRow assignment={team} criteria={[main]} currentTime={now} />
+		);
+		expect(screen.getByText("Team ID ------")).toBeInTheDocument();
 	});
 });
