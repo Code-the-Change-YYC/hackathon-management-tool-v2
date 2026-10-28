@@ -1,180 +1,34 @@
+import { getMentors } from "@/app/actions";
+import { MENTOR_CATEGORIES } from "@/types/contentfulTypes";
+import { Card, CardContent, CardHeader } from "../../ui/card";
 import MentorEntry from "./MentorEntry";
 
-// TODO: Populate with actual people
-const eventsMembers = [
-	{
-		name: "Events Person",
-		discord: "test_handle1",
-		role: "Events"
-	},
-	{
-		name: "Events Person",
-		discord: "test_handle2",
-		role: "Events"
-	},
-	{
-		name: "Events Person",
-		discord: "test_handle3",
-		role: "Events"
-	},
-	{
-		name: "Events Person",
-		discord: "test_handle4",
-		role: "Events"
-	},
-	{
-		name: "Events Person",
-		discord: "test_handle5",
-		role: "Events"
-	},
-	{
-		name: "Events Person",
-		discord: "test_handle6",
-		role: "Events"
-	}
-];
+export default async function MentorsSection() {
+	const mentors = await getMentors();
 
-const techMembers = [
-	{ name: "Tech Person", discord: "test_handle7", role: "Tech" },
-	{ name: "Tech Person", discord: "test_handle8", role: "Tech" },
-	{ name: "Tech Person", discord: "test_handle9", role: "Tech" },
-	{ name: "Tech Person", discord: "test_handle10", role: "Tech" },
-	{ name: "Tech Person", discord: "test_handle11", role: "Tech" },
-	{ name: "Tech Person", discord: "test_handle12", role: "Tech" }
-];
-
-const generalMembers = [
-	{
-		name: "Person",
-		discord: "test_handle13",
-		role: "President"
-	},
-	{
-		name: "Person",
-		discord: "test_handle14",
-		role: "President"
-	},
-	{
-		name: "Person",
-		discord: "test_handle15",
-		role: "President"
-	},
-	{
-		name: "Person",
-		discord: "test_handle16",
-		role: "President"
-	},
-	{
-		name: "Person",
-		discord: "test_handle17",
-		role: "President"
-	},
-	{
-		name: "Person",
-		discord: "test_handle18",
-		role: "President"
-	}
-];
-
-const industryMembers = [
-	{
-		name: "Industry Person",
-		discord: "test_handle19",
-		role: "Some Company"
-	},
-	{
-		name: "Industry Person",
-		discord: "test_handle20",
-		role: "Some Company"
-	},
-	{
-		name: "Industry Person",
-		discord: "test_handle21",
-		role: "Some Company"
-	},
-	{
-		name: "Industry Person",
-		discord: "test_handle22",
-		role: "Some Company"
-	},
-	{
-		name: "Industry Person",
-		discord: "test_handle23",
-		role: "Some Company"
-	},
-	{
-		name: "Industry Person",
-		discord: "test_handle24",
-		role: "Some Company"
-	},
-	{
-		name: "Industry Person",
-		discord: "test_handle25",
-		role: "Some Company"
-	},
-	{
-		name: "Industry Person",
-		discord: "test_handle26",
-		role: "Some Company"
-	},
-	{
-		name: "Industry Person",
-		discord: "test_handle27",
-		role: "Some Company"
-	},
-	{
-		name: "Industry Person",
-		discord: "test_handle28",
-		role: "Some Company"
-	}
-];
-
-export default function MentorsSection() {
 	return (
 		<div className="flex flex-col gap-4">
-			<h2 className="font-medium text-xl">Mentors</h2>
-			<div className="grid grid-cols-[repeat(auto-fit,minmax(192px,1fr))] justify-items-center gap-4">
-				{eventsMembers.map((member) => (
-					<MentorEntry
-						background="bg-primary"
-						discord={member.discord}
-						key={member.name + member.discord}
-						name={member.name}
-						role={member.role}
-						text="text-white"
-					/>
-				))}
-				{techMembers.map((member) => (
-					<MentorEntry
-						background="bg-fuzzy-peach"
-						discord={member.discord}
-						key={member.name + member.discord}
-						name={member.name}
-						role={member.role}
-						text="text-black"
-					/>
-				))}
-				{generalMembers.map((member) => (
-					<MentorEntry
-						background="bg-pastel-pink"
-						discord={member.discord}
-						key={member.name + member.discord}
-						name={member.name}
-						role={member.role}
-						text="text-black"
-					/>
-				))}
-				{industryMembers.map((member) => (
-					<MentorEntry
-						background="bg-medium-grey"
-						discord={member.discord}
-						key={member.name + member.discord}
-						name={member.name}
-						role={member.role}
-						text="text-black"
-					/>
-				))}
-			</div>
+			<Card>
+				<CardHeader>
+					<h2 className="font-medium text-xl">Mentors</h2>
+				</CardHeader>
+				<CardContent className="flex flex-col gap-4 pb-32">
+					{mentors.size ? (
+						MENTOR_CATEGORIES.map((category) => (
+							<div
+								className="grid grid-cols-6 justify-between gap-8"
+								key={category}
+							>
+								{(mentors.get(category) ?? []).map((mentor) => (
+									<MentorEntry key={mentor.sys.id} mentor={mentor} />
+								))}
+							</div>
+						))
+					) : (
+						<p className="text-dark-grey">Mentors will be announced soon.</p>
+					)}
+				</CardContent>
+			</Card>
 		</div>
 	);
 }

@@ -1,27 +1,24 @@
 import Image from "next/image";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { getAssetUrl, getFields, getString } from "@/lib/contentful";
+import type { Resource } from "@/types/contentfulTypes";
 
-interface ResourceCardProps {
-	name: string;
-	imgSrc: string;
-	description: string;
-	link: string;
-}
+export default function ResourceCard({ resource }: { resource: Resource }) {
+	const fields = getFields(resource);
+	const name = getString(fields.name)?.trim() ?? "Resource";
+	const description = getString(fields.description)?.trim();
+	const link = getString(fields.link)?.trim() ?? "/";
+	const image = getAssetUrl(fields.image)?.trim() ?? "";
+	const imageAlt = `${name} logo`;
 
-export default function ResourceCard({
-	name,
-	imgSrc,
-	description,
-	link
-}: ResourceCardProps) {
 	return (
-		<Card className="w-full">
+		<Card className="w-full border">
 			<CardContent className="flex size-full flex-row gap-2">
 				<Image
-					alt={`${name} image`}
+					alt={imageAlt}
 					className="pointer-events-none aspect-square size-24 shrink-0"
 					height={100}
-					src={imgSrc}
+					src={image}
 					width={100}
 				/>
 				<div className="flex size-full flex-1 flex-col justify-between">
