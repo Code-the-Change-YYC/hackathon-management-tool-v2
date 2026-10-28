@@ -1,3 +1,4 @@
+import { differenceInMinutes } from "date-fns";
 import { formatTime as formatClockTime, formatLongDate } from "@/lib/datetime";
 import { criterionAppliesToRound } from "@/lib/judging";
 import type { RouterOutputs } from "@/trpc/react";
@@ -30,6 +31,18 @@ export function formatDuration(minutes: number) {
 	const hours = Math.floor(minutes / 60);
 	const remainder = minutes % 60;
 	return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
+}
+
+export function getSlotStatus(timeSlot: Date | null, currentTime: Date) {
+	if (!timeSlot) return "Unscheduled";
+	const minutes = differenceInMinutes(timeSlot, currentTime, {
+		roundingMethod: "ceil"
+	});
+	return minutes > 0 ? `In ${formatDuration(minutes)}` : "Started";
+}
+
+export function isScoringOpen(assignment: JudgeAssignment, currentTime: Date) {
+	return !assignment.timeSlot || assignment.timeSlot <= currentTime;
 }
 
 export function getTeamCode(assignment: JudgeAssignment) {

@@ -1,4 +1,3 @@
-import { differenceInMinutes } from "date-fns";
 import Link from "next/link";
 import { Badge } from "@/app/components/ui/badge";
 import { Skeleton } from "@/app/components/ui/skeleton";
@@ -7,6 +6,7 @@ import {
 	formatDuration,
 	getAssignmentRoomName,
 	getAssignmentTotal,
+	getSlotStatus,
 	getTeamCode,
 	isAssignmentScored,
 	type JudgeAssignment
@@ -25,17 +25,9 @@ export function JudgeScheduleEvent({
 }) {
 	const scored = isAssignmentScored(assignment, criteria);
 	const total = getAssignmentTotal(assignment, criteria);
-	const minutesUntil = assignment.timeSlot
-		? differenceInMinutes(assignment.timeSlot, currentTime, {
-				roundingMethod: "ceil"
-			})
-		: null;
-	let status = "Unscheduled";
-	if (minutesUntil !== null) {
-		status =
-			minutesUntil > 0 ? `In ${formatDuration(minutesUntil)}` : "Started";
-	}
-	if (scored) status = "Scored";
+	const status = scored
+		? "Scored"
+		: getSlotStatus(assignment.timeSlot, currentTime);
 
 	return (
 		<Link

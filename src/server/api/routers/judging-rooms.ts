@@ -45,7 +45,13 @@ export async function getRoomDisplayNames(
 	if (uniqueIds.length === 0) return new Map();
 
 	const rooms = await db.query.judgingRooms.findMany({
-		where: inArray(judgingRooms.id, uniqueIds),
+		where: inArray(
+			judgingRooms.roundId,
+			db
+				.select({ roundId: judgingRooms.roundId })
+				.from(judgingRooms)
+				.where(inArray(judgingRooms.id, uniqueIds))
+		),
 		orderBy: (rows, { asc: orderAsc }) => [
 			orderAsc(rows.createdAt),
 			orderAsc(rows.id)
