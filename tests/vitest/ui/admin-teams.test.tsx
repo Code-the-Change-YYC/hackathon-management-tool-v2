@@ -161,6 +161,35 @@ describe("admin teams UI", () => {
 		);
 	});
 
+	it("edits an existing prescreen decision", async () => {
+		render(<TeamsView teams={teams} />);
+		openTeamMenu("Alpha Labs");
+		fireEvent.click(
+			await screen.findByRole("menuitem", { name: "Prescreen team" })
+		);
+
+		expect(
+			screen.getByText("NOTE: This team has already been prescreened!")
+		).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Edit result" }));
+
+		const feedback = screen.getByPlaceholderText(
+			"Describe why the team passed or failed…"
+		);
+		expect(feedback).toHaveValue("Strong idea");
+		fireEvent.change(feedback, { target: { value: "Needs more detail" } });
+		fireEvent.click(screen.getByRole("button", { name: "Fail team" }));
+		fireEvent.click(screen.getByRole("button", { name: "Save and Finish" }));
+
+		await waitFor(() =>
+			expect(mocks.setPrescreen).toHaveBeenCalledWith({
+				teamId: "team-alpha",
+				status: "failed",
+				comments: "Needs more detail"
+			})
+		);
+	});
+
 	it("requires confirmation before deleting a team", async () => {
 		render(<TeamsView teams={teams} />);
 		openTeamMenu("Beta Builders");
