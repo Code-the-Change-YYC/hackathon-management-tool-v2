@@ -90,7 +90,7 @@ export function JudgingView({
 						slotMinutes={schedule.slotMinutes}
 					/>
 				</div>
-				<CriteriaManagement criteria={criteria} rounds={rounds} />
+				<CriteriaManagement criteria={criteria} />
 				<ResultsManagement rankings={rankings} />
 			</div>
 		</div>

@@ -14,10 +14,7 @@ import {
 	sortAssignments
 } from "@/app/components/judge/judgePortal";
 import { JudgeScheduleEvent } from "@/app/components/judge/schedule/JudgeScheduleEvent";
-import {
-	groupScheduleByDate,
-	inferDuration
-} from "@/app/components/judge/schedule/judgeSchedule";
+import { groupScheduleByDate } from "@/app/components/judge/schedule/judgeSchedule";
 
 const now = new Date("2026-09-19T10:00:00Z");
 const main: Criterion = {
@@ -46,63 +43,30 @@ describe("judge schedule", () => {
 		expect(groupScheduleByDate([])).toEqual([]);
 	});
 
-	it("estimates duration from the next slot in the same room", () => {
-		const team = assignment();
-		const next = assignment({
-			timeSlot: new Date(now.getTime() + 30 * 60_000)
-		});
-		const otherRoom = assignment({
-			room: { ...team.room, id: "other" },
-			timeSlot: new Date(now.getTime() + 5 * 60_000)
-		});
-		expect(inferDuration(team, [otherRoom, next, team])).toBe(30);
-		expect(inferDuration(team, [team])).toBe(20);
-		expect(
-			inferDuration(team, [
-				assignment({ timeSlot: new Date(now.getTime() + 121 * 60_000) })
-			])
-		).toBe(20);
-	});
-
-	it("updates timing status at the start and labels inferred duration", () => {
+	it("opens scoring at the scheduled time without implying a live presentation status", () => {
 		const team = assignment();
 		const { rerender } = render(
 			<JudgeScheduleEvent
 				assignment={team}
 				criteria={[main]}
-				currentTime={new Date(now.getTime() - 60_000)}
-				duration={20}
+				currentTime={new Date(now.getTime() - 60000)}
 			/>
 		);
 		expect(screen.getByText("In 1 min")).toBeInTheDocument();
-		expect(screen.getByText("Estimated 20 min")).toBeInTheDocument();
-		expect(screen.getByText("Round 1")).toBeInTheDocument();
-		expect(screen.getByRole("link")).toHaveAttribute(
-			"href",
-			"/judge/score/assignment"
-		);
+		expect(
+			screen.getByRole("button", { name: "Score team for Team" })
+		).toBeDisabled();
 		rerender(
 			<JudgeScheduleEvent
 				assignment={team}
 				criteria={[main]}
 				currentTime={now}
-				duration={20}
 			/>
 		);
-		expect(screen.getByText("Started")).toBeInTheDocument();
-	});
-
-	it("shows scored status and a saved zero total", () => {
-		render(
-			<JudgeScheduleEvent
-				assignment={assignment({ scores: [score("main", 0)] })}
-				criteria={[main]}
-				currentTime={now}
-				duration={20}
-			/>
-		);
-		expect(screen.getByText("Scored")).toBeInTheDocument();
-		expect(screen.getByText("0/10")).toBeInTheDocument();
+		expect(screen.getByText("Scheduled time reached")).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Score team for Team" })
+		).toHaveAttribute("href", "/judge/score/assignment");
 	});
 });
 
@@ -400,12 +364,16 @@ describe("dashboard team rows", () => {
 					assignment={team}
 					criteria={criteria}
 					currentTime={now}
-					duration={20}
 				/>
 			)
 		);
-		expect(screen.getByText(/Scored/)).toBeInTheDocument();
-		expect(screen.getByRole("link")).toHaveTextContent("7/10");
+		if (kind === "team") {
+			expect(screen.getByText(/Scored/)).toBeInTheDocument();
+			expect(screen.getByRole("link")).toHaveTextContent("7/10");
+		} else {
+			expect(screen.getByText("Scores recorded")).toBeInTheDocument();
+			expect(screen.getByText("Main score: 7/10")).toBeInTheDocument();
+		}
 		expect(screen.queryByText(/Final criterion/)).not.toBeInTheDocument();
 	});
 

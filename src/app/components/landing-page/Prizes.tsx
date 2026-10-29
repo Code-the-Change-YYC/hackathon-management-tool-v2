@@ -1,4 +1,10 @@
-import { GiftLine, TrophyLine } from "@mingcute/react";
+import {
+	FlashLine,
+	GiftLine,
+	HandHeartLine,
+	ShieldLine,
+	TrophyLine
+} from "@mingcute/react";
 import { cn } from "@/lib/utils";
 import type { MingCuteIcon } from "@/types/landingPage";
 import { SectionTitle, SectionWrapper, Squiggle } from "./InfoSection";
@@ -6,6 +12,15 @@ import { SectionTitle, SectionWrapper, Squiggle } from "./InfoSection";
 type Prize = {
 	place: string;
 	amount: string;
+	icon: MingCuteIcon;
+	cardStyles: string;
+	badgeStyles: string;
+};
+
+type SidePot = {
+	name: string;
+	amount: string;
+	donation?: string;
 	icon: MingCuteIcon;
 	cardStyles: string;
 	badgeStyles: string;
@@ -40,6 +55,34 @@ const PRIZES: Prize[] = [
 	}
 ];
 
+const SIDE_POTS: SidePot[] = [
+	{
+		name: "Best Local Impact",
+		amount: "$150",
+		donation: "$150 donated to charity",
+		icon: HandHeartLine,
+		cardStyles:
+			"border-medium-green shadow-[6px_6px_0_0_var(--color-dark-green)]",
+		badgeStyles: "bg-mint-green text-medium-green"
+	},
+	{
+		name: "Best in Trust and Transparency",
+		amount: "$150",
+		icon: ShieldLine,
+		cardStyles:
+			"border-dark-pink shadow-[6px_6px_0_0_var(--color-medium-pink)]",
+		badgeStyles: "bg-pastel-pink text-dark-pink"
+	},
+	{
+		name: "Best Use of Real-World Energy Data",
+		amount: "$500",
+		icon: FlashLine,
+		cardStyles:
+			"border-awesomer-purple shadow-[6px_6px_0_0_var(--color-awesome-purple)]",
+		badgeStyles: "bg-accent text-awesomer-purple"
+	}
+];
+
 export default function Prizes() {
 	return (
 		<SectionWrapper
@@ -52,6 +95,7 @@ export default function Prizes() {
 			}
 		>
 			<div className="flex w-full flex-col gap-10 md:gap-14">
+				{/* Main prizes */}
 				<div className="flex flex-col gap-4">
 					<SectionTitle
 						accentPosition="after"
@@ -95,6 +139,64 @@ export default function Prizes() {
 						)
 					)}
 				</ul>
+
+				{/* Side pot prizes */}
+				<div className="flex flex-col gap-8">
+					<div className="flex flex-col gap-2">
+						<h3 className="font-bold text-2xl text-awesomer-purple md:text-3xl">
+							Side Pot Prizes
+						</h3>
+						<p className="text-base text-dark-grey md:text-lg">
+							Additional prizes for projects that stand out in special
+							categories.
+						</p>
+					</div>
+
+					<ul className="grid grid-cols-1 gap-6 sm:grid-cols-3 sm:items-stretch lg:gap-10">
+						{SIDE_POTS.map(
+							({
+								name,
+								amount,
+								donation,
+								icon: Icon,
+								cardStyles,
+								badgeStyles
+							}) => (
+								<li
+									className={cn(
+										"flex h-full flex-col items-center justify-center gap-4 rounded-[30px] border-4 bg-white p-6 text-center text-dark-grey md:p-8",
+										cardStyles
+									)}
+									key={name}
+								>
+									<div
+										className={cn(
+											"flex size-14 shrink-0 items-center justify-center rounded-full md:size-16",
+											badgeStyles
+										)}
+									>
+										<Icon aria-hidden="true" className="size-7 md:size-8" />
+									</div>
+
+									<div className="flex flex-col items-center gap-2">
+										<p className="font-semibold text-sm uppercase tracking-wide">
+											{name}
+										</p>
+										<p className="font-bold text-3xl md:text-4xl">
+											{amount} Cash
+										</p>
+
+										{donation && (
+											<p className="font-medium text-dark-grey text-sm md:text-base">
+												+ {donation}
+											</p>
+										)}
+									</div>
+								</li>
+							)
+						)}
+					</ul>
+				</div>
 			</div>
 		</SectionWrapper>
 	);
