@@ -16,7 +16,7 @@ export default async function MentorsSection() {
 					{mentors.size ? (
 						MENTOR_CATEGORIES.map((category) => (
 							<div
-								className="grid grid-cols-[repeat(auto-fill,192px)] justify-between gap-8"
+								className="grid grid-cols-[repeat(auto-fill,192px)] justify-evenly gap-8 md:justify-between"
 								key={category}
 							>
 								{(mentors.get(category) ?? []).map((mentor) => (

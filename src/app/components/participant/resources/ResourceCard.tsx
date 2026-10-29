@@ -12,16 +12,16 @@ export default function ResourceCard({ resource }: { resource: Resource }) {
 	const imageAlt = `${name} logo`;
 
 	return (
-		<Card className="w-full border">
-			<CardContent className="flex size-full flex-row gap-2">
+		<Card className="@container w-full border">
+			<CardContent className="flex flex-row gap-2">
 				<Image
 					alt={imageAlt}
-					className="pointer-events-none aspect-square size-24 shrink-0 select-none"
+					className="pointer-events-none aspect-square h-auto w-[clamp(3rem,30cqw,6rem)] shrink-0 select-none self-start object-cover"
 					height={100}
 					src={image}
 					width={100}
 				/>
-				<div className="flex size-full flex-1 flex-col justify-between">
+				<div className="flex flex-1 flex-col justify-between">
 					<div className="flex flex-col gap-2">
 						<h3 className="font-medium text-lg">{name}</h3>
 						<p>{description}</p>
