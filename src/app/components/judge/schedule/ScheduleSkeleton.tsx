@@ -1,46 +1,59 @@
 import PageHeader from "@/app/components/PageHeader";
-import { Card, CardContent } from "@/app/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { range } from "@/lib/utils";
-import { JudgeScheduleEventSkeleton } from "./JudgeScheduleEvent";
+import {
+	JudgeScheduleEventSkeleton,
+	ScheduleTable
+} from "./JudgeScheduleEvent";
+
+function RoundScheduleSkeleton() {
+	return (
+		<Card className="min-w-0">
+			<CardHeader className="flex flex-wrap items-center gap-x-3 gap-y-1">
+				<Skeleton className="my-1 h-5 w-32" />
+				<Skeleton className="my-0.5 h-4 w-14" />
+			</CardHeader>
+			<CardContent className="flex flex-col gap-6">
+				<div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/50 px-4 py-3">
+					<div className="flex flex-col gap-1">
+						<Skeleton className="my-0.5 h-4 w-56 max-w-full" />
+						<Skeleton className="my-0.5 h-4 w-40" />
+					</div>
+					<div className="flex flex-wrap items-center gap-3">
+						<Skeleton className="my-0.5 h-4 w-36" />
+						<Skeleton className="h-9 w-32" />
+					</div>
+				</div>
+				<ScheduleTable>
+					{range(3).map((index) => (
+						<JudgeScheduleEventSkeleton key={index} />
+					))}
+				</ScheduleTable>
+			</CardContent>
+		</Card>
+	);
+}
 
 export function ScheduleSkeleton() {
 	return (
 		<section
 			aria-busy="true"
 			aria-label="Loading schedule"
-			className="flex flex-col gap-6"
+			className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6"
 		>
-			<PageHeader
-				description="View your assigned time slots."
-				title="Judging Schedule"
-			/>
-			<Card>
-				<CardContent className="flex items-center justify-between">
-					<div>
-						<p className="m-0 text-muted-foreground text-xs">Current time</p>
-						<Skeleton className="my-1 h-5 w-20" />
-					</div>
-					<div className="flex flex-col items-end">
-						<p className="m-0 text-muted-foreground text-xs">Room assignment</p>
-						<Skeleton className="my-1 h-4 w-16" />
-					</div>
-				</CardContent>
-			</Card>
-			<div className="flex flex-col gap-3">
-				<Skeleton className="my-1 h-4 w-44" />
-				<div className="flex flex-col gap-4 sm:pl-6">
-					{range(3).map((index) => (
-						<div
-							className="grid gap-2 sm:grid-cols-[64px_1fr] sm:gap-4"
-							key={index}
-						>
-							<Skeleton className="my-0.5 h-4 w-16 sm:mt-2.5" />
-							<JudgeScheduleEventSkeleton />
-						</div>
-					))}
+			<div className="flex flex-wrap items-start justify-between gap-4">
+				<PageHeader
+					description="Your teams, presentation times, and scorecards."
+					title="Judging Schedule"
+				/>
+				<div className="flex flex-col items-start gap-2 sm:items-end">
+					<Skeleton className="h-9 w-24" />
+					<Skeleton className="my-0.5 h-3 w-52" />
 				</div>
 			</div>
+			<RoundScheduleSkeleton />
+			<RoundScheduleSkeleton />
 		</section>
 	);
 }

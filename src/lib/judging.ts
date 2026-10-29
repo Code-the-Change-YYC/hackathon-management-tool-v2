@@ -23,17 +23,22 @@ export const JUDGING_PHASE_LABELS: Record<JudgingPhase, string> = {
 export const SLOT_MINUTES_OPTIONS = [15, 30, 60] as const;
 export type SlotMinutes = (typeof SLOT_MINUTES_OPTIONS)[number];
 
+const RUBRIC_BAND_LABELS = [
+	"Minimal",
+	"Developing",
+	"Satisfactory",
+	"Effective",
+	"Excellent"
+] as const;
+export type RubricBandLabel = (typeof RUBRIC_BAND_LABELS)[number];
+
 export function getRubricBands(maxScore: number, includeZero = false) {
-	const bands = [
-		"Minimal",
-		"Developing",
-		"Satisfactory",
-		"Effective",
-		"Excellent"
-	];
 	const minScore = includeZero ? 0 : 1;
 	const scoreCount = Math.max(1, maxScore - minScore + 1);
-	const activeBands = bands.slice(0, Math.min(bands.length, scoreCount));
+	const activeBands = RUBRIC_BAND_LABELS.slice(
+		0,
+		Math.min(RUBRIC_BAND_LABELS.length, scoreCount)
+	);
 
 	return activeBands.map((label, index) => {
 		const start = Math.min(

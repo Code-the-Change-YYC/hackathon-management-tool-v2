@@ -1,148 +1,24 @@
 "use client";
 
-import { useState } from "react";
 import Banner from "@/app/components/Banner";
 import type { Criterion } from "@/app/components/judge/judgePortal";
 import PageHeader from "@/app/components/PageHeader";
-import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
-import {
-	Empty,
-	EmptyDescription,
-	EmptyHeader,
-	EmptyTitle
-} from "@/app/components/ui/empty";
-import { ToggleGroup, ToggleGroupItem } from "@/app/components/ui/toggle-group";
+import { RubricCard } from "@/app/components/rubric/RubricCard";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import {
 	type DashboardEvent,
 	eventNavigationUrlSchema,
 	getCurrentEvent
 } from "@/lib/participant-events";
-import { type JudgingRound, judgingStages } from "@/lib/participant-judging";
+import type { JudgingRound } from "@/lib/participant-judging";
 import type { RouterOutputs } from "@/trpc/react";
 import { CurrentEventBanner } from "../CurrentEventBanner";
 import CurrentEventImages from "../CurrentEventImages";
 import { JudgingStatus } from "../dashboard/JudgingStatus";
-import { ParticipantRubric } from "../ParticipantRubric";
 
 type Settings = RouterOutputs["hackathonSettings"]["get"];
 type Assignment = RouterOutputs["judgingAssignments"]["getMineForActiveRound"];
 type Results = RouterOutputs["scores"]["getMineReleased"];
-
-function RoundFilter({
-	rounds,
-	selected,
-	onSelect,
-	available,
-	label
-}: {
-	rounds: JudgingRound[];
-	selected: string;
-	onSelect: (id: string) => void;
-	available: Set<string>;
-	label: string;
-}) {
-	return (
-		<ToggleGroup
-			aria-label={label}
-			className="max-w-full flex-wrap gap-2"
-			onValueChange={(values) => {
-				if (values[0]) onSelect(String(values[0]));
-			}}
-			size="sm"
-			value={selected ? [selected] : []}
-			variant="outline"
-		>
-			{rounds.map((round) => (
-				<ToggleGroupItem
-					className="h-7 rounded-md border-grey-300 bg-white px-4 font-medium text-grey-600 text-sm/5 disabled:bg-grey-100 disabled:text-grey-400 data-pressed:border-purple-500 data-pressed:bg-purple-100 data-pressed:text-purple-800"
-					disabled={!available.has(round.id)}
-					key={round.id}
-					value={round.id}
-				>
-					{round.name}
-				</ToggleGroupItem>
-			))}
-		</ToggleGroup>
-	);
-}
-
-function RoundRubric({
-	criteria,
-	rounds,
-	available,
-	scores
-}: {
-	criteria: Criterion[];
-	rounds: JudgingRound[];
-	available: Set<string>;
-	scores?: Results["rounds"];
-}) {
-	const [selected, setSelected] = useState("");
-	const roundId = available.has(selected)
-		? selected
-		: (rounds.find((round) => available.has(round.id))?.id ?? "");
-	const filtered = criteria;
-	const roundScores = scores?.filter((score) => score.roundId === roundId);
-	const values = scores
-		? Object.fromEntries(
-				(roundScores ?? []).map((score) => [score.criterionId, score.value])
-			)
-		: undefined;
-
-	if (scores && !roundScores?.length) {
-		return (
-			<Empty>
-				<EmptyHeader>
-					<EmptyTitle>No team scores yet</EmptyTitle>
-					<EmptyDescription>
-						Your team’s scores will appear here once they’re published.
-					</EmptyDescription>
-				</EmptyHeader>
-			</Empty>
-		);
-	}
-
-	return (
-		<ParticipantRubric
-			criteria={
-				scores
-					? filtered.filter((criterion) => values?.[criterion.id] !== undefined)
-					: filtered
-			}
-			key={roundId}
-			scores={values}
-		>
-			{scores ? (
-				<p className="m-0 text-muted-foreground text-sm">
-					Average main score:{" "}
-					{Number(
-						criteria
-							.filter((criterion) => !criterion.isSidepot)
-							.reduce(
-								(sum, criterion) => sum + (values?.[criterion.id] ?? 0),
-								0
-							)
-							.toFixed(2)
-					)}{" "}
-					/{" "}
-					{criteria
-						.filter((criterion) => !criterion.isSidepot)
-						.reduce((sum, criterion) => sum + criterion.maxScore, 0)}
-					. Scores are averaged across submitted judge scorecards; side pots are
-					separate.
-				</p>
-			) : null}
-			<RoundFilter
-				available={available}
-				label={scores ? "Team score round" : "Rubric round"}
-				onSelect={setSelected}
-				rounds={rounds}
-				selected={roundId}
-			/>
-		</ParticipantRubric>
-	);
-}
 
 export function JudgingView({
 	settings,
@@ -168,23 +44,15 @@ export function JudgingView({
 				a.startTime.getTime() - b.startTime.getTime() ||
 				a.id.localeCompare(b.id)
 		);
-	const stages = judgingStages(
-		phase,
-		ordered,
-		settings?.currentRoundId ?? null
-	);
-	const available = new Set(
-		stages
-			.filter((stage) => stage.state !== "upcoming")
-			.map((stage) => stage.id)
-	);
-	// Publish the shared rubric before judging starts; subsequent rounds unlock with the configured phase.
-	if (ordered[0] && !ordered.some((round) => available.has(round.id)))
-		available.add(ordered[0].id);
 	const meetingUrl = eventNavigationUrlSchema.safeParse(
 		assignment?.room.roomLink
 	);
-	const releasedScores = results.released ? results.rounds : [];
+	// Finals only re-score the finalists, so every team's scores come from the first round.
+	const teamScores = Object.fromEntries(
+		(results.released ? results.rounds : [])
+			.filter((score) => score.roundId === ordered[0]?.id)
+			.map((score) => [score.criterionId, score.value])
+	);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -218,42 +86,23 @@ export function JudgingView({
 					rounds={ordered}
 					variant="detailed"
 				/>
-				<Card aria-labelledby="rubric-title" className="min-w-0" role="region">
-					<CardHeader>
-						<h2 className="font-medium text-xl" id="rubric-title">
-							Judging Rubric
-						</h2>
-					</CardHeader>
-					<CardContent>
-						<RoundRubric
-							available={available}
-							criteria={criteria}
-							rounds={ordered}
-						/>
-					</CardContent>
-				</Card>
+				<RubricCard
+					criteria={criteria}
+					emptyDescription="Check back once the judging criteria have been published."
+					emptyTitle="No judging criteria yet"
+					title="Judging Rubric"
+				/>
 				{phase === "winners_announced" && (
-					<Card
-						aria-labelledby="team-scores-title"
-						className="min-w-0"
-						role="region"
-					>
-						<CardHeader>
-							<h2 className="font-medium text-xl" id="team-scores-title">
-								Team Scores
-							</h2>
-						</CardHeader>
-						<CardContent>
-							<RoundRubric
-								available={
-									new Set(releasedScores.map((score) => score.roundId))
-								}
-								criteria={criteria}
-								rounds={ordered}
-								scores={releasedScores}
-							/>
-						</CardContent>
-					</Card>
+					<RubricCard
+						criteria={criteria.filter((criterion) =>
+							Object.hasOwn(teamScores, criterion.id)
+						)}
+						description="Scores are averaged across submitted judge scorecards. Side pots aren’t counted in the main score."
+						emptyDescription="Your team’s scores will appear here once they’re published."
+						emptyTitle="No team scores yet"
+						scores={teamScores}
+						title="Team Scores"
+					/>
 				)}
 			</div>
 		</div>

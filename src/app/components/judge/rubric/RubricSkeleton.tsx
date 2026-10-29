@@ -1,5 +1,5 @@
 import PageHeader from "@/app/components/PageHeader";
-import { JudgeRubricSkeleton } from "./JudgeRubric";
+import { RubricCardSkeleton } from "@/app/components/rubric/RubricCard";
 
 export function RubricSkeleton() {
 	return (
@@ -9,10 +9,10 @@ export function RubricSkeleton() {
 			className="flex flex-col gap-6"
 		>
 			<PageHeader
-				description="Guidelines and criteria for assessing projects."
+				description="Review the criteria and score ranges used for all rounds."
 				title="Judging Rubric"
 			/>
-			<JudgeRubricSkeleton />
+			<RubricCardSkeleton />
 		</section>
 	);
 }

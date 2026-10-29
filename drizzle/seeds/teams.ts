@@ -11,12 +11,12 @@ import {
 import { createOrGetUser } from "./users";
 
 const TEAM_DEFINITIONS = [
-	{ name: "Team One", slug: "team-1" },
-	{ name: "Team Two", slug: "team-2" },
-	{ name: "Team Three", slug: "team-3" },
-	{ name: "Team Four", slug: "team-4" },
-	{ name: "Team Five", slug: "team-5" },
-	{ name: "Team Six", slug: "team-6" }
+	{ name: "Team One", slug: "team-1", teamCode: "TEAM01" },
+	{ name: "Team Two", slug: "team-2", teamCode: "TEAM02" },
+	{ name: "Team Three", slug: "team-3", teamCode: "TEAM03" },
+	{ name: "Team Four", slug: "team-4", teamCode: "TEAM04" },
+	{ name: "Team Five", slug: "team-5", teamCode: "TEAM05" },
+	{ name: "Team Six", slug: "team-6", teamCode: "TEAM06" }
 ];
 
 type SeedTeamsInput = {
@@ -43,8 +43,15 @@ export async function seedTeams({
 						id: generateId(),
 						name: definition.name,
 						slug: definition.slug,
+						teamCode: definition.teamCode,
 						createdAt: new Date()
 					})
+					.returning();
+			} else if (!team.teamCode) {
+				[team] = await tx
+					.update(organization)
+					.set({ teamCode: definition.teamCode })
+					.where(eq(organization.id, team.id))
 					.returning();
 			}
 
