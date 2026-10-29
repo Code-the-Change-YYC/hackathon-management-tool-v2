@@ -1,6 +1,10 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNotNull, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import {
+	criterionAppliesToRound,
+	MAIN_CRITERION_MAX_SCORE
+} from "@/lib/judging";
 import { submittedScorecards } from "@/server/api/judging-results";
 import {
 	adminProcedure,
@@ -12,12 +16,12 @@ import {
 import { hackathonSettings } from "@/server/db/admin-schema";
 import { member } from "@/server/db/auth-schema";
 import {
-	criteria,
 	judgingAssignments,
-	judgingRoomStaff,
-	judgingRooms,
+	judgingCriteria,
 	judgingRounds,
-	scores
+	judgingScores,
+	judgingTableJudges,
+	judgingTables
 } from "@/server/db/judging-schema";
 
 type ScoreContext = Awaited<ReturnType<typeof createTRPCContext>>;
@@ -29,14 +33,14 @@ async function requireAssignment(
 ) {
 	const assignment = await db.query.judgingAssignments.findFirst({
 		where: eq(judgingAssignments.id, assignmentId),
-		with: { room: { with: { staff: true } } }
+		with: { table: { with: { judges: true } } }
 	});
 	if (!assignment)
 		throw new TRPCError({
 			code: "NOT_FOUND",
 			message: "Assignment not found."
 		});
-	if (!assignment.room.staff.some((member) => member.staffId === judgeId)) {
+	if (!assignment.table.judges.some((judge) => judge.judgeId === judgeId)) {
 		throw new TRPCError({
 			code: "FORBIDDEN",
 			message: "You are not assigned to score this team."
@@ -45,9 +49,21 @@ async function requireAssignment(
 	return assignment;
 }
 
-function validateScore(criterion: typeof criteria.$inferSelect, value: number) {
+function validateScore(
+	criterion: typeof judgingCriteria.$inferSelect,
+	value: number,
+	roundId: string
+) {
+	if (!criterionAppliesToRound(criterion, roundId)) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Criterion is not available for this judging round."
+		});
+	}
 	const min = criterion.isSidepot ? 0 : 1;
-	const max = criterion.isSidepot ? criterion.maxScore : 10;
+	const max = criterion.isSidepot
+		? criterion.maxScore
+		: MAIN_CRITERION_MAX_SCORE;
 	if (value < min || value > max) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
@@ -72,39 +88,42 @@ export const scoresRouter = createTRPCRouter({
 		const rows = await ctx.db
 			.select({
 				roundId: judgingRounds.id,
-				criterionId: scores.criteriaId,
-				value: sql<number>`avg(${scores.value})::float8`
+				criterionId: judgingScores.criteriaId,
+				value: sql<number>`avg(${judgingScores.value})::float8`
 			})
-			.from(scores)
+			.from(judgingScores)
 			.innerJoin(
 				judgingAssignments,
-				eq(scores.assignmentId, judgingAssignments.id)
+				eq(judgingScores.assignmentId, judgingAssignments.id)
 			)
-			.innerJoin(judgingRooms, eq(judgingAssignments.roomId, judgingRooms.id))
-			.innerJoin(judgingRounds, eq(judgingRooms.roundId, judgingRounds.id))
+			.innerJoin(
+				judgingTables,
+				eq(judgingAssignments.tableId, judgingTables.id)
+			)
+			.innerJoin(judgingRounds, eq(judgingTables.roundId, judgingRounds.id))
 			.innerJoin(
 				sql`${submittedScorecards} AS submitted`,
 				and(
-					eq(scores.assignmentId, sql`submitted.assignment_id`),
-					eq(scores.judgeId, sql`submitted.judge_id`)
+					eq(judgingScores.assignmentId, sql`submitted.assignment_id`),
+					eq(judgingScores.judgeId, sql`submitted.judge_id`)
 				)
 			)
 			.where(eq(judgingAssignments.teamId, membership.organizationId))
-			.groupBy(judgingRounds.id, scores.criteriaId);
+			.groupBy(judgingRounds.id, judgingScores.criteriaId);
 		return { released: true, rounds: rows };
 	}),
 	// Get all scores
 	getAll: judgeProcedure.query(async ({ ctx }) => {
-		const allScores = await ctx.db.query.scores.findMany({
+		const allScores = await ctx.db.query.judgingScores.findMany({
 			where:
 				ctx.session.user.role === "admin"
 					? undefined
-					: eq(scores.judgeId, ctx.session.user.id),
+					: eq(judgingScores.judgeId, ctx.session.user.id),
 			with: {
 				assignment: {
 					with: {
 						team: true,
-						room: {
+						table: {
 							with: {
 								round: true
 							}
@@ -112,7 +131,7 @@ export const scoresRouter = createTRPCRouter({
 					}
 				}
 			},
-			orderBy: (scores, { desc }) => [desc(scores.createdAt)]
+			orderBy: (rows, { desc }) => [desc(rows.createdAt)]
 		});
 		return allScores;
 	}),
@@ -122,16 +141,16 @@ export const scoresRouter = createTRPCRouter({
 		.input(z.object({ assignmentId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			await requireAssignment(ctx.db, input.assignmentId, ctx.session.user.id);
-			const assignmentScores = await ctx.db.query.scores.findMany({
+			const assignmentScores = await ctx.db.query.judgingScores.findMany({
 				where: and(
-					eq(scores.assignmentId, input.assignmentId),
-					eq(scores.judgeId, ctx.session.user.id)
+					eq(judgingScores.assignmentId, input.assignmentId),
+					eq(judgingScores.judgeId, ctx.session.user.id)
 				),
 				with: {
 					assignment: {
 						with: {
 							team: true,
-							room: {
+							table: {
 								with: {
 									round: true
 								}
@@ -147,14 +166,14 @@ export const scoresRouter = createTRPCRouter({
 	getByTeam: judgeProcedure
 		.input(z.object({ teamId: z.string() }))
 		.query(async ({ ctx, input }) => {
-			const teamScores = await ctx.db.query.scores.findMany({
-				where: (scores, { eq }) =>
+			const teamScores = await ctx.db.query.judgingScores.findMany({
+				where: (rows, { eq }) =>
 					and(
 						ctx.session.user.role === "admin"
 							? undefined
-							: eq(scores.judgeId, ctx.session.user.id),
+							: eq(rows.judgeId, ctx.session.user.id),
 						eq(
-							sql`(SELECT team_id FROM ${judgingAssignments} WHERE id = ${scores.assignmentId})`,
+							sql`(SELECT team_id FROM ${judgingAssignments} WHERE id = ${rows.assignmentId})`,
 							input.teamId
 						)
 					),
@@ -162,7 +181,7 @@ export const scoresRouter = createTRPCRouter({
 					assignment: {
 						with: {
 							team: true,
-							room: {
+							table: {
 								with: {
 									round: true
 								}
@@ -178,37 +197,37 @@ export const scoresRouter = createTRPCRouter({
 	getByRound: judgeProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
-			const judgeRoomsForRound = await ctx.db
-				.select({ id: judgingRooms.id })
-				.from(judgingRooms)
+			const judgeTablesForRound = await ctx.db
+				.select({ id: judgingTables.id })
+				.from(judgingTables)
 				.innerJoin(
-					judgingRoomStaff,
-					eq(judgingRoomStaff.roomId, judgingRooms.id)
+					judgingTableJudges,
+					eq(judgingTableJudges.tableId, judgingTables.id)
 				)
 				.where(
 					and(
-						eq(judgingRooms.roundId, input.roundId),
-						eq(judgingRoomStaff.staffId, ctx.session.user.id)
+						eq(judgingTables.roundId, input.roundId),
+						eq(judgingTableJudges.judgeId, ctx.session.user.id)
 					)
 				);
 
-			const roomIds = judgeRoomsForRound.map((r) => r.id);
+			const tableIds = judgeTablesForRound.map((t) => t.id);
 
-			if (roomIds.length === 0) return [];
+			if (tableIds.length === 0) return [];
 
 			return ctx.db.query.judgingAssignments.findMany({
 				where: (assignments, { inArray }) =>
-					inArray(assignments.roomId, roomIds),
+					inArray(assignments.tableId, tableIds),
 				with: {
 					team: true,
-					room: {
+					table: {
 						with: {
 							round: true
 						}
 					},
-					scores: { where: eq(scores.judgeId, ctx.session.user.id) }
+					scores: { where: eq(judgingScores.judgeId, ctx.session.user.id) }
 				},
-				orderBy: (assignments, { asc }) => [asc(assignments.timeSlot)]
+				orderBy: (assignments, { asc }) => [asc(assignments.startsAt)]
 			});
 		}),
 
@@ -218,37 +237,42 @@ export const scoresRouter = createTRPCRouter({
 		.query(async ({ ctx, input }) => {
 			return ctx.db
 				.select({
-					assignmentId: scores.assignmentId,
-					judgeId: scores.judgeId,
+					assignmentId: judgingScores.assignmentId,
+					judgeId: judgingScores.judgeId,
 					teamId: judgingAssignments.teamId,
 					mainTotal:
-						sql<number>`coalesce(sum(${scores.value}) filter (where ${criteria.isSidepot} = false), 0)`.mapWith(
+						sql<number>`coalesce(sum(${judgingScores.value}) filter (where ${judgingCriteria.isSidepot} = false), 0)`.mapWith(
 							Number
 						),
 					mainCriteriaScored:
-						sql<number>`count(*) filter (where ${criteria.isSidepot} = false)`.mapWith(
+						sql<number>`count(*) filter (where ${judgingCriteria.isSidepot} = false)`.mapWith(
 							Number
 						)
 				})
-				.from(scores)
+				.from(judgingScores)
 				.innerJoin(
 					judgingAssignments,
-					eq(scores.assignmentId, judgingAssignments.id)
+					eq(judgingScores.assignmentId, judgingAssignments.id)
 				)
-				.innerJoin(judgingRooms, eq(judgingAssignments.roomId, judgingRooms.id))
-				.innerJoin(criteria, eq(scores.criteriaId, criteria.id))
+				.innerJoin(
+					judgingTables,
+					eq(judgingAssignments.tableId, judgingTables.id)
+				)
+				.innerJoin(
+					judgingCriteria,
+					eq(judgingScores.criteriaId, judgingCriteria.id)
+				)
 				.where(
 					and(
-						eq(judgingRooms.roundId, input.roundId),
-						isNotNull(scores.judgeId),
+						eq(judgingTables.roundId, input.roundId),
 						ctx.session.user.role === "admin"
 							? undefined
-							: eq(scores.judgeId, ctx.session.user.id)
+							: eq(judgingScores.judgeId, ctx.session.user.id)
 					)
 				)
 				.groupBy(
-					scores.assignmentId,
-					scores.judgeId,
+					judgingScores.assignmentId,
+					judgingScores.judgeId,
 					judgingAssignments.teamId
 				);
 		}),
@@ -326,24 +350,25 @@ export const scoresRouter = createTRPCRouter({
 					message: "Each criterion may only appear once."
 				});
 			}
-			const criteriaRows = await ctx.db.query.criteria.findMany({
-				// Every round uses the same rubric; historic roundIds do not narrow submissions.
-			});
+			const criteriaRows = (
+				await ctx.db.query.judgingCriteria.findMany()
+			).filter((criterion) =>
+				criterionAppliesToRound(criterion, assignment.table.roundId)
+			);
 			if (
 				criteriaRows.length !== input.length ||
 				criteriaRows.some((criterion) => !criteriaIds.includes(criterion.id))
 			) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message:
-						"Complete every criterion in the current rubric before submitting."
+					message: "Complete every criterion for this round before submitting."
 				});
 			}
-			if (assignment.timeSlot && assignment.timeSlot > new Date()) {
-				const existing = await ctx.db.query.scores.findFirst({
+			if (assignment.startsAt > new Date()) {
+				const existing = await ctx.db.query.judgingScores.findFirst({
 					where: and(
-						eq(scores.assignmentId, assignmentId),
-						eq(scores.judgeId, ctx.session.user.id)
+						eq(judgingScores.assignmentId, assignmentId),
+						eq(judgingScores.judgeId, ctx.session.user.id)
 					)
 				});
 				if (!existing)
@@ -361,11 +386,11 @@ export const scoresRouter = createTRPCRouter({
 						code: "BAD_REQUEST",
 						message: "One or more criteria were not found."
 					});
-				validateScore(criterion, item.score);
+				validateScore(criterion, item.score, assignment.table.roundId);
 			}
 
 			const results = await ctx.db
-				.insert(scores)
+				.insert(judgingScores)
 				.values(
 					input.map((item) => ({
 						assignmentId: item.assignmentId,
@@ -375,7 +400,11 @@ export const scoresRouter = createTRPCRouter({
 					}))
 				)
 				.onConflictDoUpdate({
-					target: [scores.assignmentId, scores.criteriaId, scores.judgeId],
+					target: [
+						judgingScores.assignmentId,
+						judgingScores.criteriaId,
+						judgingScores.judgeId
+					],
 					set: { value: sql`excluded.value` }
 				})
 				.returning();
@@ -392,26 +421,29 @@ export const scoresRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const existing = await ctx.db.query.scores.findFirst({
+			const existing = await ctx.db.query.judgingScores.findFirst({
 				where: and(
-					eq(scores.id, input.id),
-					eq(scores.judgeId, ctx.session.user.id)
+					eq(judgingScores.id, input.id),
+					eq(judgingScores.judgeId, ctx.session.user.id)
 				),
 				with: { criteria: true }
 			});
 			if (!existing)
 				throw new TRPCError({ code: "NOT_FOUND", message: "Score not found." });
-			await requireAssignment(
+			const assignment = await requireAssignment(
 				ctx.db,
 				existing.assignmentId,
 				ctx.session.user.id
 			);
-			validateScore(existing.criteria, input.score);
+			validateScore(existing.criteria, input.score, assignment.table.roundId);
 			const [updated] = await ctx.db
-				.update(scores)
+				.update(judgingScores)
 				.set({ value: input.score })
 				.where(
-					and(eq(scores.id, input.id), eq(scores.judgeId, ctx.session.user.id))
+					and(
+						eq(judgingScores.id, input.id),
+						eq(judgingScores.judgeId, ctx.session.user.id)
+					)
 				)
 				.returning();
 			return updated;
@@ -421,7 +453,7 @@ export const scoresRouter = createTRPCRouter({
 	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
-			await ctx.db.delete(scores).where(eq(scores.id, input.id));
+			await ctx.db.delete(judgingScores).where(eq(judgingScores.id, input.id));
 			return { success: true };
 		})
 });

@@ -40,6 +40,10 @@ import {
 import type { db as dbType } from "@/server/db";
 import { hackathonSettings } from "@/server/db/admin-schema";
 import { member, organization } from "@/server/db/auth-schema";
+import {
+	judgingAssignments,
+	judgingTableJudges
+} from "@/server/db/judging-schema";
 import { MEMBER_ROLES, type TeamRanking } from "@/types/types";
 
 type TeamMetadata = {
@@ -546,13 +550,10 @@ export const teamsRouter = createTRPCRouter({
           SELECT o.id, o.name,
             COALESCE(AVG(card.main_score), 0)::float8 AS "totalScore",
             COUNT(card.judge_id)::int AS "submittedScorecards",
-            (SELECT COUNT(*)::int FROM hackathon_judging_assignment a
-              INNER JOIN hackathon_judging_room_staff staff ON staff.room_id = a.room_id
-              WHERE a.team_id = o.id) AS "expectedScorecards",
-            (SELECT COUNT(*)::int FROM hackathon_score legacy
-              INNER JOIN hackathon_judging_assignment a ON a.id = legacy.assignment_id
-              WHERE a.team_id = o.id AND legacy.judge_id IS NULL) AS "legacyScores"
-          FROM hackathon_organization o
+            (SELECT COUNT(*)::int FROM ${judgingAssignments} a
+              INNER JOIN ${judgingTableJudges} tj ON tj.table_id = a.table_id
+              WHERE a.team_id = o.id) AS "expectedScorecards"
+          FROM ${organization} o
           LEFT JOIN ${submittedScorecards} card ON card.team_id = o.id
           GROUP BY o.id, o.name
           ORDER BY "totalScore" DESC, o.name ASC
