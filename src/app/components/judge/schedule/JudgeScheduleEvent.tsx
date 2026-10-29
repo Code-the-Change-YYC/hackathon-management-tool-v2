@@ -1,9 +1,8 @@
 import { differenceInMinutes } from "date-fns";
 import Link from "next/link";
-import { useId } from "react";
+import { type ReactNode, useId } from "react";
 import { Button, buttonVariants } from "@/app/components/ui/button";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { eventNavigationUrlSchema } from "@/lib/participant-events";
 import { cn } from "@/lib/utils";
 import {
 	type Criterion,
@@ -34,9 +33,6 @@ export function JudgeScheduleEvent({
 	const scoreStatus = getAssignmentScoreStatus(assignment, criteria);
 	const canScore = canScoreAssignment(assignment, criteria, currentTime);
 	const total = getAssignmentTotal(assignment, criteria);
-	const meetingUrl = eventNavigationUrlSchema.safeParse(
-		assignment.room.roomLink
-	);
 	const minutesUntil = assignment.timeSlot
 		? differenceInMinutes(assignment.timeSlot, currentTime, {
 				roundingMethod: "ceil"
@@ -53,6 +49,7 @@ export function JudgeScheduleEvent({
 		: scoreStatus === "Partially scored"
 			? "Continue scoring"
 			: "Score team";
+
 	return (
 		<article
 			aria-label={`${assignment.team.name} · ${assignment.room.round.name}`}
@@ -82,34 +79,16 @@ export function JudgeScheduleEvent({
 				</p>
 			</div>
 			<div className="@min-[720px]/schedule:col-span-1 col-span-2 @min-[720px]/schedule:row-start-auto row-start-2 min-w-0">
-				<h3 className="m-0 break-words font-medium text-sm">
+				<h3 className="wrap-break-word m-0 font-medium text-sm">
 					{assignment.team.name}
 				</h3>
-				<p className="mt-1 mb-0 break-words text-muted-foreground text-xs">
+				<p className="wrap-break-word mt-1 mb-0 text-muted-foreground text-xs">
 					Team ID: {getTeamCode(assignment)}
 				</p>
 			</div>
-			<div className="min-w-0 break-words text-sm">
+			<div className="wrap-break-word min-w-0 text-sm">
 				<span className="sr-only">Room: </span>
 				{getAssignmentRoomName(assignment)}
-				{meetingUrl.success ? (
-					<a
-						className={buttonVariants({
-							variant: "link",
-							size: "xs",
-							className: "mt-1 px-0"
-						})}
-						href={meetingUrl.data}
-						rel="noreferrer"
-						target="_blank"
-					>
-						Join meeting
-						<span className="sr-only">
-							{" "}
-							for {assignment.team.name} (opens in a new tab)
-						</span>
-					</a>
-				) : null}
 			</div>
 			<div className="@min-[720px]/schedule:col-start-auto col-start-2 @min-[720px]/schedule:row-start-auto row-start-1 min-w-0 @min-[720px]/schedule:text-left text-right">
 				<span
@@ -153,16 +132,44 @@ export function JudgeScheduleEvent({
 	);
 }
 
+export function ScheduleTable({ children }: { children: ReactNode }) {
+	return (
+		<div className="@container/schedule overflow-hidden rounded-lg border border-border [--schedule-columns:100px_minmax(0,1fr)_90px_140px_156px]">
+			<div
+				aria-hidden="true"
+				className="@min-[720px]/schedule:grid hidden grid-cols-(--schedule-columns) gap-4 border-border border-b px-4 py-3 text-muted-foreground text-xs"
+			>
+				<span>Time</span>
+				<span>Team</span>
+				<span>Room</span>
+				<span>Scores</span>
+				<span className="text-right">Action</span>
+			</div>
+			{children}
+		</div>
+	);
+}
+
 export function JudgeScheduleEventSkeleton() {
 	return (
-		<div className="flex min-w-0 flex-wrap items-start gap-4 rounded-xl border border-border bg-card p-4">
-			<div className="flex shrink-0 flex-col items-start gap-2 border-border border-r pr-4">
-				<Skeleton className="h-5 w-24 rounded-4xl" />
-				<Skeleton className="my-0.5 h-3 w-16" />
+		<div className="grid min-w-0 @min-[720px]/schedule:grid-cols-(--schedule-columns) grid-cols-[minmax(0,1fr)_auto] @min-[720px]/schedule:items-center gap-x-4 gap-y-3 border-border border-b px-4 py-3 last:border-b-0">
+			<div className="flex min-w-0 flex-col">
+				<Skeleton className="my-0.5 h-4 w-16" />
+				<div className="mt-1 flex flex-col">
+					<Skeleton className="my-0.5 h-3 w-20" />
+					<Skeleton className="my-0.5 @min-[720px]/schedule:block hidden h-3 w-12" />
+				</div>
 			</div>
-			<div className="flex min-w-0 flex-1 basis-40 flex-col gap-2">
-				<Skeleton className="my-1 h-4 w-40" />
-				<Skeleton className="my-0.5 h-3 w-64 max-w-full" />
+			<div className="@min-[720px]/schedule:col-span-1 col-span-2 @min-[720px]/schedule:row-start-auto row-start-2 flex min-w-0 flex-col">
+				<Skeleton className="my-0.5 h-4 w-40 max-w-full" />
+				<Skeleton className="mt-1.5 mb-0.5 h-3 w-24" />
+			</div>
+			<Skeleton className="my-0.5 h-4 w-16" />
+			<div className="@min-[720px]/schedule:col-start-auto col-start-2 @min-[720px]/schedule:row-start-auto row-start-1 flex min-w-0 @min-[720px]/schedule:justify-start justify-end">
+				<Skeleton className="my-0.5 h-4 w-24" />
+			</div>
+			<div className="@min-[720px]/schedule:col-start-auto col-start-2 @min-[720px]/schedule:row-start-auto row-start-3 flex justify-end">
+				<Skeleton className="h-9 w-28" />
 			</div>
 		</div>
 	);

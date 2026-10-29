@@ -6,7 +6,7 @@ import type {
 } from "@/app/components/judge/judgePortal";
 import { ScheduleView } from "@/app/components/judge/schedule/ScheduleView";
 
-const mocks = vi.hoisted(() => ({ refresh: vi.fn(), replace: vi.fn() }));
+const mocks = vi.hoisted(() => ({ refresh: vi.fn() }));
 const now = new Date("2026-09-19T16:00:00Z");
 vi.mock("@/hooks/use-current-time", () => ({
 	useCurrentTime: () => new Date("2026-09-19T16:00:00Z")
@@ -85,43 +85,19 @@ const props = {
 beforeEach(() => vi.clearAllMocks());
 
 describe("judge round schedule", () => {
-	it("switches round content and records the selected round in the URL", () => {
-		const { rerender } = render(<ScheduleView {...props} />);
-		expect(screen.getByRole("tab", { name: /Preliminary/ })).toHaveAttribute(
-			"aria-selected",
-			"true"
-		);
-		expect(screen.getByRole("heading", { name: "Due team" })).toBeVisible();
-		fireEvent.click(screen.getByRole("tab", { name: /Finals/ }));
-		expect(screen.getByRole("heading", { name: "Finals team" })).toBeVisible();
-		expect(mocks.replace).toHaveBeenCalledWith("/judge/schedule?round=finals", {
-			scroll: false
-		});
-		rerender(<ScheduleView {...props} activeRoundId={finals.id} />);
-		expect(screen.getByRole("tab", { name: /Finals/ })).toHaveAttribute(
-			"aria-selected",
-			"true"
-		);
-	});
-	it("restores a requested round and falls back when that round is removed", () => {
-		const { rerender } = render(
-			<ScheduleView {...props} initialRoundId="finals" />
-		);
-		expect(screen.getByRole("tab", { name: /Finals/ })).toHaveAttribute(
-			"aria-selected",
-			"true"
-		);
-		rerender(
-			<ScheduleView
-				{...props}
-				assignments={[team("Due team")]}
-				rounds={[round]}
-			/>
-		);
-		expect(screen.getByRole("tab", { name: /Preliminary/ })).toHaveAttribute(
-			"aria-selected",
-			"true"
-		);
+	it("shows every round's assignments together in its own card", () => {
+		render(<ScheduleView {...props} />);
+		const preliminary = screen.getByRole("region", { name: "Preliminary" });
+		const finalsCard = screen.getByRole("region", { name: "Finals" });
+		expect(
+			within(preliminary).getByRole("heading", { name: "Due team" })
+		).toBeVisible();
+		expect(
+			within(finalsCard).getByRole("heading", { name: "Finals team" })
+		).toBeVisible();
+		expect(within(preliminary).getByText("Active")).toBeVisible();
+		expect(within(finalsCard).queryByText("Active")).toBeNull();
+		expect(screen.queryByRole("tab")).toBeNull();
 	});
 	it("keeps unscheduled teams visible and links to the due team's scorecard", () => {
 		render(
@@ -141,17 +117,13 @@ describe("judge round schedule", () => {
 		).toHaveAttribute("href", "/judge/score/Due team");
 		expect(screen.getByText("2 scorecards remaining")).toBeVisible();
 	});
-	it("disables upcoming scorecards while leaving meeting links available", () => {
+	it("disables upcoming scorecards", () => {
 		const upcoming = team("Upcoming", new Date("2026-09-19T16:30:00Z"));
-		upcoming.room.roomLink = "https://example.com/judging";
 		render(<ScheduleView {...props} assignments={[upcoming]} />);
 		const row = screen.getByRole("article", { name: "Upcoming · Preliminary" });
 		expect(
 			within(row).getByRole("button", { name: "Score team for Upcoming" })
 		).toBeDisabled();
-		expect(
-			within(row).getByRole("link", { name: /Join meeting/ })
-		).toHaveAttribute("href", "https://example.com/judging");
 	});
 	it("refreshes server data and distinguishes an empty schedule", () => {
 		render(<ScheduleView {...props} assignments={[]} rounds={[]} />);
