@@ -1,31 +1,31 @@
 "use client";
 
+import { useState } from "react";
 import PageHeader from "@/app/components/PageHeader";
+import { Card } from "@/app/components/ui/card";
 import {
 	Empty,
 	EmptyDescription,
 	EmptyHeader,
 	EmptyTitle
 } from "@/app/components/ui/empty";
+import { ToggleGroup, ToggleGroupItem } from "@/app/components/ui/toggle-group";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import type { JudgingRound } from "@/lib/participant-judging";
 import {
 	type Criterion,
-	getMeetingLink,
 	getRoomName,
 	isAssignmentScored,
 	type JudgeAssignment,
 	sortAssignments
 } from "../judgePortal";
-import { JoinMeetingButton } from "./JoinMeetingButton";
-import { JudgeRoundStats } from "./JudgeRoundStats";
-import { JudgeTeamCard } from "./JudgeTeamCard";
+import { JudgeNextTeam } from "./JudgeNextTeam";
+import { JudgeTeamRow } from "./JudgeTeamRow";
 
 function getRoundStats(
 	assignments: JudgeAssignment[],
 	criteria: Criterion[],
-	rounds: JudgingRound[],
-	activeRoundId: string | null
+	rounds: JudgingRound[]
 ) {
 	const roundsById = new Map(rounds.map((round) => [round.id, round] as const));
 	const grouped = new Map<string, JudgeAssignment[]>();
@@ -39,9 +39,8 @@ function getRoundStats(
 		.map(([roundId, roundAssignments]) => {
 			const round = roundsById.get(roundId);
 			return {
-				assigned: roundAssignments.length,
+				assignments: roundAssignments.sort(sortAssignments),
 				id: roundId,
-				isActive: activeRoundId === roundId,
 				name: round?.name ?? "Judging round",
 				scored: roundAssignments.filter((assignment) =>
 					isAssignmentScored(assignment, criteria)
@@ -49,10 +48,7 @@ function getRoundStats(
 				startTime: round?.startTime.getTime() ?? 0
 			};
 		})
-		.sort(
-			(a, b) =>
-				Number(b.isActive) - Number(a.isActive) || a.startTime - b.startTime
-		);
+		.sort((a, b) => a.startTime - b.startTime);
 }
 
 export function DashboardView({
@@ -69,75 +65,107 @@ export function DashboardView({
 	criteria: Criterion[];
 }) {
 	const currentTime = useCurrentTime();
-	const roundStats = getRoundStats(
-		assignments,
-		criteria,
-		rounds,
-		activeRoundId
-	);
-	// Shows the active round's teams, or the earliest round's before judging starts.
-	const shownRound = roundStats[0];
-	const shownAssignments = assignments
-		.filter((assignment) => assignment.room.round.id === shownRound?.id)
-		.sort(sortAssignments);
-	const roomName = getRoomName(assignments);
+	const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
+	const roundStats = getRoundStats(assignments, criteria, rounds);
+	const shownRound =
+		roundStats.find(
+			(round) => round.id === (selectedRoundId ?? activeRoundId)
+		) ??
+		roundStats.find((round) => round.scored < round.assignments.length) ??
+		roundStats.at(-1);
+	const shownAssignments = shownRound?.assignments ?? [];
+	const roomName = getRoomName(shownAssignments);
+	const progress = shownRound
+		? (shownRound.scored / shownRound.assignments.length) * 100
+		: 0;
 
 	return (
 		<div className="flex flex-col gap-6">
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-				<PageHeader
-					description="Manage and score your assigned teams."
-					title={`Hi, ${userName}!`}
-				/>
-				<div className="flex flex-col items-start gap-1 sm:items-end">
-					<p className="m-0 font-medium text-base">
-						{roomName
-							? `You’ve been assigned to ${roomName}`
-							: "No room assigned yet"}
-					</p>
-					<JoinMeetingButton href={getMeetingLink(assignments)} />
-				</div>
-			</div>
+			<PageHeader
+				description={
+					roomName && shownRound
+						? `You’re judging in ${roomName} for the ${shownRound.name}.`
+						: "No room assigned yet."
+				}
+				title={`Hi, ${userName}!`}
+			/>
 
-			{roundStats.length > 0 && (
-				<section className="grid gap-4 xl:grid-cols-2">
+			{roundStats.length > 1 && (
+				<ToggleGroup
+					aria-label="Judging round"
+					className="max-w-full flex-wrap gap-2"
+					onValueChange={(values) => {
+						if (values[0]) setSelectedRoundId(String(values[0]));
+					}}
+					size="sm"
+					value={shownRound ? [shownRound.id] : []}
+					variant="outline"
+				>
 					{roundStats.map((round) => (
-						<JudgeRoundStats
-							assigned={round.assigned}
+						<ToggleGroupItem
+							className="h-9 rounded-md border-grey-300 bg-white px-4 font-medium text-grey-600 text-sm data-pressed:border-purple-500 data-pressed:bg-purple-100 data-pressed:text-purple-800"
 							key={round.id}
-							name={round.name}
-							scored={round.scored}
-						/>
+							value={round.id}
+						>
+							{round.name}
+							<span className="opacity-70">
+								{round.scored}/{round.assignments.length}
+							</span>
+						</ToggleGroupItem>
 					))}
-				</section>
+				</ToggleGroup>
 			)}
 
-			<section className="flex flex-col gap-4">
-				<h2 className="font-medium text-xl">
-					{shownRound ? `Teams · ${shownRound.name}` : "Teams"}
-				</h2>
-				{shownAssignments.length > 0 ? (
-					<div className="grid gap-4 xl:grid-cols-2">
-						{shownAssignments.map((assignment) => (
-							<JudgeTeamCard
-								assignment={assignment}
-								criteria={criteria}
-								currentTime={currentTime}
-								key={assignment.id}
+			{shownRound ? (
+				<>
+					<JudgeNextTeam
+						assignment={shownAssignments.find(
+							(assignment) => !isAssignmentScored(assignment, criteria)
+						)}
+						currentTime={currentTime}
+						teamCount={shownAssignments.length}
+					/>
+
+					<section className="flex flex-col gap-3">
+						<div className="flex flex-wrap items-baseline justify-between gap-2">
+							<h2 className="m-0 font-medium text-xl">Your teams</h2>
+							<p className="m-0 text-muted-foreground text-sm">
+								{shownRound.scored} of {shownAssignments.length} scored
+							</p>
+						</div>
+						<div
+							aria-hidden
+							className="h-2 overflow-hidden rounded-full bg-grey-200"
+						>
+							<div
+								className="h-full rounded-full bg-judging-success transition-[width]"
+								style={{ width: `${progress}%` }}
 							/>
-						))}
-					</div>
-				) : (
-					<Empty className="border">
-						<EmptyHeader>
-							<EmptyTitle>No teams assigned yet</EmptyTitle>
-							<EmptyDescription>
-								Your assigned teams will appear here once the schedule is set.
-							</EmptyDescription>
-						</EmptyHeader>
-					</Empty>
-				)}
-			</section>
+						</div>
+						<Card className="py-0">
+							<ul className="m-0 list-none divide-y divide-grey-200 p-0">
+								{shownAssignments.map((assignment) => (
+									<JudgeTeamRow
+										assignment={assignment}
+										criteria={criteria}
+										currentTime={currentTime}
+										key={assignment.id}
+									/>
+								))}
+							</ul>
+						</Card>
+					</section>
+				</>
+			) : (
+				<Empty className="border">
+					<EmptyHeader>
+						<EmptyTitle>No teams assigned yet</EmptyTitle>
+						<EmptyDescription>
+							Your assigned teams will appear here once the schedule is set.
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
+			)}
 		</div>
 	);
 }

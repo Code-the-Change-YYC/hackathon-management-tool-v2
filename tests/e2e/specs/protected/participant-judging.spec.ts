@@ -10,6 +10,7 @@ import {
 } from "@/server/db/judging-schema";
 import type { User } from "@/types/types";
 import { Role } from "@/types/types";
+import { createTestUser } from "../../../utils/auth";
 import { TeamFixtureTracker } from "../../../utils/teams";
 import { expect, test } from "../../fixtures/settings.fixture";
 
@@ -35,9 +36,12 @@ async function assignTeam(user: User) {
 		})
 		.returning();
 	if (!round || !criterion) throw new Error("Failed to create judging data");
+	const judge = await createTestUser({ name: "E2E Judge", role: Role.JUDGE });
 	const cleanup = async () => {
+		// Deleting the round cascades to the judge's scores, which block deleting the judge.
 		await db.delete(judgingRounds).where(eq(judgingRounds.id, round.id));
 		await db.delete(criteria).where(eq(criteria.id, criterion.id));
+		await judge.cleanup();
 		await teams.cleanup();
 	};
 
@@ -63,11 +67,16 @@ async function assignTeam(user: User) {
 		})
 		.returning();
 	if (!assignment) throw new Error("Failed to create a judging assignment");
-	await db.insert(scores).values({
-		assignmentId: assignment.id,
-		criteriaId: criterion.id,
-		value: 4
-	});
+	// Published averages only count a judge's complete scorecard, so score every criterion.
+	const allCriteria = await db.query.criteria.findMany();
+	await db.insert(scores).values(
+		allCriteria.map((item) => ({
+			assignmentId: assignment.id,
+			criteriaId: item.id,
+			judgeId: judge.user.id,
+			value: item.id === criterion.id ? 4 : item.isSidepot ? 0 : 1
+		}))
+	);
 
 	return { cleanup, criterion, round };
 }

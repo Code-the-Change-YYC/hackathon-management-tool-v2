@@ -11,15 +11,23 @@ export const metadata: Metadata = {
 
 export default async function SchedulePage() {
 	const { user } = await requireRole([Role.JUDGE, Role.ADMIN]);
-	const [assignments, criteria] = await Promise.all([
+	const [assignments, criteria, rounds, settings] = await Promise.all([
 		api.judgingAssignments.getByJudge({ judgeId: user.id }),
-		api.criteria.getAll()
+		api.criteria.getAll(),
+		api.judgingRounds.getAll(),
+		api.hackathonSettings.get()
 	]);
 
 	return (
 		<>
 			<AutoRefresh />
-			<ScheduleView assignments={assignments} criteria={criteria} />
+			<ScheduleView
+				activeRoundId={settings?.currentRoundId ?? null}
+				assignments={assignments}
+				criteria={criteria}
+				rounds={rounds}
+				updatedAt={Date.now()}
+			/>
 		</>
 	);
 }

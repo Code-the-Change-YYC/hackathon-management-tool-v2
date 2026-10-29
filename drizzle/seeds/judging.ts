@@ -91,26 +91,50 @@ export async function seedJudging({ judges, teams }: SeedJudgingInput) {
 		.insert(judgingCriteria)
 		.values([
 			{
-				name: "Technical Execution",
+				name: "Innovation & Creativity",
 				description:
-					"Quality of the implementation (working prototype, technical depth, stability)? Use of appropriate technology stack. Is the solution technically sound and well-built?",
+					"Is the idea original or a fresh take on existing solutions? Does it apply technology in a creative way to the problem it tackles?",
 				displayOrder: 1,
 				maxScore: MAIN_CRITERION_MAX_SCORE,
 				isSidepot: false
 			},
 			{
-				name: "Innovation",
+				name: "Impact & Relevance to Prompt",
 				description:
-					"Is the idea original or a fresh take on existing solutions? Does it creatively apply technology to urban challenges (e.g., housing, mobility, disaster resilience, inclusivity)?",
+					"Does the solution clearly address the hackathon prompt? Could it make a meaningful, positive difference for the people it serves?",
 				displayOrder: 2,
 				maxScore: MAIN_CRITERION_MAX_SCORE,
+				isSidepot: false
+			},
+			{
+				name: "Feasibility & Scalability",
+				description:
+					"Is the solution practical given real constraints (budget, infrastructure, etc.)? Could it scale beyond a demo into a real-world setting?",
+				displayOrder: 3,
+				maxScore: 10,
+				isSidepot: false
+			},
+			{
+				name: "Technical Execution",
+				description:
+					"Quality of the implementation (working prototype, technical depth, stability). Use of appropriate technology stack. Is the solution technically sound and well-built?",
+				displayOrder: 4,
+				maxScore: 10,
+				isSidepot: false
+			},
+			{
+				name: "User Experience & Design",
+				description:
+					"Is the solution intuitive, accessible and user-friendly? Is it aesthetically pleasing? Does the design of the product elevate its function and original idea?",
+				displayOrder: 5,
+				maxScore: 10,
 				isSidepot: false
 			},
 			{
 				name: "Best use of AI",
 				description:
 					"How effectively does the solution use AI to address the challenge?",
-				displayOrder: 3,
+				displayOrder: 6,
 				maxScore: 5,
 				isSidepot: true,
 				roundIds: [panelRound.id]
@@ -119,7 +143,7 @@ export async function seedJudging({ judges, teams }: SeedJudgingInput) {
 				name: "Best UI",
 				description:
 					"Is the solution intuitive, accessible and user-friendly? Is the solution aesthetically pleasing? Does the design of the product elevate its function and original idea?",
-				displayOrder: 4,
+				displayOrder: 7,
 				maxScore: 5,
 				isSidepot: true,
 				roundIds: [panelRound.id]

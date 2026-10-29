@@ -37,9 +37,12 @@ const FAQ_ITEMS = [
 		question: "Who can participate?",
 		answer: (
 			<p>
-				Canadian students interested in software development and open to
-				collaborating with a team can participate. Hackathons are a great fit
-				for first-time and experienced hackers alike.
+				Hack the Change is open to all students across Canada, regardless of
+				experience level. As defined by MLH, students include anyone currently
+				attending a school, college, university, bootcamp, or similar
+				educational program, as well as those who graduated within the past 12
+				months. Whether you're a first-time hacker or an experienced developer,
+				everyone is welcome to participate!
 			</p>
 		)
 	},
