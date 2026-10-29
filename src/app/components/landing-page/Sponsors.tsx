@@ -50,7 +50,7 @@ export default function Sponsors() {
 					</p>
 				</div>
 
-				<div className="grid w-full max-w-4xl grid-cols-2 gap-x-6 gap-y-8 [--logo-size:4rem] sm:grid-cols-3 xl:max-w-7xl xl:grid-cols-6 sm:[--logo-size:5rem] md:[--logo-size:5.5rem]">
+				<div className="flex w-full max-w-4xl flex-wrap justify-center gap-x-6 gap-y-8 [--logo-size:4rem] xl:max-w-7xl sm:[--logo-size:5rem] md:[--logo-size:5.5rem]">
 					{sponsors.map((sponsor) => {
 						const logo = (
 							<Image
@@ -68,7 +68,7 @@ export default function Sponsors() {
 
 						return (
 							<div
-								className="group flex flex-col items-center gap-2"
+								className="group flex w-[calc((100%-1.5rem)/2)] flex-col items-center gap-2 sm:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-7.5rem)/6)]"
 								key={sponsor.id}
 							>
 								<div className="flex h-[calc(var(--logo-size)*1.5)] w-full items-center justify-center">
