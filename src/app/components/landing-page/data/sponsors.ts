@@ -50,10 +50,10 @@ export const sponsors: Sponsor[] = [
 	},
 	{
 		id: "sponsor-6",
-		image: "/svgs/landingPage/sponsors/cs_ucalgary.png",
-		width: 400,
-		height: 156,
-		scale: 1.15,
+		image: "/svgs/landingPage/sponsors/cs-ucalgary-logo.png",
+		width: 2448,
+		height: 446,
+		scale: 1.05,
 		name: "University of Calgary - Department of Computer Science",
 		url: "https://science.ucalgary.ca/computer-science"
 	},

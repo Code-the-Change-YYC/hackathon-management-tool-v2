@@ -4,7 +4,8 @@ import type { Sponsor } from "@/types/landingPage";
 import { sponsors } from "./data/sponsors";
 
 // Gives every logo the same area rather than the same box, so wide and tall
-// logos look equally big
+// logos look equally big. --logo-size is relative to the tile, so logos keep
+// the same proportions within their tiles at every screen size
 function getLogoWidth({ width, height, scale = 1 }: Sponsor) {
 	const factor = Math.sqrt(width / height) * scale;
 	return `calc(var(--logo-size) * ${factor.toFixed(3)})`;
@@ -50,52 +51,52 @@ export default function Sponsors() {
 					</p>
 				</div>
 
-				<div className="flex w-full max-w-4xl flex-wrap justify-center gap-x-6 gap-y-8 [--logo-size:4rem] xl:max-w-7xl sm:[--logo-size:5rem] md:[--logo-size:5.5rem]">
+				{/* Two columns on phones and four from md up, so the eight logos fill
+				    whole rows. Flex rather than grid keeps any short last row centred */}
+				<ul className="flex w-full max-w-5xl flex-wrap justify-center gap-3 sm:gap-5 lg:gap-6">
 					{sponsors.map((sponsor) => {
 						const logo = (
-							<Image
-								alt={sponsor.name}
-								className="h-auto w-full"
-								height={sponsor.height}
-								sizes="11rem"
-								src={sponsor.image}
-								width={sponsor.width}
-							/>
+							<span
+								className="block transition-transform duration-300 group-hover:scale-105"
+								style={{ width: getLogoWidth(sponsor) }}
+							>
+								<Image
+									alt={sponsor.name}
+									className="h-auto w-full"
+									height={sponsor.height}
+									sizes="(min-width: 768px) 12rem, 40vw"
+									src={sponsor.image}
+									width={sponsor.width}
+								/>
+							</span>
 						);
-						const logoClassName =
-							"group-hover:-translate-y-1 block max-w-full transition-transform duration-300";
-						const logoStyle = { width: getLogoWidth(sponsor) };
+						const tileClassName =
+							"group @container flex aspect-3/2 w-full items-center justify-center rounded-2xl border-2 border-grey-200 bg-white transition-all duration-300 [--logo-size:34cqw]";
 
 						return (
-							<div
-								className="group flex w-[calc((100%-1.5rem)/2)] flex-col items-center gap-2 sm:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-7.5rem)/6)]"
+							<li
+								className="w-[calc((100%-0.75rem)/2)] sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-3.75rem)/4)] lg:w-[calc((100%-4.5rem)/4)]"
 								key={sponsor.id}
 							>
-								<div className="flex h-[calc(var(--logo-size)*1.5)] w-full items-center justify-center">
-									{sponsor.url ? (
-										<Link
-											className={logoClassName}
-											href={sponsor.url}
-											rel="noopener noreferrer"
-											style={logoStyle}
-											target="_blank"
-										>
-											{logo}
-										</Link>
-									) : (
-										<div className={logoClassName} style={logoStyle}>
-											{logo}
-										</div>
-									)}
-								</div>
-								{/* Revealed on hover, so only shown where hovering is common */}
-								<p className="hidden text-center font-medium text-dark-grey text-sm opacity-0 transition-all duration-300 group-hover:opacity-100 lg:block">
-									{sponsor.name}
-								</p>
-							</div>
+								{sponsor.url ? (
+									<Link
+										className={`${tileClassName} hover:-translate-x-1 hover:-translate-y-1 hover:border-awesomer-purple hover:shadow-[6px_6px_0_0_var(--color-awesome-purple)] focus-visible:border-awesomer-purple focus-visible:outline-none`}
+										href={sponsor.url}
+										rel="noopener noreferrer"
+										target="_blank"
+										title={sponsor.name}
+									>
+										{logo}
+									</Link>
+								) : (
+									<div className={tileClassName} title={sponsor.name}>
+										{logo}
+									</div>
+								)}
+							</li>
 						);
 					})}
-				</div>
+				</ul>
 			</div>
 		</section>
 	);
