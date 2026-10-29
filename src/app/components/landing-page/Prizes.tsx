@@ -79,7 +79,7 @@ const SIDE_POTS: SidePot[] = [
 		icon: FlashLine,
 		cardStyles:
 			"border-awesomer-purple shadow-[6px_6px_0_0_var(--color-awesome-purple)]",
-		badgeStyles: "bg-white text-awesomer-purple"
+		badgeStyles: "bg-accent text-awesomer-purple"
 	}
 ];
 
