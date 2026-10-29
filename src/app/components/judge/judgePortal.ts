@@ -1,3 +1,4 @@
+import { differenceInMinutes } from "date-fns";
 import { formatTime as formatClockTime, formatLongDate } from "@/lib/datetime";
 import { criterionAppliesToRound } from "@/lib/judging";
 import type { RouterOutputs } from "@/trpc/react";
@@ -32,10 +33,20 @@ export function formatDuration(minutes: number) {
 	return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
 }
 
+export function getSlotStatus(timeSlot: Date | null, currentTime: Date) {
+	if (!timeSlot) return "Unscheduled";
+	const minutes = differenceInMinutes(timeSlot, currentTime, {
+		roundingMethod: "ceil"
+	});
+	return minutes > 0 ? `In ${formatDuration(minutes)}` : "Started";
+}
+
+export function isScoringOpen(assignment: JudgeAssignment, currentTime: Date) {
+	return !assignment.timeSlot || assignment.timeSlot <= currentTime;
+}
+
 export function getTeamCode(assignment: JudgeAssignment) {
-	return (
-		assignment.team.teamCode ?? assignment.team.id.slice(0, 4).toUpperCase()
-	);
+	return assignment.team.teamCode ?? "------";
 }
 
 export function getAssignmentRoomName(assignment: JudgeAssignment) {
@@ -52,15 +63,6 @@ export function sortAssignments(a: JudgeAssignment, b: JudgeAssignment) {
 export function getRoomName(assignments: JudgeAssignment[]) {
 	const first = assignments.slice().sort(sortAssignments)[0];
 	return first ? getAssignmentRoomName(first) : null;
-}
-
-export function getMeetingLink(assignments: JudgeAssignment[]) {
-	return (
-		assignments
-			.slice()
-			.sort(sortAssignments)
-			.find((assignment) => assignment.room.roomLink)?.room.roomLink ?? ""
-	);
 }
 
 export function getCriteriaScore(

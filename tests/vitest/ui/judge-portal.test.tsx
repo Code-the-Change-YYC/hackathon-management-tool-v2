@@ -1,13 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { DashboardView } from "@/app/components/judge/dashboard/DashboardView";
-import { JudgeRoundStats } from "@/app/components/judge/dashboard/JudgeRoundStats";
-import { JudgeTeamCard } from "@/app/components/judge/dashboard/JudgeTeamCard";
+import { JudgeNextTeam } from "@/app/components/judge/dashboard/JudgeNextTeam";
+import { JudgeTeamRow } from "@/app/components/judge/dashboard/JudgeTeamRow";
 import {
 	type Criterion,
 	getAssignmentTotal,
 	getDraftScore,
-	getMeetingLink,
 	getRoomName,
 	getScoreOptions,
 	isAssignmentScored,
@@ -249,22 +248,15 @@ describe("judge portal scoring contract", () => {
 });
 
 describe("judge room summary", () => {
-	it("uses the earliest assignment's room and the first meeting link", () => {
+	it("uses the earliest assignment's room", () => {
 		const later = assignment({
 			id: "later",
 			timeSlot: new Date(now.getTime() + 60 * 60_000),
-			room: {
-				...assignment().room,
-				id: "later-room",
-				name: "Room 2",
-				roomLink: "https://example.com/room-2"
-			}
+			room: { ...assignment().room, id: "later-room", name: "Room 2" }
 		});
 		const earlier = assignment({ id: "earlier" });
 		expect(getRoomName([later, earlier])).toBe("Room 1");
-		expect(getMeetingLink([later, earlier])).toBe("https://example.com/room-2");
 		expect(getRoomName([])).toBeNull();
-		expect(getMeetingLink([])).toBe("");
 	});
 });
 
@@ -279,33 +271,86 @@ describe("judge dashboard", () => {
 				userName="Dara"
 			/>
 		);
-		expect(screen.getByText("No room assigned yet")).toBeVisible();
+		expect(screen.getByText("No room assigned yet.")).toBeVisible();
 		expect(screen.getByText("No teams assigned yet")).toBeVisible();
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 	});
 
-	it("lists the active round's teams with their room", () => {
+	it("puts the next unscored team first and tracks progress", () => {
+		const done = assignment({
+			id: "done",
+			scores: [score("main", 7)],
+			team: { ...assignment().team, name: "Done" }
+		});
+		const next = assignment({
+			id: "next",
+			timeSlot: new Date(now.getTime() + 60_000),
+			team: { ...assignment().team, name: "Next" }
+		});
 		render(
 			<DashboardView
 				activeRoundId="round"
-				assignments={[assignment()]}
+				assignments={[next, done]}
 				criteria={[main]}
 				rounds={[assignment().room.round]}
 				userName="Dara"
 			/>
 		);
 		expect(
-			screen.getByRole("heading", { name: "Teams · Round 1" })
+			screen.getByText("You’re judging in Room 1 for the Round 1.")
 		).toBeVisible();
-		expect(screen.getByText("You’ve been assigned to Room 1")).toBeVisible();
-		expect(screen.getByRole("heading", { name: "Team" })).toBeVisible();
+		expect(screen.getByRole("heading", { name: "Next" })).toBeVisible();
+		expect(screen.getByText("1 of 2 scored")).toBeVisible();
+		expect(
+			screen.getByRole("link", { name: "Edit score for Done" })
+		).toHaveAttribute("href", "/judge/score/done");
+	});
+
+	it("celebrates a finished round and switches rounds", () => {
+		const finals = {
+			...assignment().room.round,
+			id: "finals",
+			name: "Finals",
+			startTime: new Date(now.getTime() + 60 * 60_000)
+		};
+		const finalsTeam = assignment({
+			id: "finals-team",
+			room: {
+				...assignment().room,
+				id: "finals-room",
+				name: "Room 2",
+				roundId: "finals",
+				roomLink: "https://example.com/finals",
+				round: finals
+			},
+			team: { ...assignment().team, name: "Finalist" }
+		});
+		render(
+			<DashboardView
+				activeRoundId="round"
+				assignments={[assignment({ scores: [score("main", 7)] }), finalsTeam]}
+				criteria={[main]}
+				rounds={[assignment().room.round, finals]}
+				userName="Dara"
+			/>
+		);
+		expect(screen.getByText("All 1 teams scored")).toBeVisible();
+		fireEvent.click(screen.getByRole("button", { name: /Finals/ }));
+		expect(screen.getByRole("heading", { name: "Finalist" })).toBeVisible();
+		expect(
+			screen.getByText("You’re judging in Room 2 for the Finals.")
+		).toBeVisible();
+		expect(
+			screen.queryByRole("link", { name: /Join meeting/ })
+		).not.toBeInTheDocument();
 	});
 });
 
-describe("dashboard cards", () => {
+describe("dashboard team rows", () => {
 	it.each([
 		"team",
 		"schedule"
-	])("shows the correct completed total in the %s card with multiple rounds", (kind) => {
+	])("shows the correct completed total in the %s view with multiple rounds", (kind) => {
 		const criteria = [
 			{ ...main, roundIds: ["round"] },
 			{ ...main, id: "final", name: "Final criterion", roundIds: ["final"] }
@@ -313,11 +358,7 @@ describe("dashboard cards", () => {
 		const team = assignment({ scores: [score("main", 7)] });
 		render(
 			kind === "team" ? (
-				<JudgeTeamCard
-					assignment={team}
-					criteria={criteria}
-					currentTime={now}
-				/>
+				<JudgeTeamRow assignment={team} criteria={criteria} currentTime={now} />
 			) : (
 				<JudgeScheduleEvent
 					assignment={team}
@@ -326,29 +367,29 @@ describe("dashboard cards", () => {
 				/>
 			)
 		);
-		expect(
-			screen.getByText(kind === "team" ? "Scored" : "Scores recorded")
-		).toBeInTheDocument();
-		expect(
-			kind === "team"
-				? screen.getByText("Total").parentElement
-				: screen.getByText("Main score: 7/10")
-		).toHaveTextContent("7/10");
-		expect(screen.queryByText("Final criterion")).not.toBeInTheDocument();
+		if (kind === "team") {
+			expect(screen.getByText(/Scored/)).toBeInTheDocument();
+			expect(screen.getByRole("link")).toHaveTextContent("7/10");
+		} else {
+			expect(screen.getByText("Scores recorded")).toBeInTheDocument();
+			expect(screen.getByText("Main score: 7/10")).toBeInTheDocument();
+		}
+		expect(screen.queryByText(/Final criterion/)).not.toBeInTheDocument();
 	});
-	it("disables future assignments and enables scoring when the slot starts", () => {
+
+	it("locks future teams and opens scoring when the slot starts", () => {
 		const team = assignment();
 		const { rerender } = render(
-			<JudgeTeamCard
+			<JudgeTeamRow
 				assignment={team}
 				criteria={[main]}
-				currentTime={new Date(now.getTime() - 1)}
+				currentTime={new Date(now.getTime() - 60_000)}
 			/>
 		);
-		expect(screen.getByRole("button", { name: "Score Team" })).toBeDisabled();
+		expect(screen.getByText("In 1 min")).toBeInTheDocument();
 		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 		rerender(
-			<JudgeTeamCard assignment={team} criteria={[main]} currentTime={now} />
+			<JudgeTeamRow assignment={team} criteria={[main]} currentTime={now} />
 		);
 		expect(screen.getByRole("link", { name: "Score Team" })).toHaveAttribute(
 			"href",
@@ -356,23 +397,23 @@ describe("dashboard cards", () => {
 		);
 	});
 
-	it("keeps unscheduled teams scoreable with separated schedule labels", () => {
+	it("keeps unscheduled teams scoreable", () => {
 		render(
-			<JudgeTeamCard
+			<JudgeTeamRow
 				assignment={assignment({ timeSlot: null })}
 				criteria={[main]}
 				currentTime={now}
 			/>
 		);
-		expect(screen.getByText("Unscheduled · Round 1")).toBeInTheDocument();
+		expect(screen.getByText("Unscheduled")).toBeInTheDocument();
 		expect(
 			screen.getByRole("link", { name: "Score Team" })
 		).toBeInTheDocument();
 	});
 
-	it("allows editing a saved zero before the slot and displays optional scores separately", () => {
+	it("allows editing a saved zero before the slot and lists sidepots", () => {
 		render(
-			<JudgeTeamCard
+			<JudgeTeamRow
 				assignment={assignment({
 					scores: [score("main", 0), score("sidepot", 4)]
 				})}
@@ -380,35 +421,49 @@ describe("dashboard cards", () => {
 				currentTime={new Date(now.getTime() - 1)}
 			/>
 		);
-		expect(
-			screen.getByRole("link", { name: "Edit score for Team" })
-		).toHaveAttribute("href", "/judge/score/assignment");
-		expect(screen.getByText("Best AI 4/10")).toBeInTheDocument();
-		const total = screen.getByText("Total").parentElement;
-		expect(total).toHaveTextContent("0/10");
-		expect(screen.queryByRole("button")).not.toBeInTheDocument();
+		const link = screen.getByRole("link", { name: "Edit score for Team" });
+		expect(link).toHaveAttribute("href", "/judge/score/assignment");
+		expect(link).toHaveTextContent("Innovation 0 · Best AI 4/10");
+		expect(link).toHaveTextContent("0/10");
 	});
 
 	it("does not mark incomplete main scores as scored", () => {
 		render(
-			<JudgeTeamCard
+			<JudgeTeamRow
 				assignment={assignment({ scores: [score("main", 8)] })}
 				criteria={[main, { ...main, id: "technical", name: "Technical" }]}
 				currentTime={now}
 			/>
 		);
-		expect(screen.queryByText("Scored")).not.toBeInTheDocument();
+		expect(screen.queryByText(/Scored/)).not.toBeInTheDocument();
 		expect(
 			screen.getByRole("link", { name: "Score Team" })
 		).toBeInTheDocument();
 	});
+});
 
-	it("derives remaining teams from assigned and scored counts", () => {
-		render(<JudgeRoundStats assigned={4} name="Round 1" scored={1} />);
-		expect(
-			screen.getByRole("heading", { name: "Round 1" })
-		).toBeInTheDocument();
-		const remaining = screen.getByText("Remaining").parentElement;
-		expect(remaining).toHaveTextContent("Remaining3");
+describe("judge next team", () => {
+	it("waits for the slot before offering to score", () => {
+		render(
+			<JudgeNextTeam
+				assignment={assignment()}
+				currentTime={new Date(now.getTime() - 5 * 60_000)}
+				teamCount={1}
+			/>
+		);
+		expect(screen.getByRole("button", { name: /Opens at/ })).toBeDisabled();
+		expect(screen.getByText(/In 5 min/)).toBeInTheDocument();
+	});
+});
+
+describe("team code", () => {
+	it("never invents an ID when a team has no code", () => {
+		const team = assignment({
+			team: { ...assignment().team, teamCode: null }
+		});
+		render(
+			<JudgeTeamRow assignment={team} criteria={[main]} currentTime={now} />
+		);
+		expect(screen.getByText("Team ID ------")).toBeInTheDocument();
 	});
 });
