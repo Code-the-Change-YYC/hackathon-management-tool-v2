@@ -124,15 +124,24 @@ describe("merged team and judging workflows", () => {
 			teamCode: expect.stringMatching(/^[A-Z0-9]{6}$/)
 		});
 	});
-	it("preserves admin prescreen decisions and rejects repeated decisions", async () => {
+	it("allows admins to edit existing prescreen decisions", async () => {
 		const api = await caller();
-		mocks.query.organization.findFirst.mockResolvedValue({
-			id: "team-1",
-			prescreenStatus: "pending"
-		});
-		mocks.write.returning.mockResolvedValue([
-			{ id: "team-1", prescreenStatus: "passed", teamCode: "ABC123" }
-		]);
+		mocks.query.organization.findFirst
+			.mockResolvedValueOnce({
+				id: "team-1",
+				prescreenStatus: "pending"
+			})
+			.mockResolvedValueOnce({
+				id: "team-1",
+				prescreenStatus: "passed"
+			});
+		mocks.write.returning
+			.mockResolvedValueOnce([
+				{ id: "team-1", prescreenStatus: "passed", teamCode: "ABC123" }
+			])
+			.mockResolvedValueOnce([
+				{ id: "team-1", prescreenStatus: "failed", teamCode: "ABC123" }
+			]);
 		await expect(
 			api.teams.setPrescreen({
 				teamId: "team-1",
@@ -140,15 +149,11 @@ describe("merged team and judging workflows", () => {
 				comments: "Reviewed submission"
 			})
 		).resolves.toMatchObject({ prescreenStatus: "passed", teamCode: "ABC123" });
-		expect(mocks.write.set).toHaveBeenCalledWith({
+		expect(mocks.write.set).toHaveBeenNthCalledWith(1, {
 			prescreenStatus: "passed",
 			prescreenComments: "Reviewed submission",
 			prescreenedBy: "current-user",
 			prescreenedAt: expect.any(Date)
-		});
-		mocks.query.organization.findFirst.mockResolvedValue({
-			id: "team-1",
-			prescreenStatus: "passed"
 		});
 		await expect(
 			api.teams.setPrescreen({
@@ -156,8 +161,14 @@ describe("merged team and judging workflows", () => {
 				status: "failed",
 				comments: "Second review"
 			})
-		).rejects.toMatchObject({ code: "CONFLICT" });
-		expect(mocks.update).toHaveBeenCalledTimes(1);
+		).resolves.toMatchObject({ prescreenStatus: "failed", teamCode: "ABC123" });
+		expect(mocks.write.set).toHaveBeenNthCalledWith(2, {
+			prescreenStatus: "failed",
+			prescreenComments: "Second review",
+			prescreenedBy: "current-user",
+			prescreenedAt: expect.any(Date)
+		});
+		expect(mocks.update).toHaveBeenCalledTimes(2);
 	});
 	it("keeps prescreening admin-only and assignment lookup scoped to the judge", async () => {
 		const participant = await caller("participant");

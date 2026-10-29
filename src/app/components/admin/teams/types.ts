@@ -1,13 +1,8 @@
-/**
- * This is intentionally decoupled from the database model,
- * like the user types are, so the UI can be built and
- * reviewed before the tRPC routers are wired in.
- */
 export type Team = {
 	rank: number;
 	id: string;
 	name: string;
-	prescreen: boolean | null;
+	prescreen: "pending" | "passed" | "failed" | null;
 	feedback: string | null;
 	round1: boolean | null;
 	round2: "winner" | "sp-winner" | "rejected" | null;
