@@ -12,11 +12,11 @@ export default async function MentorsSection() {
 				<CardHeader>
 					<h2 className="font-medium text-xl">Mentors</h2>
 				</CardHeader>
-				<CardContent className="flex flex-col gap-4 pb-32">
+				<CardContent className="flex flex-col gap-4 pb-28">
 					{mentors.size ? (
 						MENTOR_CATEGORIES.map((category) => (
 							<div
-								className="grid grid-cols-6 justify-between gap-8"
+								className="grid grid-cols-[repeat(auto-fill,192px)] justify-between gap-8"
 								key={category}
 							>
 								{(mentors.get(category) ?? []).map((mentor) => (
