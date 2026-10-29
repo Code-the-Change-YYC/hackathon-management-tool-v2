@@ -76,13 +76,13 @@ export function CriterionScore({
 							);
 						}}
 						value={score === undefined ? [] : [String(score)]}
-						variant="score"
+						variant="outline"
 					>
 						{getScoreOptions(criterion, criterion.isSidepot, score).map(
 							(value) => (
 								<ToggleGroupItem
 									aria-label={`${value} points`}
-									className="min-h-11 min-w-11"
+									className="min-h-11 min-w-11 bg-background aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/90"
 									key={value}
 									value={String(value)}
 								>

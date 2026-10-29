@@ -97,7 +97,6 @@ export function JudgingView({
 						criteria={criteria.filter((criterion) =>
 							Object.hasOwn(teamScores, criterion.id)
 						)}
-						description="Scores are averaged across submitted judge scorecards. Side pots aren’t counted in the main score."
 						emptyDescription="Your team’s scores will appear here once they’re published."
 						emptyTitle="No team scores yet"
 						scores={teamScores}
