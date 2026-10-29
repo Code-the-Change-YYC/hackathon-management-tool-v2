@@ -6,11 +6,11 @@ import {
 	type Criterion,
 	formatTime,
 	getAssignmentCriteria,
+	getAssignmentScoreStatus,
 	getAssignmentTotal,
 	getCriteriaScore,
 	getSlotStatus,
 	getTeamCode,
-	isAssignmentScored,
 	isPresenting,
 	isScoringOpen,
 	type JudgeAssignment,
@@ -28,8 +28,11 @@ export function JudgeTeamRow({
 	criteria: Criterion[];
 	currentTime: Date;
 }) {
-	const scored = isAssignmentScored(assignment, criteria);
-	const open = scored || isScoringOpen(assignment, currentTime);
+	const status = getAssignmentScoreStatus(assignment, criteria);
+	const scored = status === "Scores recorded";
+	// A criterion added after submission leaves a scorecard partly filled in.
+	const partial = status === "Partially scored";
+	const open = scored || partial || isScoringOpen(assignment, currentTime);
 	const presenting = isPresenting(assignment, currentTime);
 	const total = getAssignmentTotal(assignment, criteria);
 	const breakdown = getAssignmentCriteria(assignment, criteria)
@@ -75,6 +78,15 @@ export function JudgeTeamRow({
 						Scored · Edit
 					</span>
 				</span>
+			) : partial ? (
+				<span className="flex shrink-0 flex-col items-end">
+					<span className="flex items-center gap-1 font-medium text-primary">
+						Continue <RightLine className="size-4" />
+					</span>
+					<span className="text-muted-foreground text-xs">
+						Partially scored
+					</span>
+				</span>
 			) : open ? (
 				<span className="flex shrink-0 items-center gap-1 font-medium text-primary">
 					Score <RightLine className="size-4" />
@@ -91,7 +103,7 @@ export function JudgeTeamRow({
 		<li className={cn(presenting && "bg-purple-50")}>
 			{open ? (
 				<Link
-					aria-label={`${scored ? "Edit score for" : "Score"} ${assignment.team.name}`}
+					aria-label={`${scored ? "Edit score for" : partial ? "Continue scoring" : "Score"} ${assignment.team.name}`}
 					className={cn(
 						rowClass,
 						"focus-visible:-outline-offset-2 transition hover:bg-purple-50 focus-visible:outline-2 focus-visible:outline-primary"

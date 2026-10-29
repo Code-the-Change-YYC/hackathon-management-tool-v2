@@ -181,17 +181,6 @@ export function getAssignmentScoreStatus(
 		: "Not scored";
 }
 
-export function canScoreAssignment(
-	assignment: JudgeAssignment,
-	criteria: Criterion[],
-	currentTime: Date
-) {
-	return (
-		isAssignmentScored(assignment, criteria) ||
-		isScoringOpen(assignment, currentTime)
-	);
-}
-
 export function getAssignmentTotal(
 	assignment: JudgeAssignment,
 	criteria: Criterion[],

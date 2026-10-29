@@ -42,6 +42,10 @@ function canScoreAssignment(
 	return assignment.scores.length > 0 || assignment.startsAt <= currentTime;
 }
 
+function getDashboardHref(roundId?: string) {
+	return roundId ? `/judge?round=${encodeURIComponent(roundId)}` : "/judge";
+}
+
 function ScoreMessage({
 	title,
 	children,
@@ -69,13 +73,9 @@ function ScoreMessage({
 				) : null}
 				<Link
 					className={buttonVariants({ variant: "outline" })}
-					href={
-						roundId
-							? `/judge/schedule?round=${encodeURIComponent(roundId)}`
-							: "/judge/schedule"
-					}
+					href={getDashboardHref(roundId)}
 				>
-					Back to schedule
+					Back to dashboard
 				</Link>
 			</div>
 		</Empty>
@@ -172,7 +172,7 @@ function JudgeScorecard({
 					<div className="min-w-0">
 						<Link
 							className="inline-flex items-center gap-1 text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
-							href={`/judge/schedule?round=${encodeURIComponent(assignment.table.roundId)}`}
+							href={getDashboardHref(assignment.table.roundId)}
 							onClick={async (event) => {
 								if (saving) {
 									event.preventDefault();
@@ -189,13 +189,11 @@ function JudgeScorecard({
 											destructive: true
 										})
 									)
-										router.push(
-											`/judge/schedule?round=${encodeURIComponent(assignment.table.roundId)}`
-										);
+										router.push(getDashboardHref(assignment.table.roundId));
 								}
 							}}
 						>
-							<ArrowLeftLine aria-hidden className="size-4" /> Schedule
+							<ArrowLeftLine aria-hidden className="size-4" /> Dashboard
 						</Link>
 						<h1 className="mt-3 mb-1 break-words font-semibold text-2xl">
 							{assignment.team.name}

@@ -62,6 +62,7 @@ export function DashboardView({
 	userId,
 	userName,
 	activeRoundId,
+	initialRoundId = null,
 	rounds,
 	assignments,
 	criteria
@@ -69,17 +70,17 @@ export function DashboardView({
 	userId: string;
 	userName: string;
 	activeRoundId: string | null;
+	initialRoundId?: string | null;
 	rounds: JudgingRound[];
 	assignments: JudgeAssignment[];
 	criteria: Criterion[];
 }) {
 	const currentTime = useCurrentTime();
-	const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
+	const [selectedRoundId, setSelectedRoundId] = useState(initialRoundId);
 	const roundStats = getRoundStats(assignments, criteria, rounds);
 	const shownRound =
-		roundStats.find(
-			(round) => round.id === (selectedRoundId ?? activeRoundId)
-		) ??
+		roundStats.find((round) => round.id === selectedRoundId) ??
+		roundStats.find((round) => round.id === activeRoundId) ??
 		roundStats.find((round) => round.scored < round.assignments.length) ??
 		roundStats.at(-1);
 	const shownAssignments = shownRound?.assignments ?? [];
