@@ -104,7 +104,6 @@ export function TeamsTable({
 				<TableHeader>
 					<TableRow className="border-none hover:bg-white">
 						<TableHead>Rank</TableHead>
-						<TableHead>ID</TableHead>
 						<TableHead>Team Name</TableHead>
 						<TableHead>
 							<div className="flex size-full items-center justify-center">
@@ -132,7 +131,6 @@ export function TeamsTable({
 					{teams.map((team) => (
 						<TableRow className="border-none hover:bg-white" key={team.id}>
 							<TableCell className="pl-3">{team.rank}</TableCell>
-							<TableCell>{team.id}</TableCell>
 							<TableCell>{team.name}</TableCell>
 							<TableCell>
 								<div className="flex size-full items-center justify-center">
