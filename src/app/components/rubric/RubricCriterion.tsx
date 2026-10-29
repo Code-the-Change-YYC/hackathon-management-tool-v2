@@ -124,7 +124,7 @@ export function RubricCriterion({
 					<>
 						<ScoreBar max={criterion.maxScore} value={score} />
 						<span className="shrink-0 whitespace-nowrap text-sm tabular-nums">
-							{`${Number(score.toFixed(1))} / ${criterion.maxScore}`}
+							{`${Number(score.toFixed(2))} / ${criterion.maxScore}`}
 						</span>
 					</>
 				)}

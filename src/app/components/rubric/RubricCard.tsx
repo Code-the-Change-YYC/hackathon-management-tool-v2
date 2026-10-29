@@ -69,12 +69,14 @@ function CriteriaGroup({
 
 export function RubricCard({
 	title,
+	description,
 	criteria,
 	scores,
 	emptyTitle = "No judging criteria configured",
 	emptyDescription = "Criteria will appear here once an organizer configures them."
 }: {
 	title?: string;
+	description?: string;
 	criteria: Criterion[];
 	scores?: Record<string, number>;
 	emptyTitle?: string;
@@ -92,6 +94,9 @@ export function RubricCard({
 					<h2 className="font-medium text-xl" id={titleId}>
 						{title}
 					</h2>
+					{description && (
+						<p className="m-0 text-muted-foreground text-sm">{description}</p>
+					)}
 				</CardHeader>
 			)}
 			<CardContent className="flex flex-col gap-6">

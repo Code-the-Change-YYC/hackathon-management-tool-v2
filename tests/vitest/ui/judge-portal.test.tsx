@@ -68,6 +68,18 @@ describe("judge schedule", () => {
 			screen.getByRole("link", { name: "Score team for Team" })
 		).toHaveAttribute("href", "/judge/score/assignment");
 	});
+
+	it("shows scored status and a saved main total", () => {
+		render(
+			<JudgeScheduleEvent
+				assignment={assignment({ scores: [score("main", 1)] })}
+				criteria={[main]}
+				currentTime={now}
+			/>
+		);
+		expect(screen.getByText("Scores recorded")).toBeInTheDocument();
+		expect(screen.getByText("Main score: 1/10")).toBeInTheDocument();
+	});
 });
 
 function assignment(overrides: Partial<JudgeAssignment> = {}): JudgeAssignment {
@@ -123,20 +135,20 @@ function score(criteriaId: string, value: number) {
 }
 
 describe("judge portal scoring contract", () => {
-	it("scopes completion and totals to the assignment round", () => {
+	it("uses the entire shared rubric despite historical round metadata", () => {
 		const criteria = [
 			{ ...main, roundIds: ["round"] },
 			{ ...main, id: "final", name: "Final criterion", roundIds: ["final"] }
 		];
 		const team = assignment({ scores: [score("main", 7), score("final", 10)] });
 		expect(isAssignmentScored(team, criteria)).toBe(true);
-		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 7, max: 10 });
+		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 17, max: 20 });
 		expect(
 			isAssignmentScored(assignment({ scores: [score("final", 10)] }), criteria)
 		).toBe(false);
 	});
 
-	it("keeps shared criteria and applicable sidepots while ignoring other rounds", () => {
+	it("requires every shared criterion and separates sidepots from main totals", () => {
 		const criteria = [
 			{ ...main, roundIds: ["round"] },
 			{ ...main, id: "shared", roundIds: [] },
@@ -146,23 +158,23 @@ describe("judge portal scoring contract", () => {
 		const team = assignment({
 			scores: [
 				score("main", 7),
-				score("shared", 0),
+				score("shared", 1),
 				score("sidepot", 4),
 				score("other-sidepot", 10)
 			]
 		});
 		expect(isAssignmentScored(team, criteria)).toBe(true);
-		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 7, max: 20 });
+		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 8, max: 20 });
 		expect(getAssignmentTotal(team, criteria, true)).toEqual({
-			total: 11,
-			max: 30
+			total: 22,
+			max: 40
 		});
 		expect(
 			isAssignmentScored(assignment({ scores: [score("main", 7)] }), criteria)
 		).toBe(false);
 	});
 
-	it("does not let scores from unavailable criteria complete a sidepot-only round", () => {
+	it("does not let a sidepot score replace a required main score", () => {
 		const criteria = [
 			{ ...sidepot, roundIds: ["round"] },
 			{ ...main, roundIds: ["final"] }
@@ -172,23 +184,29 @@ describe("judge portal scoring contract", () => {
 		).toBe(false);
 		expect(
 			isAssignmentScored(
-				assignment({ scores: [score("sidepot", 0)] }),
+				assignment({ scores: [score("sidepot", 0), score("main", 10)] }),
 				criteria
 			)
 		).toBe(true);
 	});
-	it("counts saved zero as scored and does not require optional sidepots", () => {
+	it("requires every answer and accepts an explicit sidepot zero", () => {
 		expect(
-			isAssignmentScored(assignment({ scores: [score("main", 0)] }), [
+			isAssignmentScored(assignment({ scores: [score("main", 8)] }), [
 				main,
 				sidepot
 			])
+		).toBe(false);
+		expect(
+			isAssignmentScored(
+				assignment({ scores: [score("main", 8), score("sidepot", 0)] }),
+				[main, sidepot]
+			)
 		).toBe(true);
 		expect(
-			isAssignmentScored(assignment({ scores: [score("sidepot", 10)] }), [
-				main,
-				sidepot
-			])
+			isAssignmentScored(
+				assignment({ scores: [score("main", 0), score("sidepot", 0)] }),
+				[main, sidepot]
+			)
 		).toBe(false);
 	});
 
@@ -355,7 +373,7 @@ describe("dashboard team rows", () => {
 			{ ...main, roundIds: ["round"] },
 			{ ...main, id: "final", name: "Final criterion", roundIds: ["final"] }
 		];
-		const team = assignment({ scores: [score("main", 7)] });
+		const team = assignment({ scores: [score("main", 7), score("final", 10)] });
 		render(
 			kind === "team" ? (
 				<JudgeTeamRow assignment={team} criteria={criteria} currentTime={now} />
@@ -369,12 +387,12 @@ describe("dashboard team rows", () => {
 		);
 		if (kind === "team") {
 			expect(screen.getByText(/Scored/)).toBeInTheDocument();
-			expect(screen.getByRole("link")).toHaveTextContent("7/10");
+			expect(screen.getByRole("link")).toHaveTextContent("17/20");
+			expect(screen.getByRole("link")).toHaveTextContent("Final criterion 10");
 		} else {
 			expect(screen.getByText("Scores recorded")).toBeInTheDocument();
-			expect(screen.getByText("Main score: 7/10")).toBeInTheDocument();
+			expect(screen.getByText("Main score: 17/20")).toBeInTheDocument();
 		}
-		expect(screen.queryByText(/Final criterion/)).not.toBeInTheDocument();
 	});
 
 	it("locks future teams and opens scoring when the slot starts", () => {
@@ -411,11 +429,11 @@ describe("dashboard team rows", () => {
 		).toBeInTheDocument();
 	});
 
-	it("allows editing a saved zero before the slot and lists sidepots", () => {
+	it("allows editing a submitted scorecard before the slot and displays sidepots separately", () => {
 		render(
 			<JudgeTeamRow
 				assignment={assignment({
-					scores: [score("main", 0), score("sidepot", 4)]
+					scores: [score("main", 1), score("sidepot", 4)]
 				})}
 				criteria={[main, { ...sidepot, name: "Best AI" }]}
 				currentTime={new Date(now.getTime() - 1)}
@@ -423,8 +441,9 @@ describe("dashboard team rows", () => {
 		);
 		const link = screen.getByRole("link", { name: "Edit score for Team" });
 		expect(link).toHaveAttribute("href", "/judge/score/assignment");
-		expect(link).toHaveTextContent("Innovation 0 · Best AI 4/10");
-		expect(link).toHaveTextContent("0/10");
+		expect(link).toHaveTextContent("Innovation 1 · Best AI 4/10");
+		expect(link).toHaveTextContent("1/10");
+		expect(screen.queryByRole("button")).not.toBeInTheDocument();
 	});
 
 	it("does not mark incomplete main scores as scored", () => {

@@ -92,39 +92,6 @@ describe("participant result access", () => {
 	});
 });
 
-it("rejects scoring a criterion assigned to another round", async () => {
-	const id = "11111111-1111-4111-8111-111111111111";
-	const db = {
-		query: {
-			judgingAssignments: {
-				findFirst: vi.fn().mockResolvedValue({
-					room: {
-						roundId: "current-round",
-						staff: [{ staffId: "judge-user" }]
-					}
-				})
-			},
-			criteria: {
-				findMany: vi
-					.fn()
-					.mockResolvedValue([{ id, maxScore: 10, roundIds: ["other-round"] }])
-			}
-		},
-		insert: vi.fn()
-	};
-	const client = scoresRouter.createCaller({
-		db,
-		session: { user: { id: "judge-user", role: "judge" } },
-		headers: new Headers()
-	} as never);
-	await expect(
-		client.createMany([{ assignmentId: id, criteriaId: id, score: 5 }])
-	).rejects.toMatchObject({
-		code: "BAD_REQUEST",
-		message: "Criterion is not available for this judging round."
-	});
-	expect(db.insert).not.toHaveBeenCalled();
-});
 it("rejects criteria mapped to nonexistent rounds", async () => {
 	const db = {
 		query: { judgingRounds: { findMany: vi.fn().mockResolvedValue([]) } },

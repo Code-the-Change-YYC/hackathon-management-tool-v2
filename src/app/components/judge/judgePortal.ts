@@ -1,6 +1,5 @@
 import { differenceInMinutes } from "date-fns";
 import { formatTime as formatClockTime, formatLongDate } from "@/lib/datetime";
-import { criterionAppliesToRound } from "@/lib/judging";
 import type { RouterOutputs } from "@/trpc/react";
 
 export type JudgeAssignment =
@@ -74,27 +73,37 @@ export function getCriteriaScore(
 }
 
 export function getAssignmentCriteria(
-	assignment: JudgeAssignment,
+	_assignment: JudgeAssignment,
 	criteria: Criterion[]
 ) {
-	return criteria.filter((criterion) =>
-		criterionAppliesToRound(criterion, assignment.room.roundId)
-	);
+	return criteria;
 }
 
 export function isAssignmentScored(
 	assignment: JudgeAssignment,
 	criteria: Criterion[]
 ) {
-	const applicable = getAssignmentCriteria(assignment, criteria);
-	const mainCriteria = applicable.filter((criterion) => !criterion.isSidepot);
-	if (mainCriteria.length === 0) {
-		return applicable.some((criterion) =>
-			assignment.scores.some((score) => score.criteriaId === criterion.id)
-		);
-	}
-	return mainCriteria.every((criterion) =>
-		assignment.scores.some((score) => score.criteriaId === criterion.id)
+	return (
+		criteria.length > 0 &&
+		criteria.every((criterion) =>
+			assignment.scores.some(
+				(score) =>
+					score.criteriaId === criterion.id &&
+					isCriterionScoreValid(criterion, score.value)
+			)
+		)
+	);
+}
+
+export function isCriterionScoreValid(
+	criterion: Criterion,
+	value: number | undefined
+) {
+	return (
+		value !== undefined &&
+		Number.isInteger(value) &&
+		value >= (criterion.isSidepot ? 0 : 1) &&
+		value <= criterion.maxScore
 	);
 }
 
