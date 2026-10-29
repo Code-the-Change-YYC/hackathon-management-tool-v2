@@ -1,7 +1,6 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { JudgingView } from "@/app/components/participant/judging/JudgingView";
-import { criterionAppliesToRound } from "@/lib/judging";
 import { judgingStages } from "@/lib/participant-judging";
 
 const rounds = ["Round 1", "Round 2"].map((name, index) => ({
@@ -51,23 +50,12 @@ describe("participant judging information", () => {
 		expect(screen.queryByText(/7.5/)).not.toBeInTheDocument();
 		expect(screen.getByText("Hackathon updates coming soon")).toBeVisible();
 	});
-	it("disables unavailable rounds and filters published criteria", () => {
+	it("shows every published criterion without a round picker", () => {
 		render(view());
-		const filter = screen.getByRole("group", { name: "Rubric round" });
-		expect(
-			within(filter).getByRole("button", { name: "Round 2" })
-		).toBeDisabled();
-		expect(screen.queryByText("Technical execution")).not.toBeInTheDocument();
-	});
-	it("unlocks completed rounds and changes rubric criteria", () => {
-		render(view({ settings: { ...settings, currentRoundId: "round-1" } }));
-		fireEvent.click(
-			within(screen.getByRole("group", { name: "Rubric round" })).getByRole(
-				"button",
-				{ name: "Round 2" }
-			)
-		);
-		expect(screen.getByText("Technical execution")).toBeVisible();
+		const rubric = screen.getByRole("region", { name: "Judging Rubric" });
+		expect(within(rubric).getByText("Innovation")).toBeVisible();
+		expect(within(rubric).getByText("Technical execution")).toBeVisible();
+		expect(within(rubric).queryByRole("group")).not.toBeInTheDocument();
 	});
 	it("shows released averages without fabricated judge comments", () => {
 		render(
@@ -75,9 +63,6 @@ describe("participant judging information", () => {
 		);
 		const section = screen.getByRole("region", { name: "Team Scores" });
 		expect(within(section).getByText("7.5 / 10")).toBeVisible();
-		expect(
-			within(section).getByRole("button", { name: "Round 2" })
-		).toBeDisabled();
 		expect(
 			screen.queryByText(/Judge A|Judge comments/)
 		).not.toBeInTheDocument();
@@ -101,42 +86,12 @@ describe("participant judging information", () => {
 		expect(screen.getByText("1:00 PM")).toBeVisible();
 		expect(screen.queryByText(/ongoing now/)).not.toBeInTheDocument();
 	});
-	it("keeps round controls available when a round has no criteria", () => {
-		render(
-			view({
-				criteria: [
-					{
-						...criteria[0],
-						id: "only-second",
-						name: "Only second round",
-						description: "",
-						displayOrder: 0,
-						maxScore: 10,
-						isSidepot: false,
-						roundIds: ["round-1"]
-					}
-				],
-				settings: { ...settings, currentRoundId: "round-1" }
-			})
-		);
-		fireEvent.click(
-			within(screen.getByRole("group", { name: "Rubric round" })).getByRole(
-				"button",
-				{ name: "Round 2" }
-			)
-		);
-		expect(screen.getByText("Only second round")).toBeVisible();
-	});
 	it("does not advance rounds using their timestamps or a missing active round", () => {
 		expect(
 			judgingStages("judging", rounds, null)
 				.filter((stage) => rounds.some((round) => round.id === stage.id))
 				.every((stage) => stage.state === "upcoming")
 		).toBe(true);
-		expect(criterionAppliesToRound({}, "any")).toBe(true);
-		expect(criterionAppliesToRound({ roundIds: ["round-0"] }, "round-1")).toBe(
-			false
-		);
 	});
 	it("provides an empty state after release without scores", () => {
 		render(
@@ -146,5 +101,26 @@ describe("participant judging information", () => {
 			})
 		);
 		expect(screen.getByText("No team scores yet")).toBeVisible();
+	});
+	it("shows first-round team scores and leaves out finals scores", () => {
+		render(
+			view({
+				settings: { ...settings, judgingPhase: "winners_announced" },
+				results: {
+					released: true,
+					rounds: [
+						{ roundId: "round-0", criterionId: "criterion-0", value: 7.5 },
+						{ roundId: "round-1", criterionId: "criterion-0", value: 9 },
+						{ roundId: "round-1", criterionId: "criterion-1", value: 8 }
+					]
+				}
+			})
+		);
+		const section = screen.getByRole("region", { name: "Team Scores" });
+		expect(within(section).getByText("7.5 / 10")).toBeVisible();
+		expect(within(section).queryByText("9 / 10")).not.toBeInTheDocument();
+		expect(
+			within(section).queryByText("Technical execution")
+		).not.toBeInTheDocument();
 	});
 });

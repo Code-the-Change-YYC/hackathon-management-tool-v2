@@ -1,8 +1,7 @@
 import { BannerSkeleton } from "@/app/components/Banner";
 import PageHeader from "@/app/components/PageHeader";
-import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
+import { RubricCardSkeleton } from "@/app/components/rubric/RubricCard";
 import { JudgingStatusSkeleton } from "../dashboard/JudgingStatus";
-import { ParticipantRubricSkeleton } from "../ParticipantRubric";
 
 export function JudgingSkeleton() {
 	return (
@@ -18,14 +17,7 @@ export function JudgingSkeleton() {
 			<div className="flex flex-col gap-6">
 				<BannerSkeleton />
 				<JudgingStatusSkeleton variant="detailed" />
-				<Card className="min-w-0">
-					<CardHeader>
-						<h2 className="font-medium text-xl">Judging Rubric</h2>
-					</CardHeader>
-					<CardContent>
-						<ParticipantRubricSkeleton />
-					</CardContent>
-				</Card>
+				<RubricCardSkeleton title="Judging Rubric" />
 			</div>
 		</section>
 	);
