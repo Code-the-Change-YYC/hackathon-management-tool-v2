@@ -72,7 +72,7 @@ export default function MentorEntry({ mentor }: { mentor: Mentor }) {
 
 			<Image
 				alt={`${name} profile photo`}
-				className="pointer-events-none relative z-10 size-32 rounded-full object-cover"
+				className="pointer-events-none relative z-10 size-32 select-none rounded-full object-cover"
 				height={128}
 				src={image || "/images/resources/defaultProfile.png"}
 				width={128}
