@@ -1,24 +1,21 @@
 "use client";
 
-import { ConfirmAlertDialog } from "@/app/components/ConfirmAlertDialog";
 import PageHeader from "@/app/components/PageHeader";
-import { AdminScheduleControls } from "./AdminScheduleControls";
-import { AssignmentManagement } from "./AssignmentManagement";
 import { CriteriaManagement } from "./CriteriaManagement";
+import { FinalRoundManagement } from "./FinalRoundManagement";
 import type {
 	Assignment,
 	Criterion,
+	FinalResults,
 	Judge,
-	Ranking,
-	RoomLayouts,
+	Layouts,
+	PanelRanking,
 	Round,
 	Team
 } from "./judgingShared";
+import { PanelScheduleManagement } from "./PanelScheduleManagement";
 import { ReleaseScoresBanner } from "./ReleaseScoresBanner";
-import { ResultsManagement } from "./ResultsManagement";
-import { RoomManagement } from "./RoomManagement";
 import { RoundManagement } from "./RoundManagement";
-import { useAdminJudgingSchedule } from "./useAdminJudgingSchedule";
 
 export function JudgingView({
 	rounds,
@@ -28,31 +25,23 @@ export function JudgingView({
 	judges,
 	teams,
 	criteria,
-	rankings
+	rankings,
+	finalResults
 }: {
 	rounds: Round[];
 	activeRoundId: string | null;
-	layouts: RoomLayouts;
+	layouts: Layouts;
 	assignments: Assignment[];
 	judges: Judge[];
 	teams: Team[];
 	criteria: Criterion[];
-	rankings: Ranking[];
+	rankings: Record<string, PanelRanking[]>;
+	finalResults: FinalResults;
 }) {
-	const schedule = useAdminJudgingSchedule({
-		rounds,
-		activeRoundId,
-		layouts,
-		assignments,
-		judges,
-		teams
-	});
-
 	return (
 		<div className="flex flex-col gap-6">
-			<ConfirmAlertDialog {...schedule.dialogProps} />
 			<PageHeader
-				description="Create a round, generate rooms and team slots, then review the schedule."
+				description="Create a panel round, generate its tables and times, then pick finalists from the results."
 				title="Judging"
 			/>
 
@@ -61,38 +50,22 @@ export function JudgingView({
 			<RoundManagement
 				activeRoundId={activeRoundId}
 				assignments={assignments}
-				onSelectRound={schedule.selectRound}
 				rounds={rounds}
 			/>
-
-			<AdminScheduleControls schedule={schedule} />
-			<div className="mt-4 flex flex-col gap-16">
-				<div className="flex flex-col gap-4">
-					<div>
-						<h2 className="font-medium text-xl">Adjustments</h2>
-						<p className="mt-1 mb-0 text-muted-foreground text-sm">
-							Optional. Edit meeting links, extra rooms, or a single team after
-							generating the schedule.
-						</p>
-					</div>
-					<RoomManagement
-						assignments={schedule.roundAssignments}
-						judges={judges}
-						key={schedule.selectedRoundId}
-						rooms={schedule.rooms}
-						roundId={schedule.selectedRoundId}
-					/>
-					<AssignmentManagement
-						assignments={schedule.roundAssignments}
-						eligibleTeams={schedule.eligibleTeams}
-						rooms={schedule.rooms}
-						round={schedule.selectedRound}
-						slotMinutes={schedule.slotMinutes}
-					/>
-				</div>
-				<CriteriaManagement criteria={criteria} />
-				<ResultsManagement rankings={rankings} />
-			</div>
+			<PanelScheduleManagement
+				activeRoundId={activeRoundId}
+				judges={judges}
+				layouts={layouts}
+				rounds={rounds}
+				teams={teams}
+			/>
+			<CriteriaManagement criteria={criteria} rounds={rounds} />
+			<FinalRoundManagement
+				finalResults={finalResults}
+				layouts={layouts}
+				rankings={rankings}
+				rounds={rounds}
+			/>
 		</div>
 	);
 }

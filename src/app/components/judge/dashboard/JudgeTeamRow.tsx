@@ -11,6 +11,7 @@ import {
 	getSlotStatus,
 	getTeamCode,
 	isAssignmentScored,
+	isPresenting,
 	isScoringOpen,
 	type JudgeAssignment,
 	sortCriteria
@@ -29,6 +30,7 @@ export function JudgeTeamRow({
 }) {
 	const scored = isAssignmentScored(assignment, criteria);
 	const open = scored || isScoringOpen(assignment, currentTime);
+	const presenting = isPresenting(assignment, currentTime);
 	const total = getAssignmentTotal(assignment, criteria);
 	const breakdown = getAssignmentCriteria(assignment, criteria)
 		.sort(sortCriteria)
@@ -43,7 +45,7 @@ export function JudgeTeamRow({
 	const content = (
 		<>
 			<span className="w-16 shrink-0 text-muted-foreground text-sm sm:w-20">
-				{formatTime(assignment.timeSlot)}
+				{formatTime(assignment.startsAt)}
 			</span>
 			<span className="flex min-w-0 flex-1 flex-col">
 				<span className="break-words font-medium text-base">
@@ -51,6 +53,9 @@ export function JudgeTeamRow({
 				</span>
 				<span className="text-muted-foreground text-xs">
 					Team ID {getTeamCode(assignment)}
+					{presenting ? (
+						<span className="font-medium text-primary"> · Presenting now</span>
+					) : null}
 				</span>
 				{scored && breakdown.length > 0 && (
 					<span className="hidden text-muted-foreground text-xs sm:block">
@@ -76,14 +81,14 @@ export function JudgeTeamRow({
 				</span>
 			) : (
 				<span className="shrink-0 text-muted-foreground text-sm">
-					{getSlotStatus(assignment.timeSlot, currentTime)}
+					{getSlotStatus(assignment.startsAt, currentTime)}
 				</span>
 			)}
 		</>
 	);
 
 	return (
-		<li>
+		<li className={cn(presenting && "bg-purple-50")}>
 			{open ? (
 				<Link
 					aria-label={`${scored ? "Edit score for" : "Score"} ${assignment.team.name}`}

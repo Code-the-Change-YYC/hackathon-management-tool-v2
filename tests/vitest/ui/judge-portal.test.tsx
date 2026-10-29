@@ -7,22 +7,28 @@ import {
 	type Criterion,
 	getAssignmentTotal,
 	getDraftScore,
-	getRoomName,
+	getJudgeTable,
 	getScoreOptions,
 	isAssignmentScored,
-	type JudgeAssignment,
-	sortAssignments
+	sortAssignments,
+	withBreaks
 } from "@/app/components/judge/judgePortal";
 import { JudgeScheduleEvent } from "@/app/components/judge/schedule/JudgeScheduleEvent";
 import { groupScheduleByDate } from "@/app/components/judge/schedule/judgeSchedule";
+import {
+	judgeAssignment as assignment,
+	judgeTable,
+	judgingRound,
+	judgingNow as now,
+	judgeScore as score
+} from "../helpers/judging";
 
-const now = new Date("2026-09-19T10:00:00Z");
 const main: Criterion = {
 	id: "main",
 	name: "Innovation",
 	description: "",
 	displayOrder: 0,
-	maxScore: 10,
+	maxScore: 5,
 	isSidepot: false
 };
 const sidepot: Criterion = { ...main, id: "sidepot", isSidepot: true };
@@ -31,13 +37,13 @@ describe("judge schedule", () => {
 	it("groups scheduled teams by Calgary date without mutating query data", () => {
 		const first = assignment({
 			id: "first",
-			timeSlot: new Date("2026-09-19T23:59:00-06:00")
+			startsAt: new Date("2026-09-19T23:59:00-06:00")
 		});
 		const next = assignment({
 			id: "next",
-			timeSlot: new Date("2026-09-20T00:01:00-06:00")
+			startsAt: new Date("2026-09-20T00:01:00-06:00")
 		});
-		const input = [next, assignment({ timeSlot: null }), first];
+		const input = [next, first];
 		expect(groupScheduleByDate(input)).toEqual([[first], [next]]);
 		expect(input[0]).toBe(next);
 		expect(groupScheduleByDate([])).toEqual([]);
@@ -78,77 +84,25 @@ describe("judge schedule", () => {
 			/>
 		);
 		expect(screen.getByText("Scores recorded")).toBeInTheDocument();
-		expect(screen.getByText("Main score: 1/10")).toBeInTheDocument();
+		expect(screen.getByText("Main score: 1/5")).toBeInTheDocument();
 	});
 });
 
-function assignment(overrides: Partial<JudgeAssignment> = {}): JudgeAssignment {
-	return {
-		id: "assignment",
-		teamId: "team",
-		roomId: "room",
-		createdAt: now,
-		timeSlot: now,
-		scores: [],
-		team: {
-			id: "team",
-			name: "Team",
-			slug: "team",
-			logo: null,
-			metadata: null,
-			createdAt: now,
-			teamCode: "ABCD",
-			prescreenStatus: "pending",
-			prescreenComments: null,
-			prescreenedBy: null,
-			prescreenedAt: null
-		},
-		room: {
-			id: "room",
-			name: "Room 1",
-			roundId: "round",
-			roomLink: "",
-			createdAt: now,
-			updatedAt: now,
-			round: {
-				id: "round",
-				name: "Round 1",
-				startTime: now,
-				endTime: now,
-				createdAt: now,
-				updatedAt: now
-			}
-		},
-		...overrides
-	};
-}
-
-function score(criteriaId: string, value: number) {
-	return {
-		id: criteriaId,
-		assignmentId: "assignment",
-		judgeId: "judge",
-		criteriaId,
-		value,
-		createdAt: now
-	};
-}
-
 describe("judge portal scoring contract", () => {
-	it("uses the entire shared rubric despite historical round metadata", () => {
+	it("only uses the criteria that apply to the assignment's round", () => {
 		const criteria = [
 			{ ...main, roundIds: ["round"] },
 			{ ...main, id: "final", name: "Final criterion", roundIds: ["final"] }
 		];
-		const team = assignment({ scores: [score("main", 7), score("final", 10)] });
+		const team = assignment({ scores: [score("main", 4), score("final", 5)] });
 		expect(isAssignmentScored(team, criteria)).toBe(true);
-		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 17, max: 20 });
+		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 4, max: 5 });
 		expect(
-			isAssignmentScored(assignment({ scores: [score("final", 10)] }), criteria)
+			isAssignmentScored(assignment({ scores: [score("final", 5)] }), criteria)
 		).toBe(false);
 	});
 
-	it("requires every shared criterion and separates sidepots from main totals", () => {
+	it("requires every criterion for the round and separates sidepots from main totals", () => {
 		const criteria = [
 			{ ...main, roundIds: ["round"] },
 			{ ...main, id: "shared", roundIds: [] },
@@ -157,20 +111,20 @@ describe("judge portal scoring contract", () => {
 		];
 		const team = assignment({
 			scores: [
-				score("main", 7),
+				score("main", 4),
 				score("shared", 1),
 				score("sidepot", 4),
-				score("other-sidepot", 10)
+				score("other-sidepot", 5)
 			]
 		});
 		expect(isAssignmentScored(team, criteria)).toBe(true);
-		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 8, max: 20 });
+		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 5, max: 10 });
 		expect(getAssignmentTotal(team, criteria, true)).toEqual({
-			total: 22,
-			max: 40
+			total: 9,
+			max: 15
 		});
 		expect(
-			isAssignmentScored(assignment({ scores: [score("main", 7)] }), criteria)
+			isAssignmentScored(assignment({ scores: [score("main", 4)] }), criteria)
 		).toBe(false);
 	});
 
@@ -180,25 +134,25 @@ describe("judge portal scoring contract", () => {
 			{ ...main, roundIds: ["final"] }
 		];
 		expect(
-			isAssignmentScored(assignment({ scores: [score("main", 10)] }), criteria)
+			isAssignmentScored(assignment({ scores: [score("main", 5)] }), criteria)
 		).toBe(false);
 		expect(
 			isAssignmentScored(
-				assignment({ scores: [score("sidepot", 0), score("main", 10)] }),
+				assignment({ scores: [score("sidepot", 0), score("main", 5)] }),
 				criteria
 			)
 		).toBe(true);
 	});
 	it("requires every answer and accepts an explicit sidepot zero", () => {
 		expect(
-			isAssignmentScored(assignment({ scores: [score("main", 8)] }), [
+			isAssignmentScored(assignment({ scores: [score("main", 4)] }), [
 				main,
 				sidepot
 			])
 		).toBe(false);
 		expect(
 			isAssignmentScored(
-				assignment({ scores: [score("main", 8), score("sidepot", 0)] }),
+				assignment({ scores: [score("main", 4), score("sidepot", 0)] }),
 				[main, sidepot]
 			)
 		).toBe(true);
@@ -221,15 +175,15 @@ describe("judge portal scoring contract", () => {
 
 	it("excludes sidepots and removed criteria from main totals", () => {
 		const team = assignment({
-			scores: [score("main", 7), score("sidepot", 4), score("removed", 9)]
+			scores: [score("main", 4), score("sidepot", 4), score("removed", 5)]
 		});
 		expect(getAssignmentTotal(team, [main, sidepot])).toEqual({
-			total: 7,
-			max: 10
+			total: 4,
+			max: 5
 		});
 		expect(getAssignmentTotal(team, [main, sidepot], true)).toEqual({
-			total: 11,
-			max: 20
+			total: 8,
+			max: 10
 		});
 	});
 
@@ -238,12 +192,10 @@ describe("judge portal scoring contract", () => {
 		expect(getDraftScore({}, "main")).toBeUndefined();
 		expect(getScoreOptions(main, false)[0]).toBe(1);
 		expect(getScoreOptions(main, false, 0)[0]).toBe(0);
-		expect(getScoreOptions(sidepot, true)).toEqual([
-			0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-		]);
+		expect(getScoreOptions(sidepot, true)).toEqual([0, 1, 2, 3, 4, 5]);
 	});
 
-	it("orders scheduled teams by time then name, with unscheduled teams last", () => {
+	it("orders teams by time then name", () => {
 		const alpha = assignment({
 			id: "alpha",
 			team: { ...assignment().team, name: "Alpha" }
@@ -254,27 +206,49 @@ describe("judge portal scoring contract", () => {
 		});
 		const later = assignment({
 			id: "later",
-			timeSlot: new Date(now.getTime() + 60_000)
+			startsAt: new Date(now.getTime() + 60_000)
 		});
-		const unscheduled = assignment({ id: "unscheduled", timeSlot: null });
 		expect(
-			[unscheduled, later, beta, alpha]
-				.sort(sortAssignments)
-				.map(({ id }) => id)
-		).toEqual(["alpha", "beta", "later", "unscheduled"]);
+			[later, beta, alpha].sort(sortAssignments).map(({ id }) => id)
+		).toEqual(["alpha", "beta", "later"]);
+	});
+
+	it("shows a gap longer than one slot as a break", () => {
+		const first = assignment({ id: "first" });
+		const afterBreak = assignment({
+			id: "after-break",
+			startsAt: new Date(now.getTime() + 30 * 60_000)
+		});
+		const next = assignment({
+			id: "next",
+			startsAt: new Date(now.getTime() + 40 * 60_000)
+		});
+		expect(withBreaks([next, afterBreak, first])).toEqual([
+			{ kind: "assignment", assignment: first },
+			{
+				kind: "break",
+				startsAt: new Date(now.getTime() + 8 * 60_000),
+				endsAt: afterBreak.startsAt
+			},
+			{ kind: "assignment", assignment: afterBreak },
+			{ kind: "assignment", assignment: next }
+		]);
 	});
 });
 
-describe("judge room summary", () => {
-	it("uses the earliest assignment's room", () => {
+describe("judge table summary", () => {
+	it("uses the earliest assignment's table and lists the other judges", () => {
 		const later = assignment({
 			id: "later",
-			timeSlot: new Date(now.getTime() + 60 * 60_000),
-			room: { ...assignment().room, id: "later-room", name: "Room 2" }
+			startsAt: new Date(now.getTime() + 60 * 60_000),
+			table: judgeTable({ id: "later-table", tableNumber: 2 })
 		});
 		const earlier = assignment({ id: "earlier" });
-		expect(getRoomName([later, earlier])).toBe("Room 1");
-		expect(getRoomName([])).toBeNull();
+		expect(getJudgeTable([later, earlier], "judge")).toEqual({
+			name: "Table 1",
+			otherJudges: ["Sam"]
+		});
+		expect(getJudgeTable([], "judge")).toBeNull();
 	});
 });
 
@@ -286,10 +260,11 @@ describe("judge dashboard", () => {
 				assignments={[]}
 				criteria={[main]}
 				rounds={[]}
+				userId="judge"
 				userName="Dara"
 			/>
 		);
-		expect(screen.getByText("No room assigned yet.")).toBeVisible();
+		expect(screen.getByText("No table assigned yet.")).toBeVisible();
 		expect(screen.getByText("No teams assigned yet")).toBeVisible();
 		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 	});
@@ -297,12 +272,12 @@ describe("judge dashboard", () => {
 	it("puts the next unscored team first and tracks progress", () => {
 		const done = assignment({
 			id: "done",
-			scores: [score("main", 7)],
+			scores: [score("main", 4)],
 			team: { ...assignment().team, name: "Done" }
 		});
 		const next = assignment({
 			id: "next",
-			timeSlot: new Date(now.getTime() + 60_000),
+			startsAt: new Date(now.getTime() + 60_000),
 			team: { ...assignment().team, name: "Next" }
 		});
 		render(
@@ -310,12 +285,13 @@ describe("judge dashboard", () => {
 				activeRoundId="round"
 				assignments={[next, done]}
 				criteria={[main]}
-				rounds={[assignment().room.round]}
+				rounds={[judgingRound()]}
+				userId="judge"
 				userName="Dara"
 			/>
 		);
 		expect(
-			screen.getByText("You’re judging in Room 1 for the Round 1.")
+			screen.getByText("You’re at Table 1 for the Round 1 with Sam.")
 		).toBeVisible();
 		expect(screen.getByRole("heading", { name: "Next" })).toBeVisible();
 		expect(screen.getByText("1 of 2 scored")).toBeVisible();
@@ -325,30 +301,24 @@ describe("judge dashboard", () => {
 	});
 
 	it("celebrates a finished round and switches rounds", () => {
-		const finals = {
-			...assignment().room.round,
+		const finals = judgingRound({
 			id: "finals",
 			name: "Finals",
+			kind: "final",
 			startTime: new Date(now.getTime() + 60 * 60_000)
-		};
+		});
 		const finalsTeam = assignment({
 			id: "finals-team",
-			room: {
-				...assignment().room,
-				id: "finals-room",
-				name: "Room 2",
-				roundId: "finals",
-				roomLink: "https://example.com/finals",
-				round: finals
-			},
+			table: judgeTable({ id: "finals-table", round: finals }),
 			team: { ...assignment().team, name: "Finalist" }
 		});
 		render(
 			<DashboardView
 				activeRoundId="round"
-				assignments={[assignment({ scores: [score("main", 7)] }), finalsTeam]}
+				assignments={[assignment({ scores: [score("main", 4)] }), finalsTeam]}
 				criteria={[main]}
-				rounds={[assignment().room.round, finals]}
+				rounds={[judgingRound(), finals]}
+				userId="judge"
 				userName="Dara"
 			/>
 		);
@@ -356,11 +326,8 @@ describe("judge dashboard", () => {
 		fireEvent.click(screen.getByRole("button", { name: /Finals/ }));
 		expect(screen.getByRole("heading", { name: "Finalist" })).toBeVisible();
 		expect(
-			screen.getByText("You’re judging in Room 2 for the Finals.")
+			screen.getByText("You’re at the final table for the Finals with Sam.")
 		).toBeVisible();
-		expect(
-			screen.queryByRole("link", { name: /Join meeting/ })
-		).not.toBeInTheDocument();
 	});
 });
 
@@ -373,7 +340,7 @@ describe("dashboard team rows", () => {
 			{ ...main, roundIds: ["round"] },
 			{ ...main, id: "final", name: "Final criterion", roundIds: ["final"] }
 		];
-		const team = assignment({ scores: [score("main", 7), score("final", 10)] });
+		const team = assignment({ scores: [score("main", 4), score("final", 5)] });
 		render(
 			kind === "team" ? (
 				<JudgeTeamRow assignment={team} criteria={criteria} currentTime={now} />
@@ -387,11 +354,11 @@ describe("dashboard team rows", () => {
 		);
 		if (kind === "team") {
 			expect(screen.getByText(/Scored/)).toBeInTheDocument();
-			expect(screen.getByRole("link")).toHaveTextContent("17/20");
-			expect(screen.getByRole("link")).toHaveTextContent("Final criterion 10");
+			expect(screen.getByRole("link")).toHaveTextContent("4/5");
+			expect(screen.getByRole("link")).not.toHaveTextContent("Final criterion");
 		} else {
 			expect(screen.getByText("Scores recorded")).toBeInTheDocument();
-			expect(screen.getByText("Main score: 17/20")).toBeInTheDocument();
+			expect(screen.getByText("Main score: 4/5")).toBeInTheDocument();
 		}
 	});
 
@@ -415,18 +382,23 @@ describe("dashboard team rows", () => {
 		);
 	});
 
-	it("keeps unscheduled teams scoreable", () => {
-		render(
+	it("marks the team presenting right now", () => {
+		const { rerender } = render(
 			<JudgeTeamRow
-				assignment={assignment({ timeSlot: null })}
+				assignment={assignment()}
 				criteria={[main]}
-				currentTime={now}
+				currentTime={new Date(now.getTime() + 60_000)}
 			/>
 		);
-		expect(screen.getByText("Unscheduled")).toBeInTheDocument();
-		expect(
-			screen.getByRole("link", { name: "Score Team" })
-		).toBeInTheDocument();
+		expect(screen.getByText(/Presenting now/)).toBeInTheDocument();
+		rerender(
+			<JudgeTeamRow
+				assignment={assignment()}
+				criteria={[main]}
+				currentTime={new Date(now.getTime() + 8 * 60_000)}
+			/>
+		);
+		expect(screen.queryByText(/Presenting now/)).not.toBeInTheDocument();
 	});
 
 	it("allows editing a submitted scorecard before the slot and displays sidepots separately", () => {
@@ -441,15 +413,15 @@ describe("dashboard team rows", () => {
 		);
 		const link = screen.getByRole("link", { name: "Edit score for Team" });
 		expect(link).toHaveAttribute("href", "/judge/score/assignment");
-		expect(link).toHaveTextContent("Innovation 1 · Best AI 4/10");
-		expect(link).toHaveTextContent("1/10");
+		expect(link).toHaveTextContent("Innovation 1 · Best AI 4/5");
+		expect(link).toHaveTextContent("1/5");
 		expect(screen.queryByRole("button")).not.toBeInTheDocument();
 	});
 
 	it("does not mark incomplete main scores as scored", () => {
 		render(
 			<JudgeTeamRow
-				assignment={assignment({ scores: [score("main", 8)] })}
+				assignment={assignment({ scores: [score("main", 4)] })}
 				criteria={[main, { ...main, id: "technical", name: "Technical" }]}
 				currentTime={now}
 			/>

@@ -21,6 +21,8 @@ import { useCurrentTime } from "@/hooks/use-current-time";
 import {
 	type Criterion,
 	formatTime,
+	getAssignmentCriteria,
+	getTableName,
 	getTeamCode,
 	isAssignmentScored,
 	isCriterionScoreValid,
@@ -37,11 +39,7 @@ function canScoreAssignment(
 	_criteria: Criterion[],
 	currentTime: Date
 ) {
-	return (
-		assignment.scores.length > 0 ||
-		!assignment.timeSlot ||
-		assignment.timeSlot <= currentTime
-	);
+	return assignment.scores.length > 0 || assignment.startsAt <= currentTime;
 }
 
 function ScoreMessage({
@@ -125,7 +123,7 @@ function JudgeScorecard({
 	const next = assignments.find(
 		(item) =>
 			item.id !== assignment.id &&
-			item.room.roundId === assignment.room.roundId &&
+			item.table.roundId === assignment.table.roundId &&
 			!isAssignmentScored(item, criteria) &&
 			canScoreAssignment(item, criteria, currentTime)
 	);
@@ -133,12 +131,12 @@ function JudgeScorecard({
 	if (card.status === "saved")
 		return (
 			<ScoreMessage
-				roundId={assignment.room.roundId}
+				roundId={assignment.table.roundId}
 				title="Your scores have been submitted"
 			>
 				<span className="flex flex-col gap-3">
 					<span>
-						{assignment.team.name} · {assignment.room.round.name}
+						{assignment.team.name} · {assignment.table.round.name}
 					</span>
 					<span>
 						{main.length
@@ -161,7 +159,7 @@ function JudgeScorecard({
 	if (!canScoreAssignment(assignment, criteria, currentTime))
 		return (
 			<ScoreMessage title="Scoring has not opened yet">
-				You can score this team from {formatTime(assignment.timeSlot)}. Your
+				You can score this team from {formatTime(assignment.startsAt)}. Your
 				draft will be kept on this device.
 			</ScoreMessage>
 		);
@@ -174,7 +172,7 @@ function JudgeScorecard({
 					<div className="min-w-0">
 						<Link
 							className="inline-flex items-center gap-1 text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
-							href={`/judge/schedule?round=${encodeURIComponent(assignment.room.roundId)}`}
+							href={`/judge/schedule?round=${encodeURIComponent(assignment.table.roundId)}`}
 							onClick={async (event) => {
 								if (saving) {
 									event.preventDefault();
@@ -192,7 +190,7 @@ function JudgeScorecard({
 										})
 									)
 										router.push(
-											`/judge/schedule?round=${encodeURIComponent(assignment.room.roundId)}`
+											`/judge/schedule?round=${encodeURIComponent(assignment.table.roundId)}`
 										);
 								}
 							}}
@@ -203,8 +201,8 @@ function JudgeScorecard({
 							{assignment.team.name}
 						</h1>
 						<p className="m-0 text-muted-foreground text-sm">
-							Team {getTeamCode(assignment)} · {assignment.room.round.name} ·{" "}
-							{formatTime(assignment.timeSlot)}
+							Team {getTeamCode(assignment)} · {assignment.table.round.name} ·{" "}
+							{getTableName(assignment)} · {formatTime(assignment.startsAt)}
 						</p>
 					</div>
 					{main.length ? (
@@ -372,7 +370,8 @@ export function ScoreView({
 				This team is not assigned to your judging account.
 			</ScoreMessage>
 		);
-	if (!criteria.length)
+	const roundCriteria = getAssignmentCriteria(assignment, criteria);
+	if (!roundCriteria.length)
 		return (
 			<ScoreMessage title="No criteria available">
 				Organizers need to publish the judging criteria before you can score
@@ -383,7 +382,7 @@ export function ScoreView({
 		<JudgeScorecard
 			assignment={assignment}
 			assignments={assignments}
-			criteria={criteria.slice().sort(sortCriteria)}
+			criteria={roundCriteria.sort(sortCriteria)}
 			key={`${userId}:${assignment.id}`}
 			userId={userId}
 			userName={userName}

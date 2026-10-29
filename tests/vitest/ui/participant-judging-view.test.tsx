@@ -1,11 +1,16 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { JudgingView } from "@/app/components/participant/judging/JudgingView";
 import { judgingStages } from "@/lib/participant-judging";
+
+vi.mock("@/hooks/use-current-time", () => ({
+	useCurrentTime: () => new Date("2026-11-08T12:00:00Z")
+}));
 
 const rounds = ["Round 1", "Round 2"].map((name, index) => ({
 	id: `round-${index}`,
 	name,
+	kind: index ? ("final" as const) : ("panel" as const),
 	startTime: new Date(`2026-11-08T${index + 12}:00:00Z`),
 	endTime: new Date(`2026-11-08T${index + 13}:00:00Z`)
 }));
@@ -14,7 +19,7 @@ const criteria = ["Innovation", "Technical execution"].map((name, index) => ({
 	name,
 	description: `Published ${name} description.`,
 	displayOrder: index,
-	maxScore: 10,
+	maxScore: 5,
 	isSidepot: false,
 	roundIds: index ? ["round-1"] : []
 }));
@@ -25,14 +30,33 @@ const settings = {
 } as NonNullable<Parameters<typeof JudgingView>[0]["settings"]>;
 const results = {
 	released: true,
-	rounds: [{ roundId: "round-0", criterionId: "criterion-0", value: 7.5 }]
+	rounds: [{ roundId: "round-0", criterionId: "criterion-0", value: 3.5 }]
 };
+function judging(kind: "panel" | "final", tables: number[]) {
+	return [
+		{
+			round: {
+				id: `${kind}-round`,
+				name: kind === "panel" ? "Panel Round" : "Final Round",
+				kind,
+				startTime: new Date("2026-11-08T19:00:00Z"),
+				presentationMinutes: 6,
+				publishedAt: new Date("2026-11-08T12:00:00Z")
+			},
+			assignments: tables.map((tableNumber, index) => ({
+				id: `assignment-${index}`,
+				tableNumber,
+				startsAt: new Date(Date.UTC(2026, 10, 8, 19, index * 8))
+			}))
+		}
+	];
+}
 function view(overrides: Partial<Parameters<typeof JudgingView>[0]> = {}) {
 	return (
 		<JudgingView
-			assignment={null}
 			criteria={criteria}
 			events={[]}
+			judging={[]}
 			results={results}
 			rounds={rounds}
 			settings={settings}
@@ -47,7 +71,7 @@ describe("participant judging information", () => {
 		expect(
 			screen.queryByRole("heading", { name: "Team Scores" })
 		).not.toBeInTheDocument();
-		expect(screen.queryByText(/7.5/)).not.toBeInTheDocument();
+		expect(screen.queryByText(/3.5/)).not.toBeInTheDocument();
 		expect(screen.getByText("Hackathon updates coming soon")).toBeVisible();
 	});
 	it("shows every published criterion without a round picker", () => {
@@ -62,29 +86,35 @@ describe("participant judging information", () => {
 			view({ settings: { ...settings, judgingPhase: "winners_announced" } })
 		);
 		const section = screen.getByRole("region", { name: "Team Scores" });
-		expect(within(section).getByText("7.5 / 10")).toBeVisible();
+		expect(within(section).getByText("3.5 / 5")).toBeVisible();
 		expect(
 			screen.queryByText(/Judge A|Judge comments/)
 		).not.toBeInTheDocument();
 	});
-	it("shows assigned time and safe meeting navigation without claiming an ongoing event", () => {
-		const assignment = {
-			id: "assigned",
-			timeSlot: new Date("2026-11-08T19:00:00Z"),
-			room: {
-				name: "Room 2",
-				roomLink: "https://example.com/meeting",
-				round: rounds[0]
-			}
-		} as NonNullable<Parameters<typeof JudgingView>[0]["assignment"]>;
-		render(view({ assignment }));
-		expect(screen.getByRole("link", { name: "Join meeting" })).toHaveAttribute(
-			"href",
-			"https://example.com/meeting"
-		);
-		expect(screen.getByText("Room 2")).toBeVisible();
-		expect(screen.getByText("1:00 PM")).toBeVisible();
+	it("shows the team's tables, times and when to arrive", () => {
+		render(view({ judging: judging("panel", [3, 5]) }));
+		expect(
+			screen.getByRole("heading", { name: "Panel Round: your team’s judging" })
+		).toBeVisible();
+		expect(screen.getByText("Table 3 → Table 5")).toBeVisible();
+		expect(
+			screen.getByText(
+				"Arrive by 12:50 PM. Present at Table 3 at 1:00 PM, then Table 5 at 1:08 PM. You have 6 minutes per presentation, including Q&A."
+			)
+		).toBeVisible();
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 		expect(screen.queryByText(/ongoing now/)).not.toBeInTheDocument();
+	});
+	it("tells finalists when they present to every judge", () => {
+		render(view({ judging: judging("final", [1]) }));
+		expect(
+			screen.getByRole("heading", { name: "You’re a finalist!" })
+		).toBeVisible();
+		expect(
+			screen.getByText(
+				"Arrive by 12:50 PM. Present to every judge at 1:00 PM. You have 6 minutes, including Q&A."
+			)
+		).toBeVisible();
 	});
 	it("does not advance rounds using their timestamps or a missing active round", () => {
 		expect(
@@ -102,23 +132,23 @@ describe("participant judging information", () => {
 		);
 		expect(screen.getByText("No team scores yet")).toBeVisible();
 	});
-	it("shows first-round team scores and leaves out finals scores", () => {
+	it("shows panel-round team scores and leaves out finals scores", () => {
 		render(
 			view({
 				settings: { ...settings, judgingPhase: "winners_announced" },
 				results: {
 					released: true,
 					rounds: [
-						{ roundId: "round-0", criterionId: "criterion-0", value: 7.5 },
-						{ roundId: "round-1", criterionId: "criterion-0", value: 9 },
-						{ roundId: "round-1", criterionId: "criterion-1", value: 8 }
+						{ roundId: "round-0", criterionId: "criterion-0", value: 3.5 },
+						{ roundId: "round-1", criterionId: "criterion-0", value: 4.5 },
+						{ roundId: "round-1", criterionId: "criterion-1", value: 4 }
 					]
 				}
 			})
 		);
 		const section = screen.getByRole("region", { name: "Team Scores" });
-		expect(within(section).getByText("7.5 / 10")).toBeVisible();
-		expect(within(section).queryByText("9 / 10")).not.toBeInTheDocument();
+		expect(within(section).getByText("3.5 / 5")).toBeVisible();
+		expect(within(section).queryByText("4.5 / 5")).not.toBeInTheDocument();
 		expect(
 			within(section).queryByText("Technical execution")
 		).not.toBeInTheDocument();

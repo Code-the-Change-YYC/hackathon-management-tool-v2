@@ -14,11 +14,12 @@ import {
 import { Spinner } from "@/app/components/ui/spinner";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { useRefresh } from "@/hooks/use-refresh";
-import { formatDateKey, formatDateTime } from "@/lib/datetime";
+import { formatDateKey, formatDateTime, formatTime } from "@/lib/datetime";
 import {
 	type Criterion,
-	getAssignmentRoomName,
-	type JudgeAssignment
+	getTableName,
+	type JudgeAssignment,
+	withBreaks
 } from "../judgePortal";
 import { JudgeScheduleEvent, ScheduleTable } from "./JudgeScheduleEvent";
 import {
@@ -31,7 +32,7 @@ type RoundScheduleProps = {
 	assignments: JudgeAssignment[];
 	criteria: Criterion[];
 	currentTime: Date;
-	round: JudgeAssignment["room"]["round"];
+	round: JudgeAssignment["table"]["round"];
 };
 
 function ScheduleRows({
@@ -43,19 +44,31 @@ function ScheduleRows({
 	return (
 		<ScheduleTable>
 			<ol className="m-0 list-none p-0">
-				{assignments.map((assignment) => (
-					<li
-						className="border-border border-b last:border-b-0"
-						key={assignment.id}
-					>
-						<JudgeScheduleEvent
-							assignment={assignment}
-							criteria={criteria}
-							currentTime={currentTime}
-							highlighted={assignment.id === highlightedId}
-						/>
-					</li>
-				))}
+				{withBreaks(assignments).map((item) =>
+					item.kind === "break" ? (
+						<li
+							className="border-border border-b bg-muted/50 px-4 py-3 text-muted-foreground text-sm last:border-b-0"
+							key={`break-${item.startsAt.getTime()}`}
+						>
+							<span className="font-medium tabular-nums">
+								{formatTime(item.startsAt)}
+							</span>{" "}
+							· Break until {formatTime(item.endsAt)}
+						</li>
+					) : (
+						<li
+							className="border-border border-b last:border-b-0"
+							key={item.assignment.id}
+						>
+							<JudgeScheduleEvent
+								assignment={item.assignment}
+								criteria={criteria}
+								currentTime={currentTime}
+								highlighted={item.assignment.id === highlightedId}
+							/>
+						</li>
+					)
+				)}
 			</ol>
 		</ScheduleTable>
 	);
@@ -88,7 +101,6 @@ function RoundSchedule({
 	);
 	const featured = summary.nextScheduled ?? summary.needsScoring;
 	const groups = groupScheduleByDate(assignments);
-	const unscheduled = assignments.filter((assignment) => !assignment.timeSlot);
 	const rows = {
 		criteria,
 		currentTime,
@@ -118,10 +130,7 @@ function RoundSchedule({
 								{featured.team.name}
 							</span>
 							<span className="mt-1 block text-muted-foreground">
-								{featured.timeSlot
-									? formatDateTime(featured.timeSlot)
-									: "Time not assigned"}{" "}
-								· {getAssignmentRoomName(featured)}
+								{formatDateTime(featured.startsAt)} · {getTableName(featured)}
 							</span>
 						</p>
 					) : (
@@ -144,14 +153,14 @@ function RoundSchedule({
 							<span className="font-medium">
 								{summary.needsScoring.team.name}
 							</span>{" "}
-							· {getAssignmentRoomName(summary.needsScoring)}
+							· {getTableName(summary.needsScoring)}
 						</p>
 						{scoringAction}
 					</div>
 				)}
 			</section>
 			{groups.map((group) => {
-				const time = group[0]?.timeSlot;
+				const time = group[0]?.startsAt;
 				if (!time) return null;
 				return (
 					<section className="flex flex-col gap-3" key={formatDateKey(time)}>
@@ -159,17 +168,6 @@ function RoundSchedule({
 					</section>
 				);
 			})}
-			{unscheduled.length > 0 && (
-				<section className="flex flex-col gap-3">
-					<div>
-						<h3 className="m-0 font-medium text-base">Awaiting scheduling</h3>
-						<p className="mt-1 mb-0 text-muted-foreground text-sm">
-							Presentation times have not been set for these teams.
-						</p>
-					</div>
-					<ScheduleRows assignments={unscheduled} {...rows} />
-				</section>
-			)}
 		</div>
 	);
 }
@@ -183,7 +181,7 @@ export function ScheduleView({
 }: {
 	assignments: JudgeAssignment[];
 	criteria: Criterion[];
-	rounds: JudgeAssignment["room"]["round"][];
+	rounds: JudgeAssignment["table"]["round"][];
 	activeRoundId: string | null;
 	updatedAt: number;
 }) {
@@ -221,7 +219,7 @@ export function ScheduleView({
 			{rounds.length > 0 ? (
 				rounds.map((round) => {
 					const roundAssignments = assignments.filter(
-						(assignment) => assignment.room.roundId === round.id
+						(assignment) => assignment.table.roundId === round.id
 					);
 					return (
 						<Card

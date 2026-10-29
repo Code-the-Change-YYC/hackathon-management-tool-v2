@@ -27,6 +27,7 @@ export default async function DashboardPage() {
 				assignments={assignments}
 				criteria={criteria}
 				rounds={rounds}
+				userId={user.id}
 				userName={
 					user.firstName || getNameParts(user.name).firstName || "Judge"
 				}

@@ -32,9 +32,8 @@ export const MAX_PRESENTATION_MINUTES = 10;
 
 export const DEFAULT_FINALIST_COUNT = 5;
 
-/** Slot choices offered by the judging UI; the API accepts any positive duration. */
-export const SLOT_MINUTES_OPTIONS = [15, 30, 60] as const;
-export type SlotMinutes = (typeof SLOT_MINUTES_OPTIONS)[number];
+// Teams are asked to arrive this long before their first presentation.
+export const ARRIVAL_BUFFER_MINUTES = 10;
 
 const RUBRIC_BAND_LABELS = [
 	"Minimal",

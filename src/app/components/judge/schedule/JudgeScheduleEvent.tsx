@@ -9,9 +9,9 @@ import {
 	canScoreAssignment,
 	formatDuration,
 	formatTime,
-	getAssignmentRoomName,
 	getAssignmentScoreStatus,
 	getAssignmentTotal,
+	getTableName,
 	getTeamCode,
 	isAssignmentScored,
 	type JudgeAssignment
@@ -33,17 +33,13 @@ export function JudgeScheduleEvent({
 	const scoreStatus = getAssignmentScoreStatus(assignment, criteria);
 	const canScore = canScoreAssignment(assignment, criteria, currentTime);
 	const total = getAssignmentTotal(assignment, criteria);
-	const minutesUntil = assignment.timeSlot
-		? differenceInMinutes(assignment.timeSlot, currentTime, {
-				roundingMethod: "ceil"
-			})
-		: null;
+	const minutesUntil = differenceInMinutes(assignment.startsAt, currentTime, {
+		roundingMethod: "ceil"
+	});
 	const timing =
-		minutesUntil === null
-			? "Time not assigned"
-			: minutesUntil > 0
-				? `In ${formatDuration(minutesUntil)}`
-				: "Scheduled time reached";
+		minutesUntil > 0
+			? `In ${formatDuration(minutesUntil)}`
+			: "Scheduled time reached";
 	const action = scored
 		? "Edit scores"
 		: scoreStatus === "Partially scored"
@@ -52,23 +48,19 @@ export function JudgeScheduleEvent({
 
 	return (
 		<article
-			aria-label={`${assignment.team.name} · ${assignment.room.round.name}`}
+			aria-label={`${assignment.team.name} · ${assignment.table.round.name}`}
 			className={cn(
 				"grid min-w-0 @min-[720px]/schedule:grid-cols-(--schedule-columns) grid-cols-[minmax(0,1fr)_auto] @min-[720px]/schedule:items-center gap-x-4 gap-y-3 px-4 py-3",
 				highlighted && "bg-muted/50"
 			)}
 		>
 			<div className="min-w-0">
-				{assignment.timeSlot ? (
-					<time
-						className="font-medium text-sm tabular-nums"
-						dateTime={assignment.timeSlot.toISOString()}
-					>
-						{formatTime(assignment.timeSlot)}
-					</time>
-				) : (
-					<span className="text-muted-foreground text-sm">Unscheduled</span>
-				)}
+				<time
+					className="font-medium text-sm tabular-nums"
+					dateTime={assignment.startsAt.toISOString()}
+				>
+					{formatTime(assignment.startsAt)}
+				</time>
 				<p className="mt-1 mb-0 text-muted-foreground text-xs" id={timingId}>
 					{timing}
 					{!canScore ? (
@@ -87,8 +79,8 @@ export function JudgeScheduleEvent({
 				</p>
 			</div>
 			<div className="wrap-break-word min-w-0 text-sm">
-				<span className="sr-only">Room: </span>
-				{getAssignmentRoomName(assignment)}
+				<span className="sr-only">Table: </span>
+				{getTableName(assignment)}
 			</div>
 			<div className="@min-[720px]/schedule:col-start-auto col-start-2 @min-[720px]/schedule:row-start-auto row-start-1 min-w-0 @min-[720px]/schedule:text-left text-right">
 				<span
@@ -122,9 +114,7 @@ export function JudgeScheduleEvent({
 						size="sm"
 						variant="outline"
 					>
-						{assignment.timeSlot
-							? `Opens at ${formatTime(assignment.timeSlot)}`
-							: action}
+						Opens at {formatTime(assignment.startsAt)}
 					</Button>
 				)}
 			</div>
@@ -141,7 +131,7 @@ export function ScheduleTable({ children }: { children: ReactNode }) {
 			>
 				<span>Time</span>
 				<span>Team</span>
-				<span>Room</span>
+				<span>Table</span>
 				<span>Scores</span>
 				<span className="text-right">Action</span>
 			</div>

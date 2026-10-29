@@ -23,6 +23,7 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[]}
 				firstName="Victoria"
+				judging={[]}
 				rounds={[]}
 				settings={null}
 			/>
@@ -40,6 +41,7 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[ongoingEvent("https://example.com/directions")]}
 				firstName="Victoria"
+				judging={[]}
 				rounds={[]}
 				settings={null}
 			/>
@@ -54,6 +56,7 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[ongoingEvent("javascript:alert(1)")]}
 				firstName="Victoria"
+				judging={[]}
 				rounds={[]}
 				settings={null}
 			/>
@@ -67,6 +70,7 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[]}
 				firstName="Victoria"
+				judging={[]}
 				rounds={[]}
 				settings={null}
 			/>

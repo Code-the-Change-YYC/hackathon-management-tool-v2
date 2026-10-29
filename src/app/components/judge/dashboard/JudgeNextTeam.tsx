@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import {
 	formatTime,
 	getSlotStatus,
+	getTableName,
 	getTeamCode,
 	isScoringOpen,
 	type JudgeAssignment
@@ -53,10 +54,9 @@ export function JudgeNextTeam({
 						{assignment.team.name}
 					</h2>
 					<p className="m-0 text-muted-foreground">
-						Team ID {getTeamCode(assignment)} ·{" "}
-						{assignment.timeSlot
-							? `${formatTime(assignment.timeSlot)} · ${getSlotStatus(assignment.timeSlot, currentTime)}`
-							: "Unscheduled"}
+						Team ID {getTeamCode(assignment)} · {getTableName(assignment)} ·{" "}
+						{formatTime(assignment.startsAt)} ·{" "}
+						{getSlotStatus(assignment.startsAt, currentTime)}
 					</p>
 				</div>
 				{open ? (
@@ -74,7 +74,7 @@ export function JudgeNextTeam({
 						size="lg"
 						variant="secondary"
 					>
-						Opens at {formatTime(assignment.timeSlot)}
+						Opens at {formatTime(assignment.startsAt)}
 					</Button>
 				)}
 			</CardContent>

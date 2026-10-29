@@ -5,6 +5,7 @@ import type {
 	JudgeAssignment
 } from "@/app/components/judge/judgePortal";
 import { ScheduleView } from "@/app/components/judge/schedule/ScheduleView";
+import { judgeAssignment, judgeTable, judgingRound } from "../helpers/judging";
 
 const mocks = vi.hoisted(() => ({ refresh: vi.fn() }));
 const now = new Date("2026-09-19T16:00:00Z");
@@ -17,59 +18,34 @@ const criterion: Criterion = {
 	name: "Innovation",
 	description: "",
 	displayOrder: 0,
-	maxScore: 10,
+	maxScore: 5,
 	isSidepot: false
 };
-const round = {
-	id: "round",
+const round = judgingRound({
 	name: "Preliminary",
 	startTime: now,
-	endTime: new Date("2026-09-19T18:00:00Z"),
-	createdAt: now,
-	updatedAt: now
-};
-function team(id: string, timeSlot: Date | null = now): JudgeAssignment {
-	return {
+	endTime: new Date("2026-09-19T18:00:00Z")
+});
+function team(id: string, startsAt: Date = now): JudgeAssignment {
+	return judgeAssignment({
 		id,
 		teamId: id,
-		roomId: "room",
-		timeSlot,
-		createdAt: now,
-		scores: [],
-		team: {
-			id,
-			name: id,
-			slug: id,
-			logo: null,
-			metadata: null,
-			createdAt: now,
-			teamCode: id,
-			prescreenStatus: "passed",
-			prescreenComments: null,
-			prescreenedBy: null,
-			prescreenedAt: null
-		},
-		room: {
-			id: "room",
-			name: "Room 2",
-			roundId: round.id,
-			roomLink: "",
-			createdAt: now,
-			updatedAt: now,
-			round
-		}
-	};
+		startsAt,
+		team: { ...judgeAssignment().team, id, name: id, slug: id, teamCode: id },
+		table: judgeTable({ tableNumber: 2, round })
+	});
 }
 
-const finals = {
-	...round,
+const finals = judgingRound({
 	id: "finals",
 	name: "Finals",
-	startTime: new Date("2026-09-19T19:00:00Z")
-};
+	kind: "final",
+	startTime: new Date("2026-09-19T19:00:00Z"),
+	endTime: new Date("2026-09-19T20:00:00Z")
+});
 const finalsTeam = {
 	...team("Finals team", finals.startTime),
-	room: { ...team("base").room, roundId: finals.id, round: finals }
+	table: judgeTable({ id: "finals-table", round: finals })
 };
 const props = {
 	assignments: [
@@ -99,23 +75,32 @@ describe("judge round schedule", () => {
 		expect(within(finalsCard).queryByText("Active")).toBeNull();
 		expect(screen.queryByRole("tab")).toBeNull();
 	});
-	it("keeps unscheduled teams visible and links to the due team's scorecard", () => {
+	it("links to the due team's scorecard and shows each team's table", () => {
+		render(<ScheduleView {...props} />);
+		const preliminary = screen.getByRole("region", { name: "Preliminary" });
+		expect(
+			within(preliminary).getByRole("link", {
+				name: "Open scorecard for Due team"
+			})
+		).toHaveAttribute("href", "/judge/score/Due team");
+		expect(
+			within(preliminary).getByText("2 scorecards remaining")
+		).toBeVisible();
+		expect(within(preliminary).getAllByText("Table 2")).toHaveLength(2);
+		const finalsCard = screen.getByRole("region", { name: "Finals" });
+		expect(within(finalsCard).getByText("Final table")).toBeVisible();
+	});
+	it("shows free time between a table's presentations as a break", () => {
 		render(
 			<ScheduleView
 				{...props}
-				assignments={[team("Unscheduled team", null), team("Due team")]}
+				assignments={[
+					team("Due team"),
+					team("After break", new Date("2026-09-19T16:30:00Z"))
+				]}
 			/>
 		);
-		expect(
-			screen.getByRole("heading", { name: "Awaiting scheduling" })
-		).toBeVisible();
-		expect(
-			screen.getByRole("link", { name: "Score team for Unscheduled team" })
-		).toHaveAttribute("href", "/judge/score/Unscheduled team");
-		expect(
-			screen.getByRole("link", { name: "Open scorecard for Due team" })
-		).toHaveAttribute("href", "/judge/score/Due team");
-		expect(screen.getByText("2 scorecards remaining")).toBeVisible();
+		expect(screen.getByText(/Break until 10:30 AM/)).toBeVisible();
 	});
 	it("disables upcoming scorecards", () => {
 		const upcoming = team("Upcoming", new Date("2026-09-19T16:30:00Z"));

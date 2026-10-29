@@ -1,11 +1,26 @@
-import type { JudgingPhase } from "./judging";
+import { addMinutes } from "date-fns";
+import type { RouterOutputs } from "@/trpc/react";
+import type { JudgingPhase, JudgingRoundKind } from "./judging";
 
 export type JudgingRound = {
 	id: string;
 	name: string;
+	kind: JudgingRoundKind;
 	startTime: Date;
 	endTime: Date;
 };
+
+export type TeamJudging = RouterOutputs["judgingAssignments"]["getMine"];
+
+// The first published round whose last presentation hasn't ended yet.
+export function getUpcomingJudging(judging: TeamJudging, now: Date) {
+	return judging.find(({ round, assignments }) => {
+		const last = assignments.at(-1);
+		return (
+			last && addMinutes(last.startsAt, round.presentationMinutes ?? 0) > now
+		);
+	});
+}
 export function judgingStages(
 	phase: JudgingPhase,
 	rounds: JudgingRound[],

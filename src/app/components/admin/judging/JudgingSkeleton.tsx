@@ -28,21 +28,6 @@ function TableSkeleton({ rows }: { rows: number }) {
 	);
 }
 
-function SectionHeading({
-	title,
-	description
-}: {
-	title: string;
-	description: string;
-}) {
-	return (
-		<div>
-			<h2 className="font-medium text-xl">{title}</h2>
-			<p className="mt-1 mb-0 text-muted-foreground text-sm">{description}</p>
-		</div>
-	);
-}
-
 export function JudgingSkeleton() {
 	return (
 		<section
@@ -51,12 +36,12 @@ export function JudgingSkeleton() {
 			className="flex flex-col gap-6"
 		>
 			<PageHeader
-				description="Create a round, generate rooms and team slots, then review the schedule."
+				description="Create a panel round, generate its tables and times, then pick finalists from the results."
 				title="Judging"
 			/>
 			<ReleaseScoresBanner />
 			<ManagementSection
-				description="Start here. Each round is a judging window with a start and end time. Set one as active, then generate rooms below."
+				description="Start here. A panel round’s start and end are the window its schedule must fit in. The final round is created from the panel results below. The active round is the one participants see as in progress."
 				id="round-management"
 				title="Judging rounds"
 			>
@@ -68,87 +53,46 @@ export function JudgingSkeleton() {
 				</div>
 				<TableSkeleton rows={2} />
 			</ManagementSection>
-			<div className="flex flex-col gap-4">
-				<SectionHeading
-					description="This creates the rooms and places prescreen-passed teams into time slots."
-					title="Assign teams to rooms"
-				/>
-				<div className="grid gap-6 sm:grid-cols-2">
+			<ManagementSection
+				description="Set the panel size and timing, check the preview, then generate. Each team presents back-to-back at two tables. After publishing, remove or add teams and move judges without reshuffling anyone else."
+				id="panel-schedule"
+				title="Panel schedule"
+			>
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+					{range(4).map((field) => (
+						<FieldSkeleton key={field} />
+					))}
+				</div>
+				<Skeleton className="mt-6 h-20 rounded-lg" />
+				<Skeleton className="mt-6 h-56 rounded-lg" />
+			</ManagementSection>
+			<ManagementSection
+				description="Scoring categories judges see. Set these up before judging starts."
+				id="criteria-management"
+				title="Judging criteria"
+			>
+				<div className="grid gap-3 lg:grid-cols-[1fr_160px_160px_auto] lg:items-end">
 					<FieldSkeleton />
 					<FieldSkeleton />
+					<Skeleton className="h-12 rounded-xl" />
+					<Skeleton className="h-11 w-28" />
 				</div>
-				<FieldSkeleton className="max-w-xs" />
-				<div className="flex flex-col items-end gap-2">
-					<Skeleton className="h-11 w-36" />
-					<Skeleton className="my-0.5 h-4 w-64" />
-				</div>
-			</div>
-			<div className="flex flex-col gap-4">
-				<SectionHeading
-					description="The grid updates after you assign teams to rooms."
-					title="Judging schedule"
-				/>
-				<div className="flex flex-col gap-4 sm:flex-row">
-					<FieldSkeleton className="w-full sm:w-64" />
-					<FieldSkeleton className="w-full sm:w-64" />
-				</div>
-				<Skeleton className="h-56 rounded-2xl" />
-			</div>
-			<div className="mt-4 flex flex-col gap-16">
-				<div className="flex flex-col gap-4">
-					<SectionHeading
-						description="Optional. Edit meeting links, extra rooms, or a single team after generating the schedule."
-						title="Adjustments"
-					/>
-					<ManagementSection
-						description="Optional. Add meeting links, extra rooms, or change judges after generating the schedule."
-						id="room-management"
-						title="Rooms"
-					>
-						<div className="mb-5 flex items-center justify-between gap-3">
-							<Skeleton className="my-0.5 h-4 w-48" />
-							<Skeleton className="h-11 w-28" />
-						</div>
-						<div className="grid gap-4 xl:grid-cols-2">
-							<Skeleton className="h-80 rounded-xl" />
-							<Skeleton className="h-80 rounded-xl" />
-						</div>
-					</ManagementSection>
-					<ManagementSection
-						description="Optional. Move or add a single team after generating the schedule."
-						id="assignment-management"
-						title="Manual assignments"
-					>
-						<div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-							<FieldSkeleton />
-							<FieldSkeleton />
-							<FieldSkeleton />
-							<Skeleton className="h-11 w-36" />
-						</div>
-						<TableSkeleton rows={3} />
-					</ManagementSection>
-				</div>
-				<ManagementSection
-					description="Scoring categories judges see. Set these up before judging starts."
-					id="criteria-management"
-					title="Judging criteria"
-				>
-					<div className="grid gap-3 lg:grid-cols-[1fr_160px_160px_auto] lg:items-end">
-						<FieldSkeleton />
-						<FieldSkeleton />
-						<Skeleton className="h-12 rounded-xl" />
-						<Skeleton className="h-11 w-28" />
-					</div>
-					<TableSkeleton rows={4} />
-				</ManagementSection>
-				<ManagementSection
-					description="Live team totals after scores are submitted."
-					id="results-management"
-					title="Results"
-				>
-					<TableSkeleton rows={3} />
-				</ManagementSection>
-			</div>
+				<TableSkeleton rows={4} />
+			</ManagementSection>
+			<ManagementSection
+				description="Teams are ranked by normalized score: each judge’s totals are compared against that judge’s own scores, so a lenient or strict table doesn’t decide who advances. The top teams are pre-selected; adjust the picks, then create the final round."
+				id="panel-results"
+				title="Panel results"
+			>
+				<TableSkeleton rows={5} />
+			</ManagementSection>
+			<ManagementSection
+				description="Every judge sits at one table and the finalists present one after another."
+				id="final-round"
+				title="Final round"
+			>
+				<TableSkeleton rows={2} />
+			</ManagementSection>
 		</section>
 	);
 }

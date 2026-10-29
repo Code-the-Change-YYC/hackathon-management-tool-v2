@@ -1,5 +1,6 @@
-import { differenceInMinutes } from "date-fns";
+import { addMinutes, differenceInMinutes } from "date-fns";
 import { formatTime as formatClockTime, formatLongDate } from "@/lib/datetime";
+import { criterionAppliesToRound } from "@/lib/judging";
 import type { RouterOutputs } from "@/trpc/react";
 
 export type JudgeAssignment =
@@ -32,36 +33,93 @@ export function formatDuration(minutes: number) {
 	return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
 }
 
-export function getSlotStatus(timeSlot: Date | null, currentTime: Date) {
-	if (!timeSlot) return "Unscheduled";
-	const minutes = differenceInMinutes(timeSlot, currentTime, {
+export function getSlotStatus(startsAt: Date, currentTime: Date) {
+	const minutes = differenceInMinutes(startsAt, currentTime, {
 		roundingMethod: "ceil"
 	});
 	return minutes > 0 ? `In ${formatDuration(minutes)}` : "Started";
 }
 
 export function isScoringOpen(assignment: JudgeAssignment, currentTime: Date) {
-	return !assignment.timeSlot || assignment.timeSlot <= currentTime;
+	return assignment.startsAt <= currentTime;
+}
+
+export function getPresentationEnd(assignment: JudgeAssignment) {
+	return addMinutes(
+		assignment.startsAt,
+		assignment.table.round.presentationMinutes ?? 0
+	);
+}
+
+export function isPresenting(assignment: JudgeAssignment, currentTime: Date) {
+	return (
+		assignment.startsAt <= currentTime &&
+		currentTime < getPresentationEnd(assignment)
+	);
 }
 
 export function getTeamCode(assignment: JudgeAssignment) {
 	return assignment.team.teamCode ?? "------";
 }
 
-export function getAssignmentRoomName(assignment: JudgeAssignment) {
-	return assignment.room.name || "Room";
+export function getTableName(assignment: JudgeAssignment) {
+	return assignment.table.round.kind === "final"
+		? "Final table"
+		: `Table ${assignment.table.tableNumber}`;
 }
 
 export function sortAssignments(a: JudgeAssignment, b: JudgeAssignment) {
-	const aTime = a.timeSlot?.getTime() ?? Number.MAX_SAFE_INTEGER;
-	const bTime = b.timeSlot?.getTime() ?? Number.MAX_SAFE_INTEGER;
-	return aTime - bTime || a.team.name.localeCompare(b.team.name);
+	return (
+		a.startsAt.getTime() - b.startsAt.getTime() ||
+		a.team.name.localeCompare(b.team.name)
+	);
 }
 
-// Judges sit in one room, so the earliest assignment's room stands for all.
-export function getRoomName(assignments: JudgeAssignment[]) {
+// Judges sit at one table per round, so the earliest assignment's table stands for all.
+export function getJudgeTable(assignments: JudgeAssignment[], userId: string) {
 	const first = assignments.slice().sort(sortAssignments)[0];
-	return first ? getAssignmentRoomName(first) : null;
+	if (!first) return null;
+	return {
+		name:
+			first.table.round.kind === "final"
+				? "the final table"
+				: getTableName(first),
+		otherJudges: first.table.judges
+			.filter(({ judge }) => judge.id !== userId)
+			.map(({ judge }) => judge.name)
+	};
+}
+
+export type ScheduleItem =
+	| { kind: "assignment"; assignment: JudgeAssignment }
+	| { kind: "break"; startsAt: Date; endsAt: Date };
+
+// A gap longer than one slot between a table's presentations is free time.
+export function withBreaks(assignments: JudgeAssignment[]): ScheduleItem[] {
+	const sorted = assignments.slice().sort(sortAssignments);
+	return sorted.flatMap((assignment, index): ScheduleItem[] => {
+		const previous = sorted[index - 1];
+		const item = { kind: "assignment" as const, assignment };
+		if (!previous || previous.table.roundId !== assignment.table.roundId) {
+			return [item];
+		}
+		const { presentationMinutes, changeoverMinutes } = assignment.table.round;
+		if (presentationMinutes === null) return [item];
+		const slotEnd = addMinutes(
+			previous.startsAt,
+			presentationMinutes + changeoverMinutes
+		);
+		return assignment.startsAt > slotEnd
+			? [
+					{
+						kind: "break",
+						startsAt: getPresentationEnd(previous),
+						endsAt: assignment.startsAt
+					},
+					item
+				]
+			: [item];
+	});
 }
 
 export function getCriteriaScore(
@@ -73,19 +131,22 @@ export function getCriteriaScore(
 }
 
 export function getAssignmentCriteria(
-	_assignment: JudgeAssignment,
+	assignment: JudgeAssignment,
 	criteria: Criterion[]
 ) {
-	return criteria;
+	return criteria.filter((criterion) =>
+		criterionAppliesToRound(criterion, assignment.table.roundId)
+	);
 }
 
 export function isAssignmentScored(
 	assignment: JudgeAssignment,
 	criteria: Criterion[]
 ) {
+	const applicable = getAssignmentCriteria(assignment, criteria);
 	return (
-		criteria.length > 0 &&
-		criteria.every((criterion) =>
+		applicable.length > 0 &&
+		applicable.every((criterion) =>
 			assignment.scores.some(
 				(score) =>
 					score.criteriaId === criterion.id &&
@@ -127,8 +188,7 @@ export function canScoreAssignment(
 ) {
 	return (
 		isAssignmentScored(assignment, criteria) ||
-		!assignment.timeSlot ||
-		assignment.timeSlot <= currentTime
+		isScoringOpen(assignment, currentTime)
 	);
 }
 

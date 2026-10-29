@@ -29,7 +29,7 @@ export default async function AdminLayout({
 				{ title: "Teams", href: "/admin/teams", icon: "group" },
 				{ title: "Meals", href: "/admin/meals", icon: "hamburger" },
 				{
-					title: "Judging Information",
+					title: "Judging",
 					href: "/admin/judging",
 					icon: "task"
 				}

@@ -46,13 +46,11 @@ import {
 export function RoundManagement({
 	rounds,
 	activeRoundId,
-	assignments,
-	onSelectRound
+	assignments
 }: {
 	rounds: Round[];
 	activeRoundId: string | null;
 	assignments: Assignment[];
-	onSelectRound: (roundId: string) => void;
 }) {
 	const { confirm, dialogProps } = useConfirmDialog();
 	const { isRefreshing, refresh } = useRefresh();
@@ -75,9 +73,8 @@ export function RoundManagement({
 
 	const createRound = api.judgingRounds.create.useMutation({
 		onError: (error) => setMessage(error.message),
-		onSuccess: (round) =>
+		onSuccess: () =>
 			refresh(() => {
-				onSelectRound(round?.id ?? "");
 				resetForm();
 				setMessage("Judging round created.");
 			})
@@ -96,11 +93,7 @@ export function RoundManagement({
 	});
 	const setActiveRound = api.hackathonSettings.update.useMutation({
 		onError: (error) => setMessage(error.message),
-		onSuccess: (_, variables) =>
-			refresh(() => {
-				onSelectRound(variables.currentRoundId ?? "");
-				setMessage("Active round updated.");
-			})
+		onSuccess: () => refresh(() => setMessage("Active round updated."))
 	});
 	const isSaving =
 		createRound.isPending || updateRound.isPending || isRefreshing;
@@ -125,12 +118,12 @@ export function RoundManagement({
 	const scoredRoundIds = new Set(
 		assignments
 			.filter((assignment) => assignment.scores.length > 0)
-			.map((assignment) => assignment.room.round.id)
+			.map((assignment) => assignment.table.round.id)
 	);
 
 	return (
 		<ManagementSection
-			description="Start here. Each round is a judging window with a start and end time. Set one as active, then generate rooms below."
+			description="Start here. A panel round’s start and end are the window its schedule must fit in. The final round is created from the panel results below. The active round is the one participants see as in progress."
 			id="round-management"
 			title="Judging rounds"
 		>
@@ -150,7 +143,7 @@ export function RoundManagement({
 								validate: (value) =>
 									Boolean(value.trim()) || "Round name is required."
 							})}
-							placeholder="Preliminary round"
+							placeholder="Panel round"
 						/>
 						<FieldError errors={[errors.name]} />
 					</Field>
@@ -210,6 +203,7 @@ export function RoundManagement({
 					<TableHeader>
 						<TableRow>
 							<TableHead className="px-3 py-3">Round</TableHead>
+							<TableHead className="px-3 py-3">Type</TableHead>
 							<TableHead className="px-3 py-3">Start</TableHead>
 							<TableHead className="px-3 py-3">End</TableHead>
 							<TableHead className="px-3 py-3">Status</TableHead>
@@ -220,10 +214,14 @@ export function RoundManagement({
 						{rounds.map((round) => {
 							const isActive = activeRoundId === round.id;
 							const hasScores = scoredRoundIds.has(round.id);
+							const isFinal = round.kind === "final";
 							return (
 								<TableRow key={round.id}>
 									<TableCell className="px-3 py-4 font-medium">
 										{round.name}
+									</TableCell>
+									<TableCell className="px-3 py-4">
+										{isFinal ? "Final" : "Panel"}
 									</TableCell>
 									<TableCell className="px-3 py-4">
 										{formatDateTime(round.startTime)}
@@ -232,11 +230,16 @@ export function RoundManagement({
 										{formatDateTime(round.endTime)}
 									</TableCell>
 									<TableCell className="px-3 py-4">
-										{isActive ? (
-											<Badge variant="secondary">Active</Badge>
-										) : (
-											<span className="text-muted-foreground">Inactive</span>
-										)}
+										<span className="flex flex-wrap gap-1.5">
+											{isActive ? (
+												<Badge variant="secondary">Active</Badge>
+											) : null}
+											{round.publishedAt ? (
+												<Badge variant="secondary">Published</Badge>
+											) : (
+												<Badge variant="outline">Not published</Badge>
+											)}
+										</span>
 									</TableCell>
 									<TableCell className="px-3 py-4">
 										<div className="flex justify-end gap-2">
@@ -256,7 +259,7 @@ export function RoundManagement({
 												</Button>
 											) : null}
 											<Button
-												disabled={hasScores}
+												disabled={hasScores || isFinal}
 												onClick={() => {
 													setEditingId(round.id);
 													reset({
@@ -268,9 +271,11 @@ export function RoundManagement({
 												}}
 												size="sm"
 												title={
-													hasScores
-														? "Scored rounds cannot be edited."
-														: undefined
+													isFinal
+														? "Change the final round from the panel results."
+														: hasScores
+															? "Scored rounds cannot be edited."
+															: undefined
 												}
 												type="button"
 												variant="outline"
@@ -292,7 +297,7 @@ export function RoundManagement({
 														!(await confirm({
 															title: `Delete "${round.name}"?`,
 															description:
-																"Unscored rooms and assignments in it will also be deleted.",
+																"Unscored tables and times in it will also be deleted.",
 															confirmLabel: "Delete",
 															destructive: true
 														}))

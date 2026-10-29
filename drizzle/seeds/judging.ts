@@ -111,7 +111,7 @@ export async function seedJudging({ judges, teams }: SeedJudgingInput) {
 				description:
 					"Is the solution practical given real constraints (budget, infrastructure, etc.)? Could it scale beyond a demo into a real-world setting?",
 				displayOrder: 3,
-				maxScore: 10,
+				maxScore: MAIN_CRITERION_MAX_SCORE,
 				isSidepot: false
 			},
 			{
@@ -119,7 +119,7 @@ export async function seedJudging({ judges, teams }: SeedJudgingInput) {
 				description:
 					"Quality of the implementation (working prototype, technical depth, stability). Use of appropriate technology stack. Is the solution technically sound and well-built?",
 				displayOrder: 4,
-				maxScore: 10,
+				maxScore: MAIN_CRITERION_MAX_SCORE,
 				isSidepot: false
 			},
 			{
@@ -127,7 +127,7 @@ export async function seedJudging({ judges, teams }: SeedJudgingInput) {
 				description:
 					"Is the solution intuitive, accessible and user-friendly? Is it aesthetically pleasing? Does the design of the product elevate its function and original idea?",
 				displayOrder: 5,
-				maxScore: 10,
+				maxScore: MAIN_CRITERION_MAX_SCORE,
 				isSidepot: false
 			},
 			{

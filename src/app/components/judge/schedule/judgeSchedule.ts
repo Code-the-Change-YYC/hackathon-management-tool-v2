@@ -9,8 +9,7 @@ import {
 export function groupScheduleByDate(assignments: JudgeAssignment[]) {
 	const groups = new Map<string, JudgeAssignment[]>();
 	for (const assignment of assignments.slice().sort(sortAssignments)) {
-		if (!assignment.timeSlot) continue;
-		const key = formatDateKey(assignment.timeSlot);
+		const key = formatDateKey(assignment.startsAt);
 		const group = groups.get(key);
 		if (group) group.push(assignment);
 		else groups.set(key, [assignment]);
@@ -19,12 +18,12 @@ export function groupScheduleByDate(assignments: JudgeAssignment[]) {
 }
 
 export function getScheduleRounds(
-	rounds: JudgeAssignment["room"]["round"][],
+	rounds: JudgeAssignment["table"]["round"][],
 	assignments: JudgeAssignment[]
 ) {
 	// Assignment metadata keeps a newly assigned round visible between refreshes.
 	const byId = new Map(
-		[...assignments.map((assignment) => assignment.room.round), ...rounds].map(
+		[...assignments.map((assignment) => assignment.table.round), ...rounds].map(
 			(round) => [round.id, round]
 		)
 	);
@@ -43,17 +42,17 @@ export function getScheduleSummary(
 	const outstanding = assignments
 		.filter(
 			(assignment) =>
-				assignment.room.roundId === activeRoundId &&
+				assignment.table.roundId === activeRoundId &&
 				!isAssignmentScored(assignment, criteria)
 		)
 		.sort(sortAssignments);
 	return {
 		outstandingCount: outstanding.length,
 		needsScoring: outstanding.find(
-			(assignment) => !assignment.timeSlot || assignment.timeSlot <= currentTime
+			(assignment) => assignment.startsAt <= currentTime
 		),
 		nextScheduled: outstanding.find(
-			(assignment) => assignment.timeSlot && assignment.timeSlot > currentTime
+			(assignment) => assignment.startsAt > currentTime
 		)
 	};
 }
