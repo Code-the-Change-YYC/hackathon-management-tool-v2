@@ -1,11 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { RubricView } from "@/app/components/judge/rubric/RubricView";
-
-const refresh = vi.hoisted(() => vi.fn());
-vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
-
-beforeEach(() => vi.clearAllMocks());
 
 describe("shared judge rubric", () => {
 	it("shows all criteria without a round selector", () => {
@@ -31,10 +26,11 @@ describe("shared judge rubric", () => {
 		expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
 	});
 
-	it("can refresh an empty rubric after organizers configure criteria", () => {
+	it("shows the empty state in an untitled rubric card", () => {
 		render(<RubricView criteria={[]} />);
 		expect(screen.getByText("No judging criteria configured")).toBeVisible();
-		fireEvent.click(screen.getByRole("button", { name: "Refresh rubric" }));
-		expect(refresh).toHaveBeenCalledOnce();
+		expect(
+			screen.getAllByRole("heading").map(({ textContent }) => textContent)
+		).toEqual(["Judging Rubric"]);
 	});
 });
