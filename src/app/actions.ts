@@ -56,7 +56,7 @@ export async function getMentors() {
 	const { data, error } = await tryCatch(fetchContentful("hackathonMentor"));
 	if (!data) {
 		if (error) {
-			console.error("Error fetching mentors judges:", error);
+			console.error("Error fetching mentors:", error);
 		}
 		return new Map<MentorCategory, Mentor[]>();
 	}
@@ -68,7 +68,7 @@ export async function getResources() {
 	const { data, error } = await tryCatch(fetchContentful("hackathonResource"));
 	if (!data) {
 		if (error) {
-			console.error("Error fetching mentors judges:", error);
+			console.error("Error fetching resources:", error);
 		}
 		return [];
 	}

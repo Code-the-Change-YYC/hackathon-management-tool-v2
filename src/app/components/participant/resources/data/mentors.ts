@@ -1,5 +1,9 @@
 import { getFields, getString } from "@/lib/contentful";
-import type { Mentor, MentorCategory } from "@/types/contentfulTypes";
+import {
+	MENTOR_CATEGORIES,
+	type Mentor,
+	type MentorCategory
+} from "@/types/contentfulTypes";
 
 function compareMentors(left: Mentor, right: Mentor): number {
 	const leftFields = getFields(left);
@@ -19,11 +23,17 @@ function compareMentors(left: Mentor, right: Mentor): number {
 	);
 }
 
+function isMentorCategory(value: unknown): value is MentorCategory {
+	return (MENTOR_CATEGORIES as readonly unknown[]).includes(value);
+}
+
 function isRenderableMentor(entry: Mentor): boolean {
 	const fields = getFields(entry);
 
 	return Boolean(
-		getString(fields.name)?.trim() && getString(fields.role)?.trim()
+		getString(fields.name)?.trim() &&
+			getString(fields.role)?.trim() &&
+			isMentorCategory(getString(fields.category))
 	);
 }
 
