@@ -178,7 +178,10 @@ export function TeamsView({ teams }: TeamsViewProps) {
 	return (
 		<>
 			<div className="flex flex-col gap-6">
-				<PageHeader description="View all teams" title="Teams" />
+				<PageHeader
+					description="Manage teams and prescreening."
+					title="Teams"
+				/>
 				<Card>
 					<CardContent className="flex flex-col gap-6">
 						<TeamsToolbar
