@@ -27,14 +27,12 @@ export const test = base.extend<{ judgingFixture: JudgingFixture }>({
 		try {
 			const team = await teams.create("Judge browser fixture");
 			const now = Date.now();
-			await db
-				.insert(judgingRounds)
-				.values({
-					id: roundId,
-					name: "Browser judging round",
-					startTime: new Date(now - 3_600_000),
-					endTime: new Date(now + 3_600_000)
-				});
+			await db.insert(judgingRounds).values({
+				id: roundId,
+				name: "Browser judging round",
+				startTime: new Date(now - 3_600_000),
+				endTime: new Date(now + 3_600_000)
+			});
 			const [room] = await db
 				.insert(judgingRooms)
 				.values({ roundId, roomLink: "https://example.com/judging" })
@@ -43,27 +41,23 @@ export const test = base.extend<{ judgingFixture: JudgingFixture }>({
 			await db
 				.insert(judgingRoomStaff)
 				.values({ roomId: room.id, staffId: authUser.id });
-			await db
-				.insert(judgingAssignments)
-				.values({
-					id: assignmentId,
-					roomId: room.id,
-					teamId: team.id,
-					timeSlot: new Date(now - 60_000)
-				});
-			await db
-				.insert(criteria)
-				.values(
-					criterionIds.map((id, index) => ({
-						id,
-						name: `Browser criterion ${index + 1}: a detailed description of innovation and community impact`,
-						description:
-							"Evaluate the team's evidence, execution and measurable impact.",
-						displayOrder: index,
-						maxScore: index < 2 ? 10 : 5,
-						isSidepot: index >= 2
-					}))
-				);
+			await db.insert(judgingAssignments).values({
+				id: assignmentId,
+				roomId: room.id,
+				teamId: team.id,
+				timeSlot: new Date(now - 60_000)
+			});
+			await db.insert(criteria).values(
+				criterionIds.map((id, index) => ({
+					id,
+					name: `Browser criterion ${index + 1}: a detailed description of innovation and community impact`,
+					description:
+						"Evaluate the team's evidence, execution and measurable impact.",
+					displayOrder: index,
+					maxScore: index < 2 ? 10 : 5,
+					isSidepot: index >= 2
+				}))
+			);
 			const rubric = await db.query.criteria.findMany({
 				orderBy: (rows, { asc }) => [asc(rows.displayOrder), asc(rows.name)]
 			});
