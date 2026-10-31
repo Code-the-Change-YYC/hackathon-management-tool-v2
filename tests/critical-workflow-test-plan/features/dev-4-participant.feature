@@ -51,5 +51,5 @@ Feature: Participants receive current event information and reliable personal up
     And two authorized scanner sessions submit the same token for the same meal
     When those redemption requests are released simultaneously
     Then exactly one request succeeds
-    And the other returns an already-checked-in conflict
+    And the other returns an already-checked-in result referencing the same attendance record
     And exactly one attendance record exists for that participant and meal
