@@ -5,10 +5,12 @@ import { useRefresh } from "@/hooks/use-refresh";
 import { api } from "@/trpc/react";
 import {
 	type Criterion,
-	isCriterionScoreValid,
+	isScorecardComplete,
 	type JudgeAssignment
 } from "../judgePortal";
 import { useJudgeScoreDraft } from "./useJudgeScoreDraft";
+
+export type Scorecard = ReturnType<typeof useJudgeScorecard>;
 
 export function useJudgeScorecard(
 	assignment: JudgeAssignment,
@@ -32,10 +34,7 @@ export function useJudgeScorecard(
 	const [error, setError] = useState("");
 	const saving = useRef(false);
 	const complete =
-		criteria.length > 0 &&
-		criteria.every((criterion) =>
-			isCriterionScoreValid(criterion, draft.scores[criterion.id])
-		);
+		criteria.length > 0 && isScorecardComplete(criteria, draft.scores);
 	const submit = async () => {
 		if (!complete || !draft.initialized || saving.current || status === "saved")
 			return;

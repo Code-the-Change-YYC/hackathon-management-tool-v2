@@ -167,6 +167,15 @@ export function isCriterionScoreValid(
 	);
 }
 
+export function isScorecardComplete(
+	criteria: Criterion[],
+	scores: Record<string, number>
+) {
+	return criteria.every((criterion) =>
+		isCriterionScoreValid(criterion, scores[criterion.id])
+	);
+}
+
 export function getAssignmentScoreStatus(
 	assignment: JudgeAssignment,
 	criteria: Criterion[]
@@ -253,12 +262,6 @@ export function getCriterionDescription(criterion: Criterion) {
 	return criterion.isSidepot
 		? `Assess how well this project meets the ${criterion.name} sidepot and whether the execution is clear, meaningful, and complete.`
 		: `Evaluate how strongly this project demonstrates ${criterion.name.toLowerCase()} and how clearly that strength supports the team’s overall solution.`;
-}
-
-export function getBandDescription(criterion: Criterion, label: string) {
-	return criterion.isSidepot
-		? `Use this range when the ${criterion.name} sidepot shows ${label.toLowerCase()} evidence, execution, and relevance.`
-		: `Use this range when the project shows ${label.toLowerCase()} evidence for ${criterion.name.toLowerCase()}.`;
 }
 
 export function getScoreOptions(
