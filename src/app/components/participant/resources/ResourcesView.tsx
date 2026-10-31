@@ -9,10 +9,8 @@ export function ResourcesView() {
 				description="Helpful resources and mentors!"
 				title="Resources and Help"
 			/>
-			<div className="flex flex-col gap-16">
-				<ResourcesSection />
-				<MentorsSection />
-			</div>
+			<ResourcesSection />
+			<MentorsSection />
 		</div>
 	);
 }

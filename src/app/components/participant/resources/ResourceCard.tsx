@@ -1,30 +1,27 @@
 import Image from "next/image";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { getAssetUrl, getFields, getString } from "@/lib/contentful";
+import type { Resource } from "@/types/contentfulTypes";
 
-interface ResourceCardProps {
-	name: string;
-	imgSrc: string;
-	description: string;
-	link: string;
-}
+export default function ResourceCard({ resource }: { resource: Resource }) {
+	const fields = getFields(resource);
+	const name = getString(fields.name)?.trim() ?? "Resource";
+	const description = getString(fields.description)?.trim();
+	const link = getString(fields.link)?.trim() ?? "/";
+	const image = getAssetUrl(fields.image)?.trim() ?? "";
+	const imageAlt = `${name} logo`;
 
-export default function ResourceCard({
-	name,
-	imgSrc,
-	description,
-	link
-}: ResourceCardProps) {
 	return (
-		<Card className="w-full">
-			<CardContent className="flex size-full flex-row gap-2">
+		<Card className="@container w-full border">
+			<CardContent className="flex flex-row gap-2">
 				<Image
-					alt={`${name} image`}
-					className="pointer-events-none aspect-square size-24 shrink-0"
+					alt={imageAlt}
+					className="pointer-events-none aspect-square h-auto w-[clamp(3rem,30cqw,6rem)] shrink-0 select-none self-start object-cover"
 					height={100}
-					src={imgSrc}
+					src={image}
 					width={100}
 				/>
-				<div className="flex size-full flex-1 flex-col justify-between">
+				<div className="flex flex-1 flex-col justify-between">
 					<div className="flex flex-col gap-2">
 						<h3 className="font-medium text-lg">{name}</h3>
 						<p>{description}</p>
