@@ -30,6 +30,11 @@ export default async function ParticipantLayout({
 		{ title: "Schedule", href: "/participant/schedule", icon: "calendar" },
 		{ title: "Team", href: "/participant/team", icon: "group" },
 		{ title: "Meals", href: "/participant/meals", icon: "hamburger" },
+		{
+			title: "Important Info",
+			href: "/participant/important-info",
+			icon: "question"
+		},
 		{ title: "Judging", href: "/participant/judging", icon: "task" }
 	];
 	if (hasHackathonStarted(settings?.startDate)) {
