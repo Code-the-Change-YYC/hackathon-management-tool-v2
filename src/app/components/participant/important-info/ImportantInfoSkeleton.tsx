@@ -13,26 +13,19 @@ export function ImportantInfoSkeleton() {
 				description="Rules, code of conduct, project submission steps, and tips for success."
 				title="Important Information"
 			/>
-			<div aria-hidden="true" className="flex flex-col gap-4">
-				<Card>
-					<CardHeader>
-						<Skeleton className="h-5 w-36" />
-						<Skeleton className="h-4 w-12" />
-					</CardHeader>
-					<CardContent className="flex flex-col gap-4">
-						{["design", "presentation", "ownership", "team", "figma"].map(
-							(key) => (
-								<Skeleton className="h-12 w-full" key={key} />
-							)
-						)}
-					</CardContent>
-				</Card>
-				<div className="flex justify-center gap-2 sm:gap-3">
-					<Skeleton className="h-9 w-24" />
-					<Skeleton className="h-9 w-28" />
-					<Skeleton className="h-9 w-20" />
-				</div>
-			</div>
+			<Card aria-hidden="true">
+				<CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<Skeleton className="h-7 w-40" />
+					<Skeleton className="h-8 w-full sm:w-80" />
+				</CardHeader>
+				<CardContent className="flex flex-col gap-4">
+					{["design", "presentation", "ownership", "team", "figma"].map(
+						(key) => (
+							<Skeleton className="h-12 w-full" key={key} />
+						)
+					)}
+				</CardContent>
+			</Card>
 			<Card aria-hidden="true">
 				<CardHeader>
 					<Skeleton className="h-5 w-48 max-w-full" />
