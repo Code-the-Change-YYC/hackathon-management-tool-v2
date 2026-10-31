@@ -7,7 +7,7 @@ export default async function JudgingCriteria() {
 	return (
 		<SectionWrapper bgColor="bg-pastel-green">
 			<div
-				className="flex w-full flex-col gap-10 md:gap-14"
+				className="flex w-full scroll-mt-24 flex-col gap-10 md:gap-14"
 				id="judging-criteria"
 			>
 				<div className="flex flex-col gap-4">

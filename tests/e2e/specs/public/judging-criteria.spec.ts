@@ -73,6 +73,19 @@ test(
 		await expect(page).toHaveURL(/#judging-criteria$/);
 		const first = page.locator("#judging-criteria h3").first();
 		await expect(first).toBeInViewport();
+		const heading = page.locator("#judging-criteria h2");
+		await expect(heading).toBeInViewport();
+		await expect
+			.poll(async () => {
+				const [titleBox, headerBox] = await Promise.all([
+					heading.boundingBox(),
+					page.locator("header").first().boundingBox()
+				]);
+				return titleBox && headerBox
+					? titleBox.y - headerBox.y - headerBox.height
+					: -1;
+			})
+			.toBeGreaterThanOrEqual(0);
 		await page.keyboard.press("Tab");
 		await expect
 			.poll(() => page.evaluate(() => document.activeElement?.tagName))
