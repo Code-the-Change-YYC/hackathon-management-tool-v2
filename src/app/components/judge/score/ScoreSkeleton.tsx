@@ -1,4 +1,5 @@
 import { Skeleton } from "@/app/components/ui/skeleton";
+import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
 import { range } from "@/lib/utils";
 
 function RubricBandsSkeleton() {
@@ -67,7 +68,7 @@ export function ScoreSkeleton() {
 								Score
 							</p>
 							<div className="flex flex-wrap gap-3">
-								{range(10).map((index) => (
+								{range(MAIN_CRITERION_MAX_SCORE).map((index) => (
 									<Skeleton className="h-14 w-15.5 rounded-lg" key={index} />
 								))}
 							</div>

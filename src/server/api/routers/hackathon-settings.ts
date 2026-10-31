@@ -12,8 +12,8 @@ import {
 	createTRPCRouter,
 	publicProcedure
 } from "@/server/api/trpc";
+import { hackathonSettings } from "@/server/db/admin-schema";
 import { event } from "@/server/db/event-schema";
-import { hackathonSettings } from "@/server/db/schema";
 
 export const hackathonSettingsRouter = createTRPCRouter({
 	// Get current hackathon settings

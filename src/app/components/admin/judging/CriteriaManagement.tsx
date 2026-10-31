@@ -24,17 +24,26 @@ import {
 	TableRow
 } from "@/app/components/ui/table";
 import { useRefresh } from "@/hooks/use-refresh";
+import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
 import { tryCatch } from "@/lib/utils";
 import { api } from "@/trpc/react";
-import { type Criterion, ManagementSection } from "./judgingShared";
+import { type Criterion, ManagementSection, type Round } from "./judgingShared";
 
-export function CriteriaManagement({ criteria }: { criteria: Criterion[] }) {
+export function CriteriaManagement({
+	criteria,
+	rounds
+}: {
+	criteria: Criterion[];
+	rounds: Round[];
+}) {
 	const { confirm, dialogProps } = useConfirmDialog();
 	const { isRefreshing, refresh } = useRefresh();
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [name, setName] = useState("");
-	const [maxScore, setMaxScore] = useState(10);
+	const [maxScore, setMaxScore] = useState(MAIN_CRITERION_MAX_SCORE);
 	const [isSidepot, setIsSidepot] = useState(false);
+	const [roundIds, setRoundIds] = useState<string[]>([]);
+	const roundNames = new Map(rounds.map((round) => [round.id, round.name]));
 	const [message, setMessage] = useState("");
 
 	const createCriterion = api.criteria.create.useMutation();
@@ -44,8 +53,9 @@ export function CriteriaManagement({ criteria }: { criteria: Criterion[] }) {
 	const resetForm = () => {
 		setEditingId(null);
 		setName("");
-		setMaxScore(10);
+		setMaxScore(MAIN_CRITERION_MAX_SCORE);
 		setIsSidepot(false);
+		setRoundIds([]);
 	};
 	const isSaving =
 		createCriterion.isPending || updateCriterion.isPending || isRefreshing;
@@ -53,7 +63,12 @@ export function CriteriaManagement({ criteria }: { criteria: Criterion[] }) {
 	const submit = async () => {
 		if (!name.trim() || isSaving) return;
 		setMessage("");
-		const values = { roundIds: [], isSidepot, maxScore, name: name.trim() };
+		const values = {
+			roundIds,
+			isSidepot,
+			maxScore: isSidepot ? maxScore : MAIN_CRITERION_MAX_SCORE,
+			name: name.trim()
+		};
 		const { error } = await tryCatch<unknown>(
 			editingId
 				? updateCriterion.mutateAsync({ id: editingId, ...values })
@@ -117,13 +132,14 @@ export function CriteriaManagement({ criteria }: { criteria: Criterion[] }) {
 					<FieldLabel>Maximum score</FieldLabel>
 					<Input
 						className="h-12"
+						disabled={!isSidepot}
 						max={100}
 						min={1}
 						onChange={(event) =>
 							setMaxScore(Number.parseInt(event.target.value, 10) || 1)
 						}
 						type="number"
-						value={maxScore}
+						value={isSidepot ? maxScore : MAIN_CRITERION_MAX_SCORE}
 					/>
 				</Field>
 				<div className="flex h-12 items-center gap-2 rounded-xl border border-border bg-background px-4">
@@ -150,8 +166,39 @@ export function CriteriaManagement({ criteria }: { criteria: Criterion[] }) {
 				</div>
 			</div>
 
+			{rounds.length > 0 ? (
+				<fieldset className="mt-4 flex flex-col gap-2">
+					<legend className="mb-2 text-sm">
+						Rounds{" "}
+						<span className="text-muted-foreground">
+							· Leave all unchecked to use this criterion in every round
+						</span>
+					</legend>
+					<div className="flex flex-wrap gap-x-6 gap-y-2">
+						{rounds.map((round) => (
+							<div className="flex items-center gap-2" key={round.id}>
+								<Checkbox
+									checked={roundIds.includes(round.id)}
+									id={`criterion-round-${round.id}`}
+									onCheckedChange={(checked) =>
+										setRoundIds((current) =>
+											checked
+												? [...current, round.id]
+												: current.filter((id) => id !== round.id)
+										)
+									}
+								/>
+								<label htmlFor={`criterion-round-${round.id}`}>
+									{round.name}
+								</label>
+							</div>
+						))}
+					</div>
+				</fieldset>
+			) : null}
 			<p className="mt-4 text-muted-foreground text-sm">
-				The same rubric is used for every judging round.
+				Main criteria are scored 1–{MAIN_CRITERION_MAX_SCORE}. Limit sidepots to
+				the panel round so final-round judges only score the main rubric.
 			</p>
 			<div className="mt-6">
 				<Table className="min-w-155">
@@ -160,6 +207,7 @@ export function CriteriaManagement({ criteria }: { criteria: Criterion[] }) {
 							<TableHead className="px-3 py-3">Name</TableHead>
 							<TableHead className="px-3 py-3">Maximum</TableHead>
 							<TableHead className="px-3 py-3">Type</TableHead>
+							<TableHead className="px-3 py-3">Rounds</TableHead>
 							<TableHead className="px-3 py-3 text-right">Actions</TableHead>
 						</TableRow>
 					</TableHeader>
@@ -175,6 +223,13 @@ export function CriteriaManagement({ criteria }: { criteria: Criterion[] }) {
 								<TableCell className="px-3 py-4">
 									{criterion.isSidepot ? "Sidepot" : "Main"}
 								</TableCell>
+								<TableCell className="whitespace-normal px-3 py-4">
+									{criterion.roundIds.length
+										? criterion.roundIds
+												.map((id) => roundNames.get(id) ?? "Deleted round")
+												.join(", ")
+										: "All rounds"}
+								</TableCell>
 								<TableCell className="px-3 py-4">
 									<div className="flex justify-end gap-2">
 										<Button
@@ -183,6 +238,7 @@ export function CriteriaManagement({ criteria }: { criteria: Criterion[] }) {
 												setName(criterion.name);
 												setMaxScore(criterion.maxScore);
 												setIsSidepot(criterion.isSidepot);
+												setRoundIds(criterion.roundIds);
 												setMessage("");
 											}}
 											size="sm"

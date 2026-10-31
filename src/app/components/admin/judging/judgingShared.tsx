@@ -9,18 +9,20 @@ import type { RouterInputs, RouterOutputs } from "@/trpc/react";
 
 export type Round = RouterOutputs["judgingRounds"]["getAll"][number];
 export type Assignment = RouterOutputs["judgingAssignments"]["getAll"][number];
-export type Room =
-	RouterOutputs["judgingRooms"]["getLayoutByRound"]["rooms"][number];
-// Each round's rooms, by round ID.
-export type RoomLayouts = Record<string, Room[]>;
+export type Layout = RouterOutputs["judgingTables"]["getLayoutByRound"];
+export type LayoutTable = Layout["tables"][number];
+// Each round's tables, by round ID.
+export type Layouts = Record<string, Layout>;
 export type Judge = RouterOutputs["users"]["getAll"][number];
 export type Team = RouterOutputs["teams"]["getAll"][number];
 export type Criterion = RouterOutputs["criteria"]["getAll"][number];
-export type Ranking = RouterOutputs["teams"]["getRankings"][number];
-
-export type LayoutInput =
-	RouterInputs["judgingRooms"]["saveLayoutByRound"]["layout"];
-export type LayoutRoomInput = NonNullable<LayoutInput["rooms"]>[number];
+export type PanelRanking =
+	RouterOutputs["judgingResults"]["getPanelRanking"][number];
+export type FinalResults = RouterOutputs["judgingResults"]["getFinalResults"];
+export type ScheduleSettings = Omit<
+	RouterInputs["judgingTables"]["previewSchedule"],
+	"roundId"
+>;
 
 export function byNameThenId<T extends { id: string; name: string }>(
 	a: T,

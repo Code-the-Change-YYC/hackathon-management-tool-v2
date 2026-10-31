@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RoundManagement } from "@/app/components/admin/judging/RoundManagement";
+import { judgingRound } from "../helpers/judging";
 
 const mocks = vi.hoisted(() => ({
 	create: vi.fn(),
@@ -29,12 +30,7 @@ vi.mock("@/trpc/react", () => ({
 type Round = Parameters<typeof RoundManagement>[0]["rounds"][number];
 function renderRounds(rounds: Round[] = []) {
 	return render(
-		<RoundManagement
-			activeRoundId={null}
-			assignments={[]}
-			onSelectRound={vi.fn()}
-			rounds={rounds}
-		/>
+		<RoundManagement activeRoundId={null} assignments={[]} rounds={rounds} />
 	);
 }
 
@@ -74,14 +70,12 @@ describe("judging round form", () => {
 	});
 	it("loads existing values for editing and resets on cancel", async () => {
 		renderRounds([
-			{
+			judgingRound({
 				id: "round-1",
 				name: "Existing round",
 				startTime: new Date("2026-09-12T16:00:00Z"),
-				endTime: new Date("2026-09-12T18:00:00Z"),
-				createdAt: new Date("2026-09-01T00:00:00Z"),
-				updatedAt: new Date("2026-09-01T00:00:00Z")
-			}
+				endTime: new Date("2026-09-12T18:00:00Z")
+			})
 		]);
 		fireEvent.click(screen.getByRole("button", { name: "Edit" }));
 		expect(screen.getByLabelText("Round name")).toHaveValue("Existing round");
@@ -101,6 +95,26 @@ describe("judging round form", () => {
 		expect(
 			screen.getByRole("button", { name: "Add round" })
 		).toBeInTheDocument();
+	});
+	it("labels each round's type and publish state, and leaves the final round to the results", () => {
+		renderRounds([
+			judgingRound({ id: "panel", name: "Panel round" }),
+			judgingRound({
+				id: "final",
+				name: "Final round",
+				kind: "final",
+				publishedAt: null
+			})
+		]);
+		expect(screen.getByText("Panel")).toBeInTheDocument();
+		expect(screen.getByText("Final")).toBeInTheDocument();
+		expect(screen.getByText("Published")).toBeInTheDocument();
+		expect(screen.getByText("Not published")).toBeInTheDocument();
+		const [panelEdit, finalEdit] = screen.getAllByRole("button", {
+			name: "Edit"
+		});
+		expect(panelEdit).toBeEnabled();
+		expect(finalEdit).toBeDisabled();
 	});
 	it("does not submit while a creation is pending", async () => {
 		mocks.pending = true;

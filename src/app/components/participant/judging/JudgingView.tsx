@@ -1,23 +1,21 @@
 "use client";
 
-import Banner from "@/app/components/Banner";
 import type { Criterion } from "@/app/components/judge/judgePortal";
 import PageHeader from "@/app/components/PageHeader";
 import { RubricCard } from "@/app/components/rubric/RubricCard";
 import { useCurrentTime } from "@/hooks/use-current-time";
+import { type DashboardEvent, getCurrentEvent } from "@/lib/participant-events";
 import {
-	type DashboardEvent,
-	eventNavigationUrlSchema,
-	getCurrentEvent
-} from "@/lib/participant-events";
-import type { JudgingRound } from "@/lib/participant-judging";
+	getUpcomingJudging,
+	type JudgingRound,
+	type TeamJudging
+} from "@/lib/participant-judging";
 import type { RouterOutputs } from "@/trpc/react";
 import { CurrentEventBanner } from "../CurrentEventBanner";
-import CurrentEventImages from "../CurrentEventImages";
 import { JudgingStatus } from "../dashboard/JudgingStatus";
+import { TeamJudgingBanner } from "./TeamJudgingBanner";
 
 type Settings = RouterOutputs["hackathonSettings"]["get"];
-type Assignment = RouterOutputs["judgingAssignments"]["getMineForActiveRound"];
 type Results = RouterOutputs["scores"]["getMineReleased"];
 
 export function JudgingView({
@@ -25,14 +23,14 @@ export function JudgingView({
 	events,
 	rounds,
 	criteria,
-	assignment,
+	judging,
 	results
 }: {
 	settings: Settings;
 	events: DashboardEvent[];
 	rounds: JudgingRound[];
 	criteria: Criterion[];
-	assignment: Assignment;
+	judging: TeamJudging;
 	results: Results;
 }) {
 	const now = useCurrentTime();
@@ -44,13 +42,12 @@ export function JudgingView({
 				a.startTime.getTime() - b.startTime.getTime() ||
 				a.id.localeCompare(b.id)
 		);
-	const meetingUrl = eventNavigationUrlSchema.safeParse(
-		assignment?.room.roomLink
-	);
-	// Finals only re-score the finalists, so every team's scores come from the first round.
+	const upcoming = getUpcomingJudging(judging, now);
+	// Finals only re-score the finalists, so every team's scores come from the panel round.
+	const panelRound = ordered.find((round) => round.kind === "panel");
 	const teamScores = Object.fromEntries(
 		(results.released ? results.rounds : [])
-			.filter((score) => score.roundId === ordered[0]?.id)
+			.filter((score) => score.roundId === panelRound?.id)
 			.map((score) => [score.criterionId, score.value])
 	);
 
@@ -61,19 +58,8 @@ export function JudgingView({
 				title="Judging"
 			/>
 			<div className="flex flex-col gap-6">
-				{assignment ? (
-					<Banner
-						buttonText="Join meeting"
-						colour="red"
-						endTime={
-							assignment.timeSlot ? undefined : assignment.room.round.endTime
-						}
-						href={meetingUrl.success ? meetingUrl.data : undefined}
-						image={<CurrentEventImages />}
-						location={assignment.room.name}
-						startTime={assignment.timeSlot ?? assignment.room.round.startTime}
-						title={`${assignment.room.round.name}: your team’s judging assignment`}
-					/>
+				{upcoming ? (
+					<TeamJudgingBanner judging={upcoming} />
 				) : (
 					<CurrentEventBanner
 						colour="red"

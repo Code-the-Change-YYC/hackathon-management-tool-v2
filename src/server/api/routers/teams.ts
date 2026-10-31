@@ -9,18 +9,18 @@
  * conflict, and `ensureNotInTeam` is backstopped by a unique index on
  * member.userId (isDuplicateMembershipError recognizes that race via the
  * Postgres error code/constraint name and turns it into a friendly error).
- * `join`/`acceptInvite` take a per-team Postgres advisory lock before
- * counting members against MAX_TEAM_SIZE, so concurrent joins to the same
- * team can't both slip past the cap.
+ * `join` takes a per-team Postgres advisory lock before counting members
+ * against MAX_TEAM_SIZE, so concurrent joins to the same team can't both
+ * slip past the cap.
  *
- * Only owners can invite or update team details (besides app admins).
- * When the owner leaves, the earliest-joined remaining member becomes owner;
- * a team left with zero members is deleted.
+ * Only owners can update team details (besides app admins). When the owner
+ * leaves, the earliest-joined remaining member becomes owner; a team left
+ * with zero members is deleted.
  */
 
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { addDays, isValid } from "date-fns";
+import { isValid } from "date-fns";
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { resolveAvatarSrc } from "@/lib/avatars";
@@ -38,13 +38,12 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
+import { hackathonSettings } from "@/server/db/admin-schema";
+import { member, organization } from "@/server/db/auth-schema";
 import {
-	invitation,
-	member,
-	organization,
-	user
-} from "@/server/db/auth-schema";
-import { hackathonSettings } from "@/server/db/schema";
+	judgingAssignments,
+	judgingTableJudges
+} from "@/server/db/judging-schema";
 import { MEMBER_ROLES, type TeamRanking } from "@/types/types";
 
 type TeamMetadata = {
@@ -151,13 +150,10 @@ async function getUserMembership(db: typeof dbType, userId: string) {
 	return membership;
 }
 
-async function deleteTeamAndInvitations(
+async function deleteTeam(
 	tx: Parameters<Parameters<typeof dbType.transaction>[0]>[0],
 	organizationId: string
 ) {
-	await tx
-		.delete(invitation)
-		.where(eq(invitation.organizationId, organizationId));
 	await tx.delete(member).where(eq(member.organizationId, organizationId));
 	await tx.delete(organization).where(eq(organization.id, organizationId));
 }
@@ -445,154 +441,6 @@ export const teamsRouter = createTRPCRouter({
 			return data;
 		}),
 
-	invite: protectedProcedure
-		.input(
-			z.object({
-				email: z.string().email("Invalid email address")
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-
-			const ownerMembership = await ctx.db.query.member.findFirst({
-				where: and(
-					eq(member.userId, userId),
-					eq(member.role, MEMBER_ROLES.OWNER)
-				)
-			});
-			if (!ownerMembership) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Only team owners can send invitations"
-				});
-			}
-
-			const invitedUser = await ctx.db.query.user.findFirst({
-				where: eq(user.email, input.email)
-			});
-			if (invitedUser) {
-				const alreadyInTeam = await ctx.db.query.member.findFirst({
-					where: eq(member.userId, invitedUser.id)
-				});
-				if (alreadyInTeam) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: "That user is already a member of a team"
-					});
-				}
-			}
-
-			const existingInvite = await ctx.db.query.invitation.findFirst({
-				where: and(
-					eq(invitation.organizationId, ownerMembership.organizationId),
-					eq(invitation.email, input.email),
-					eq(invitation.status, "pending")
-				)
-			});
-			if (existingInvite) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "An invitation has already been sent to this email"
-				});
-			}
-
-			const [newInvitation] = await ctx.db
-				.insert(invitation)
-				.values({
-					id: crypto.randomUUID(),
-					organizationId: ownerMembership.organizationId,
-					email: input.email,
-					role: MEMBER_ROLES.MEMBER,
-					status: "pending",
-					expiresAt: addDays(new Date(), 7),
-					inviterId: userId
-				})
-				.returning();
-
-			return newInvitation;
-		}),
-
-	acceptInvite: protectedProcedure
-		.input(
-			z.object({
-				invitationId: z.string()
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-			await ensureNotInTeam(ctx.db, userId);
-
-			const inv = await ctx.db.query.invitation.findFirst({
-				where: and(
-					eq(invitation.id, input.invitationId),
-					eq(invitation.status, "pending")
-				)
-			});
-			if (!inv) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Invitation not found or already used"
-				});
-			}
-
-			const currentUser = await ctx.db.query.user.findFirst({
-				where: eq(user.id, userId)
-			});
-			if (!currentUser || currentUser.email !== inv.email) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "This invitation is not addressed to you"
-				});
-			}
-
-			if (inv.expiresAt < new Date()) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "This invitation has expired"
-				});
-			}
-
-			const { error } = await tryCatch(
-				ctx.db.transaction(async (tx) => {
-					await tx.execute(
-						sql`select pg_advisory_xact_lock(hashtext(${inv.organizationId}))`
-					);
-
-					const [row] = await tx
-						.select({ count: sql<number>`count(*)::int` })
-						.from(member)
-						.where(eq(member.organizationId, inv.organizationId));
-					if ((row?.count ?? 0) >= MAX_TEAM_SIZE) {
-						throw new TRPCError({
-							code: "BAD_REQUEST",
-							message: `This team is full (${MAX_TEAM_SIZE} members maximum)`
-						});
-					}
-
-					await tx.insert(member).values({
-						id: crypto.randomUUID(),
-						organizationId: inv.organizationId,
-						userId,
-						role: MEMBER_ROLES.MEMBER,
-						createdAt: new Date()
-					});
-
-					await tx
-						.update(invitation)
-						.set({ status: "accepted" })
-						.where(eq(invitation.id, inv.id));
-				})
-			);
-			if (error) {
-				if (isDuplicateMembershipError(error)) {
-					throw alreadyInTeamError();
-				}
-				throw error;
-			}
-
-			return { success: true };
-		}),
-
 	leave: protectedProcedure.mutation(async ({ ctx }) => {
 		const userId = ctx.session.user.id;
 		const { organizationId } = await getUserMembership(ctx.db, userId);
@@ -620,7 +468,7 @@ export const teamsRouter = createTRPCRouter({
 
 			const [earliest] = remainingMembers;
 			if (!earliest) {
-				await deleteTeamAndInvitations(tx, organizationId);
+				await deleteTeam(tx, organizationId);
 				return;
 			}
 
@@ -702,13 +550,10 @@ export const teamsRouter = createTRPCRouter({
           SELECT o.id, o.name,
             COALESCE(AVG(card.main_score), 0)::float8 AS "totalScore",
             COUNT(card.judge_id)::int AS "submittedScorecards",
-            (SELECT COUNT(*)::int FROM hackathon_judging_assignment a
-              INNER JOIN hackathon_judging_room_staff staff ON staff.room_id = a.room_id
-              WHERE a.team_id = o.id) AS "expectedScorecards",
-            (SELECT COUNT(*)::int FROM hackathon_score legacy
-              INNER JOIN hackathon_judging_assignment a ON a.id = legacy.assignment_id
-              WHERE a.team_id = o.id AND legacy.judge_id IS NULL) AS "legacyScores"
-          FROM hackathon_organization o
+            (SELECT COUNT(*)::int FROM ${judgingAssignments} a
+              INNER JOIN ${judgingTableJudges} tj ON tj.table_id = a.table_id
+              WHERE a.team_id = o.id) AS "expectedScorecards"
+          FROM ${organization} o
           LEFT JOIN ${submittedScorecards} card ON card.team_id = o.id
           GROUP BY o.id, o.name
           ORDER BY "totalScore" DESC, o.name ASC

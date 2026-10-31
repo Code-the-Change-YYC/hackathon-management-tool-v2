@@ -21,7 +21,6 @@ export default async function JudgeLayout({
 		{
 			items: [
 				{ title: "Dashboard", href: "/judge", icon: "home" },
-				{ title: "Schedule", href: "/judge/schedule", icon: "calendar" },
 				{ title: "Rubric", href: "/judge/rubric", icon: "task" }
 			]
 		}

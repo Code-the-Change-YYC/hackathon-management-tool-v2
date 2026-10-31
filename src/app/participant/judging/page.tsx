@@ -11,13 +11,13 @@ export const metadata: Metadata = {
 
 export default async function JudgingPage() {
 	await requireRole([Role.PARTICIPANT, Role.ADMIN]);
-	const [settings, events, rounds, criteria, assignment, results] =
+	const [settings, events, rounds, criteria, judging, results] =
 		await Promise.all([
 			api.hackathonSettings.get(),
 			api.events.getActiveEvents(),
 			api.judgingRounds.getAll(),
 			api.criteria.getAll(),
-			api.judgingAssignments.getMineForActiveRound(),
+			api.judgingAssignments.getMine(),
 			api.scores.getMineReleased()
 		]);
 
@@ -25,9 +25,9 @@ export default async function JudgingPage() {
 		<>
 			<AutoRefresh />
 			<JudgingView
-				assignment={assignment}
 				criteria={criteria}
 				events={events}
+				judging={judging}
 				results={results}
 				rounds={rounds}
 				settings={settings}

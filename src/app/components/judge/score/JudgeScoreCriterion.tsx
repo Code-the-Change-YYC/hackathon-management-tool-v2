@@ -81,7 +81,7 @@ export function CriterionScore({
 						{getScoreOptions(criterion, criterion.isSidepot, score).map(
 							(value) => (
 								<ToggleGroupItem
-									aria-label={`${value} points`}
+									aria-label={`${value} ${value === 1 ? "point" : "points"}`}
 									className="min-h-11 min-w-11 bg-background aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/90"
 									key={value}
 									value={String(value)}
@@ -101,7 +101,7 @@ export function CriterionScore({
 			<div aria-live="polite" className="rounded-lg bg-muted/50 p-4">
 				<p className="m-0 font-medium text-sm">
 					{selectedBand
-						? `${selectedBand.label} · ${selectedBand.range} points`
+						? `${selectedBand.label} · ${selectedBand.range} ${selectedBand.range === "1" ? "point" : "points"}`
 						: score === 0
 							? "0 points selected"
 							: "Rubric at a glance"}

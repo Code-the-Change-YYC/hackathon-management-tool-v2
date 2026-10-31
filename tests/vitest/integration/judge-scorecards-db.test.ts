@@ -5,11 +5,12 @@ import { db } from "@/server/db";
 import { organization } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
-	judgingRoomStaff,
-	judgingRooms,
-	judgingRounds
-} from "@/server/db/schema";
-import { criteria, scores } from "@/server/db/scores-schema";
+	judgingCriteria,
+	judgingRounds,
+	judgingScores,
+	judgingTableJudges,
+	judgingTables
+} from "@/server/db/judging-schema";
 import { Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
 import { createAuthenticatedCaller } from "../helpers/auth";
@@ -29,6 +30,7 @@ describe("judge score ownership in PostgreSQL", () => {
 			await db.insert(judgingRounds).values({
 				id: roundId,
 				name: "Score ownership test",
+				kind: "panel",
 				startTime: new Date(),
 				endTime: new Date(Date.now() + 60_000)
 			});
@@ -38,75 +40,72 @@ describe("judge score ownership in PostgreSQL", () => {
 				slug: `score-test-${teamId}`,
 				createdAt: new Date()
 			});
-			const [room] = await db
-				.insert(judgingRooms)
-				.values({
-					roundId,
-					roomLink: "https://example.com/judging"
-				})
+			const [table] = await db
+				.insert(judgingTables)
+				.values({ roundId, tableNumber: 1 })
 				.returning();
-			assert(room);
-			await db.insert(judgingRoomStaff).values([
-				{ roomId: room.id, staffId: judgeA.user.id },
-				{ roomId: room.id, staffId: judgeB.user.id }
+			assert(table);
+			await db.insert(judgingTableJudges).values([
+				{ tableId: table.id, judgeId: judgeA.user.id },
+				{ tableId: table.id, judgeId: judgeB.user.id }
 			]);
 			const [assignment] = await db
 				.insert(judgingAssignments)
 				.values({
-					roomId: room.id,
-					teamId
+					tableId: table.id,
+					teamId,
+					startsAt: new Date()
 				})
 				.returning();
-			await db.insert(criteria).values({
+			await db.insert(judgingCriteria).values({
 				id: criterionId,
 				name: "Technical",
-				maxScore: 10,
+				maxScore: 5,
 				roundIds: [roundId]
 			});
 			assert(assignment);
 			const assignmentId = assignment.id;
-			await db
-				.insert(scores)
-				.values({ assignmentId, criteriaId: criterionId, value: 10 });
 			const submit = (score: number) => [
 				{ assignmentId, criteriaId: criterionId, score }
 			];
-			await judgeA.caller.scores.createMany(submit(7));
-			await judgeB.caller.scores.createMany(submit(9));
-			await judgeA.caller.scores.createMany(submit(8));
+			await judgeA.caller.scores.createMany(submit(2));
+			await judgeB.caller.scores.createMany(submit(4));
+			await judgeA.caller.scores.createMany(submit(3));
 			const aScores = await judgeA.caller.scores.getByAssignment({
 				assignmentId
 			});
 			const bScores = await judgeB.caller.scores.getByAssignment({
 				assignmentId
 			});
-			expect(aScores).toMatchObject([{ judgeId: judgeA.user.id, value: 8 }]);
+			expect(aScores).toMatchObject([{ judgeId: judgeA.user.id, value: 3 }]);
 			expect(aScores).toHaveLength(1);
-			expect(bScores).toMatchObject([{ judgeId: judgeB.user.id, value: 9 }]);
+			expect(bScores).toMatchObject([{ judgeId: judgeB.user.id, value: 4 }]);
 			expect(bScores).toHaveLength(1);
 			expect(
 				await judgeA.caller.scores.getJudgeTotals({ roundId })
 			).toMatchObject([
-				{ judgeId: judgeA.user.id, mainTotal: 8, mainCriteriaScored: 1 }
+				{ judgeId: judgeA.user.id, mainTotal: 3, mainCriteriaScored: 1 }
 			]);
 			expect(
 				await judgeB.caller.scores.getJudgeTotals({ roundId })
 			).toMatchObject([
-				{ judgeId: judgeB.user.id, mainTotal: 9, mainCriteriaScored: 1 }
+				{ judgeId: judgeB.user.id, mainTotal: 4, mainCriteriaScored: 1 }
 			]);
 			assert(aScores[0]);
 			await expect(
-				judgeB.caller.scores.update({ id: aScores[0].id, score: 4 })
+				judgeB.caller.scores.update({ id: aScores[0].id, score: 1 })
 			).rejects.toMatchObject({ code: "NOT_FOUND" });
 			expect(
 				await db
 					.select()
-					.from(scores)
-					.where(eq(scores.assignmentId, assignmentId))
-			).toHaveLength(3);
+					.from(judgingScores)
+					.where(eq(judgingScores.assignmentId, assignmentId))
+			).toHaveLength(2);
 		} finally {
 			await db.delete(judgingRounds).where(eq(judgingRounds.id, roundId));
-			await db.delete(criteria).where(eq(criteria.id, criterionId));
+			await db
+				.delete(judgingCriteria)
+				.where(eq(judgingCriteria.id, criterionId));
 			await db.delete(organization).where(eq(organization.id, teamId));
 			await judgeB?.cleanup();
 			await judgeA.cleanup();

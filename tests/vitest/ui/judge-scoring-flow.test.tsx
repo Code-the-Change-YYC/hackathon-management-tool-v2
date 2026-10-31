@@ -12,6 +12,7 @@ import type {
 	JudgeAssignment
 } from "@/app/components/judge/judgePortal";
 import { ScoreView } from "@/app/components/judge/score/ScoreView";
+import { judgeAssignment, judgeTable, judgingRound } from "../helpers/judging";
 
 const mocks = vi.hoisted(() => ({
 	portal: vi.fn(),
@@ -49,10 +50,10 @@ const criteria: Criterion[] = [
 		id: "main",
 		name: "Innovation",
 		description: "Assess originality and execution.",
-		maxScore: 10,
+		maxScore: 5,
 		displayOrder: 0,
 		isSidepot: false,
-		roundIds: ["other-round"]
+		roundIds: ["round"]
 	},
 	{
 		id: "side",
@@ -63,13 +64,11 @@ const criteria: Criterion[] = [
 		isSidepot: true
 	}
 ];
-const assignment = {
-	id: "assignment",
-	timeSlot: now,
-	scores: [],
-	team: { id: "team", teamCode: "ABCD", name: "Team One" },
-	room: { roundId: "round", round: { name: "Preliminary" } }
-} as unknown as JudgeAssignment;
+const assignment: JudgeAssignment = judgeAssignment({
+	startsAt: now,
+	team: { ...judgeAssignment().team, name: "Team One" },
+	table: judgeTable({ round: judgingRound({ name: "Preliminary" }) })
+});
 let client: QueryClient;
 function mount() {
 	return render(
@@ -86,7 +85,7 @@ function mount() {
 }
 async function complete() {
 	await screen.findByRole("heading", { name: "Innovation" });
-	fireEvent.click(screen.getByRole("button", { name: "8 points" }));
+	fireEvent.click(screen.getByRole("button", { name: "4 points" }));
 	fireEvent.click(screen.getByRole("button", { name: "Next criterion" }));
 	await screen.findByRole("heading", { name: "Best AI" });
 	fireEvent.click(screen.getByRole("button", { name: "0 points" }));
@@ -117,21 +116,41 @@ afterEach(() => {
 });
 
 describe("individual judge scoring", () => {
+	it("leaves out criteria that belong to another round", async () => {
+		mocks.portal.mockReturnValue({
+			assignments: [assignment],
+			criteria: [
+				...criteria,
+				{
+					...criteria[1],
+					id: "final-only",
+					name: "Final only",
+					roundIds: ["final"]
+				}
+			],
+			isLoading: false,
+			error: null
+		});
+		mount();
+		await screen.findByRole("heading", { name: "Innovation" });
+		expect(screen.getByText("0 of 2 criteria scored")).toBeInTheDocument();
+		expect(screen.queryByText("Final only")).not.toBeInTheDocument();
+	});
 	it("shows shared rubric guidance, selected score summaries and a separate review step", async () => {
 		mount();
 		await complete();
 		expect(
 			screen.getByRole("heading", { name: "Review your scores" })
 		).toBeInTheDocument();
-		expect(screen.getByText("8 / 10 points")).toBeInTheDocument();
+		expect(screen.getByText("4 / 5 points")).toBeInTheDocument();
 		expect(screen.getByText("0 / 5 points")).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: "Submit my scores" })
 		).toBeEnabled();
 		expect(mocks.submit).not.toHaveBeenCalled();
 		fireEvent.click(screen.getByRole("button", { name: "Edit Innovation" }));
-		expect(screen.getByText("Effective · 7–8 points")).toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "8 points" })).toHaveAttribute(
+		expect(screen.getByText("Effective · 4 points")).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "4 points" })).toHaveAttribute(
 			"aria-pressed",
 			"true"
 		);
@@ -152,13 +171,13 @@ describe("individual judge scoring", () => {
 	it("allows clearing a selected score and marks it unanswered again", async () => {
 		mount();
 		await screen.findByRole("heading", { name: "Innovation" });
-		fireEvent.click(screen.getByRole("button", { name: "8 points" }));
-		expect(screen.getByRole("button", { name: "8 points" })).toHaveAttribute(
+		fireEvent.click(screen.getByRole("button", { name: "4 points" }));
+		expect(screen.getByRole("button", { name: "4 points" })).toHaveAttribute(
 			"aria-pressed",
 			"true"
 		);
-		fireEvent.click(screen.getByRole("button", { name: "8 points" }));
-		expect(screen.getByRole("button", { name: "8 points" })).toHaveAttribute(
+		fireEvent.click(screen.getByRole("button", { name: "4 points" }));
+		expect(screen.getByRole("button", { name: "4 points" })).toHaveAttribute(
 			"aria-pressed",
 			"false"
 		);
@@ -210,13 +229,13 @@ describe("individual judge scoring", () => {
 			"Network unavailable"
 		);
 		expect(localStorage.length).toBe(1);
-		expect(screen.getByText("8 / 10 points")).toBeInTheDocument();
+		expect(screen.getByText("4 / 5 points")).toBeInTheDocument();
 		fireEvent.click(screen.getByRole("button", { name: "Submit my scores" }));
 		await screen.findByText("Your scores have been submitted");
 		expect(localStorage.length).toBe(0);
 		expect(mocks.submit).toHaveBeenLastCalledWith(
 			[
-				{ assignmentId: "assignment", criteriaId: "main", score: 8 },
+				{ assignmentId: "assignment", criteriaId: "main", score: 4 },
 				{ assignmentId: "assignment", criteriaId: "side", score: 0 }
 			],
 			expect.anything()
@@ -263,7 +282,7 @@ describe("individual judge scoring", () => {
 	it("isolates a new judge's form and draft when switching accounts in one query client", async () => {
 		const { rerender } = mount();
 		await screen.findByRole("heading", { name: "Innovation" });
-		fireEvent.click(screen.getByRole("button", { name: "8 points" }));
+		fireEvent.click(screen.getByRole("button", { name: "4 points" }));
 		rerender(
 			<QueryClientProvider client={client}>
 				<ScoreView
@@ -276,7 +295,7 @@ describe("individual judge scoring", () => {
 			</QueryClientProvider>
 		);
 		await screen.findByText("Scoring as Lee · Your individual assessment");
-		expect(screen.getByRole("button", { name: "8 points" })).toHaveAttribute(
+		expect(screen.getByRole("button", { name: "4 points" })).toHaveAttribute(
 			"aria-pressed",
 			"false"
 		);

@@ -5,8 +5,8 @@ import { db } from "@/server/db";
 // Keep the suite hermetic: never make a real Resend call during tests.
 vi.mock("@/server/email", () => ({ sendEmail: vi.fn() }));
 
+import { roleInvitation } from "@/server/db/admin-schema";
 import { user } from "@/server/db/auth-schema";
-import { roleInvitation } from "@/server/db/schema";
 import { Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
 import {

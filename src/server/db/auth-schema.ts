@@ -1,7 +1,6 @@
 /**
  * Drizzle schema for better-auth's core tables (user, session, account,
- * verification) plus the organization/member/invitation tables used to
- * model teams.
+ * verification) plus the organization/member tables used to model teams.
  *
  * `member_userId_idx` is a unique index, not just a lookup index: a user
  * can only belong to one team at a time (also enforced in app code by
@@ -24,7 +23,6 @@ import {
 	boolean,
 	index,
 	integer,
-	pgTableCreator,
 	text,
 	timestamp,
 	uniqueIndex
@@ -34,6 +32,7 @@ import {
 	LEVELS_OF_STUDY,
 	PROGRAMS
 } from "@/lib/validation/signup";
+import { createTable } from "./table";
 
 export {
 	DIETARY_RESTRICTIONS,
@@ -44,8 +43,6 @@ export {
 
 const MEMBER_ROLE_VALUES = ["owner", "member", "admin"] as const;
 export const PRESCREEN_STATUS_VALUES = ["pending", "passed", "failed"] as const;
-
-export const createTable = pgTableCreator((name) => `hackathon_${name}`);
 
 export const user = createTable("user", {
 	id: text("id").primaryKey(),
@@ -91,6 +88,8 @@ export const user = createTable("user", {
 		.notNull()
 });
 
+// Only used by Better Auth. One row per signed-in device. The token is in the
+// session cookie.
 export const session = createTable(
 	"session",
 	{
@@ -112,6 +111,8 @@ export const session = createTable(
 	(table) => [index("session_userId_idx").on(table.userId)]
 );
 
+// Only used by Better Auth. One row per login method per user: the password
+// hash for email sign-ups, or the Google account and its tokens.
 export const account = createTable(
 	"account",
 	{
@@ -136,6 +137,8 @@ export const account = createTable(
 	(table) => [index("account_userId_idx").on(table.userId)]
 );
 
+// Only used by Better Auth. Better Auth stores the emailed sign-up and password
+// reset codes here.
 export const verification = createTable(
 	"verification",
 	{
@@ -152,6 +155,7 @@ export const verification = createTable(
 	(table) => [index("verification_identifier_idx").on(table.identifier)]
 );
 
+// TODO: It would make more sense for this table to be called "team"
 export const organization = createTable("organization", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
@@ -172,6 +176,7 @@ export const organization = createTable("organization", {
 	prescreenedAt: timestamp("prescreened_at")
 });
 
+// TODO: It would be more clear if this table was called "team_member"
 export const member = createTable(
 	"member",
 	{
@@ -193,33 +198,10 @@ export const member = createTable(
 	]
 );
 
-export const invitation = createTable(
-	"invitation",
-	{
-		id: text("id").primaryKey(),
-		organizationId: text("organization_id")
-			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
-		email: text("email").notNull(),
-		role: text("role"),
-		status: text("status").default("pending").notNull(),
-		expiresAt: timestamp("expires_at").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		inviterId: text("inviter_id")
-			.notNull()
-			.references(() => user.id, { onDelete: "cascade" })
-	},
-	(table) => [
-		index("invitation_organizationId_idx").on(table.organizationId),
-		index("invitation_email_idx").on(table.email)
-	]
-);
-
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
-	members: many(member),
-	invitations: many(invitation)
+	members: many(member)
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -237,8 +219,7 @@ export const accountRelations = relations(account, ({ one }) => ({
 }));
 
 export const organizationRelations = relations(organization, ({ many }) => ({
-	members: many(member),
-	invitations: many(invitation)
+	members: many(member)
 }));
 
 export const memberRelations = relations(member, ({ one }) => ({
@@ -248,17 +229,6 @@ export const memberRelations = relations(member, ({ one }) => ({
 	}),
 	user: one(user, {
 		fields: [member.userId],
-		references: [user.id]
-	})
-}));
-
-export const invitationRelations = relations(invitation, ({ one }) => ({
-	organization: one(organization, {
-		fields: [invitation.organizationId],
-		references: [organization.id]
-	}),
-	user: one(user, {
-		fields: [invitation.inviterId],
 		references: [user.id]
 	})
 }));
