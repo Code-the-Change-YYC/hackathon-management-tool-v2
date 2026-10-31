@@ -30,14 +30,12 @@ it("HMTV2-55: schedules passed teams without conflicts and preserves a layout af
 			.set({ prescreenStatus: "passed" })
 			.where(eq(organization.id, team.id));
 	const now = Date.now();
-	await db
-		.insert(judgingRounds)
-		.values({
-			id: roundId,
-			name: "Scheduling regression",
-			startTime: new Date(now + 60_000),
-			endTime: new Date(now + 3_660_000)
-		});
+	await db.insert(judgingRounds).values({
+		id: roundId,
+		name: "Scheduling regression",
+		startTime: new Date(now + 60_000),
+		endTime: new Date(now + 3_660_000)
+	});
 	const input = {
 		roundId,
 		roomCount: 1,
