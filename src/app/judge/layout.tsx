@@ -1,14 +1,9 @@
-import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { resolveAvatarSrc } from "@/lib/avatars";
 import { getNameParts } from "@/lib/names";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { Role } from "@/types/types";
+import { JudgeHeader } from "../components/judge/JudgeHeader";
 import PageContainer from "../components/PageContainer";
-import type { NavGroup } from "../components/sidebar/AppSidebar";
-import {
-	AppSidebar,
-	AppSidebarTriggerHeader
-} from "../components/sidebar/AppSidebar";
 
 export default async function JudgeLayout({
 	children
@@ -17,28 +12,17 @@ export default async function JudgeLayout({
 }) {
 	const { user } = await requireRole([Role.JUDGE, Role.ADMIN]);
 
-	const JUDGE_NAV_GROUPS: NavGroup[] = [
-		{
-			items: [
-				{ title: "Dashboard", href: "/judge", icon: "home" },
-				{ title: "Rubric", href: "/judge/rubric", icon: "task" }
-			]
-		}
-	];
-
 	return (
-		<SidebarProvider>
-			<AppSidebar
+		<div className="flex min-h-svh flex-col">
+			<JudgeHeader
 				avatarUrl={resolveAvatarSrc(user.image)}
-				navGroups={JUDGE_NAV_GROUPS}
 				userName={
 					user.firstName || getNameParts(user.name).firstName || "Judge"
 				}
 			/>
-			<SidebarInset>
-				<AppSidebarTriggerHeader />
+			<main className="mx-auto w-full max-w-4xl">
 				<PageContainer>{children}</PageContainer>
-			</SidebarInset>
-		</SidebarProvider>
+			</main>
+		</div>
 	);
 }

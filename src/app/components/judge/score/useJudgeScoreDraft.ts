@@ -85,7 +85,6 @@ export function useJudgeScoreDraft({
 					)
 				) {
 					scores = parsed.data.scores;
-					notice = "Your unfinished draft was restored from this device.";
 				} else {
 					notice =
 						"An older draft could not be restored because it expired, the rubric changed, or newer scores were submitted. Your submitted scores are shown.";

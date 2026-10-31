@@ -22,7 +22,7 @@ export function ScoreReview({
 				<h2 className="m-0 font-semibold text-3xl" id="score-review-heading">
 					Review your scores
 				</h2>
-				<p className="m-0 text-lg text-muted-foreground">
+				<p className="m-0 text-muted-foreground">
 					Select a criterion to change its score.
 				</p>
 			</div>

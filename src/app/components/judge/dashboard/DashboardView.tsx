@@ -187,7 +187,7 @@ export function DashboardView({
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				description="Score each team once their presentation starts."
+				description="Score each team after their presentation."
 				title={`Hi, ${userName}!`}
 			/>
 			{currentGroup && table && (
