@@ -24,7 +24,7 @@ import { RadioGroup, RadioGroupItem } from "../../ui/radio-group";
 import type { Team } from "./types";
 
 type EditableFields = {
-	prescreen: boolean | null;
+	prescreen: "pending" | "passed" | "failed" | null;
 	prescreenFeedback: string;
 	round1: boolean | null;
 	round2: "winner" | "sp-winner" | "rejected" | null;
@@ -42,38 +42,6 @@ function toEditableFields(team: Team): EditableFields {
 		round1: team.round1,
 		round2: team.round2
 	};
-}
-
-function booleanToRadioValue(value: boolean | null) {
-	if (value === true) {
-		return "pass";
-	}
-
-	if (value === false) {
-		return "fail";
-	}
-
-	if (value === null) {
-		return "null";
-	}
-
-	return "";
-}
-
-function radioValueToBoolean(value: string): boolean | null {
-	if (value === "pass") {
-		return true;
-	}
-
-	if (value === "fail") {
-		return false;
-	}
-
-	if (value === "null") {
-		return null;
-	}
-
-	return null;
 }
 
 export function ReviewFeedbackDialog({
@@ -144,16 +112,16 @@ export function ReviewFeedbackDialog({
 								aria-labelledby="review-prescreen-status-label"
 								id="review-prescreen-status"
 								onValueChange={(value) =>
-									updateField("prescreen", radioValueToBoolean(value))
+									updateField("prescreen", value === "null" ? null : value)
 								}
-								value={booleanToRadioValue(fields.prescreen)}
+								value={fields.prescreen ?? "null"}
 							>
 								<div className="flex items-center gap-2">
-									<RadioGroupItem id="review-prescreen-pass" value="pass" />
+									<RadioGroupItem id="review-prescreen-pass" value="passed" />
 									<Label htmlFor="review-prescreen-pass">Pass</Label>
 								</div>
 								<div className="flex items-center gap-2">
-									<RadioGroupItem id="review-prescreen-fail" value="fail" />
+									<RadioGroupItem id="review-prescreen-fail" value="failed" />
 									<Label htmlFor="review-prescreen-fail">Fail</Label>
 								</div>
 								<div className="flex items-center gap-2">
@@ -184,16 +152,16 @@ export function ReviewFeedbackDialog({
 								aria-labelledby="review-round1-status-label"
 								id="review-round1-status"
 								onValueChange={(value) =>
-									updateField("round1", radioValueToBoolean(value))
+									updateField("round1", value === "null" ? null : value)
 								}
-								value={booleanToRadioValue(fields.round1)}
+								value={fields.round1 ?? "null"}
 							>
 								<div className="flex items-center gap-2">
-									<RadioGroupItem id="review-round1-pass" value="pass" />
+									<RadioGroupItem id="review-round1-pass" value="passed" />
 									<Label htmlFor="review-round1-pass">Pass</Label>
 								</div>
 								<div className="flex items-center gap-2">
-									<RadioGroupItem id="review-round1-fail" value="fail" />
+									<RadioGroupItem id="review-round1-fail" value="failed" />
 									<Label htmlFor="review-round1-fail">Fail</Label>
 								</div>
 								<div className="flex items-center gap-2">

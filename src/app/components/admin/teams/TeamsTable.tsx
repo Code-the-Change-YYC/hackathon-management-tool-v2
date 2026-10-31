@@ -46,7 +46,18 @@ function getBooleanElement(bool: boolean | null) {
 		case false:
 			return <CloseFill aria-label="Failed" size={10} />;
 		default:
-			return <p>N/A</p>;
+			return <p>n/a</p>;
+	}
+}
+
+function getPrescreenElement(status: Team["prescreen"]) {
+	switch (status) {
+		case "passed":
+			return <CheckFill aria-label="Passed" size={10} />;
+		case "failed":
+			return <CloseFill aria-label="Failed" size={10} />;
+		default:
+			return <p>n/a</p>;
 	}
 }
 
@@ -61,7 +72,7 @@ function getRoundTwoElement(
 		case "rejected":
 			return <CloseFill aria-label="Rejected" size={10} />;
 		default:
-			return <p>N/A</p>;
+			return <p>n/a</p>;
 	}
 }
 
@@ -93,7 +104,6 @@ export function TeamsTable({
 				<TableHeader>
 					<TableRow className="border-none hover:bg-white">
 						<TableHead>Rank</TableHead>
-						<TableHead>ID</TableHead>
 						<TableHead>Team Name</TableHead>
 						<TableHead>
 							<div className="flex size-full items-center justify-center">
@@ -121,11 +131,10 @@ export function TeamsTable({
 					{teams.map((team) => (
 						<TableRow className="border-none hover:bg-white" key={team.id}>
 							<TableCell className="pl-3">{team.rank}</TableCell>
-							<TableCell>{team.id}</TableCell>
 							<TableCell>{team.name}</TableCell>
 							<TableCell>
 								<div className="flex size-full items-center justify-center">
-									{getBooleanElement(team.prescreen)}
+									{getPrescreenElement(team.prescreen)}
 								</div>
 							</TableCell>
 							<TableCell>
@@ -138,7 +147,7 @@ export function TeamsTable({
 									{getRoundTwoElement(team.round2)}
 								</div>
 							</TableCell>
-							<TableCell>{team.feedback}</TableCell>
+							<TableCell>{team.feedback ?? "n/a"}</TableCell>
 							<TableCell>{team.members}</TableCell>
 							<TableCell className="pr-4 text-right">
 								<DropdownMenu>
@@ -158,9 +167,10 @@ export function TeamsTable({
 											<DropdownMenuItem onClick={() => onPrescreen(team)}>
 												Prescreen team
 											</DropdownMenuItem>
-											<DropdownMenuItem onClick={() => onReview(team)}>
+											{/* TODO: Reimplement after judging issues have been settled (round1, round2, and final round data are not yet in the db, so this dialog is pointless for now) */}
+											{/* <DropdownMenuItem onClick={() => onReview(team)}>
 												Review judging feedback
-											</DropdownMenuItem>
+											</DropdownMenuItem> */}
 											<DropdownMenuItem
 												onClick={() => onDelete(team)}
 												variant="destructive"

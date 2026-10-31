@@ -36,9 +36,15 @@ export default async function ParticipantLayout({
 		navItems.push({
 			title: "Resources",
 			href: "/participant/resources",
-			icon: "question"
+			icon: "braces"
 		});
 	}
+
+	navItems.push({
+		title: "Important Info",
+		href: "/participant/important-info",
+		icon: "information"
+	});
 
 	const PARTICPANT_NAV_GROUPS: NavGroup[] = [
 		{ items: navItems },

@@ -1,4 +1,6 @@
 import {
+	BracesFill,
+	BracesLine,
 	Calendar2Fill,
 	Calendar2Line,
 	CodeFill,
@@ -11,10 +13,10 @@ import {
 	HamburgerLine,
 	Home4Fill,
 	Home4Line,
+	InformationFill,
+	InformationLine,
 	LinkFill,
 	LinkLine,
-	QuestionFill,
-	QuestionLine,
 	TaskFill,
 	TaskLine,
 	User3Fill,
@@ -28,10 +30,11 @@ export const NAV_ICONS = {
 	hamburger: { line: HamburgerLine, fill: HamburgerFill },
 	link: { line: LinkLine, fill: LinkFill },
 	task: { line: TaskLine, fill: TaskFill },
-	question: { line: QuestionLine, fill: QuestionFill },
+	information: { line: InformationLine, fill: InformationFill },
 	discord: { line: DiscordLine, fill: DiscordFill },
 	user: { line: User3Line, fill: User3Fill },
-	code: { line: CodeLine, fill: CodeFill }
+	code: { line: CodeLine, fill: CodeFill },
+	braces: { line: BracesLine, fill: BracesFill }
 } as const;
 
 export type NavIconKey = keyof typeof NAV_ICONS;
