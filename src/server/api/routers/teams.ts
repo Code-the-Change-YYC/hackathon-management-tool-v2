@@ -162,6 +162,26 @@ async function deleteTeamAndInvitations(
 	await tx.delete(organization).where(eq(organization.id, organizationId));
 }
 
+async function fetchTeamRankings(db: typeof dbType): Promise<TeamRanking[]> {
+	const result = await db.execute(sql<TeamRanking>`
+		SELECT o.id, o.name,
+			COALESCE(AVG(card.main_score), 0)::float8 AS "totalScore",
+			COUNT(card.judge_id)::int AS "submittedScorecards",
+			(SELECT COUNT(*)::int FROM hackathon_judging_assignment a
+				INNER JOIN hackathon_judging_room_staff staff ON staff.room_id = a.room_id
+				WHERE a.team_id = o.id) AS "expectedScorecards",
+			(SELECT COUNT(*)::int FROM hackathon_score legacy
+				INNER JOIN hackathon_judging_assignment a ON a.id = legacy.assignment_id
+				WHERE a.team_id = o.id AND legacy.judge_id IS NULL) AS "legacyScores"
+		FROM hackathon_organization o
+		LEFT JOIN ${submittedScorecards} card ON card.team_id = o.id
+		GROUP BY o.id, o.name
+		ORDER BY "totalScore" DESC, o.name ASC, o.id ASC
+	`);
+
+	return result as unknown as TeamRanking[];
+}
+
 export const teamsRouter = createTRPCRouter({
 	getMyDevpostSubmissionStatus: protectedProcedure.query(async ({ ctx }) => {
 		const membership = await getUserMembership(ctx.db, ctx.session.user.id);
@@ -210,6 +230,44 @@ export const teamsRouter = createTRPCRouter({
 		return teams;
 	}),
 
+	getTeamsWithMembers: adminProcedure.query(async ({ ctx }) => {
+		const [rows, rankings] = await Promise.all([
+			ctx.db.query.organization.findMany({
+				orderBy: [desc(organization.createdAt)],
+				columns: {
+					id: true,
+					name: true,
+					prescreenStatus: true,
+					prescreenComments: true
+				},
+				with: { members: { with: { user: { columns: { email: true } } } } }
+			}),
+			fetchTeamRankings(ctx.db)
+		]);
+
+		const rankById = new Map(
+			rankings.map((ranking, index) => [ranking.id, index + 1])
+		);
+
+		return rows.map(({ members, ...team }) => {
+			const memberEmails = members
+				.map((member) => member.user.email)
+				.join(", ");
+
+			return {
+				rank: rankById.get(team.id) ?? 0,
+				id: team.id,
+				name: team.name,
+				prescreen: team.prescreenStatus,
+				feedback: team.prescreenComments,
+				members: memberEmails,
+				memberCount: members.length,
+				round1: null, // Missing for now due to judging complications
+				round2: null // Missing for now due to judging complications
+			};
+		});
+	}),
+
 	setPrescreen: adminProcedure
 		.input(
 			z.object({
@@ -228,13 +286,6 @@ export const teamsRouter = createTRPCRouter({
 					message: "Team not found"
 				});
 			}
-			if (team.prescreenStatus !== "pending") {
-				throw new TRPCError({
-					code: "CONFLICT",
-					message: "Team has already been prescreened"
-				});
-			}
-
 			const [updated] = await ctx.db
 				.update(organization)
 				.set({
@@ -696,25 +747,31 @@ export const teamsRouter = createTRPCRouter({
 			}
 			return rows[0];
 		}),
-	getRankings: adminProcedure.query(async ({ ctx }) => {
-		const result = await ctx.db.execute(
-			sql<TeamRanking>`
-          SELECT o.id, o.name,
-            COALESCE(AVG(card.main_score), 0)::float8 AS "totalScore",
-            COUNT(card.judge_id)::int AS "submittedScorecards",
-            (SELECT COUNT(*)::int FROM hackathon_judging_assignment a
-              INNER JOIN hackathon_judging_room_staff staff ON staff.room_id = a.room_id
-              WHERE a.team_id = o.id) AS "expectedScorecards",
-            (SELECT COUNT(*)::int FROM hackathon_score legacy
-              INNER JOIN hackathon_judging_assignment a ON a.id = legacy.assignment_id
-              WHERE a.team_id = o.id AND legacy.judge_id IS NULL) AS "legacyScores"
-          FROM hackathon_organization o
-          LEFT JOIN ${submittedScorecards} card ON card.team_id = o.id
-          GROUP BY o.id, o.name
-          ORDER BY "totalScore" DESC, o.name ASC
-        `
-		);
+	getRankings: adminProcedure.query(({ ctx }) => fetchTeamRankings(ctx.db)),
+	delete: adminProcedure
+		.input(z.object({ id: z.string() }))
+		.mutation(async ({ ctx, input }) => {
+			const deleted = await ctx.db.transaction(async (tx) => {
+				// Serialize with joins/leaves for this team.
+				await tx.execute(
+					sql`select pg_advisory_xact_lock(hashtext(${input.id}))`
+				);
 
-		return result as unknown as TeamRanking[];
-	})
+				const [row] = await tx
+					.delete(organization)
+					.where(eq(organization.id, input.id))
+					.returning({ id: organization.id });
+
+				return row;
+			});
+
+			if (!deleted) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Team not found"
+				});
+			}
+
+			return { success: true, id: deleted.id };
+		})
 });
