@@ -182,7 +182,7 @@ export default function Prizes() {
 				</ul>
 
 				{/* Side pot prizes */}
-				<div className="flex flex-col gap-8">
+				<div className="mt-6 flex flex-col gap-8">
 					<div className="flex flex-col gap-2">
 						<h3 className="font-bold text-2xl text-awesomer-purple md:text-3xl">
 							Side Pot Prizes
@@ -244,7 +244,7 @@ export default function Prizes() {
 					</ul>
 
 					{/* MLH Prizes */}
-					<div className="flex flex-col gap-8">
+					<div className="mt-8 flex flex-col gap-8">
 						<div className="flex flex-col gap-2">
 							<h3 className="font-bold text-2xl text-dark-pink md:text-3xl">
 								MLH Prizes
@@ -264,8 +264,7 @@ export default function Prizes() {
 										"p-4 text-center text-dark-grey",
 										"shadow-[4px_4px_0_0_var(--color-medium-pink)]",
 										"sm:w-[calc((100%-2rem)/3)]",
-										"lg:w-[calc((100%-3.75rem)/4)]",
-										"hover:-translate-y-1 transition-transform duration-300"
+										"lg:w-[calc((100%-3.75rem)/4)]"
 									)}
 									key={sponsor}
 								>
