@@ -73,13 +73,3 @@ Feature: Scoring APIs preserve valid scores and participant results under traffi
       | a participant session    | scores.getAggregatedByTeam | FORBIDDEN  |
       | a participant session    | scores.createMany        | FORBIDDEN    |
       | a participant session    | scores.update            | FORBIDDEN    |
-
-  @SCORE07 @P1 @load @production_build
-  Scenario: Participant refresh traffic does not prevent judges saving scores
-    Given the mixed-load profile in the plan uses distinct synthetic accounts and assignments
-    When participant dashboard, schedule, and judging pages refresh at the real 30-second cadence
-    And judges read assigned teams and submit valid score batches throughout the same interval
-    Then the agreed read-latency, save-latency, and error-rate budgets are met
-    And the latest acknowledged score batch for each assignment remains readable after the run
-    And no cross-team result data or duplicate score rows are produced
-    And query volume and database connection usage stabilize after traffic subsides

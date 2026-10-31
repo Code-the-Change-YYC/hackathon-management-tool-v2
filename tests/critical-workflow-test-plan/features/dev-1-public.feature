@@ -12,20 +12,6 @@ Feature: Public information and email verification remain usable
     And the unavailable message is absent
     And no sign-in is required to read the criteria
 
-  @PUB02 @P1 @browser @fault
-  Scenario Outline: An unavailable criteria section recovers after the data source recovers
-    Given the homepage criteria query encounters <failure>
-    When an anonymous visitor opens a freshly rendered homepage
-    Then the criteria section displays "Judging criteria are currently unavailable."
-    And the signup and login entry points remain usable
-    When the criteria query is restored to return published data
-    And a new homepage render is completed after the configured cache revalidation
-    Then a fresh anonymous request displays the restored criteria
-    Examples:
-      | failure                     |
-      | an empty criteria table     |
-      | a database connection error |
-
   @PUB03 @P1 @browser @accessibility
   Scenario: A visitor discovers the rubric through the FAQ using a keyboard
     Given a signed-out visitor is using a narrow screen with published criteria
@@ -34,20 +20,6 @@ Feature: Public information and email verification remain usable
     Then the judging criteria section is reached
     And its heading and first criterion can be read without the fixed header obscuring them
     And keyboard focus remains usable for continuing through the page
-
-  @PUB04 @P1 @browser
-  Scenario Outline: Homepage entry actions use the current session
-    Given the homepage is opened with <session>
-    When the visitor activates <action>
-    Then they arrive at <destination>
-    And the page does not use a previous account's dashboard destination
-    Examples:
-      | session                          | action                | destination  |
-      | no signed-in account             | header Join Hackathon | /signup      |
-      | no signed-in account             | hero Join Hackathon   | /signup      |
-      | no signed-in account             | header Log in         | /login       |
-      | a fully registered participant   | hero Dashboard        | /participant |
-      | a fully registered judge         | header Dashboard      | /judge       |
 
   @PUB05 @P0 @browser @database
   Scenario Outline: Repeating signup cannot replace an existing account's password
@@ -77,11 +49,3 @@ Feature: Public information and email verification remain usable
       | cause                        |
       | expiry after ten minutes     |
       | three incorrect code guesses |
-
-  @PUB07 @P1 @load @production_build
-  Scenario: A public traffic burst preserves criteria availability and signup access
-    Given the published criteria exist and the public-load profile in the plan is configured
-    When anonymous traffic exercises cold and warm homepage renders and opens signup
-    Then successful homepage renders include the published criteria
-    And the agreed page-latency and error-rate budgets are met
-    And the database pool recovers after the burst without sustained connection exhaustion

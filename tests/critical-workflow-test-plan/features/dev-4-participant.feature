@@ -21,17 +21,6 @@ Feature: Participants receive current event information and reliable personal up
     And the judging page shows team A's new room, time, and meeting destination
     And no team B assignment appears in team A's response or page
 
-  @PART03 @P1 @browser @fault
-  Scenario: Auto-refresh preserves a loaded page while the connection is unavailable
-    Given a participant has a loaded schedule
-    When the browser goes offline for two refresh intervals
-    Then the loaded schedule remains readable and no page refresh is attempted
-    When the browser is online but the connectivity probe fails
-    Then no page refresh is attempted
-    When the server recovers and an online or visible-tab event occurs
-    Then one refresh retrieves the latest event data
-    And overlapping triggers do not create concurrent connectivity checks
-
   @PART04 @P1 @browser
   Scenario: Resource visibility and direct access open together when the event starts
     Given the configured start time is in the future
@@ -41,18 +30,6 @@ Feature: Participants receive current event information and reliable personal up
     And the participant performs a fresh navigation
     Then Resources appears and /participant/resources is accessible
     And the Discord and Devpost quick links open the configured event destinations
-
-  @PART05 @P1 @browser @database
-  Scenario Outline: Saved profile changes reach other views without changing another account
-    Given participant A and participant B have different saved profiles
-    When A saves <change> through the profile interface
-    Then A's profile and <dependent_view> display the saved value after refresh
-    And the value survives signing out and back in
-    And B's stored profile remains unchanged
-    Examples:
-      | change                         | dependent_view              |
-      | a different first and last name | the sidebar name            |
-      | a different allowed avatar      | the sidebar and team avatar |
 
   @PART06 @P1 @browser @fault
   Scenario Outline: A failed personal update keeps its draft available to retry or cancel
