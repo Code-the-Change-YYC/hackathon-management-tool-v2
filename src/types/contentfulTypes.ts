@@ -83,6 +83,36 @@ type PastHackathonWinnerSkeleton = EntrySkeletonType<
 >;
 export type PastHackathonWinner = Entry<PastHackathonWinnerSkeleton>;
 
+export interface ResourceFields {
+	name: EntryFieldTypes.Symbol;
+	description: EntryFieldTypes.Symbol;
+	link: EntryFieldTypes.Symbol;
+	image: EntryFieldTypes.AssetLink;
+}
+
+type ResourceSkeleton = EntrySkeletonType<ResourceFields, "hackathonResource">;
+export type Resource = Entry<ResourceSkeleton>;
+
+export const MENTOR_CATEGORIES = [
+	"industry",
+	"events_member",
+	"tech_member",
+	"general_member"
+] as const;
+
+export type MentorCategory = (typeof MENTOR_CATEGORIES)[number];
+
+export interface MentorFields {
+	name: EntryFieldTypes.Symbol;
+	role: EntryFieldTypes.Symbol;
+	category: EntryFieldTypes.Symbol<MentorCategory>;
+	discord: EntryFieldTypes.Symbol;
+	image: EntryFieldTypes.AssetLink;
+}
+
+type MentorSkeleton = EntrySkeletonType<MentorFields, "hackathonMentor">;
+export type Mentor = Entry<MentorSkeleton>;
+
 type UnknownContentType<Id extends string> = EntrySkeletonType<
 	Record<string, EntryFieldTypes.Object>,
 	Id
@@ -100,4 +130,6 @@ export interface ContentTypeMap {
 	upcomingEvents: UnknownContentType<"upcomingEvents">;
 	ceremonyDetails: CeremonyDetailsSkeleton;
 	pastHackathonWinner: PastHackathonWinnerSkeleton;
+	hackathonResource: ResourceSkeleton;
+	hackathonMentor: MentorSkeleton;
 }
