@@ -42,29 +42,25 @@ it("HMTV2-59: advances rounds without resetting assignments or scores and releas
 		await admin.cleanup();
 	});
 	const team = await teams.create("Multi-round finalist");
-	await db
-		.insert(member)
-		.values({
-			id: crypto.randomUUID(),
-			organizationId: team.id,
-			userId: participant.user.id,
-			role: "owner",
-			createdAt: new Date()
-		});
+	await db.insert(member).values({
+		id: crypto.randomUUID(),
+		organizationId: team.id,
+		userId: participant.user.id,
+		role: "owner",
+		createdAt: new Date()
+	});
 	await db
 		.insert(criteria)
 		.values({ id: criterionId, name: "Multi-round evidence", maxScore: 10 });
 	const rubric = await db.query.criteria.findMany();
 	const assignmentIds: string[] = [];
 	for (const [index, roundId] of roundIds.entries()) {
-		await db
-			.insert(judgingRounds)
-			.values({
-				id: roundId,
-				name: `Workflow round ${index + 1}`,
-				startTime: new Date(Date.now() - (4 - index) * 3_600_000),
-				endTime: new Date(Date.now() - (3 - index) * 3_600_000)
-			});
+		await db.insert(judgingRounds).values({
+			id: roundId,
+			name: `Workflow round ${index + 1}`,
+			startTime: new Date(Date.now() - (4 - index) * 3_600_000),
+			endTime: new Date(Date.now() - (3 - index) * 3_600_000)
+		});
 		const [room] = await db
 			.insert(judgingRooms)
 			.values({ roundId, roomLink: `https://example.com/round-${index + 1}` })
