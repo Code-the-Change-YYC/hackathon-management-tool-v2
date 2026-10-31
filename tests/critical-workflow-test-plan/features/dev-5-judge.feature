@@ -10,7 +10,7 @@ Feature: Judges can enter and edit scores without losing work
     And selects a score for each criterion while moving through Next and Prev
     Then earlier selections remain selected when revisiting a step
     When the judge submits the completed form
-    Then the browser returns to the dashboard after a successful save response
+    Then the browser shows the submitted confirmation after a successful save response
     And a fresh visit to that assignment loads the submitted values from the database
     Examples:
       | entry              |
@@ -36,7 +36,7 @@ Feature: Judges can enter and edit scores without losing work
     And the judge is not shown a successful save or redirected to the dashboard
     When the endpoint recovers and the judge retries with rapid repeated clicks
     Then only one save request is issued while that retry is pending
-    And successful completion returns the judge to the dashboard
+    And successful completion shows the submitted confirmation
 
   @JUDGE04 @P0 @browser @fault
   Scenario: A delayed score fetch cannot overwrite a judge's new draft
@@ -57,14 +57,13 @@ Feature: Judges can enter and edit scores without losing work
     And the dashboard reflects the edited saved values after its query invalidation
 
   @JUDGE06 @P1 @browser
-  Scenario: Leaving the first scoring step handles unsaved edits explicitly
+  Scenario: Leaving scoring preserves a recoverable device draft without submitting it
     Given the judge has changed a score on the first step without submitting
-    When they activate Prev
-    Then the "Leave scoring?" confirmation opens
-    When they cancel leaving
-    Then they remain in the scoring form with the draft intact
-    When they activate Prev again and confirm leaving
-    Then the dashboard opens and the draft is not persisted
+    When they follow the Schedule link
+    Then the schedule opens without submitting the draft to the server
+    When they return to that scoring assignment and reload it
+    Then their draft selection is restored from this device
+    And no score rows have been created by leaving or restoring the draft
 
   @JUDGE07 @P1 @browser @accessibility
   Scenario Outline: Judge scoring controls stay reachable on smaller screens
