@@ -234,6 +234,16 @@ export const teamsRouter = createTRPCRouter({
 					message: "Team has already been prescreened"
 				});
 			}
+			if (
+				input.status === "passed" &&
+				!parseMetadata<TeamMetadata>(team.metadata).devpostLink?.trim()
+			) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"A Devpost submission link is required before approving a team."
+				});
+			}
 
 			const [updated] = await ctx.db
 				.update(organization)
