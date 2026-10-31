@@ -21,15 +21,13 @@ it("HMTV2-51: submission reminders follow the team's saved link and submission d
 		await account.cleanup();
 	});
 	const team = await teams.create("Submission status");
-	await db
-		.insert(member)
-		.values({
-			id: crypto.randomUUID(),
-			organizationId: team.id,
-			userId: account.user.id,
-			role: "owner",
-			createdAt: new Date()
-		});
+	await db.insert(member).values({
+		id: crypto.randomUUID(),
+		organizationId: team.id,
+		userId: account.user.id,
+		role: "owner",
+		createdAt: new Date()
+	});
 	const metadata = JSON.stringify({
 		devpostSubmissionCloseAt: new Date(Date.now() + 3_600_000).toISOString()
 	});
