@@ -17,13 +17,11 @@ describe("HMTV2-50 existing judge invitation security", () => {
 			await target.cleanup();
 			await admin.cleanup();
 		});
-		await db
-			.insert(roleInvitation)
-			.values({
-				email: target.user.email.toLowerCase(),
-				role: Role.JUDGE,
-				invitedById: admin.user.id
-			});
+		await db.insert(roleInvitation).values({
+			email: target.user.email.toLowerCase(),
+			role: Role.JUDGE,
+			invitedById: admin.user.id
+		});
 		expect(
 			await applyInvitedRole(db, target.user.id, target.user.email)
 		).toBeNull();
