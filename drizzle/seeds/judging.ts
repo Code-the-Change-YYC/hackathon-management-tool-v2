@@ -37,7 +37,7 @@ export async function seedJudging({ judges, teams }: SeedJudgingInput) {
 	const [panelRound] = await db
 		.insert(judgingRounds)
 		.values({
-			name: "Panel Round",
+			name: "Main Judging",
 			kind: "panel",
 			startTime: panelStart,
 			endTime: addMinutes(panelStart, 180),
