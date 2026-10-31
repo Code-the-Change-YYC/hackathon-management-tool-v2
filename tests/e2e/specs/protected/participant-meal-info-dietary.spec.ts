@@ -285,3 +285,25 @@ test("failed save keeps the editor open and the draft available to retry", async
 	await page.reload();
 	await expectRegistered(page, ["Halal", "Gluten-free"]);
 });
+
+test("HMTV2-80: a failed dietary save retries successfully with the retained draft", async ({
+	authenticatedPage: page
+}) => {
+	await page.route(dietaryMutation, (route) => route.abort("failed"), {
+		times: 1
+	});
+	await openEditor(page);
+	await toggleRestriction(page, "Vegetarian");
+	const save = editor(page).getByRole("button", { name: "Save changes" });
+	await save.click();
+	await expect(
+		page.getByText("Unable to update dietary restrictions", { exact: true })
+	).toBeVisible();
+	await expectDraft(page, ["Halal", "Gluten-free", "Vegetarian"]);
+	await expect(save).toBeEnabled();
+	await save.click();
+	await expect(editor(page)).toBeHidden();
+	await expectRegistered(page, ["Halal", "Gluten-free", "Vegetarian"]);
+	await page.reload();
+	await expectRegistered(page, ["Halal", "Gluten-free", "Vegetarian"]);
+});
