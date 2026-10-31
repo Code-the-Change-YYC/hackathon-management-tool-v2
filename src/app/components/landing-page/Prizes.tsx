@@ -2,6 +2,7 @@ import {
 	FlashLine,
 	GiftLine,
 	HandHeartLine,
+	MedalLine,
 	ShieldLine,
 	TrophyLine
 } from "@mingcute/react";
@@ -21,9 +22,15 @@ type SidePot = {
 	name: string;
 	amount: string;
 	donation?: string;
+	sponsor: string;
 	icon: MingCuteIcon;
 	cardStyles: string;
 	badgeStyles: string;
+};
+
+type MLHPrize = {
+	sponsor: string;
+	reward: string;
 };
 
 // Listed in podium order (2nd, 1st, 3rd). On phones the cards stack with
@@ -32,7 +39,7 @@ const PRIZES: Prize[] = [
 	{
 		place: "2nd place",
 		amount: "$3,000",
-		icon: GiftLine,
+		icon: MedalLine,
 		cardStyles:
 			"order-2 border-dark-pink shadow-[8px_8px_0_0_var(--color-medium-pink)] sm:order-1",
 		badgeStyles: "bg-pastel-pink text-dark-pink"
@@ -48,7 +55,7 @@ const PRIZES: Prize[] = [
 	{
 		place: "3rd place",
 		amount: "$2,000",
-		icon: GiftLine,
+		icon: MedalLine,
 		cardStyles:
 			"order-3 border-medium-green shadow-[8px_8px_0_0_var(--color-dark-green)]",
 		badgeStyles: "bg-mint-green text-medium-green"
@@ -60,6 +67,7 @@ const SIDE_POTS: SidePot[] = [
 		name: "Best Local Impact",
 		amount: "$150",
 		donation: "$150 donated to charity",
+		sponsor: "Benevity",
 		icon: HandHeartLine,
 		cardStyles:
 			"border-medium-green shadow-[6px_6px_0_0_var(--color-dark-green)]",
@@ -68,6 +76,7 @@ const SIDE_POTS: SidePot[] = [
 	{
 		name: "Best in Trust and Transparency",
 		amount: "$150",
+		sponsor: "Clio",
 		icon: ShieldLine,
 		cardStyles:
 			"border-dark-pink shadow-[6px_6px_0_0_var(--color-medium-pink)]",
@@ -76,10 +85,42 @@ const SIDE_POTS: SidePot[] = [
 	{
 		name: "Best Use of Real-World Energy Data",
 		amount: "$500",
+		sponsor: "Voltex Solutions",
 		icon: FlashLine,
 		cardStyles:
 			"border-awesomer-purple shadow-[6px_6px_0_0_var(--color-awesome-purple)]",
 		badgeStyles: "bg-accent text-awesomer-purple"
+	}
+];
+
+const MLH_PRIZES: MLHPrize[] = [
+	{
+		sponsor: "GoDaddy Registry",
+		reward: "Digital Gift Card"
+	},
+	{
+		sponsor: "Gemini API",
+		reward: "MLH Swag Kits"
+	},
+	{
+		sponsor: "Vultr",
+		reward: "Assorted Prizes"
+	},
+	{
+		sponsor: "Solana",
+		reward: "Unruggable Hardware Wallets"
+	},
+	{
+		sponsor: "Auth0",
+		reward: "Wireless Headphones"
+	},
+	{
+		sponsor: "Tiger Data",
+		reward: "Stream Deck Mini"
+	},
+	{
+		sponsor: "Entire",
+		reward: "Mini Portable Projector"
 	}
 ];
 
@@ -158,6 +199,7 @@ export default function Prizes() {
 								name,
 								amount,
 								donation,
+								sponsor,
 								icon: Icon,
 								cardStyles,
 								badgeStyles
@@ -192,10 +234,55 @@ export default function Prizes() {
 											</p>
 										)}
 									</div>
+									<p className="mt-auto w-full border-dark-grey/15 border-t pt-3 text-dark-grey text-sm">
+										Sponsored by <span className="font-bold">{sponsor}</span>
+									</p>
 								</li>
 							)
 						)}
 					</ul>
+
+					{/* MLH Prizes */}
+					<div className="flex flex-col gap-8">
+						<div className="flex flex-col gap-2">
+							<h3 className="font-bold text-2xl text-dark-pink md:text-3xl">
+								MLH Prizes
+							</h3>
+							<p className="text-base text-dark-grey md:text-lg">
+								Additional prizes and challenges brought to you by Major League
+								Hacking and its partners.
+							</p>
+						</div>
+
+						<ul className="flex flex-wrap justify-center gap-4 md:gap-5">
+							{MLH_PRIZES.map(({ sponsor, reward }) => (
+								<li
+									className={cn(
+										"flex w-[calc((100%-1rem)/2)] flex-col items-center justify-center",
+										"gap-3 rounded-2xl border-2 border-dark-pink bg-white",
+										"p-4 text-center text-dark-grey",
+										"shadow-[4px_4px_0_0_var(--color-medium-pink)]",
+										"sm:w-[calc((100%-2rem)/3)]",
+										"lg:w-[calc((100%-3.75rem)/4)]",
+										"hover:-translate-y-1 transition-transform duration-300"
+									)}
+									key={sponsor}
+								>
+									<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-fuzzy-peach/60 text-pinky-peach">
+										<GiftLine aria-hidden="true" className="size-5" />
+									</div>
+
+									<div className="flex flex-col items-center gap-1">
+										<p className="font-bold text-sm md:text-base">{sponsor}</p>
+
+										<p className="text-dark-grey text-xs md:text-sm">
+											{reward}
+										</p>
+									</div>
+								</li>
+							))}
+						</ul>
+					</div>
 				</div>
 			</div>
 		</SectionWrapper>
