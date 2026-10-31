@@ -65,8 +65,8 @@ const PRIZES: Prize[] = [
 const SIDE_POTS: SidePot[] = [
 	{
 		name: "Best Local Impact",
-		amount: "$150",
-		donation: "$150 donated to charity",
+		amount: "$100",
+		donation: "$100 donated to charity",
 		sponsor: "Benevity",
 		icon: HandHeartLine,
 		cardStyles:
@@ -75,7 +75,7 @@ const SIDE_POTS: SidePot[] = [
 	},
 	{
 		name: "Best in Trust and Transparency",
-		amount: "$150",
+		amount: "$100",
 		sponsor: "Clio",
 		icon: ShieldLine,
 		cardStyles:
