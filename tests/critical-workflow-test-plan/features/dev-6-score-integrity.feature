@@ -18,9 +18,9 @@ Feature: Scoring APIs preserve valid scores and participant results under traffi
       | a score above the criterion's configured maximum    |
       | a nonexistent criterion alongside an otherwise valid item |
 
-  @SCORE02 @P0 @integration @candidate_regression
+  @SCORE02 @P0 @integration
   Scenario Outline: The alternate score-update endpoint preserves scoring restrictions
-    Given a score exists with a configured maximum of ten
+    Given the caller owns a score with a configured maximum of ten
     When <caller> directly calls scores.update with <value>
     Then the request is rejected with <error>
     And the saved score remains unchanged
@@ -34,17 +34,17 @@ Feature: Scoring APIs preserve valid scores and participant results under traffi
     Given a valid score batch has already been acknowledged as saved
     When two identical retries of that same batch arrive simultaneously
     Then both retries complete without creating extra score rows
-    And exactly one row exists per assignment and criterion
+    And exactly one row exists per judge, assignment, and criterion
     And the saved values equal the acknowledged batch
 
   @SCORE04 @P0 @integration @concurrency @current_contract
-  Scenario: Two assigned judges cannot leave a mixed partial score batch
+  Scenario: Two assigned judges retain independent complete score batches
     Given two judges share the same room assignment
     And each has a different complete score batch for the same criteria
     When the two batches are submitted concurrently
-    Then the final stored batch equals one complete submitted batch
-    And no criterion has duplicate score rows
-    And a fresh read from both judge sessions returns that same stored batch
+    Then each judge's stored batch equals their own complete submitted batch
+    And no judge, assignment, and criterion has duplicate score rows
+    And a fresh read from each judge session returns only that judge's stored batch
 
   @SCORE05 @P0 @integration @database
   Scenario: Released result averages are calculated from actual persisted assignments
