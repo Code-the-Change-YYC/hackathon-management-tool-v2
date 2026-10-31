@@ -19,12 +19,11 @@ export default async function AdminLayout({
 
 	const ADMIN_NAV_GROUPS: NavGroup[] = [
 		{
-			groupLabel: "Event Management",
 			items: [
 				{ title: "Schedule", href: "/admin/schedule", icon: "calendar" },
 				{
-					title: "Registered Users",
-					href: "/admin/participants",
+					title: "Users",
+					href: "/admin/users",
 					icon: "user"
 				},
 				{ title: "Teams", href: "/admin/teams", icon: "group" },
@@ -37,9 +36,14 @@ export default async function AdminLayout({
 			]
 		},
 		{
-			groupLabel: "App Management",
+			groupLabel: "Portal Views",
 			items: [
-				{ title: "Admin Controls", href: "/admin/controls", icon: "settings" }
+				{
+					title: "Participant Dashboard",
+					href: "/participant",
+					icon: "link"
+				},
+				{ title: "Judge Dashboard", href: "/judge", icon: "link" }
 			]
 		}
 	];

@@ -215,7 +215,7 @@ export function ReviewFeedbackDialog({
 						<Button disabled={!isDirty} onClick={saveChanges}>
 							Save changes
 						</Button>
-						<Button onClick={() => requestClose(false)} variant="ghost">
+						<Button onClick={() => requestClose(false)} variant="outline">
 							Cancel
 						</Button>
 					</div>

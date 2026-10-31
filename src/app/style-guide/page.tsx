@@ -867,7 +867,7 @@ export default function StyleGuidePage() {
 											<DialogClose
 												render={<Button variant="outline">Cancel</Button>}
 											/>
-											<Button variant="destructive">Delete</Button>
+											<Button variant="destructive-solid">Delete</Button>
 										</DialogFooter>
 									</DialogContent>
 								</Dialog>

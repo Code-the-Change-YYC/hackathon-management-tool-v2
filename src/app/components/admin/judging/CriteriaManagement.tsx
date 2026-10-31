@@ -26,18 +26,11 @@ import {
 import { useRefresh } from "@/hooks/use-refresh";
 import { tryCatch } from "@/lib/utils";
 import { api } from "@/trpc/react";
-import { type Criterion, ManagementSection, type Round } from "./judgingShared";
+import { type Criterion, ManagementSection } from "./judgingShared";
 
-export function CriteriaManagement({
-	criteria,
-	rounds
-}: {
-	criteria: Criterion[];
-	rounds: Round[];
-}) {
+export function CriteriaManagement({ criteria }: { criteria: Criterion[] }) {
 	const { confirm, dialogProps } = useConfirmDialog();
 	const { isRefreshing, refresh } = useRefresh();
-	const [roundIds, setRoundIds] = useState<string[]>([]);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [name, setName] = useState("");
 	const [maxScore, setMaxScore] = useState(10);
@@ -50,7 +43,6 @@ export function CriteriaManagement({
 
 	const resetForm = () => {
 		setEditingId(null);
-		setRoundIds([]);
 		setName("");
 		setMaxScore(10);
 		setIsSidepot(false);
@@ -61,7 +53,7 @@ export function CriteriaManagement({
 	const submit = async () => {
 		if (!name.trim() || isSaving) return;
 		setMessage("");
-		const values = { roundIds, isSidepot, maxScore, name: name.trim() };
+		const values = { roundIds: [], isSidepot, maxScore, name: name.trim() };
 		const { error } = await tryCatch<unknown>(
 			editingId
 				? updateCriterion.mutateAsync({ id: editingId, ...values })
@@ -158,29 +150,9 @@ export function CriteriaManagement({
 				</div>
 			</div>
 
-			<fieldset className="mt-4 flex flex-wrap gap-4">
-				<legend className="mb-2 text-sm">
-					Apply to rounds (none selected means all rounds)
-				</legend>
-				{rounds.map((round) => (
-					<Field key={round.id} orientation="horizontal">
-						<Checkbox
-							checked={roundIds.includes(round.id)}
-							id={`criterion-round-${round.id}`}
-							onCheckedChange={(checked) =>
-								setRoundIds((ids) =>
-									checked
-										? [...ids, round.id]
-										: ids.filter((id) => id !== round.id)
-								)
-							}
-						/>
-						<FieldLabel htmlFor={`criterion-round-${round.id}`}>
-							{round.name}
-						</FieldLabel>
-					</Field>
-				))}
-			</fieldset>
+			<p className="mt-4 text-muted-foreground text-sm">
+				The same rubric is used for every judging round.
+			</p>
 			<div className="mt-6">
 				<Table className="min-w-155">
 					<TableHeader>
@@ -209,7 +181,6 @@ export function CriteriaManagement({
 											onClick={() => {
 												setEditingId(criterion.id);
 												setName(criterion.name);
-												setRoundIds(criterion.roundIds ?? []);
 												setMaxScore(criterion.maxScore);
 												setIsSidepot(criterion.isSidepot);
 												setMessage("");

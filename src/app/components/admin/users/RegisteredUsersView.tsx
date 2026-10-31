@@ -1,0 +1,365 @@
+"use client";
+
+import { CloseFill } from "@mingcute/react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle
+} from "@/app/components/ui/alert-dialog";
+import { Badge } from "@/app/components/ui/badge";
+import { useRefresh } from "@/hooks/use-refresh";
+import { downloadParticipantsCsv } from "@/lib/participants-csv";
+import { authClient } from "@/server/better-auth/client";
+import PageHeader from "../../PageHeader";
+import { Card, CardContent } from "../../ui/card";
+import { EditParticipantDialog } from "./EditParticipantDialog";
+import { InviteUserDialog } from "./InviteUserDialog";
+import { ParticipantsTable } from "./ParticipantsTable";
+import { ParticipantsToolbar } from "./ParticipantsToolbar";
+import { RegistrationsChartCard } from "./RegistrationsChartCard";
+import { SendEmailDialog } from "./SendEmailDialog";
+import {
+	EMAIL_VERIFIED_OPTIONS,
+	EMPTY_FILTERS,
+	FOOD_OPTIONS,
+	type Participant,
+	type ParticipantFilters,
+	REGISTRATION_OPTIONS,
+	ROLE_LABELS,
+	SORT_OPTIONS,
+	type SortOption
+} from "./types";
+
+type ActiveChip = {
+	key: string;
+	label: string;
+	onRemove: () => void;
+};
+
+function matchesSearch(participant: Participant, search: string) {
+	const needle = search.trim().toLowerCase();
+
+	if (needle.length === 0) {
+		return true;
+	}
+
+	return [
+		participant.firstName,
+		participant.lastName,
+		participant.email,
+		participant.teamName ?? ""
+	].some((value) => (value ?? "").toLowerCase().includes(needle));
+}
+
+function matchesFilters(participant: Participant, filters: ParticipantFilters) {
+	if (
+		filters.roles.length > 0 &&
+		(!participant.role || !filters.roles.includes(participant.role))
+	) {
+		return false;
+	}
+
+	if (filters.food.length === 1) {
+		const wantsRegistered = filters.food[0] === "registered";
+
+		if (participant.registeredForFood !== wantsRegistered) {
+			return false;
+		}
+	}
+
+	if (filters.emailVerified.length === 1) {
+		const wantsVerified = filters.emailVerified[0] === "verified";
+
+		if (participant.emailVerified !== wantsVerified) {
+			return false;
+		}
+	}
+
+	if (filters.registration.length === 1) {
+		const wantsCompleted = filters.registration[0] === "completed";
+
+		if (participant.completedRegistration !== wantsCompleted) {
+			return false;
+		}
+	}
+
+	if (
+		filters.institutions.length > 0 &&
+		(!participant.institution ||
+			!filters.institutions.includes(participant.institution))
+	) {
+		return false;
+	}
+
+	if (
+		filters.majors.length > 0 &&
+		!(participant.major && filters.majors.includes(participant.major))
+	) {
+		return false;
+	}
+
+	return true;
+}
+
+function compareParticipants(
+	a: Participant,
+	b: Participant,
+	sort: SortOption | null
+) {
+	switch (sort) {
+		case "role-asc":
+			return (a.role ?? "").localeCompare(b.role ?? "");
+		case "role-desc":
+			return (b.role ?? "").localeCompare(a.role ?? "");
+		case "name-asc":
+			return (a.firstName ?? "").localeCompare(b.firstName ?? "");
+		case "name-desc":
+			return (b.firstName ?? "").localeCompare(a.firstName ?? "");
+		default:
+			return 0;
+	}
+}
+
+type RegisteredUsersViewProps = {
+	participants: Participant[];
+};
+
+export function RegisteredUsersView({
+	participants
+}: RegisteredUsersViewProps) {
+	const [search, setSearch] = useState("");
+	const [filters, setFilters] = useState<ParticipantFilters>(EMPTY_FILTERS);
+	const [sort, setSort] = useState<SortOption | null>(null);
+	const [inviteOpen, setInviteOpen] = useState(false);
+	const [emailOpen, setEmailOpen] = useState(false);
+	const [editing, setEditing] = useState<Participant | null>(null);
+	const [deleting, setDeleting] = useState<Participant | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+
+	const { refresh } = useRefresh();
+
+	const visibleParticipants = useMemo(
+		() =>
+			participants
+				.filter(
+					(participant) =>
+						matchesSearch(participant, search) &&
+						matchesFilters(participant, filters)
+				)
+				.sort((a, b) => compareParticipants(a, b, sort)),
+		[participants, search, filters, sort]
+	);
+
+	const activeChips: ActiveChip[] = [
+		...filters.roles.map((role) => ({
+			key: `role-${role}`,
+			label: `Role: ${ROLE_LABELS[role]}`,
+			onRemove: () =>
+				setFilters((current) => ({
+					...current,
+					roles: current.roles.filter((value) => value !== role)
+				}))
+		})),
+		...filters.food.map((food) => ({
+			key: `food-${food}`,
+			label:
+				FOOD_OPTIONS.find((option) => option.value === food)?.label ?? food,
+			onRemove: () =>
+				setFilters((current) => ({
+					...current,
+					food: current.food.filter((value) => value !== food)
+				}))
+		})),
+		...filters.emailVerified.map((emailVerified) => ({
+			key: `email-verified-${emailVerified}`,
+			label:
+				EMAIL_VERIFIED_OPTIONS.find((option) => option.value === emailVerified)
+					?.label ?? emailVerified,
+			onRemove: () =>
+				setFilters((current) => ({
+					...current,
+					emailVerified: current.emailVerified.filter(
+						(value) => value !== emailVerified
+					)
+				}))
+		})),
+		...filters.registration.map((registration) => ({
+			key: `registration-${registration}`,
+			label:
+				REGISTRATION_OPTIONS.find((option) => option.value === registration)
+					?.label ?? registration,
+			onRemove: () =>
+				setFilters((current) => ({
+					...current,
+					registration: current.registration.filter(
+						(value) => value !== registration
+					)
+				}))
+		})),
+		...filters.institutions.map((institution) => ({
+			key: `institution-${institution}`,
+			label: institution,
+			onRemove: () =>
+				setFilters((current) => ({
+					...current,
+					institutions: current.institutions.filter(
+						(value) => value !== institution
+					)
+				}))
+		})),
+		...filters.majors.map((major) => ({
+			key: `major-${major}`,
+			label: major,
+			onRemove: () =>
+				setFilters((current) => ({
+					...current,
+					majors: current.majors.filter((value) => value !== major)
+				}))
+		}))
+	];
+
+	if (sort) {
+		activeChips.push({
+			key: `sort-${sort}`,
+			label:
+				SORT_OPTIONS.find((option) => option.value === sort)?.label ?? sort,
+			onRemove: () => setSort(null)
+		});
+	}
+
+	function handleCopyEmails() {
+		const emails = visibleParticipants
+			.map((participant) => participant.email)
+			.join(", ");
+
+		void navigator.clipboard?.writeText(emails);
+		toast.success("Emails copied to clipboard!");
+	}
+
+	function handleDownloadCsv() {
+		downloadParticipantsCsv(visibleParticipants);
+	}
+
+	async function handleDelete() {
+		if (!deleting || isDeleting) return;
+
+		setIsDeleting(true);
+		try {
+			const { data, error } = await authClient.admin.removeUser({
+				userId: deleting.id
+			});
+
+			if (data?.success) {
+				setDeleting(null);
+				toast.success("User deleted!");
+				refresh();
+			} else {
+				toast.error(error?.message ?? "Unable to delete user.");
+			}
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Unable to delete user."
+			);
+		} finally {
+			setIsDeleting(false);
+		}
+	}
+
+	return (
+		<>
+			<div className="flex flex-col gap-6">
+				<PageHeader description="View and manage users." title="Users" />
+				<RegistrationsChartCard participants={participants} />
+				<Card>
+					<CardContent className="flex flex-col gap-6">
+						<ParticipantsToolbar
+							filters={filters}
+							onCopyEmails={handleCopyEmails}
+							onDownloadCsv={handleDownloadCsv}
+							onEmail={() => setEmailOpen(true)}
+							onFiltersChange={setFilters}
+							onInvite={() => setInviteOpen(true)}
+							onSearchChange={setSearch}
+							onSortChange={setSort}
+							search={search}
+							sort={sort}
+						/>
+
+						<div className="flex flex-wrap items-center gap-2">
+							<span className="text-muted-foreground text-sm">
+								Showing {visibleParticipants.length.toLocaleString()} of{" "}
+								{participants.length.toLocaleString()} users
+							</span>
+							{activeChips.map((chip) => (
+								<Badge
+									aria-label={`Remove filter: ${chip.label}`}
+									className="h-7 cursor-pointer rounded-md px-3 font-medium"
+									key={chip.key}
+									render={<button onClick={chip.onRemove} type="button" />}
+									variant="accent"
+								>
+									{chip.label}
+									<CloseFill />
+								</Badge>
+							))}
+						</div>
+
+						<ParticipantsTable
+							onDelete={setDeleting}
+							onEdit={setEditing}
+							participants={visibleParticipants}
+						/>
+					</CardContent>
+				</Card>
+			</div>
+
+			<InviteUserDialog onOpenChange={setInviteOpen} open={inviteOpen} />
+			<SendEmailDialog onOpenChange={setEmailOpen} open={emailOpen} />
+			<EditParticipantDialog
+				onOpenChange={(open) => {
+					if (!open) {
+						setEditing(null);
+					}
+				}}
+				participant={editing}
+			/>
+
+			<AlertDialog
+				onOpenChange={(open) => {
+					if (!open) {
+						setDeleting(null);
+					}
+				}}
+				open={deleting !== null}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete this user?</AlertDialogTitle>
+						<AlertDialogDescription>
+							{deleting
+								? `${deleting.firstName} ${deleting.lastName} will lose access to the event. This cannot be undone.`
+								: null}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							disabled={isDeleting}
+							onClick={handleDelete}
+							variant="destructive-solid"
+						>
+							{isDeleting ? "Deleting..." : "Delete user"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
+	);
+}

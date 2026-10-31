@@ -243,6 +243,7 @@ test("reload rotates the QR: the old token is rejected and the current token red
 			token: currentToken
 		});
 		expect(redeemed).toMatchObject({
+			status: "checked_in",
 			participant: {
 				id: authUser.id,
 				name: authUser.name,
@@ -250,12 +251,16 @@ test("reload rotates the QR: the old token is rejected and the current token red
 			},
 			event: { id: meal.id, title: meal.title }
 		});
-		await expect(
-			client.events.redeemEventTicket.mutate({
-				eventId: meal.id,
-				token: currentToken
-			})
-		).rejects.toMatchObject({ data: { code: "CONFLICT" } });
+		const repeatScan = await client.events.redeemEventTicket.mutate({
+			eventId: meal.id,
+			token: currentToken
+		});
+		expect(repeatScan).toMatchObject({
+			status: "already_checked_in",
+			attendanceId: redeemed.attendanceId,
+			checkedInAt: redeemed.checkedInAt,
+			participant: { id: authUser.id, name: authUser.name }
+		});
 		const attendance = await db.query.eventAttendance.findMany({
 			where: attendanceWhere
 		});
