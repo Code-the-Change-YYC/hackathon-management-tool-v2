@@ -39,14 +39,14 @@ export function judgeTable(
 				tableId: "table",
 				judgeId: "judge",
 				createdAt: judgingNow,
-				judge: { id: "judge", name: "Dara" }
+				judge: { id: "judge", name: "Dara", image: null }
 			},
 			{
 				id: "seat-2",
 				tableId: "table",
 				judgeId: "judge-2",
 				createdAt: judgingNow,
-				judge: { id: "judge-2", name: "Sam" }
+				judge: { id: "judge-2", name: "Sam", image: null }
 			}
 		],
 		...overrides,

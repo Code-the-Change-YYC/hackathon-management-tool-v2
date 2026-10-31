@@ -80,13 +80,12 @@ export function getJudgeTable(assignments: JudgeAssignment[], userId: string) {
 	const first = assignments.slice().sort(sortAssignments)[0];
 	if (!first) return null;
 	return {
-		name:
-			first.table.round.kind === "final"
-				? "the final table"
-				: getTableName(first),
+		name: getTableName(first),
+		number: first.table.tableNumber,
+		isFinal: first.table.round.kind === "final",
 		otherJudges: first.table.judges
 			.filter(({ judge }) => judge.id !== userId)
-			.map(({ judge }) => judge.name)
+			.map(({ judge }) => judge)
 	};
 }
 

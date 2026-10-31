@@ -42,20 +42,14 @@ function canScoreAssignment(
 	return assignment.scores.length > 0 || assignment.startsAt <= currentTime;
 }
 
-function getDashboardHref(roundId?: string) {
-	return roundId ? `/judge?round=${encodeURIComponent(roundId)}` : "/judge";
-}
-
 function ScoreMessage({
 	title,
 	children,
-	onRetry,
-	roundId
+	onRetry
 }: {
 	title: string;
 	children: ReactNode;
 	onRetry?: () => void;
-	roundId?: string;
 }) {
 	return (
 		<Empty className="mx-auto max-w-xl py-16">
@@ -71,10 +65,7 @@ function ScoreMessage({
 						Try again
 					</Button>
 				) : null}
-				<Link
-					className={buttonVariants({ variant: "outline" })}
-					href={getDashboardHref(roundId)}
-				>
+				<Link className={buttonVariants({ variant: "outline" })} href="/judge">
 					Back to dashboard
 				</Link>
 			</div>
@@ -130,10 +121,7 @@ function JudgeScorecard({
 
 	if (card.status === "saved")
 		return (
-			<ScoreMessage
-				roundId={assignment.table.roundId}
-				title="Your scores have been submitted"
-			>
+			<ScoreMessage title="Your scores have been submitted">
 				<span className="flex flex-col gap-3">
 					<span>
 						{assignment.team.name} · {assignment.table.round.name}
@@ -172,7 +160,7 @@ function JudgeScorecard({
 					<div className="min-w-0">
 						<Link
 							className="inline-flex items-center gap-1 text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
-							href={getDashboardHref(assignment.table.roundId)}
+							href="/judge"
 							onClick={async (event) => {
 								if (saving) {
 									event.preventDefault();
@@ -189,13 +177,13 @@ function JudgeScorecard({
 											destructive: true
 										})
 									)
-										router.push(getDashboardHref(assignment.table.roundId));
+										router.push("/judge");
 								}
 							}}
 						>
 							<ArrowLeftLine aria-hidden className="size-4" /> Dashboard
 						</Link>
-						<h1 className="mt-3 mb-1 break-words font-semibold text-2xl">
+						<h1 className="wrap-break-word mt-3 mb-1 font-semibold text-2xl">
 							{assignment.team.name}
 						</h1>
 						<p className="m-0 text-muted-foreground text-sm">
@@ -251,7 +239,9 @@ function JudgeScorecard({
 								{isCriterionScoreValid(criterion, card.scores[criterion.id]) ? (
 									<CheckLine aria-hidden data-icon="inline-start" />
 								) : null}
-								<span className="min-w-0 break-words">{criterion.name}</span>
+								<span className="wrap-break-word min-w-0">
+									{criterion.name}
+								</span>
 								<span className="shrink-0 tabular-nums">
 									{card.scores[criterion.id] ?? "–"}/{criterion.maxScore}
 								</span>

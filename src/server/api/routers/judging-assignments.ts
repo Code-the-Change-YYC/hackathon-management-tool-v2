@@ -19,7 +19,7 @@ const tableWithRoundAndJudges = {
 		round: true,
 		judges: {
 			with: {
-				judge: { columns: { id: true, name: true } }
+				judge: { columns: { id: true, name: true, image: true } }
 			}
 		}
 	}

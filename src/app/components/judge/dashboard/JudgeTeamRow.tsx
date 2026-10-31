@@ -5,19 +5,87 @@ import { cn } from "@/lib/utils";
 import {
 	type Criterion,
 	formatTime,
-	getAssignmentCriteria,
 	getAssignmentScoreStatus,
 	getAssignmentTotal,
-	getCriteriaScore,
 	getSlotStatus,
 	getTeamCode,
 	isPresenting,
 	isScoringOpen,
-	type JudgeAssignment,
-	sortCriteria
+	type JudgeAssignment
 } from "../judgePortal";
 
-const rowClass = "flex min-h-16 items-center gap-4 px-4 py-3 sm:px-6";
+const rowClass = "flex min-h-20 items-center gap-2 px-4 py-3 sm:px-6";
+// Scored rows sit on the primary colour, so muted text needs a light tint.
+const mutedClass =
+	"text-muted-foreground group-data-[state=scored]:text-primary-foreground/80";
+
+type RowState = "scored" | "partial" | "open" | "upcoming";
+
+function getRowState(
+	assignment: JudgeAssignment,
+	criteria: Criterion[],
+	currentTime: Date
+): RowState {
+	const status = getAssignmentScoreStatus(assignment, criteria);
+	if (status === "Scores recorded") return "scored";
+	// A criterion added after submission leaves a scorecard partly filled in.
+	if (status === "Partially scored") return "partial";
+	if (isScoringOpen(assignment, currentTime)) return "open";
+	return "upcoming";
+}
+
+const LINK_LABELS: Record<Exclude<RowState, "upcoming">, string> = {
+	scored: "Edit score for",
+	partial: "Continue scoring",
+	open: "Score"
+};
+
+function RowStatus({
+	state,
+	assignment,
+	criteria,
+	currentTime
+}: {
+	state: RowState;
+	assignment: JudgeAssignment;
+	criteria: Criterion[];
+	currentTime: Date;
+}) {
+	switch (state) {
+		case "scored": {
+			const { total, max } = getAssignmentTotal(assignment, criteria);
+			return (
+				<span className="shrink-0 tabular-nums">
+					<span className="font-semibold text-xl">{total}</span>
+					{max > 0 && <span className={cn(mutedClass, "text-xs")}>/{max}</span>}
+				</span>
+			);
+		}
+		case "partial":
+			return (
+				<span className="flex shrink-0 flex-col items-end">
+					<span className="flex items-center gap-1 font-medium text-primary">
+						Continue <RightLine className="size-4" />
+					</span>
+					<span className="text-muted-foreground text-xs">
+						Partially scored
+					</span>
+				</span>
+			);
+		case "open":
+			return (
+				<span className="flex shrink-0 items-center gap-0.5 font-medium text-primary">
+					Score <RightLine className="size-5" />
+				</span>
+			);
+		case "upcoming":
+			return (
+				<span className="shrink-0 text-muted-foreground text-sm">
+					{getSlotStatus(assignment.startsAt, currentTime)}
+				</span>
+			);
+	}
+}
 
 export function JudgeTeamRow({
 	assignment,
@@ -28,93 +96,62 @@ export function JudgeTeamRow({
 	criteria: Criterion[];
 	currentTime: Date;
 }) {
-	const status = getAssignmentScoreStatus(assignment, criteria);
-	const scored = status === "Scores recorded";
-	// A criterion added after submission leaves a scorecard partly filled in.
-	const partial = status === "Partially scored";
-	const open = scored || partial || isScoringOpen(assignment, currentTime);
-	const presenting = isPresenting(assignment, currentTime);
-	const total = getAssignmentTotal(assignment, criteria);
-	const breakdown = getAssignmentCriteria(assignment, criteria)
-		.sort(sortCriteria)
-		.flatMap((criterion) => {
-			const value = getCriteriaScore(assignment, criterion.id);
-			if (value === undefined) return [];
-			return criterion.isSidepot
-				? `${criterion.name} ${value}/${criterion.maxScore}`
-				: `${criterion.name} ${value}`;
-		});
+	const state = getRowState(assignment, criteria, currentTime);
 
 	const content = (
 		<>
-			<span className="w-16 shrink-0 text-muted-foreground text-sm sm:w-20">
+			<span
+				className={cn(
+					mutedClass,
+					"w-16 shrink-0 whitespace-nowrap text-sm sm:w-20"
+				)}
+			>
 				{formatTime(assignment.startsAt)}
 			</span>
 			<span className="flex min-w-0 flex-1 flex-col">
-				<span className="break-words font-medium text-base">
+				<span className="wrap-break-word font-medium text-base sm:text-lg">
 					{assignment.team.name}
 				</span>
-				<span className="text-muted-foreground text-xs">
-					Team ID {getTeamCode(assignment)}
-					{presenting ? (
-						<span className="font-medium text-primary"> · Presenting now</span>
-					) : null}
+				<span className={cn(mutedClass, "text-sm tracking-wider")}>
+					{getTeamCode(assignment)}
 				</span>
-				{scored && breakdown.length > 0 && (
-					<span className="hidden text-muted-foreground text-xs sm:block">
-						{breakdown.join(" · ")}
-					</span>
-				)}
 			</span>
-			{scored ? (
-				<span className="flex shrink-0 flex-col items-end">
-					<span className="tabular-nums">
-						<strong className="text-lg">{total.total}</strong>
-						{total.max > 0 && (
-							<span className="text-muted-foreground">/{total.max}</span>
-						)}
-					</span>
-					<span className="font-medium text-judging-success text-xs">
-						Scored · Edit
-					</span>
-				</span>
-			) : partial ? (
-				<span className="flex shrink-0 flex-col items-end">
-					<span className="flex items-center gap-1 font-medium text-primary">
-						Continue <RightLine className="size-4" />
-					</span>
-					<span className="text-muted-foreground text-xs">
-						Partially scored
-					</span>
-				</span>
-			) : open ? (
-				<span className="flex shrink-0 items-center gap-1 font-medium text-primary">
-					Score <RightLine className="size-4" />
-				</span>
-			) : (
-				<span className="shrink-0 text-muted-foreground text-sm">
-					{getSlotStatus(assignment.startsAt, currentTime)}
-				</span>
-			)}
+			<RowStatus
+				assignment={assignment}
+				criteria={criteria}
+				currentTime={currentTime}
+				state={state}
+			/>
 		</>
 	);
 
-	return (
-		<li className={cn(presenting && "bg-purple-50")}>
-			{open ? (
-				<Link
-					aria-label={`${scored ? "Edit score for" : partial ? "Continue scoring" : "Score"} ${assignment.team.name}`}
-					className={cn(
-						rowClass,
-						"focus-visible:-outline-offset-2 transition hover:bg-purple-50 focus-visible:outline-2 focus-visible:outline-primary"
-					)}
-					href={`/judge/score/${assignment.id}`}
-				>
-					{content}
-				</Link>
-			) : (
+	const rowBackground = cn(
+		"group",
+		isPresenting(assignment, currentTime) && "bg-purple-50",
+		state === "scored" && "bg-primary text-primary-foreground"
+	);
+
+	if (state === "upcoming") {
+		return (
+			<li className={rowBackground} data-state={state}>
 				<div className={rowClass}>{content}</div>
-			)}
+			</li>
+		);
+	}
+
+	return (
+		<li className={rowBackground} data-state={state}>
+			<Link
+				aria-label={`${LINK_LABELS[state]} ${assignment.team.name}`}
+				className={cn(
+					rowClass,
+					"focus-visible:-outline-offset-2 transition hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-primary",
+					"group-data-[state=scored]:focus-visible:outline-primary-foreground group-data-[state=scored]:hover:bg-primary-foreground/10"
+				)}
+				href={`/judge/score/${assignment.id}`}
+			>
+				{content}
+			</Link>
 		</li>
 	);
 }
