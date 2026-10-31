@@ -235,7 +235,8 @@ export default function Prizes() {
 										)}
 									</div>
 									<p className="mt-auto w-full border-dark-grey/15 border-t pt-3 text-dark-grey text-sm">
-										Sponsored by <span className="font-bold">{sponsor}</span>
+										Sponsored by{" "}
+										<span className="font-semibold">{sponsor}</span>
 									</p>
 								</li>
 							)
