@@ -303,7 +303,7 @@ test("HMTV2-80: a failed dietary save retries successfully with the retained dra
 	await expect(save).toBeEnabled();
 	await save.click();
 	await expect(editor(page)).toBeHidden();
-	await expectRegistered(page, ["Halal", "Gluten-free", "Vegetarian"]);
+	await expectRegistered(page, ["Halal", "Vegetarian", "Gluten-free"]);
 	await page.reload();
-	await expectRegistered(page, ["Halal", "Gluten-free", "Vegetarian"]);
+	await expectRegistered(page, ["Halal", "Vegetarian", "Gluten-free"]);
 });
