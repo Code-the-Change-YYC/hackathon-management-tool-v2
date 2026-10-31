@@ -128,7 +128,10 @@ describe("merged team and judging workflows", () => {
 		const api = await caller();
 		mocks.query.organization.findFirst.mockResolvedValue({
 			id: "team-1",
-			prescreenStatus: "pending"
+			prescreenStatus: "pending",
+			metadata: JSON.stringify({
+				devpostLink: "https://devpost.com/software/reviewed"
+			})
 		});
 		mocks.write.returning.mockResolvedValue([
 			{ id: "team-1", prescreenStatus: "passed", teamCode: "ABC123" }
