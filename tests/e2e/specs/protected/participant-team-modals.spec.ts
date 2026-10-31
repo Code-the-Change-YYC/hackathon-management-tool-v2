@@ -1,4 +1,4 @@
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { Page } from "playwright/test";
 import { db } from "@/server/db";
 import { member, organization } from "@/server/db/auth-schema";
@@ -178,6 +178,39 @@ async function addMembers(teamId: string, count: number) {
 		for (const { cleanup } of users) await cleanup();
 	};
 }
+
+test("TEAM03: a full-team rejection preserves membership and allows another choice", async ({
+	authenticatedPage: page,
+	authUser,
+	createTeam
+}) => {
+	const team = await createTeam("Full team");
+	const cleanup = await addMembers(team.id, 5);
+	try {
+		await page.goto("/participant/team");
+		await page.getByRole("button", { name: "Join or register a team" }).click();
+		await page.getByText("our team is already registered").click();
+		await page.getByRole("button", { name: "Continue" }).click();
+		await page.getByLabel("Team invite code").fill(team.teamCode ?? "");
+		await page.getByRole("button", { name: "Continue" }).click();
+		await expect(page.getByText(/full.*5|5.*maximum/i)).toBeVisible();
+		await expect(page.getByText(`You've joined ${team.name}!`)).toHaveCount(0);
+		expect(
+			await db.query.member.findMany({
+				where: eq(member.organizationId, team.id)
+			})
+		).toHaveLength(5);
+		expect(
+			await db.query.member.findMany({ where: eq(member.userId, authUser.id) })
+		).toHaveLength(0);
+		await page.getByRole("button", { name: /back/i }).click();
+		await expect(
+			page.getByText("our team is already registered")
+		).toBeVisible();
+	} finally {
+		await cleanup();
+	}
+});
 
 async function joinAsOwner(teamId: string, userId: string) {
 	await db.insert(member).values({
