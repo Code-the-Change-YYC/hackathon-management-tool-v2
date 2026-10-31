@@ -1,12 +1,20 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { FinalRoundManagement } from "@/app/components/admin/judging/FinalRoundManagement";
+import { FinalistsDialog } from "@/app/components/admin/judging/FinalistsDialog";
 import type {
 	Layout,
 	PanelRanking,
 	Team
 } from "@/app/components/admin/judging/judgingShared";
-import { PanelScheduleManagement } from "@/app/components/admin/judging/PanelScheduleManagement";
+import { PanelResults } from "@/app/components/admin/judging/PanelResults";
+import { PanelSchedule } from "@/app/components/admin/judging/PanelSchedule";
+import { ScheduleDialog } from "@/app/components/admin/judging/ScheduleDialog";
 import { judgingRound, judgingNow as now } from "../helpers/judging";
 
 const { mocks, mutation } = vi.hoisted(() => ({
@@ -31,10 +39,6 @@ vi.mock("@/trpc/react", () => ({
 			removeTeam: mutation(mocks.removeTeam),
 			addTeam: mutation(vi.fn()),
 			assignJudge: mutation(vi.fn())
-		},
-		judgingRounds: {
-			publish: mutation(vi.fn()),
-			unpublish: mutation(vi.fn())
 		},
 		judgingResults: { setFinalists: mutation(mocks.setFinalists) }
 	}
@@ -76,20 +80,31 @@ const layout = {
 		}))
 	}))
 } as unknown as Layout;
+const passedTeam = {
+	id: "late",
+	name: "Late",
+	prescreenStatus: "passed"
+} as Team;
 
 function renderSchedule(
-	layoutForRound: Layout | null = layout,
-	roundToShow = round
+	props: Partial<Parameters<typeof PanelSchedule>[0]> = {}
 ) {
 	return render(
-		<PanelScheduleManagement
-			activeRoundId={round.id}
+		<PanelSchedule
+			hasScores={false}
 			judges={[]}
-			layouts={layoutForRound ? { [round.id]: layoutForRound } : {}}
-			rounds={[roundToShow]}
-			teams={[{ id: "late", name: "Late", prescreenStatus: "passed" } as Team]}
+			layout={layout}
+			round={round}
+			teams={[passedTeam]}
+			{...props}
 		/>
 	);
+}
+
+function changeNumber(label: string, value: string) {
+	const input = within(screen.getByRole("dialog")).getByLabelText(label);
+	fireEvent.change(input, { target: { value } });
+	fireEvent.blur(input);
 }
 
 beforeEach(() => {
@@ -110,34 +125,35 @@ beforeEach(() => {
 					endsAt: minutes(170)
 				}
 			}
-		}
+		},
+		error: null,
+		isPlaceholderData: false
 	});
 });
 
-describe("panel schedule", () => {
-	it("previews the computed schedule and generates with the entered settings", () => {
-		renderSchedule(null);
-		expect(
-			screen.getByText(
-				"5 tables (4, 4, 4, 4, 4 judges) · 5-minute presentations · 10 waves"
-			)
-		).toBeVisible();
-		fireEvent.change(screen.getByLabelText("Judges per table (minimum)"), {
-			target: { value: "3" }
-		});
+describe("schedule dialog", () => {
+	it("previews the computed schedule and generates with the entered settings", async () => {
+		render(
+			<ScheduleDialog hasSchedule={false} onClose={vi.fn()} round={round} />
+		);
+		expect(screen.getByText("5 tables · 5-minute presentations")).toBeVisible();
+		expect(screen.getByText(/50 teams · 20 judges/)).toBeVisible();
+		changeNumber("Judges per table", "3");
 		expect(mocks.preview).toHaveBeenLastCalledWith(
 			expect.objectContaining({ roundId: round.id, panelSize: 3 }),
 			expect.objectContaining({ enabled: true })
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Generate schedule" }));
-		expect(mocks.generate).toHaveBeenCalledWith({
-			roundId: round.id,
-			panelSize: 3,
-			changeoverMinutes: 2,
-			breakMinutes: 10,
-			maxBlockMinutes: 50,
-			confirm: false
-		});
+		fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+		await waitFor(() =>
+			expect(mocks.generate).toHaveBeenCalledWith({
+				roundId: round.id,
+				panelSize: 3,
+				changeoverMinutes: 2,
+				breakMinutes: 10,
+				maxBlockMinutes: 50,
+				confirm: false
+			})
+		);
 	});
 
 	it("explains a schedule that doesn't fit and won't generate it", () => {
@@ -149,42 +165,57 @@ describe("panel schedule", () => {
 					ok: false,
 					message: "Two tables of 4 need at least 8 judges."
 				}
-			}
+			},
+			error: null,
+			isPlaceholderData: false
 		});
-		renderSchedule(null);
-		expect(screen.getByText("Doesn’t fit")).toBeVisible();
+		render(
+			<ScheduleDialog hasSchedule={false} onClose={vi.fn()} round={round} />
+		);
 		expect(
-			screen.getByRole("button", { name: "Generate schedule" })
-		).toBeDisabled();
+			screen.getByText("Two tables of 4 need at least 8 judges.")
+		).toBeVisible();
+		expect(screen.getByRole("button", { name: "Generate" })).toBeDisabled();
 	});
 
-	it("disables generating while a setting isn't a whole number", () => {
-		renderSchedule(null);
-		fireEvent.change(screen.getByLabelText("Break length (minutes)"), {
-			target: { value: "" }
-		});
-		expect(
-			screen.getByText("Enter a whole number for each setting.")
-		).toBeVisible();
-		expect(
-			screen.getByRole("button", { name: "Generate schedule" })
-		).toBeDisabled();
+	it("flags an empty setting on submit instead of generating", async () => {
+		render(
+			<ScheduleDialog hasSchedule={false} onClose={vi.fn()} round={round} />
+		);
+		changeNumber("Break length (min)", "");
+		fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+		expect(await screen.findByText("Enter a number.")).toBeVisible();
+		expect(mocks.generate).not.toHaveBeenCalled();
 	});
 
-	it("shows tables with their judges, free time as a break, and confirms regenerating a published round", async () => {
-		renderSchedule(layout, { ...round, publishedAt: now });
+	it("warns before regenerating a published round, then confirms it", async () => {
+		render(
+			<ScheduleDialog
+				hasSchedule
+				onClose={vi.fn()}
+				round={{ ...round, publishedAt: now }}
+			/>
+		);
 		expect(
-			screen.getByRole("columnheader", { name: /Table 1\s*Ada, Bo/ })
+			screen.getByText(/teams have already seen their current times/)
 		).toBeVisible();
-		expect(screen.getByText(/Break · 4:18 AM–4:30 AM/)).toBeVisible();
 		fireEvent.click(screen.getByRole("button", { name: "Regenerate" }));
-		const dialog = await screen.findByRole("alertdialog");
-		fireEvent.click(within(dialog).getByRole("button", { name: "Regenerate" }));
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(mocks.generate).toHaveBeenCalledWith(
 				expect.objectContaining({ confirm: true })
 			)
 		);
+	});
+});
+
+describe("panel schedule", () => {
+	it("shows tables with their judges and free time as a break", () => {
+		renderSchedule();
+		expect(screen.getByText("2 tables · 8-minute presentations")).toBeVisible();
+		expect(
+			screen.getByRole("columnheader", { name: /Table 1\s*Ada, Bo/ })
+		).toBeVisible();
+		expect(screen.getByText(/Break · 4:18 AM – 4:30 AM/)).toBeVisible();
 	});
 
 	it("removes a team only after confirmation", async () => {
@@ -195,13 +226,51 @@ describe("panel schedule", () => {
 			})[0] as HTMLElement
 		);
 		const dialog = await screen.findByRole("alertdialog");
+		expect(mocks.removeTeam).not.toHaveBeenCalled();
 		fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(mocks.removeTeam).toHaveBeenCalledWith({
 				roundId: round.id,
 				teamId: "10"
 			})
 		);
+	});
+
+	it("opens the add team and move judge dialogs", async () => {
+		renderSchedule();
+		fireEvent.click(screen.getByRole("button", { name: "Add team" }));
+		expect(
+			await screen.findByRole("dialog", { name: "Add a team" })
+		).toBeVisible();
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		fireEvent.click(screen.getByRole("button", { name: "Move judge" }));
+		expect(
+			await screen.findByRole("dialog", { name: "Move a judge" })
+		).toBeVisible();
+	});
+
+	it("won't regenerate a scored round", () => {
+		renderSchedule({ hasScores: true });
+		expect(screen.getByRole("button", { name: "Regenerate" })).toBeDisabled();
+	});
+
+	it("offers to generate a schedule once teams have passed prescreening", async () => {
+		renderSchedule({ layout: undefined });
+		expect(screen.getByText("No schedule yet")).toBeVisible();
+		fireEvent.click(screen.getByRole("button", { name: "Generate schedule" }));
+		expect(
+			await screen.findByRole("dialog", { name: "Generate schedule" })
+		).toBeVisible();
+	});
+
+	it("points to prescreening when no team has passed", () => {
+		renderSchedule({ layout: undefined, teams: [] });
+		expect(
+			screen.getByText("No teams have passed prescreening yet.")
+		).toBeVisible();
+		expect(
+			screen.getByRole("link", { name: "Prescreen teams" })
+		).toHaveAttribute("href", "/admin/teams");
 	});
 });
 
@@ -214,47 +283,79 @@ const ranking: PanelRanking[] = ["A", "B", "C"].map((name, index) => ({
 	expectedScorecards: 4
 }));
 
-function renderResults() {
+function renderResults(
+	props: Partial<Parameters<typeof PanelResults>[0]> = {}
+) {
 	return render(
-		<FinalRoundManagement
-			finalResults={null}
-			layouts={{}}
-			rankings={{ [round.id]: ranking }}
-			rounds={[round]}
+		<PanelResults
+			finalRoundHasScores={false}
+			hackathonDates={null}
+			hasFinalRound={false}
+			onFinalRoundCreated={vi.fn()}
+			ranking={ranking}
+			round={round}
+			{...props}
 		/>
 	);
 }
 
-describe("finalist picker", () => {
-	it("pre-selects the top teams and follows the finalist count", () => {
+describe("panel results", () => {
+	it("ranks teams and opens the finalist picker", async () => {
 		renderResults();
-		expect(screen.getByText("3 finalists selected")).toBeVisible();
-		fireEvent.change(screen.getByLabelText("Number of finalists"), {
-			target: { value: "2" }
-		});
+		const topRow = screen.getByText("Team A").closest("tr") as HTMLElement;
+		expect(topRow).toHaveTextContent("1Team A1.004.004/4");
+		fireEvent.click(screen.getByRole("button", { name: "Pick finalists" }));
 		expect(
-			screen.getByRole("checkbox", { name: "Select Team C as a finalist" })
-		).not.toBeChecked();
-		expect(screen.getByText("2 finalists selected")).toBeVisible();
+			await screen.findByRole("dialog", { name: "Create final round" })
+		).toBeVisible();
 	});
 
-	it("requires a start time, then creates the final round in rank order", () => {
-		renderResults();
-		fireEvent.click(
-			screen.getByRole("checkbox", { name: "Select Team B as a finalist" })
+	it("won't change finalists once the final round is scored", () => {
+		renderResults({ hasFinalRound: true, finalRoundHasScores: true });
+		expect(
+			screen.getByRole("button", { name: "Change finalists" })
+		).toBeDisabled();
+	});
+});
+
+describe("finalists dialog", () => {
+	function renderDialog() {
+		return render(
+			<FinalistsDialog
+				hackathonDates={null}
+				hasFinalRound={false}
+				onClose={vi.fn()}
+				onCreated={vi.fn()}
+				panelRound={round}
+				ranking={ranking}
+			/>
 		);
+	}
+
+	it("pre-selects the top teams", () => {
+		renderDialog();
+		expect(screen.getByText("Finalists · 3 selected")).toBeVisible();
+		fireEvent.click(screen.getByRole("checkbox", { name: /Team C/ }));
+		expect(screen.getByText("Finalists · 2 selected")).toBeVisible();
+	});
+
+	it("requires a start time, then creates the final round in rank order", async () => {
+		renderDialog();
+		fireEvent.click(screen.getByRole("checkbox", { name: /Team B/ }));
 		fireEvent.click(screen.getByRole("button", { name: "Create final round" }));
-		expect(screen.getByText("Choose a valid start time.")).toBeVisible();
+		expect(await screen.findByText("Choose a start time.")).toBeVisible();
 		expect(mocks.setFinalists).not.toHaveBeenCalled();
-		fireEvent.change(screen.getByLabelText("Final round starts"), {
-			target: { value: "2026-11-08T16:00" }
+		fireEvent.change(screen.getByLabelText("Starts"), {
+			target: { value: "16:00" }
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Create final round" }));
-		expect(mocks.setFinalists).toHaveBeenCalledWith({
-			teamIds: ["a", "c"],
-			startTime: new Date("2026-11-08T16:00:00-06:00"),
-			presentationMinutes: 10,
-			changeoverMinutes: 2
-		});
+		await waitFor(() =>
+			expect(mocks.setFinalists).toHaveBeenCalledWith({
+				teamIds: ["a", "c"],
+				startTime: new Date("2026-09-19T16:00:00-06:00"),
+				presentationMinutes: 10,
+				changeoverMinutes: 2
+			})
+		);
 	});
 });

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AutoRefresh } from "@/app/components/AutoRefresh";
 import { JudgingView } from "@/app/components/admin/judging/JudgingView";
 import { byNameThenId } from "@/app/components/admin/judging/judgingShared";
+import { toHackathonDates } from "@/lib/validation/event";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
@@ -54,6 +55,7 @@ export default async function JudgingPage() {
 				assignments={assignments}
 				criteria={criteria}
 				finalResults={finalResults}
+				hackathonDates={toHackathonDates(settings)}
 				judges={users
 					.filter((user) => user.role === Role.JUDGE)
 					.sort(byNameThenId)}
