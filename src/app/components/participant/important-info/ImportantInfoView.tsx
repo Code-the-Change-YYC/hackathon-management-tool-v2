@@ -9,8 +9,7 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardHeader,
-	CardTitle
+	CardHeader
 } from "@/app/components/ui/card";
 import { DEVPOST_URL } from "@/lib/constants";
 
@@ -61,9 +60,7 @@ export function ImportantInfoView() {
 			>
 				<Card aria-atomic="true" aria-live="polite">
 					<CardHeader>
-						<CardTitle>
-							<h2>{slide.title}</h2>
-						</CardTitle>
+						<h2 className="font-medium text-xl">{slide.title}</h2>
 					</CardHeader>
 					<CardContent>
 						<ol className="flex list-decimal flex-col gap-4 pl-5 leading-relaxed">
@@ -73,7 +70,7 @@ export function ImportantInfoView() {
 						</ol>
 					</CardContent>
 				</Card>
-				<div className="flex flex-wrap items-center justify-between gap-3">
+				<div className="flex items-center justify-center gap-4 sm:gap-6">
 					<Button
 						aria-label="Previous guideline"
 						onClick={() =>
@@ -86,7 +83,7 @@ export function ImportantInfoView() {
 					>
 						Previous
 					</Button>
-					<div className="flex flex-wrap gap-2">
+					<div className="flex gap-3 sm:gap-2">
 						{slides.map((item, index) => (
 							<Button
 								aria-label={`Show ${item.title}`}
@@ -114,9 +111,7 @@ export function ImportantInfoView() {
 			</section>
 			<Card>
 				<CardHeader>
-					<CardTitle>
-						<h2>Submitting Your Project</h2>
-					</CardTitle>
+					<h2 className="font-medium text-xl">Submitting Your Project</h2>
 					<CardDescription>
 						Prepare your submission and submit it on Devpost before Sunday,
 						November 8 at 11:30AM ABT.
@@ -124,7 +119,7 @@ export function ImportantInfoView() {
 				</CardHeader>
 				<CardContent className="flex flex-col gap-6 leading-relaxed">
 					<section className="flex flex-col gap-2">
-						<h3 className="font-medium">What goes into a submission?</h3>
+						<h3 className="font-semibold">What goes into a submission?</h3>
 						<ul className="flex list-disc flex-col gap-2 pl-5">
 							<li>Your team ID and team name.</li>
 							<li>
@@ -138,7 +133,7 @@ export function ImportantInfoView() {
 						</ul>
 					</section>
 					<section className="flex flex-col gap-2">
-						<h3 className="font-medium">Submission instructions</h3>
+						<h3 className="font-semibold">Submission instructions</h3>
 						<ol className="flex list-decimal flex-col gap-2 pl-5">
 							<li>
 								Open the event’s Devpost page and select “Start Project”.{" "}
@@ -182,7 +177,7 @@ export function ImportantInfoView() {
 						</div>
 					</section>
 					<section className="flex flex-col gap-2">
-						<h3 className="font-medium">After submissions</h3>
+						<h3 className="font-semibold">After submissions</h3>
 						<p>
 							Teams will demo their projects to judges live. Check the{" "}
 							<Link
@@ -202,7 +197,7 @@ export function ImportantInfoView() {
 						</p>
 					</section>
 					<section className="flex flex-col gap-2">
-						<h3 className="font-medium">After judging</h3>
+						<h3 className="font-semibold">After judging</h3>
 						<p>
 							Stay tuned while CTC members aggregate the final scores and
 							announce the winners at the closing ceremonies. Follow the event
