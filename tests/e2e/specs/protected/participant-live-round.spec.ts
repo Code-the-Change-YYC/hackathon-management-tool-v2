@@ -29,25 +29,21 @@ test("PART02: an active-round change refreshes both views without leaking anothe
 	try {
 		const teamA = await teams.create("Team A");
 		const teamB = await teams.create("Private Team B");
-		await db
-			.insert(member)
-			.values({
-				id: crypto.randomUUID(),
-				organizationId: teamA.id,
-				userId: authUser.id,
-				role: "owner",
-				createdAt: new Date()
-			});
+		await db.insert(member).values({
+			id: crypto.randomUUID(),
+			organizationId: teamA.id,
+			userId: authUser.id,
+			role: "owner",
+			createdAt: new Date()
+		});
 		const names = ["Live Round One", "Live Round Two"];
 		for (const [index, id] of roundIds.entries()) {
-			await db
-				.insert(judgingRounds)
-				.values({
-					id,
-					name: names[index] ?? "Round",
-					startTime: new Date(`2099-06-15T${18 + index * 2}:00:00Z`),
-					endTime: new Date(`2099-06-15T${19 + index * 2}:00:00Z`)
-				});
+			await db.insert(judgingRounds).values({
+				id,
+				name: names[index] ?? "Round",
+				startTime: new Date(`2099-06-15T${18 + index * 2}:00:00Z`),
+				endTime: new Date(`2099-06-15T${19 + index * 2}:00:00Z`)
+			});
 			for (const [label, team] of [
 				["a", teamA],
 				["b", teamB]
@@ -60,13 +56,11 @@ test("PART02: an active-round change refreshes both views without leaking anothe
 					})
 					.returning();
 				if (!room) throw new Error("Missing room fixture");
-				await db
-					.insert(judgingAssignments)
-					.values({
-						roomId: room.id,
-						teamId: team.id,
-						timeSlot: new Date(`2099-06-15T${18 + index * 2}:30:00Z`)
-					});
+				await db.insert(judgingAssignments).values({
+					roomId: room.id,
+					teamId: team.id,
+					timeSlot: new Date(`2099-06-15T${18 + index * 2}:30:00Z`)
+				});
 			}
 		}
 		await setSettings({ currentRoundId: roundIds[0], judgingPhase: "judging" });
