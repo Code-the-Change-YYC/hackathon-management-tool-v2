@@ -46,61 +46,51 @@ async function fixture() {
 	assert(judgeA && judgeB && participant);
 	const teamA = await teams.create("Integrity A");
 	const teamB = await teams.create("Integrity B");
-	await db
-		.insert(member)
-		.values({
-			id: crypto.randomUUID(),
-			userId: participant.user.id,
-			organizationId: teamA.id,
-			role: "owner",
-			createdAt: new Date()
-		});
+	await db.insert(member).values({
+		id: crypto.randomUUID(),
+		userId: participant.user.id,
+		organizationId: teamA.id,
+		role: "owner",
+		createdAt: new Date()
+	});
 	const roomIds: string[] = [];
 	for (const [index, roundId] of roundIds.entries()) {
-		await db
-			.insert(judgingRounds)
-			.values({
-				id: roundId,
-				name: `Integrity round ${index}`,
-				startTime: new Date(Date.now() - 7_200_000),
-				endTime: new Date(Date.now() + 3_600_000)
-			});
+		await db.insert(judgingRounds).values({
+			id: roundId,
+			name: `Integrity round ${index}`,
+			startTime: new Date(Date.now() - 7_200_000),
+			endTime: new Date(Date.now() + 3_600_000)
+		});
 		const [room] = await db
 			.insert(judgingRooms)
 			.values({ roundId, roomLink: "https://example.com/integrity" })
 			.returning();
 		assert(room);
 		roomIds.push(room.id);
-		await db
-			.insert(judgingRoomStaff)
-			.values(
-				[judgeA, judgeB].map(({ user }) => ({
-					roomId: room.id,
-					staffId: user.id
-				}))
-			);
-	}
-	await db
-		.insert(criteria)
-		.values(
-			criterionIds.map((id, index) => ({
-				id,
-				name: `Integrity criterion ${index}`,
-				maxScore: 10
+		await db.insert(judgingRoomStaff).values(
+			[judgeA, judgeB].map(({ user }) => ({
+				roomId: room.id,
+				staffId: user.id
 			}))
 		);
+	}
+	await db.insert(criteria).values(
+		criterionIds.map((id, index) => ({
+			id,
+			name: `Integrity criterion ${index}`,
+			maxScore: 10
+		}))
+	);
 	const rubric = await db.query.criteria.findMany();
 	const assignmentIds = Array.from({ length: 4 }, () => crypto.randomUUID());
-	await db
-		.insert(judgingAssignments)
-		.values(
-			assignmentIds.map((id, index) => ({
-				id,
-				roomId: roomIds[index === 2 ? 1 : 0] as string,
-				teamId: index === 3 ? teamB.id : teamA.id,
-				timeSlot: new Date(Date.now() - 60_000)
-			}))
-		);
+	await db.insert(judgingAssignments).values(
+		assignmentIds.map((id, index) => ({
+			id,
+			roomId: roomIds[index === 2 ? 1 : 0] as string,
+			teamId: index === 3 ? teamB.id : teamA.id,
+			timeSlot: new Date(Date.now() - 60_000)
+		}))
+	);
 	const batch = (index: number, value: number) =>
 		rubric.map((criterion) => ({
 			assignmentId: assignmentIds[index] as string,
