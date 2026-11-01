@@ -34,7 +34,7 @@ type TeamsTableProps = {
 };
 
 function OptionalBooleanIcon({ value }: { value: boolean | null }) {
-	return value === null ? "n/a" : <BooleanIcon value={value} />;
+	return value === null ? "-" : <BooleanIcon value={value} />;
 }
 
 export function TeamsTable({ teams, rounds, onDelete }: TeamsTableProps) {
@@ -79,7 +79,7 @@ export function TeamsTable({ teams, rounds, onDelete }: TeamsTableProps) {
 						<TableRow className="border-none hover:bg-white" key={team.id}>
 							<TableCell className="pl-4">{team.name}</TableCell>
 							<TableCell className="tracking-wider">
-								{team.teamCode ?? "n/a"}
+								{team.teamCode ?? "-"}
 							</TableCell>
 							<TableCell>
 								<OptionalBooleanIcon
@@ -96,10 +96,10 @@ export function TeamsTable({ teams, rounds, onDelete }: TeamsTableProps) {
 								</TableCell>
 							))}
 							<TableCell className="whitespace-normal">
-								{team.feedback ?? "n/a"}
+								{team.feedback ?? "-"}
 							</TableCell>
 							<TableCell className="whitespace-normal">
-								{team.members.length > 0 ? formatMemberNames(team) : "n/a"}
+								{team.members.length > 0 ? formatMemberNames(team) : "-"}
 							</TableCell>
 							<TableCell className="pr-4 text-right">
 								<DropdownMenu>

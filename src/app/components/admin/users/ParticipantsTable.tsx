@@ -106,10 +106,10 @@ export function ParticipantsTable({
 										{ROLE_LABELS[participant.role]}
 									</Badge>
 								) : (
-									<Badge variant={"secondary"}>N/A</Badge>
+									"-"
 								)}
 							</TableCell>
-							<TableCell>{participant.teamName ?? "n/a"}</TableCell>
+							<TableCell>{participant.teamName ?? "-"}</TableCell>
 							<TableCell>{formatShortDate(participant.signedUpAt)}</TableCell>
 							<TableCell>
 								<BooleanIcon value={participant.emailVerified} />
@@ -117,11 +117,11 @@ export function ParticipantsTable({
 							<TableCell>
 								<BooleanIcon value={participant.completedRegistration} />
 							</TableCell>
-							<TableCell>{participant.institution ?? "n/a"}</TableCell>
-							<TableCell>{participant.major ?? "n/a"}</TableCell>
+							<TableCell>{participant.institution ?? "-"}</TableCell>
+							<TableCell>{participant.major ?? "-"}</TableCell>
 							<TableCell>
 								{participant.registeredForFood === null ? (
-									"n/a"
+									"-"
 								) : (
 									<BooleanIcon value={participant.registeredForFood} />
 								)}
