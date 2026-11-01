@@ -1,12 +1,14 @@
 import { eq } from "drizzle-orm";
+import { criterionAppliesToRound } from "@/lib/judging";
 import { db } from "@/server/db";
 import { member } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
-	judgingRooms,
-	judgingRounds
-} from "@/server/db/schema";
-import { criteria, scores } from "@/server/db/scores-schema";
+	judgingCriteria,
+	judgingRounds,
+	judgingScores,
+	judgingTables
+} from "@/server/db/judging-schema";
 import type { User } from "@/types/types";
 import { Role } from "@/types/types";
 import { createTestUser } from "../../../utils/auth";
@@ -23,12 +25,16 @@ async function assignTeam(user: User) {
 		.insert(judgingRounds)
 		.values({
 			name: "E2E Round",
+			kind: "panel",
 			startTime: new Date("2099-06-15T18:00:00Z"),
-			endTime: new Date("2099-06-15T20:00:00Z")
+			endTime: new Date("2099-06-15T20:00:00Z"),
+			publishedAt: new Date(),
+			presentationMinutes: 6,
+			changeoverMinutes: 2
 		})
 		.returning();
 	const [criterion] = await db
-		.insert(criteria)
+		.insert(judgingCriteria)
 		.values({
 			name: `E2E Impact ${crypto.randomUUID().slice(0, 8)}`,
 			maxScore: 5
@@ -39,7 +45,9 @@ async function assignTeam(user: User) {
 	const cleanup = async () => {
 		// Deleting the round cascades to the judge's scores, which block deleting the judge.
 		await db.delete(judgingRounds).where(eq(judgingRounds.id, round.id));
-		await db.delete(criteria).where(eq(criteria.id, criterion.id));
+		await db
+			.delete(judgingCriteria)
+			.where(eq(judgingCriteria.id, criterion.id));
 		await judge.cleanup();
 		await teams.cleanup();
 	};
@@ -52,24 +60,28 @@ async function assignTeam(user: User) {
 		role: "owner",
 		createdAt: new Date()
 	});
-	const [room] = await db
-		.insert(judgingRooms)
-		.values({ roundId: round.id, roomLink: "https://meet.example.com/e2e" })
+	const tables = await db
+		.insert(judgingTables)
+		.values([1, 2].map((tableNumber) => ({ roundId: round.id, tableNumber })))
 		.returning();
-	if (!room) throw new Error("Failed to create a judging room");
 	const [assignment] = await db
 		.insert(judgingAssignments)
-		.values({
-			teamId: team.id,
-			roomId: room.id,
-			timeSlot: new Date("2099-06-15T18:30:00Z")
-		})
+		.values(
+			tables.map((table, index) => ({
+				teamId: team.id,
+				tableId: table.id,
+				startsAt: new Date(Date.UTC(2099, 5, 15, 18, 30 + index * 8))
+			}))
+		)
 		.returning();
 	if (!assignment) throw new Error("Failed to create a judging assignment");
-	// Published averages only count a judge's complete scorecard, so score every criterion.
-	const allCriteria = await db.query.criteria.findMany();
-	await db.insert(scores).values(
-		allCriteria.map((item) => ({
+	// Published averages only count a judge's complete scorecard, so score every
+	// criterion that applies to the round.
+	const roundCriteria = (await db.query.judgingCriteria.findMany()).filter(
+		(item) => criterionAppliesToRound(item, round.id)
+	);
+	await db.insert(judgingScores).values(
+		roundCriteria.map((item) => ({
 			assignmentId: assignment.id,
 			criteriaId: item.id,
 			judgeId: judge.user.id,
@@ -91,14 +103,14 @@ test("participant without an assignment sees the general banner", async ({
 		page.getByRole("heading", { name: "Judging", exact: true })
 	).toBeVisible();
 	await expect(
-		page.getByRole("heading", { name: /your team’s judging assignment/ })
+		page.getByRole("heading", { name: /your team’s judging/ })
 	).toHaveCount(0);
 	await expect(
 		page.getByRole("heading", { name: "Judging Rubric" })
 	).toBeVisible();
 });
 
-test("assigned team sees its room, time slot and meeting link", async ({
+test("assigned team sees its tables, times and when to arrive", async ({
 	authenticatedPage: page,
 	authUser,
 	setSettings
@@ -112,15 +124,15 @@ test("assigned team sees its room, time slot and meeting link", async ({
 		await page.goto("/participant/judging");
 
 		const banner = page
-			.getByRole("heading", {
-				name: "E2E Round: your team’s judging assignment"
-			})
+			.getByRole("heading", { name: "E2E Round: your team’s judging" })
 			.locator("xpath=../..");
-		await expect(banner).toContainText("Room 1");
-		await expect(banner).toContainText("12:30 PM");
-		await expect(
-			page.getByRole("link", { name: "Join meeting" })
-		).toHaveAttribute("href", "https://meet.example.com/e2e");
+		await expect(banner).toContainText("Table 1 → Table 2");
+		await expect(banner).toContainText(
+			"Arrive by 12:20 PM. Present at Table 1 at 12:30 PM, then Table 2 at 12:38 PM."
+		);
+		await expect(page.getByRole("link", { name: "Join meeting" })).toHaveCount(
+			0
+		);
 	} finally {
 		await setSettings({ currentRoundId: null });
 		await cleanup();

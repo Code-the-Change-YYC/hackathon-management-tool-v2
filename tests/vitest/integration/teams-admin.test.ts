@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
 	execute: vi.fn(),
 	findMany: vi.fn(),
 	findFirst: vi.fn(),
+	findRounds: vi.fn(),
 	update: vi.fn(),
 	set: vi.fn(),
 	where: vi.fn(),
@@ -29,7 +30,8 @@ vi.mock("@/server/db", () => ({
 			organization: {
 				findMany: mocks.findMany,
 				findFirst: mocks.findFirst
-			}
+			},
+			judgingRounds: { findMany: mocks.findRounds }
 		},
 		update: mocks.update,
 		transaction: mocks.transaction
@@ -50,6 +52,7 @@ beforeEach(() => {
 	mocks.execute.mockResolvedValue([]);
 	mocks.findMany.mockResolvedValue([]);
 	mocks.findFirst.mockResolvedValue(undefined);
+	mocks.findRounds.mockResolvedValue([]);
 	mocks.update.mockReturnValue({ set: mocks.set });
 	mocks.set.mockReturnValue({ where: mocks.where });
 	mocks.where.mockReturnValue({ returning: mocks.returning });
@@ -92,57 +95,79 @@ describe("admin teams procedures", () => {
 		expect(mocks.transaction).not.toHaveBeenCalled();
 	});
 
-	it("returns teams with member emails and ranking positions", async () => {
+	it("returns teams with member names, codes, and the rounds they advanced past", async () => {
 		mocks.findMany.mockResolvedValue([
 			{
 				id: "team-1",
 				name: "Alpha",
+				teamCode: "ABC123",
 				prescreenStatus: "passed",
-				prescreenComments: "Strong submission",
+				prescreenComments: null,
 				members: [
-					{ user: { email: "alpha@example.com" } },
-					{ user: { email: "teammate@example.com" } }
+					{ user: { name: "Ada Lovelace", email: "alpha@example.com" } },
+					{ user: { name: "Alan Turing", email: "teammate@example.com" } }
 				]
 			},
 			{
 				id: "team-2",
 				name: "Beta",
+				teamCode: null,
 				prescreenStatus: "pending",
 				prescreenComments: null,
 				members: []
 			}
 		]);
-		mocks.execute.mockResolvedValue([
-			{ id: "team-2", name: "Beta", totalScore: 99 },
-			{ id: "team-1", name: "Alpha", totalScore: 80 }
+		mocks.findRounds.mockResolvedValue([
+			{
+				id: "round-1",
+				name: "Round 1",
+				kind: "panel",
+				tables: [
+					{ assignments: [{ teamId: "team-1" }] },
+					{ assignments: [{ teamId: "team-2" }] }
+				]
+			},
+			{
+				id: "round-2",
+				name: "Round 2",
+				kind: "panel",
+				tables: [{ assignments: [{ teamId: "team-1" }] }, { assignments: [] }]
+			},
+			{ id: "final", name: "Final Round", kind: "final", tables: [] }
 		]);
 
 		const api = await caller("admin");
 
-		await expect(api.teams.getTeamsWithMembers()).resolves.toEqual([
-			{
-				rank: 2,
-				id: "team-1",
-				name: "Alpha",
-				prescreen: "passed",
-				feedback: "Strong submission",
-				members: "alpha@example.com, teammate@example.com",
-				memberCount: 2,
-				round1: null,
-				round2: null
-			},
-			{
-				rank: 1,
-				id: "team-2",
-				name: "Beta",
-				prescreen: "pending",
-				feedback: null,
-				members: "",
-				memberCount: 0,
-				round1: null,
-				round2: null
-			}
-		]);
+		await expect(api.teams.getTeamsWithMembers()).resolves.toEqual({
+			rounds: [
+				{ id: "round-1", name: "Round 1" },
+				{ id: "round-2", name: "Round 2" }
+			],
+			teams: [
+				{
+					id: "team-1",
+					name: "Alpha",
+					teamCode: "ABC123",
+					prescreen: "passed",
+					feedback: null,
+					members: [
+						{ name: "Ada Lovelace", email: "alpha@example.com" },
+						{ name: "Alan Turing", email: "teammate@example.com" }
+					],
+					rounds: { "round-1": true, "round-2": null }
+				},
+				{
+					id: "team-2",
+					name: "Beta",
+					teamCode: null,
+					prescreen: "pending",
+					feedback: null,
+					members: [],
+					rounds: { "round-1": false, "round-2": null }
+				}
+			]
+		});
+		expect(mocks.execute).not.toHaveBeenCalled();
 	});
 
 	it("returns rankings to admins", async () => {
@@ -158,17 +183,31 @@ describe("admin teams procedures", () => {
 		expect(mocks.execute).toHaveBeenCalledOnce();
 	});
 
-	it("rejects prescreening without comments", async () => {
+	it("rejects failing a team without feedback", async () => {
 		const api = await caller("admin");
 
 		await expect(
 			api.teams.setPrescreen({
 				teamId: "team-1",
 				status: "failed",
-				comments: ""
+				comments: "   "
 			})
 		).rejects.toMatchObject({ code: "BAD_REQUEST" });
 		expect(mocks.findFirst).not.toHaveBeenCalled();
+	});
+
+	it("passes a team without feedback and clears old feedback", async () => {
+		mocks.findFirst.mockResolvedValue({ id: "team-1", name: "Alpha" });
+		mocks.returning.mockResolvedValue([{ id: "team-1" }]);
+		const api = await caller("admin");
+
+		await api.teams.setPrescreen({ teamId: "team-1", status: "passed" });
+		expect(mocks.set).toHaveBeenCalledWith(
+			expect.objectContaining({
+				prescreenStatus: "passed",
+				prescreenComments: null
+			})
+		);
 	});
 
 	it("returns not found when prescreening an unknown team", async () => {
@@ -207,7 +246,7 @@ describe("admin teams procedures", () => {
 		expect(mocks.set).toHaveBeenCalledWith(
 			expect.objectContaining({
 				prescreenStatus: "failed",
-				prescreenComments: "  Missing a working demo  ",
+				prescreenComments: "Missing a working demo",
 				prescreenedBy: "current-user",
 				prescreenedAt: expect.any(Date)
 			})

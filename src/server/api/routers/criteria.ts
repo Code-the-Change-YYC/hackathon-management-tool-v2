@@ -1,14 +1,14 @@
 import { TRPCError } from "@trpc/server";
 import { asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
+import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	publicProcedure
 } from "@/server/api/trpc";
 import type { db } from "@/server/db";
-import { judgingRounds } from "@/server/db/schema";
-import { criteria } from "@/server/db/scores-schema";
+import { judgingCriteria, judgingRounds } from "@/server/db/judging-schema";
 
 async function validateRounds(database: typeof db, roundIds?: string[]) {
 	if (!roundIds?.length) return;
@@ -28,8 +28,8 @@ export const criteriaRouter = createTRPCRouter({
 	getAll: publicProcedure.query(async ({ ctx }) => {
 		return await ctx.db
 			.select()
-			.from(criteria)
-			.orderBy(asc(criteria.displayOrder), asc(criteria.name));
+			.from(judgingCriteria)
+			.orderBy(asc(judgingCriteria.displayOrder), asc(judgingCriteria.name));
 	}),
 
 	create: adminProcedure
@@ -38,20 +38,20 @@ export const criteriaRouter = createTRPCRouter({
 				name: z.string().min(1),
 				description: z.string().default(""),
 				displayOrder: z.number().int().default(0),
-				maxScore: z.number().int().positive().default(10),
+				maxScore: z.number().int().positive().default(MAIN_CRITERION_MAX_SCORE),
 				roundIds: z.array(z.string().uuid()).default([]),
 				isSidepot: z.boolean().default(false)
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			await validateRounds(ctx.db, input.roundIds);
-			if (!input.isSidepot && input.maxScore !== 10) {
+			if (!input.isSidepot && input.maxScore !== MAIN_CRITERION_MAX_SCORE) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "Main criteria must have a maximum score of 10."
+					message: `Main criteria must have a maximum score of ${MAIN_CRITERION_MAX_SCORE}.`
 				});
 			}
-			return await ctx.db.insert(criteria).values(input).returning();
+			return await ctx.db.insert(judgingCriteria).values(input).returning();
 		}),
 
 	update: adminProcedure
@@ -69,8 +69,8 @@ export const criteriaRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
 			await validateRounds(ctx.db, data.roundIds);
-			const existing = await ctx.db.query.criteria.findFirst({
-				where: eq(criteria.id, id)
+			const existing = await ctx.db.query.judgingCriteria.findFirst({
+				where: eq(judgingCriteria.id, id)
 			});
 			if (!existing)
 				throw new TRPCError({
@@ -79,17 +79,17 @@ export const criteriaRouter = createTRPCRouter({
 				});
 			if (
 				!(data.isSidepot ?? existing.isSidepot) &&
-				(data.maxScore ?? existing.maxScore) !== 10
+				(data.maxScore ?? existing.maxScore) !== MAIN_CRITERION_MAX_SCORE
 			) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "Main criteria must have a maximum score of 10."
+					message: `Main criteria must have a maximum score of ${MAIN_CRITERION_MAX_SCORE}.`
 				});
 			}
 			const [updated] = await ctx.db
-				.update(criteria)
+				.update(judgingCriteria)
 				.set(data)
-				.where(eq(criteria.id, id))
+				.where(eq(judgingCriteria.id, id))
 				.returning();
 			return updated;
 		}),
@@ -97,7 +97,9 @@ export const criteriaRouter = createTRPCRouter({
 	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
-			await ctx.db.delete(criteria).where(eq(criteria.id, input.id));
+			await ctx.db
+				.delete(judgingCriteria)
+				.where(eq(judgingCriteria.id, input.id));
 			return { success: true };
 		})
 });

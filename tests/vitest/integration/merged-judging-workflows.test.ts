@@ -11,7 +11,9 @@ const mocks = vi.hoisted(() => {
 		member: { findFirst: vi.fn(), findMany: vi.fn() },
 		organization: { findFirst: vi.fn(), findMany: vi.fn() },
 		judgingAssignments: { findFirst: vi.fn() },
-		criteria: { findMany: vi.fn() }
+		judgingRounds: { findFirst: vi.fn() },
+		user: { findMany: vi.fn() },
+		judgingCriteria: { findMany: vi.fn() }
 	};
 	const write = { set: vi.fn(), where: vi.fn(), returning: vi.fn() };
 	const scoreQuery = {
@@ -185,13 +187,25 @@ describe("merged team and judging workflows", () => {
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
 		expect(mocks.update).not.toHaveBeenCalled();
 	});
-	it("retains scored-assignment protection before deleting any room layout", async () => {
+	it("retains scored-assignment protection before regenerating a schedule", async () => {
 		mocks.scoreQuery.limit.mockResolvedValue([{ id: "existing-score" }]);
+		mocks.query.judgingRounds.findFirst.mockResolvedValue({
+			id: "11111111-1111-4111-8111-111111111111",
+			kind: "panel",
+			startTime: new Date(0),
+			endTime: new Date(3 * 3600000),
+			publishedAt: null
+		});
+		mocks.query.user.findMany.mockResolvedValue([]);
+		mocks.query.organization.findMany.mockResolvedValue([]);
 		const api = await caller();
 		await expect(
-			api.judgingRooms.saveLayoutByRound({
+			api.judgingTables.generateSchedule({
 				roundId: "11111111-1111-4111-8111-111111111111",
-				layout: { rooms: [] }
+				panelSize: 4,
+				changeoverMinutes: 2,
+				breakMinutes: 10,
+				maxBlockMinutes: 50
 			})
 		).rejects.toMatchObject({
 			code: "BAD_REQUEST",
@@ -199,9 +213,9 @@ describe("merged team and judging workflows", () => {
 		});
 		expect(mocks.remove).not.toHaveBeenCalled();
 	});
-	it("rejects scoring by a judge who is not assigned to the room", async () => {
+	it("rejects scoring by a judge who is not assigned to the table", async () => {
 		mocks.query.judgingAssignments.findFirst.mockResolvedValue({
-			room: { staff: [{ staffId: "another-judge" }] }
+			table: { judges: [{ judgeId: "another-judge" }] }
 		});
 		const api = await caller("judge");
 		await expect(

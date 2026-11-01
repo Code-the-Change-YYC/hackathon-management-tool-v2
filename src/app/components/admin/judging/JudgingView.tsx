@@ -1,24 +1,40 @@
 "use client";
 
-import { ConfirmAlertDialog } from "@/app/components/ConfirmAlertDialog";
+import { AddLine } from "@mingcute/react";
+import { useState } from "react";
 import PageHeader from "@/app/components/PageHeader";
-import { AdminScheduleControls } from "./AdminScheduleControls";
-import { AssignmentManagement } from "./AssignmentManagement";
-import { CriteriaManagement } from "./CriteriaManagement";
+import { Button } from "@/app/components/ui/button";
+import { Card } from "@/app/components/ui/card";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle
+} from "@/app/components/ui/empty";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger
+} from "@/app/components/ui/tabs";
+import type { HackathonDates } from "@/lib/validation/event";
+import { CriteriaCard } from "./CriteriaCard";
+import { FinalRound } from "./FinalRound";
 import type {
 	Assignment,
 	Criterion,
+	FinalResults,
 	Judge,
-	Ranking,
-	RoomLayouts,
+	Layouts,
+	PanelRanking,
 	Round,
 	Team
 } from "./judgingShared";
-import { ReleaseScoresBanner } from "./ReleaseScoresBanner";
-import { ResultsManagement } from "./ResultsManagement";
-import { RoomManagement } from "./RoomManagement";
-import { RoundManagement } from "./RoundManagement";
-import { useAdminJudgingSchedule } from "./useAdminJudgingSchedule";
+import { PanelResults } from "./PanelResults";
+import { PanelSchedule } from "./PanelSchedule";
+import { RoundDialog } from "./RoundDialog";
+import { RoundHeader } from "./RoundHeader";
 
 export function JudgingView({
 	rounds,
@@ -28,71 +44,139 @@ export function JudgingView({
 	judges,
 	teams,
 	criteria,
-	rankings
+	rankings,
+	finalResults,
+	hackathonDates
 }: {
 	rounds: Round[];
 	activeRoundId: string | null;
-	layouts: RoomLayouts;
+	layouts: Layouts;
 	assignments: Assignment[];
 	judges: Judge[];
 	teams: Team[];
 	criteria: Criterion[];
-	rankings: Ranking[];
+	rankings: Record<string, PanelRanking[]>;
+	finalResults: FinalResults;
+	hackathonDates: HackathonDates | null;
 }) {
-	const schedule = useAdminJudgingSchedule({
-		rounds,
-		activeRoundId,
-		layouts,
-		assignments,
-		judges,
-		teams
-	});
+	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const [isAddingRound, setIsAddingRound] = useState(false);
+	const orderedRounds = rounds
+		.slice()
+		.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+	const selected =
+		orderedRounds.find((round) => round.id === selectedId) ??
+		orderedRounds.find((round) => round.id === activeRoundId) ??
+		orderedRounds[0];
+	const scoredRoundIds = new Set(
+		assignments
+			.filter((assignment) => assignment.scores.length > 0)
+			.map((assignment) => assignment.table.round.id)
+	);
+	const finalRound = orderedRounds.find((round) => round.kind === "final");
+	const addRoundButton = (
+		<Button onClick={() => setIsAddingRound(true)} size="sm">
+			Add round
+			<AddLine data-icon="inline-end" />
+		</Button>
+	);
 
 	return (
 		<div className="flex flex-col gap-6">
-			<ConfirmAlertDialog {...schedule.dialogProps} />
 			<PageHeader
-				description="Create a round, generate rooms and team slots, then review the schedule."
+				description="Schedule each round, publish times to teams, then pick finalists from the results."
 				title="Judging"
 			/>
 
-			<ReleaseScoresBanner />
+			{/* TODO: There needs to be a way for admins to release the scores */}
 
-			<RoundManagement
-				activeRoundId={activeRoundId}
-				assignments={assignments}
-				onSelectRound={schedule.selectRound}
-				rounds={rounds}
-			/>
-
-			<AdminScheduleControls schedule={schedule} />
-			<div className="mt-4 flex flex-col gap-16">
-				<div className="flex flex-col gap-4">
-					<div>
-						<h2 className="font-medium text-xl">Adjustments</h2>
-						<p className="mt-1 mb-0 text-muted-foreground text-sm">
-							Optional. Edit meeting links, extra rooms, or a single team after
-							generating the schedule.
-						</p>
+			{selected ? (
+				<Tabs
+					className="gap-4"
+					onValueChange={(value) => setSelectedId(String(value))}
+					value={selected.id}
+				>
+					<div className="flex flex-wrap items-center justify-between gap-3">
+						<TabsList className="h-9">
+							{orderedRounds.map((round) => (
+								<TabsTrigger className="px-3" key={round.id} value={round.id}>
+									{round.name}
+								</TabsTrigger>
+							))}
+						</TabsList>
+						{addRoundButton}
 					</div>
-					<RoomManagement
-						assignments={schedule.roundAssignments}
-						judges={judges}
-						key={schedule.selectedRoundId}
-						rooms={schedule.rooms}
-						roundId={schedule.selectedRoundId}
-					/>
-					<AssignmentManagement
-						assignments={schedule.roundAssignments}
-						eligibleTeams={schedule.eligibleTeams}
-						rooms={schedule.rooms}
-						round={schedule.selectedRound}
-						slotMinutes={schedule.slotMinutes}
-					/>
-				</div>
-				<CriteriaManagement criteria={criteria} />
-				<ResultsManagement rankings={rankings} />
-			</div>
+					{orderedRounds.map((round) => {
+						const hasSchedule = Boolean(layouts[round.id]?.tables.length);
+						return (
+							<TabsContent
+								className="flex flex-col gap-6"
+								key={round.id}
+								value={round.id}
+							>
+								<RoundHeader
+									hackathonDates={hackathonDates}
+									hasSchedule={hasSchedule}
+									hasScores={scoredRoundIds.has(round.id)}
+									isCurrent={round.id === activeRoundId}
+									round={round}
+								/>
+								{round.kind === "panel" ? (
+									<>
+										<PanelSchedule
+											hasScores={scoredRoundIds.has(round.id)}
+											judges={judges}
+											layout={layouts[round.id]}
+											round={round}
+											teams={teams}
+										/>
+										{hasSchedule ? (
+											<PanelResults
+												finalRoundHasScores={Boolean(
+													finalRound && scoredRoundIds.has(finalRound.id)
+												)}
+												hackathonDates={hackathonDates}
+												hasFinalRound={Boolean(finalRound)}
+												onFinalRoundCreated={setSelectedId}
+												ranking={rankings[round.id] ?? []}
+												round={round}
+											/>
+										) : null}
+									</>
+								) : (
+									<FinalRound
+										layout={layouts[round.id]}
+										results={finalResults}
+										round={round}
+									/>
+								)}
+							</TabsContent>
+						);
+					})}
+				</Tabs>
+			) : (
+				<Card>
+					<Empty>
+						<EmptyHeader>
+							<EmptyTitle>No judging rounds yet</EmptyTitle>
+							<EmptyDescription>
+								Add a panel round to start scheduling judging.
+							</EmptyDescription>
+						</EmptyHeader>
+						<EmptyContent>{addRoundButton}</EmptyContent>
+					</Empty>
+				</Card>
+			)}
+
+			<CriteriaCard criteria={criteria} rounds={orderedRounds} />
+
+			{isAddingRound ? (
+				<RoundDialog
+					hackathonDates={hackathonDates}
+					onClose={() => setIsAddingRound(false)}
+					onSaved={setSelectedId}
+				/>
+			) : null}
 		</div>
 	);
 }

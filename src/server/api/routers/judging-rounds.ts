@@ -1,13 +1,13 @@
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { assertRoundHasNoScores } from "@/server/api/routers/judging-rooms";
+import { assertRoundHasNoScores } from "@/server/api/routers/judging-tables";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
-import { judgingRounds } from "@/server/db/schema";
+import { judgingRounds, judgingTables } from "@/server/db/judging-schema";
 
 export const judgingRoundsRouter = createTRPCRouter({
 	// Get all judging rounds
@@ -18,7 +18,7 @@ export const judgingRoundsRouter = createTRPCRouter({
 		return rounds;
 	}),
 
-	// Create a new judging round
+	// Create a new panel round; the final round comes from judgingResults.setFinalists
 	create: adminProcedure
 		.input(
 			z
@@ -35,7 +35,7 @@ export const judgingRoundsRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const [round] = await ctx.db
 				.insert(judgingRounds)
-				.values(input)
+				.values({ ...input, kind: "panel" })
 				.returning();
 			return round;
 		}),
@@ -82,6 +82,39 @@ export const judgingRoundsRouter = createTRPCRouter({
 				.update(judgingRounds)
 				.set(data)
 				.where(eq(judgingRounds.id, id))
+				.returning();
+			return updated;
+		}),
+
+	// Participants only see a round's schedule once it is published
+	publish: adminProcedure
+		.input(z.object({ id: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			const table = await ctx.db.query.judgingTables.findFirst({
+				where: eq(judgingTables.roundId, input.id),
+				columns: { id: true }
+			});
+			if (!table) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Generate a schedule before publishing this round."
+				});
+			}
+			const [updated] = await ctx.db
+				.update(judgingRounds)
+				.set({ publishedAt: new Date() })
+				.where(eq(judgingRounds.id, input.id))
+				.returning();
+			return updated;
+		}),
+
+	unpublish: adminProcedure
+		.input(z.object({ id: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			const [updated] = await ctx.db
+				.update(judgingRounds)
+				.set({ publishedAt: null })
+				.where(eq(judgingRounds.id, input.id))
 				.returning();
 			return updated;
 		}),

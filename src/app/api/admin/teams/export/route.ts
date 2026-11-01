@@ -31,30 +31,30 @@ export async function GET(request: Request) {
 		return Response.json({ error: "Forbidden" }, { status: 403 });
 	}
 
-	const teams = await api.teams.getTeamsWithMembers();
+	const { rounds, teams } = await api.teams.getTeamsWithMembers();
 
 	const rows = [
 		[
-			"Rank",
 			"ID",
 			"Team Name",
+			"Team Code",
 			"Prescreen",
-			"Round1",
-			"Round2",
+			...rounds.map((round) => round.name),
 			"Feedback",
 			"Members",
+			"Member Emails",
 			"Member Count"
 		],
 		...teams.map((team) => [
-			team.rank,
 			team.id,
 			team.name,
+			team.teamCode,
 			team.prescreen,
-			team.round1,
-			team.round2,
+			...rounds.map((round) => team.rounds[round.id]),
 			team.feedback,
-			team.members,
-			team.memberCount
+			team.members.map((member) => member.name).join(", "),
+			team.members.map((member) => member.email).join(", "),
+			team.members.length
 		])
 	];
 

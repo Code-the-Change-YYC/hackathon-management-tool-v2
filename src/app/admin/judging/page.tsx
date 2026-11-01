@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AutoRefresh } from "@/app/components/AutoRefresh";
 import { JudgingView } from "@/app/components/admin/judging/JudgingView";
 import { byNameThenId } from "@/app/components/admin/judging/judgingShared";
+import { toHackathonDates } from "@/lib/validation/event";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function JudgingPage() {
 	await requireRole([Role.ADMIN]);
-	const [rounds, settings, assignments, users, teams, criteria, rankings] =
+	const [rounds, settings, assignments, users, teams, criteria, finalResults] =
 		await Promise.all([
 			api.judgingRounds.getAll(),
 			api.hackathonSettings.get(),
@@ -20,19 +21,31 @@ export default async function JudgingPage() {
 			api.users.getAll(),
 			api.teams.getAll(),
 			api.criteria.getAll(),
-			api.teams.getRankings()
+			api.judgingResults.getFinalResults()
 		]);
-	// Every round's rooms load up front, so switching rounds is instant.
-	const layouts = Object.fromEntries(
-		await Promise.all(
-			rounds.map(async (round) => {
-				const layout = await api.judgingRooms.getLayoutByRound({
-					roundId: round.id
-				});
-				return [round.id, layout.rooms] as const;
-			})
-		)
-	);
+	// Every round's tables and rankings load up front, so switching rounds is instant.
+	const [layouts, rankings] = await Promise.all([
+		Promise.all(
+			rounds.map(
+				async (round) =>
+					[
+						round.id,
+						await api.judgingTables.getLayoutByRound({ roundId: round.id })
+					] as const
+			)
+		).then(Object.fromEntries),
+		Promise.all(
+			rounds
+				.filter((round) => round.kind === "panel")
+				.map(
+					async (round) =>
+						[
+							round.id,
+							await api.judgingResults.getPanelRanking({ roundId: round.id })
+						] as const
+				)
+		).then(Object.fromEntries)
+	]);
 
 	return (
 		<>
@@ -41,6 +54,8 @@ export default async function JudgingPage() {
 				activeRoundId={settings?.currentRoundId ?? null}
 				assignments={assignments}
 				criteria={criteria}
+				finalResults={finalResults}
+				hackathonDates={toHackathonDates(settings)}
 				judges={users
 					.filter((user) => user.role === Role.JUDGE)
 					.sort(byNameThenId)}

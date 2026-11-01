@@ -1,12 +1,7 @@
 "use client";
 
-import {
-	CheckFill,
-	CloseFill,
-	DeleteLine,
-	More1Line,
-	User3Line
-} from "@mingcute/react";
+import { DeleteLine, More1Line, User3Line } from "@mingcute/react";
+import { BooleanIcon } from "@/app/components/admin/BooleanIcon";
 import { Button } from "@/app/components/ui/button";
 import {
 	DropdownMenu,
@@ -30,58 +25,19 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
-import type { Team } from "./types";
+import { formatMemberNames, type Team, type TeamRound } from "./types";
 
 type TeamsTableProps = {
 	teams: Team[];
-	onPrescreen: (team: Team) => void;
-	onReview: (team: Team) => void;
-	onDelete: (participant: Team) => void;
+	rounds: TeamRound[];
+	onDelete: (team: Team) => void;
 };
 
-function getBooleanElement(bool: boolean | null) {
-	switch (bool) {
-		case true:
-			return <CheckFill aria-label="Passed" size={10} />;
-		case false:
-			return <CloseFill aria-label="Failed" size={10} />;
-		default:
-			return <p>n/a</p>;
-	}
+function OptionalBooleanIcon({ value }: { value: boolean | null }) {
+	return value === null ? "-" : <BooleanIcon value={value} />;
 }
 
-function getPrescreenElement(status: Team["prescreen"]) {
-	switch (status) {
-		case "passed":
-			return <CheckFill aria-label="Passed" size={10} />;
-		case "failed":
-			return <CloseFill aria-label="Failed" size={10} />;
-		default:
-			return <p>n/a</p>;
-	}
-}
-
-function getRoundTwoElement(
-	round2: "winner" | "sp-winner" | "rejected" | null
-) {
-	switch (round2) {
-		case "winner":
-			return <p>Winner</p>;
-		case "sp-winner":
-			return <p>SP Winner</p>;
-		case "rejected":
-			return <CloseFill aria-label="Rejected" size={10} />;
-		default:
-			return <p>n/a</p>;
-	}
-}
-
-export function TeamsTable({
-	teams,
-	onPrescreen,
-	onReview,
-	onDelete
-}: TeamsTableProps) {
+export function TeamsTable({ teams, rounds, onDelete }: TeamsTableProps) {
 	if (teams.length === 0) {
 		return (
 			<Empty className="rounded-xl border">
@@ -99,29 +55,20 @@ export function TeamsTable({
 	}
 
 	return (
-		<div className="overflow-hidden">
+		<div className="overflow-x-auto">
 			<Table>
 				<TableHeader>
 					<TableRow className="border-none hover:bg-white">
-						<TableHead>Rank</TableHead>
-						<TableHead>Team Name</TableHead>
-						<TableHead>
-							<div className="flex size-full items-center justify-center">
-								Prescreen
-							</div>
-						</TableHead>
-						<TableHead>
-							<div className="flex size-full items-center justify-center">
-								Round 1
-							</div>
-						</TableHead>
-						<TableHead>
-							<div className="flex size-full items-center justify-center">
-								Round 2
-							</div>
-						</TableHead>
-						<TableHead>Feedback</TableHead>
-						<TableHead>Members</TableHead>
+						<TableHead className="min-w-44 pl-4">Team Name</TableHead>
+						<TableHead className="min-w-28">Team Code</TableHead>
+						<TableHead className="min-w-28">Prescreen</TableHead>
+						{rounds.map((round) => (
+							<TableHead className="min-w-28" key={round.id}>
+								{round.name}
+							</TableHead>
+						))}
+						<TableHead className="min-w-52">Feedback</TableHead>
+						<TableHead className="min-w-64">Members</TableHead>
 						<TableHead className="w-12 pr-4">
 							<span className="sr-only">Actions</span>
 						</TableHead>
@@ -130,25 +77,30 @@ export function TeamsTable({
 				<TableBody>
 					{teams.map((team) => (
 						<TableRow className="border-none hover:bg-white" key={team.id}>
-							<TableCell className="pl-3">{team.rank}</TableCell>
-							<TableCell>{team.name}</TableCell>
-							<TableCell>
-								<div className="flex size-full items-center justify-center">
-									{getPrescreenElement(team.prescreen)}
-								</div>
+							<TableCell className="pl-4">{team.name}</TableCell>
+							<TableCell className="tracking-wider">
+								{team.teamCode ?? "-"}
 							</TableCell>
 							<TableCell>
-								<div className="flex size-full items-center justify-center">
-									{getBooleanElement(team.round1)}
-								</div>
+								<OptionalBooleanIcon
+									value={
+										team.prescreen === "pending"
+											? null
+											: team.prescreen === "passed"
+									}
+								/>
 							</TableCell>
-							<TableCell>
-								<div className="flex size-full items-center justify-center">
-									{getRoundTwoElement(team.round2)}
-								</div>
+							{rounds.map((round) => (
+								<TableCell key={round.id}>
+									<OptionalBooleanIcon value={team.rounds[round.id] ?? null} />
+								</TableCell>
+							))}
+							<TableCell className="whitespace-normal">
+								{team.feedback ?? "-"}
 							</TableCell>
-							<TableCell>{team.feedback ?? "n/a"}</TableCell>
-							<TableCell>{team.members}</TableCell>
+							<TableCell className="whitespace-normal">
+								{team.members.length > 0 ? formatMemberNames(team) : "-"}
+							</TableCell>
 							<TableCell className="pr-4 text-right">
 								<DropdownMenu>
 									<DropdownMenuTrigger
@@ -164,13 +116,6 @@ export function TeamsTable({
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end" className="w-40">
 										<DropdownMenuGroup>
-											<DropdownMenuItem onClick={() => onPrescreen(team)}>
-												Prescreen team
-											</DropdownMenuItem>
-											{/* TODO: Reimplement after judging issues have been settled (round1, round2, and final round data are not yet in the db, so this dialog is pointless for now) */}
-											{/* <DropdownMenuItem onClick={() => onReview(team)}>
-												Review judging feedback
-											</DropdownMenuItem> */}
 											<DropdownMenuItem
 												onClick={() => onDelete(team)}
 												variant="destructive"

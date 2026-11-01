@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import PageHeader from "@/app/components/PageHeader";
 import { Card } from "@/app/components/ui/card";
 import {
@@ -9,163 +8,202 @@ import {
 	EmptyHeader,
 	EmptyTitle
 } from "@/app/components/ui/empty";
-import { ToggleGroup, ToggleGroupItem } from "@/app/components/ui/toggle-group";
 import { useCurrentTime } from "@/hooks/use-current-time";
-import type { JudgingRound } from "@/lib/participant-judging";
+import { formatTime } from "@/lib/datetime";
+import { cn } from "@/lib/utils";
 import {
 	type Criterion,
-	getRoomName,
+	getJudgeTable,
 	isAssignmentScored,
 	type JudgeAssignment,
-	sortAssignments
+	type ScheduleItem,
+	sortAssignments,
+	withBreaks
 } from "../judgePortal";
-import { JudgeNextTeam } from "./JudgeNextTeam";
+import { JudgeTableCard } from "./JudgeTableCard";
 import { JudgeTeamRow } from "./JudgeTeamRow";
 
-function getRoundStats(
-	assignments: JudgeAssignment[],
-	criteria: Criterion[],
-	rounds: JudgingRound[]
-) {
-	const roundsById = new Map(rounds.map((round) => [round.id, round] as const));
-	const grouped = new Map<string, JudgeAssignment[]>();
-	for (const assignment of assignments) {
-		const round = assignment.room.round;
-		roundsById.set(round.id, round);
-		grouped.set(round.id, [...(grouped.get(round.id) ?? []), assignment]);
-	}
+type Round = JudgeAssignment["table"]["round"];
 
-	return Array.from(grouped.entries())
-		.map(([roundId, roundAssignments]) => {
-			const round = roundsById.get(roundId);
-			return {
-				assignments: roundAssignments.sort(sortAssignments),
-				id: roundId,
-				name: round?.name ?? "Judging round",
-				scored: roundAssignments.filter((assignment) =>
-					isAssignmentScored(assignment, criteria)
-				).length,
-				startTime: round?.startTime.getTime() ?? 0
-			};
-		})
-		.sort((a, b) => a.startTime - b.startTime);
+type RoundGroup = {
+	round: Round;
+	assignments: JudgeAssignment[];
+	scoredCount: number;
+};
+
+function groupByRound(
+	assignments: JudgeAssignment[],
+	criteria: Criterion[]
+): RoundGroup[] {
+	const groups = new Map<string, RoundGroup>();
+	for (const assignment of assignments.slice().sort(sortAssignments)) {
+		const round = assignment.table.round;
+		const group = groups.get(round.id) ?? {
+			round,
+			assignments: [],
+			scoredCount: 0
+		};
+		group.assignments.push(assignment);
+		if (isAssignmentScored(assignment, criteria)) group.scoredCount++;
+		groups.set(round.id, group);
+	}
+	return Array.from(groups.values()).sort(
+		(a, b) => a.round.startTime.getTime() - b.round.startTime.getTime()
+	);
 }
 
-export function DashboardView({
-	userName,
-	activeRoundId,
-	rounds,
+function isIncomplete(group: RoundGroup) {
+	return group.scoredCount < group.assignments.length;
+}
+
+// The round the judge should be working on: the active round while it has
+// teams left, else the first round with teams left, else the active or last one.
+function getCurrentGroup(groups: RoundGroup[], activeRoundId: string | null) {
+	const active = groups.find((group) => group.round.id === activeRoundId);
+	if (active && isIncomplete(active)) return active;
+
+	const incomplete = groups.find(isIncomplete);
+	if (incomplete) return incomplete;
+
+	return active ?? groups.at(-1);
+}
+
+function RoundProgress({
 	assignments,
 	criteria
 }: {
+	assignments: JudgeAssignment[];
+	criteria: Criterion[];
+}) {
+	return (
+		<div aria-hidden className="flex gap-1.5">
+			{assignments.map((assignment) => (
+				<span
+					className={cn(
+						"h-2 flex-1 rounded-full bg-grey-200 transition-colors",
+						isAssignmentScored(assignment, criteria) && "bg-primary"
+					)}
+					key={assignment.id}
+				/>
+			))}
+		</div>
+	);
+}
+
+function BreakRow({
+	item
+}: {
+	item: Extract<ScheduleItem, { kind: "break" }>;
+}) {
+	return (
+		<li className="flex min-h-12 items-center gap-4 bg-muted/50 px-4 py-2 text-muted-foreground text-sm sm:px-6">
+			<span className="w-16 shrink-0 whitespace-nowrap sm:w-20">
+				{formatTime(item.startsAt)}
+			</span>
+			<span>Break until {formatTime(item.endsAt)}</span>
+		</li>
+	);
+}
+
+function RoundSection({
+	group,
+	criteria,
+	currentTime
+}: {
+	group: RoundGroup;
+	criteria: Criterion[];
+	currentTime: Date;
+}) {
+	const titleId = `round-${group.round.id}-title`;
+
+	return (
+		<section aria-labelledby={titleId} className="flex flex-col gap-3">
+			<div className="flex flex-wrap items-baseline justify-between gap-2">
+				<h2 className="m-0 font-medium text-xl" id={titleId}>
+					{group.round.name}
+				</h2>
+				<p className="m-0 text-muted-foreground text-sm">
+					{group.scoredCount} of {group.assignments.length} scored
+				</p>
+			</div>
+			<RoundProgress assignments={group.assignments} criteria={criteria} />
+			<Card className="py-0">
+				<ul className="m-0 list-none divide-y divide-grey-200 p-0">
+					{withBreaks(group.assignments).map((item) => {
+						if (item.kind === "break") {
+							return (
+								<BreakRow
+									item={item}
+									key={`break-${item.startsAt.getTime()}`}
+								/>
+							);
+						}
+						return (
+							<JudgeTeamRow
+								assignment={item.assignment}
+								criteria={criteria}
+								currentTime={currentTime}
+								key={item.assignment.id}
+							/>
+						);
+					})}
+				</ul>
+			</Card>
+		</section>
+	);
+}
+
+function NoAssignments() {
+	return (
+		<Empty>
+			<EmptyHeader>
+				<EmptyTitle>No teams assigned yet</EmptyTitle>
+				<EmptyDescription>
+					Your assigned teams will appear here once the schedule is set.
+				</EmptyDescription>
+			</EmptyHeader>
+		</Empty>
+	);
+}
+
+export function DashboardView({
+	userId,
+	userName,
+	activeRoundId,
+	assignments,
+	criteria
+}: {
+	userId: string;
 	userName: string;
 	activeRoundId: string | null;
-	rounds: JudgingRound[];
 	assignments: JudgeAssignment[];
 	criteria: Criterion[];
 }) {
 	const currentTime = useCurrentTime();
-	const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
-	const roundStats = getRoundStats(assignments, criteria, rounds);
-	const shownRound =
-		roundStats.find(
-			(round) => round.id === (selectedRoundId ?? activeRoundId)
-		) ??
-		roundStats.find((round) => round.scored < round.assignments.length) ??
-		roundStats.at(-1);
-	const shownAssignments = shownRound?.assignments ?? [];
-	const roomName = getRoomName(shownAssignments);
-	const progress = shownRound
-		? (shownRound.scored / shownRound.assignments.length) * 100
-		: 0;
+	const groups = groupByRound(assignments, criteria);
+	const currentGroup = getCurrentGroup(groups, activeRoundId);
+	const table = currentGroup && getJudgeTable(currentGroup.assignments, userId);
 
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				description={
-					roomName && shownRound
-						? `You’re judging in ${roomName} for the ${shownRound.name}.`
-						: "No room assigned yet."
-				}
+				description="Score each team after their presentation."
 				title={`Hi, ${userName}!`}
 			/>
-
-			{roundStats.length > 1 && (
-				<ToggleGroup
-					aria-label="Judging round"
-					className="max-w-full flex-wrap gap-2"
-					onValueChange={(values) => {
-						if (values[0]) setSelectedRoundId(String(values[0]));
-					}}
-					size="sm"
-					value={shownRound ? [shownRound.id] : []}
-					variant="outline"
-				>
-					{roundStats.map((round) => (
-						<ToggleGroupItem
-							className="h-9 rounded-md border-grey-300 bg-white px-4 font-medium text-grey-600 text-sm data-pressed:border-purple-500 data-pressed:bg-purple-100 data-pressed:text-purple-800"
-							key={round.id}
-							value={round.id}
-						>
-							{round.name}
-							<span className="opacity-70">
-								{round.scored}/{round.assignments.length}
-							</span>
-						</ToggleGroupItem>
-					))}
-				</ToggleGroup>
+			{currentGroup && table && (
+				<JudgeTableCard roundName={currentGroup.round.name} table={table} />
 			)}
-
-			{shownRound ? (
-				<>
-					<JudgeNextTeam
-						assignment={shownAssignments.find(
-							(assignment) => !isAssignmentScored(assignment, criteria)
-						)}
+			<div className="flex flex-col gap-12">
+				{groups.length === 0 && <NoAssignments />}
+				{groups.map((group) => (
+					<RoundSection
+						criteria={criteria}
 						currentTime={currentTime}
-						teamCount={shownAssignments.length}
+						group={group}
+						key={group.round.id}
 					/>
-
-					<section className="flex flex-col gap-3">
-						<div className="flex flex-wrap items-baseline justify-between gap-2">
-							<h2 className="m-0 font-medium text-xl">Your teams</h2>
-							<p className="m-0 text-muted-foreground text-sm">
-								{shownRound.scored} of {shownAssignments.length} scored
-							</p>
-						</div>
-						<div
-							aria-hidden
-							className="h-2 overflow-hidden rounded-full bg-grey-200"
-						>
-							<div
-								className="h-full rounded-full bg-judging-success transition-[width]"
-								style={{ width: `${progress}%` }}
-							/>
-						</div>
-						<Card className="py-0">
-							<ul className="m-0 list-none divide-y divide-grey-200 p-0">
-								{shownAssignments.map((assignment) => (
-									<JudgeTeamRow
-										assignment={assignment}
-										criteria={criteria}
-										currentTime={currentTime}
-										key={assignment.id}
-									/>
-								))}
-							</ul>
-						</Card>
-					</section>
-				</>
-			) : (
-				<Empty className="border">
-					<EmptyHeader>
-						<EmptyTitle>No teams assigned yet</EmptyTitle>
-						<EmptyDescription>
-							Your assigned teams will appear here once the schedule is set.
-						</EmptyDescription>
-					</EmptyHeader>
-				</Empty>
-			)}
+				))}
+			</div>
 		</div>
 	);
 }

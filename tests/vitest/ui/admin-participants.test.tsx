@@ -104,7 +104,7 @@ describe("admin users", () => {
 		expect(screen.getByRole("heading", { name: "Users" })).toBeInTheDocument();
 		expect(screen.getByText("Showing 3 of 3 users")).toBeInTheDocument();
 		expect(screen.getByText("Analytical Engines")).toBeInTheDocument();
-		expect(screen.getAllByText("n/a").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("-").length).toBeGreaterThan(0);
 
 		fireEvent.change(
 			screen.getByRole("textbox", { name: "Search for a user" }),

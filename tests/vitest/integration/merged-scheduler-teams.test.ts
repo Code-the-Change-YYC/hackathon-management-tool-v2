@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => {
 		member: { findFirst: vi.fn(), findMany: vi.fn() },
 		organization: { findFirst: vi.fn(), findMany: vi.fn() },
 		judgingAssignments: { findFirst: vi.fn() },
-		criteria: { findMany: vi.fn() }
+		judgingCriteria: { findMany: vi.fn() }
 	};
 	const write = { set: vi.fn(), where: vi.fn(), returning: vi.fn() };
 	const scoreQuery = {

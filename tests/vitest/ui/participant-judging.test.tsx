@@ -16,7 +16,7 @@ vi.mock("@/trpc/server", () => ({
 		events: { getActiveEvents: async () => [] },
 		judgingRounds: { getAll: async () => [] },
 		criteria: { getAll: async () => [] },
-		judgingAssignments: { getMineForActiveRound: async () => null },
+		judgingAssignments: { getMine: async () => [] },
 		scores: { getMineReleased: async () => ({ released: false, rounds: [] }) }
 	}
 }));
@@ -36,9 +36,9 @@ describe("participant judging route", () => {
 		expect(mocks.requireRole).toHaveBeenCalledWith(["participant", "admin"]);
 		expect(screen.getByText("Participant judging information")).toBeVisible();
 		expect(mocks.judgingView).toHaveBeenCalledWith({
-			assignment: null,
 			criteria: [],
 			events: [],
+			judging: [],
 			results: { released: false, rounds: [] },
 			rounds: [],
 			settings: { judgingPhase: "judging" }

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function AdminTeamsPage() {
 	await requireRole([Role.ADMIN]);
 
-	const teams = await api.teams.getTeamsWithMembers();
+	const { rounds, teams } = await api.teams.getTeamsWithMembers();
 
-	return <TeamsView teams={teams} />;
+	return <TeamsView rounds={rounds} teams={teams} />;
 }

@@ -29,7 +29,6 @@ export default async function ScorePage({
 			criteria={criteria}
 			key={`${user.id}:${assignmentId}`}
 			userId={user.id}
-			userName={user.firstName || user.name || "Judge"}
 		/>
 	);
 }

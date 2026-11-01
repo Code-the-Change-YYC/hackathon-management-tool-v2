@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
-import { hackathonSettings } from "@/server/db/schema";
+import { hackathonSettings } from "@/server/db/admin-schema";
 import { assertE2EDatabaseSafety } from "../db";
 import { test as base, expect } from "./event.fixture";
 
