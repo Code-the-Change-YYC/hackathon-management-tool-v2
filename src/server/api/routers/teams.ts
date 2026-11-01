@@ -27,6 +27,7 @@ import { resolveAvatarSrc } from "@/lib/avatars";
 import { tryCatch } from "@/lib/utils";
 import {
 	joinTeamSchema,
+	prescreenSchema,
 	registerTeamSchema,
 	TEAM_CODE_LENGTH,
 	teamNameSchema
@@ -42,6 +43,7 @@ import { hackathonSettings } from "@/server/db/admin-schema";
 import { member, organization } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
+	judgingRounds,
 	judgingTableJudges
 } from "@/server/db/judging-schema";
 import { MEMBER_ROLES, type TeamRanking } from "@/types/types";
@@ -223,52 +225,79 @@ export const teamsRouter = createTRPCRouter({
 		return teams;
 	}),
 
+	// A team advanced past a round when the next round schedules it, so a round
+	// stays empty (null) until the next one is scheduled. The final round gets
+	// no column because winners aren't recorded.
 	getTeamsWithMembers: adminProcedure.query(async ({ ctx }) => {
-		const [rows, rankings] = await Promise.all([
+		const [rows, rounds] = await Promise.all([
 			ctx.db.query.organization.findMany({
 				orderBy: [desc(organization.createdAt)],
 				columns: {
 					id: true,
 					name: true,
+					teamCode: true,
 					prescreenStatus: true,
 					prescreenComments: true
 				},
-				with: { members: { with: { user: { columns: { email: true } } } } }
+				with: {
+					members: {
+						orderBy: [asc(member.createdAt)],
+						with: { user: { columns: { name: true, email: true } } }
+					}
+				}
 			}),
-			fetchTeamRankings(ctx.db)
+			ctx.db.query.judgingRounds.findMany({
+				orderBy: [asc(judgingRounds.startTime)],
+				columns: { id: true, name: true, kind: true },
+				with: {
+					tables: {
+						columns: {},
+						with: { assignments: { columns: { teamId: true } } }
+					}
+				}
+			})
 		]);
 
-		const rankById = new Map(
-			rankings.map((ranking, index) => [ranking.id, index + 1])
-		);
+		const advancedTeamIds = rounds.flatMap((round, index) => {
+			if (round.kind === "final") return [];
+			const teamIds = (rounds[index + 1]?.tables ?? []).flatMap((table) =>
+				table.assignments.map((assignment) => assignment.teamId)
+			);
+			return [
+				{
+					id: round.id,
+					name: round.name,
+					teamIds: teamIds.length > 0 ? new Set(teamIds) : null
+				}
+			];
+		});
 
-		return rows.map(({ members, ...team }) => {
-			const memberEmails = members
-				.map((member) => member.user.email)
-				.join(", ");
-
-			return {
-				rank: rankById.get(team.id) ?? 0,
+		return {
+			rounds: advancedTeamIds.map(({ id, name }) => ({ id, name })),
+			teams: rows.map(({ members, ...team }) => ({
 				id: team.id,
 				name: team.name,
+				teamCode: team.teamCode,
 				prescreen: team.prescreenStatus,
 				feedback: team.prescreenComments,
-				members: memberEmails,
-				memberCount: members.length,
-				round1: null, // Missing for now due to judging complications
-				round2: null // Missing for now due to judging complications
-			};
-		});
+				members: members.map(({ user }) => ({
+					name: user.name,
+					email: user.email
+				})),
+				// Whether the team advanced past each round, by round ID.
+				rounds: Object.fromEntries(
+					advancedTeamIds.map(({ id, teamIds }) => [
+						id,
+						teamIds ? teamIds.has(team.id) : null
+					])
+				)
+			}))
+		};
 	}),
 
+	// Feedback is only required when a team fails.
 	setPrescreen: adminProcedure
-		.input(
-			z.object({
-				teamId: z.string(),
-				status: z.enum(["passed", "failed"]),
-				comments: z.string().min(1, "Comments are required")
-			})
-		)
+		.input(prescreenSchema)
 		.mutation(async ({ ctx, input }) => {
 			const team = await ctx.db.query.organization.findFirst({
 				where: eq(organization.id, input.teamId)
@@ -283,7 +312,7 @@ export const teamsRouter = createTRPCRouter({
 				.update(organization)
 				.set({
 					prescreenStatus: input.status,
-					prescreenComments: input.comments,
+					prescreenComments: input.comments || null,
 					prescreenedBy: ctx.session.user.id,
 					prescreenedAt: new Date()
 				})

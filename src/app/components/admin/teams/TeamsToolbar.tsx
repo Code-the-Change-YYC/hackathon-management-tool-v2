@@ -14,6 +14,7 @@ import type { FilterOption, SortOption } from "./types";
 type TeamsToolbarProps = {
 	search: string;
 	onSearchChange: (search: string) => void;
+	filterOptions: { value: FilterOption; label: string }[];
 	filters: FilterOption[];
 	onFiltersChange: (filters: FilterOption[]) => void;
 	sort: SortOption | null;
@@ -25,6 +26,7 @@ type TeamsToolbarProps = {
 export function TeamsToolbar({
 	search,
 	onSearchChange,
+	filterOptions,
 	filters,
 	onFiltersChange,
 	sort,
@@ -46,7 +48,11 @@ export function TeamsToolbar({
 				/>
 			</InputGroup>
 			<div className="flex flex-wrap items-center gap-2 lg:ml-auto">
-				<TeamsFilterMenu filters={filters} onFiltersChange={onFiltersChange} />
+				<TeamsFilterMenu
+					filters={filters}
+					onFiltersChange={onFiltersChange}
+					options={filterOptions}
+				/>
 				<TeamsSortMenu onSortChange={onSortChange} sort={sort} />
 				<TeamsExportMenu
 					onCopyEmails={onCopyEmails}

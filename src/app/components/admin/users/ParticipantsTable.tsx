@@ -1,13 +1,7 @@
 "use client";
 
-import {
-	CheckLine,
-	CloseLine,
-	DeleteLine,
-	EditLine,
-	More1Line,
-	User3Line
-} from "@mingcute/react";
+import { DeleteLine, EditLine, More1Line, User3Line } from "@mingcute/react";
+import { BooleanIcon } from "@/app/components/admin/BooleanIcon";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -44,24 +38,6 @@ const ROLE_BADGE_VARIANTS: Record<
 	[Role.JUDGE]: "accent",
 	[Role.PARTICIPANT]: "secondary"
 };
-
-function BooleanIcon({ value }: { value: boolean }) {
-	return value ? (
-		<CheckLine
-			aria-label="Yes"
-			className="size-5"
-			color="var(--color-green-700)"
-			role="img"
-		/>
-	) : (
-		<CloseLine
-			aria-label="No"
-			className="size-5"
-			color="var(--color-red-600)"
-			role="img"
-		/>
-	);
-}
 
 type ParticipantsTableProps = {
 	participants: Participant[];

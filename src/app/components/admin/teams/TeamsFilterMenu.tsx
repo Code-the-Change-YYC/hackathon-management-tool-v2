@@ -9,9 +9,10 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuTrigger
 } from "@/app/components/ui/dropdown-menu";
-import { FILTER_OPTIONS, type FilterOption } from "./types";
+import type { FilterOption } from "./types";
 
 type TeamsFilterMenuProps = {
+	options: { value: FilterOption; label: string }[];
 	filters: FilterOption[];
 	onFiltersChange: (filters: FilterOption[]) => void;
 };
@@ -23,6 +24,7 @@ function toggle<T>(values: T[], value: T): T[] {
 }
 
 export function TeamsFilterMenu({
+	options,
 	filters,
 	onFiltersChange
 }: TeamsFilterMenuProps) {
@@ -37,7 +39,7 @@ export function TeamsFilterMenu({
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-56">
 				<DropdownMenuGroup>
-					{FILTER_OPTIONS.map((option) => (
+					{options.map((option) => (
 						<DropdownMenuCheckboxItem
 							checked={filters.includes(option.value)}
 							key={option.value}
