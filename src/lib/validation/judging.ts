@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { fromDateTimeLocalValue } from "@/lib/datetime";
-import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
+import {
+	JUDGING_ROUND_KINDS,
+	MAIN_CRITERION_MAX_SCORE,
+	MAX_PRESENTATION_MINUTES
+} from "@/lib/judging";
 import { dateField, type HackathonDates, timeField } from "./event";
 
 export const ROUND_NAME_MAX_LENGTH = 120;
@@ -26,10 +30,13 @@ function toDateTime(date: string, time: string, ctx: z.RefinementCtx) {
 	return value;
 }
 
+// Panel rounds set a window for the schedule generator. A final round sets
+// its presentation length, and its end follows from the finalists.
 export function createRoundFormSchema(hackathonDates: HackathonDates | null) {
 	return (
 		z
 			.object({
+				kind: z.enum(JUDGING_ROUND_KINDS),
 				name: z
 					.string()
 					.trim()
@@ -37,18 +44,52 @@ export function createRoundFormSchema(hackathonDates: HackathonDates | null) {
 					.max(ROUND_NAME_MAX_LENGTH),
 				date: dateField(hackathonDates),
 				startTime: timeField("Choose a start time."),
-				endTime: timeField("Choose an end time.")
+				endTime: z.string(),
+				presentationMinutes: z.number().nullable(),
+				changeoverMinutes: z.number().nullable()
 			})
-			.refine((data) => data.endTime > data.startTime, {
-				message: "End time must be after start time.",
-				path: ["endTime"]
+			.superRefine((data, ctx) => {
+				function check(schema: z.ZodType, path: keyof typeof data) {
+					const value = data[path];
+					for (const issue of schema.safeParse(value).error?.issues ?? []) {
+						ctx.addIssue({
+							code: "custom",
+							message: issue.message,
+							path: [path]
+						});
+					}
+				}
+				if (data.kind === "final") {
+					check(numberField(1), "presentationMinutes");
+					check(numberField(0), "changeoverMinutes");
+					return;
+				}
+				check(timeField("Choose an end time."), "endTime");
+				if (data.endTime && data.endTime <= data.startTime) {
+					ctx.addIssue({
+						code: "custom",
+						message: "End time must be after start time.",
+						path: ["endTime"]
+					});
+				}
 			})
-			// Both times fall on the one date, in Calgary time.
-			.transform(({ date, startTime, endTime, name }, ctx) => ({
-				name,
-				startTime: toDateTime(date, startTime, ctx),
-				endTime: toDateTime(date, endTime, ctx)
-			}))
+			// Times fall on the one date, in Calgary time.
+			.transform((data, ctx) =>
+				data.kind === "panel"
+					? {
+							kind: "panel" as const,
+							name: data.name,
+							startTime: toDateTime(data.date, data.startTime, ctx),
+							endTime: toDateTime(data.date, data.endTime, ctx)
+						}
+					: {
+							kind: "final" as const,
+							name: data.name,
+							startTime: toDateTime(data.date, data.startTime, ctx),
+							presentationMinutes: data.presentationMinutes ?? 0,
+							changeoverMinutes: data.changeoverMinutes ?? 0
+						}
+			)
 	);
 }
 
@@ -57,10 +98,13 @@ export type RoundFormInput = z.input<RoundFormSchema>;
 export type RoundFormValues = z.output<RoundFormSchema>;
 
 export const EMPTY_ROUND_FORM: RoundFormInput = {
+	kind: "panel",
 	name: "",
 	date: "",
 	startTime: "",
-	endTime: ""
+	endTime: "",
+	presentationMinutes: MAX_PRESENTATION_MINUTES,
+	changeoverMinutes: 2
 };
 
 export const scheduleSettingsSchema = z.object({
@@ -73,31 +117,11 @@ export const scheduleSettingsSchema = z.object({
 export type ScheduleSettingsInput = z.input<typeof scheduleSettingsSchema>;
 export type ScheduleSettingsValues = z.output<typeof scheduleSettingsSchema>;
 
-export function createFinalistsFormSchema(
-	hackathonDates: HackathonDates | null
-) {
-	return z
-		.object({
-			teamIds: z.array(z.string()).min(1, "Pick at least one finalist."),
-			date: dateField(hackathonDates),
-			startTime: timeField("Choose a start time."),
-			presentationMinutes: numberField(1),
-			changeoverMinutes: numberField(0)
-		})
-		.transform(({ date, startTime, ...data }, ctx) => ({
-			...data,
-			startTime: toDateTime(date, startTime, ctx)
-		}));
-}
+export const finalistsFormSchema = z.object({
+	teamIds: z.array(z.string()).min(1, "Pick at least one finalist.")
+});
 
-type FinalistsFormSchema = ReturnType<typeof createFinalistsFormSchema>;
-export type FinalistsFormInput = z.input<FinalistsFormSchema>;
-export type FinalistsFormValues = z.output<FinalistsFormSchema>;
-
-export const FINALISTS_FORM_DEFAULTS = {
-	presentationMinutes: 10,
-	changeoverMinutes: 2
-};
+export type FinalistsFormValues = z.infer<typeof finalistsFormSchema>;
 
 export const criterionFormSchema = z
 	.object({

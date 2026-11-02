@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FinalistsDialog } from "@/app/components/admin/judging/FinalistsDialog";
+import { FinalRound } from "@/app/components/admin/judging/FinalRound";
 import type {
 	Layout,
 	PanelRanking,
@@ -15,6 +16,7 @@ import type {
 import { PanelResults } from "@/app/components/admin/judging/PanelResults";
 import { PanelSchedule } from "@/app/components/admin/judging/PanelSchedule";
 import { ScheduleDialog } from "@/app/components/admin/judging/ScheduleDialog";
+import { formatTime } from "@/lib/datetime";
 import { judgingRound, judgingNow as now } from "../helpers/judging";
 
 const { mocks, mutation } = vi.hoisted(() => ({
@@ -22,7 +24,8 @@ const { mocks, mutation } = vi.hoisted(() => ({
 		preview: vi.fn(),
 		generate: vi.fn(),
 		removeTeam: vi.fn(),
-		setFinalists: vi.fn()
+		setFinalists: vi.fn(),
+		reorderFinalists: vi.fn()
 	},
 	mutation: (mutate: () => void) => ({
 		useMutation: () => ({ mutate, isPending: false })
@@ -40,7 +43,10 @@ vi.mock("@/trpc/react", () => ({
 			addTeam: mutation(vi.fn()),
 			assignJudge: mutation(vi.fn())
 		},
-		judgingResults: { setFinalists: mutation(mocks.setFinalists) }
+		judgingResults: {
+			setFinalists: mutation(mocks.setFinalists),
+			reorderFinalists: mutation(mocks.reorderFinalists)
+		}
 	}
 }));
 
@@ -274,6 +280,14 @@ describe("panel schedule", () => {
 	});
 });
 
+const finalRound = judgingRound({
+	id: "final",
+	name: "Final Round",
+	kind: "final",
+	presentationMinutes: 10,
+	publishedAt: null
+});
+
 const ranking: PanelRanking[] = ["A", "B", "C"].map((name, index) => ({
 	teamId: name.toLowerCase(),
 	teamName: `Team ${name}`,
@@ -288,12 +302,11 @@ function renderResults(
 ) {
 	return render(
 		<PanelResults
+			finalRound={finalRound}
 			finalRoundHasScores={false}
-			hackathonDates={null}
-			hasFinalRound={false}
-			onFinalRoundCreated={vi.fn()}
+			hasFinalists={false}
+			onFinalistsSaved={vi.fn()}
 			rankings={{ main: ranking, sidepots: [] }}
-			round={round}
 			{...props}
 		/>
 	);
@@ -306,8 +319,15 @@ describe("panel results", () => {
 		expect(topRow).toHaveTextContent("1Team A1.004.004/4");
 		fireEvent.click(screen.getByRole("button", { name: "Pick finalists" }));
 		expect(
-			await screen.findByRole("dialog", { name: "Create final round" })
+			await screen.findByRole("dialog", { name: "Pick finalists" })
 		).toBeVisible();
+	});
+
+	it("waits for a final round before picking finalists", () => {
+		renderResults({ finalRound: undefined });
+		expect(
+			screen.getByRole("button", { name: "Pick finalists" })
+		).toBeDisabled();
 	});
 
 	it("switches to a sidepot's ranking", async () => {
@@ -331,7 +351,7 @@ describe("panel results", () => {
 	});
 
 	it("won't change finalists once the final round is scored", () => {
-		renderResults({ hasFinalRound: true, finalRoundHasScores: true });
+		renderResults({ hasFinalists: true, finalRoundHasScores: true });
 		expect(
 			screen.getByRole("button", { name: "Change finalists" })
 		).toBeDisabled();
@@ -342,11 +362,10 @@ describe("finalists dialog", () => {
 	function renderDialog() {
 		return render(
 			<FinalistsDialog
-				hackathonDates={null}
-				hasFinalRound={false}
+				finalRound={finalRound}
+				hasFinalists={false}
 				onClose={vi.fn()}
-				onCreated={vi.fn()}
-				panelRound={round}
+				onSaved={vi.fn()}
 				ranking={ranking}
 			/>
 		);
@@ -359,23 +378,90 @@ describe("finalists dialog", () => {
 		expect(screen.getByText("Finalists · 2 selected")).toBeVisible();
 	});
 
-	it("requires a start time, then creates the final round in rank order", async () => {
+	it("only picks finalists, leaving times to the final round", () => {
 		renderDialog();
-		fireEvent.click(screen.getByRole("checkbox", { name: /Team B/ }));
-		fireEvent.click(screen.getByRole("button", { name: "Create final round" }));
-		expect(await screen.findByText("Choose a start time.")).toBeVisible();
+		expect(screen.queryByLabelText("Starts")).not.toBeInTheDocument();
+		expect(
+			screen.queryByLabelText("Presentation (min)")
+		).not.toBeInTheDocument();
+	});
+
+	it("requires a finalist, then saves them in rank order", async () => {
+		renderDialog();
+		for (const name of [/Team A/, /Team B/, /Team C/]) {
+			fireEvent.click(screen.getByRole("checkbox", { name }));
+		}
+		fireEvent.click(screen.getByRole("button", { name: "Save finalists" }));
+		expect(
+			await screen.findByText("Pick at least one finalist.")
+		).toBeVisible();
 		expect(mocks.setFinalists).not.toHaveBeenCalled();
-		fireEvent.change(screen.getByLabelText("Starts"), {
-			target: { value: "16:00" }
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Create final round" }));
+		fireEvent.click(screen.getByRole("checkbox", { name: /Team C/ }));
+		fireEvent.click(screen.getByRole("checkbox", { name: /Team A/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Save finalists" }));
 		await waitFor(() =>
-			expect(mocks.setFinalists).toHaveBeenCalledWith({
-				teamIds: ["a", "c"],
-				startTime: new Date("2026-09-19T16:00:00-06:00"),
-				presentationMinutes: 10,
-				changeoverMinutes: 2
-			})
+			expect(mocks.setFinalists).toHaveBeenCalledWith({ teamIds: ["a", "c"] })
 		);
+	});
+});
+
+describe("final round presentation order", () => {
+	const finalLayout = {
+		round: finalRound,
+		tables: [
+			{
+				...layout.tables[0],
+				assignments: ["A", "B", "C"].map((name, index) => ({
+					id: `final-${name}`,
+					teamId: name.toLowerCase(),
+					tableId: "table-1",
+					startsAt: minutes(index * 12),
+					createdAt: now,
+					team: team(name)
+				}))
+			}
+		]
+	} as unknown as Layout;
+
+	function names() {
+		return screen
+			.getAllByRole("listitem")
+			.map((item) => item.textContent?.match(/Team [A-C]/)?.[0]);
+	}
+
+	it("reorders finalists, previewing their new times, then saves", () => {
+		render(
+			<FinalRound layout={finalLayout} results={null} round={finalRound} />
+		);
+		expect(
+			screen.queryByRole("button", { name: "Move Team A later" })
+		).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Reorder" }));
+		expect(
+			screen.getByRole("button", { name: "Move Team A earlier" })
+		).toBeDisabled();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Move Team C earlier" })
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Move Team A later" }));
+		expect(names()).toEqual(["Team C", "Team A", "Team B"]);
+		expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(
+			formatTime(finalRound.startTime)
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Save order" }));
+		expect(mocks.reorderFinalists).toHaveBeenCalledWith({
+			assignmentIds: ["final-C", "final-A", "final-B"]
+		});
+	});
+
+	it("discards a new order on cancel", () => {
+		render(
+			<FinalRound layout={finalLayout} results={null} round={finalRound} />
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Reorder" }));
+		fireEvent.click(screen.getByRole("button", { name: "Move Team A later" }));
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		expect(names()).toEqual(["Team A", "Team B", "Team C"]);
+		expect(mocks.reorderFinalists).not.toHaveBeenCalled();
 	});
 });

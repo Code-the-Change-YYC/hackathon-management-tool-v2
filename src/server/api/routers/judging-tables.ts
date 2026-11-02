@@ -14,7 +14,7 @@ import {
 	judgingTables
 } from "@/server/db/judging-schema";
 
-type DbClient =
+export type DbClient =
 	| typeof dbType
 	| Parameters<Parameters<typeof dbType.transaction>[0]>[0];
 

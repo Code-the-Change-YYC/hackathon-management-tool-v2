@@ -1,9 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { DateField } from "@/app/components/forms/DateField";
+import { NumberField } from "@/app/components/forms/NumberField";
+import {
+	SelectField,
+	type SelectOption
+} from "@/app/components/forms/SelectField";
 import { TextField } from "@/app/components/forms/TextField";
 import { TimeField } from "@/app/components/forms/TimeField";
 import { Button } from "@/app/components/ui/button";
@@ -18,6 +23,7 @@ import {
 import { FieldGroup } from "@/app/components/ui/field";
 import { useRefresh } from "@/hooks/use-refresh";
 import { toDateInputValue, toTimeInputValue } from "@/lib/datetime";
+import type { JudgingRoundKind } from "@/lib/judging";
 import type { HackathonDates } from "@/lib/validation/event";
 import {
 	createRoundFormSchema,
@@ -29,23 +35,34 @@ import {
 import { api } from "@/trpc/react";
 import type { Round } from "./judgingShared";
 
+const ROUND_KIND_OPTIONS: SelectOption<JudgingRoundKind>[] = [
+	{ value: "panel", label: "Panel round" },
+	{ value: "final", label: "Final round" }
+];
+
 function toFormInput(round?: Round): RoundFormInput {
 	if (!round) return EMPTY_ROUND_FORM;
 	return {
+		kind: round.kind,
 		name: round.name,
 		date: toDateInputValue(round.startTime),
 		startTime: toTimeInputValue(round.startTime),
-		endTime: toTimeInputValue(round.endTime)
+		endTime: toTimeInputValue(round.endTime),
+		presentationMinutes:
+			round.presentationMinutes ?? EMPTY_ROUND_FORM.presentationMinutes,
+		changeoverMinutes: round.changeoverMinutes
 	};
 }
 
 export function RoundDialog({
 	round,
+	canAddFinal = false,
 	hackathonDates,
 	onClose,
 	onSaved
 }: {
 	round?: Round;
+	canAddFinal?: boolean;
 	hackathonDates: HackathonDates | null;
 	onClose: () => void;
 	onSaved?: (roundId: string) => void;
@@ -55,6 +72,7 @@ export function RoundDialog({
 		defaultValues: toFormInput(round),
 		resolver: zodResolver(createRoundFormSchema(hackathonDates))
 	});
+	const kind = useWatch({ control: form.control, name: "kind" });
 	const callbacks = {
 		onSuccess: (saved?: { id: string }) =>
 			refresh(() => {
@@ -79,7 +97,9 @@ export function RoundDialog({
 				<DialogHeader>
 					<DialogTitle>{round ? "Edit round" : "Add round"}</DialogTitle>
 					<DialogDescription>
-						The schedule must fit between the start and end.
+						{kind === "final"
+							? "Finalists present back to back from the start time."
+							: "The schedule must fit between the start and end."}
 					</DialogDescription>
 				</DialogHeader>
 				<form
@@ -87,18 +107,27 @@ export function RoundDialog({
 					noValidate
 					onSubmit={form.handleSubmit((values) =>
 						round
-							? updateRound.mutate({ id: round.id, ...values })
+							? updateRound.mutate({ ...values, id: round.id })
 							: createRound.mutate(values)
 					)}
 				>
 					<FieldGroup className="gap-4">
+						{!round && canAddFinal ? (
+							<SelectField
+								control={form.control}
+								disabled={isPending}
+								label="Type"
+								name="kind"
+								options={ROUND_KIND_OPTIONS}
+							/>
+						) : null}
 						<TextField
 							control={form.control}
 							disabled={isPending}
 							label="Name"
 							maxLength={ROUND_NAME_MAX_LENGTH}
 							name="name"
-							placeholder="Panel round"
+							placeholder={kind === "final" ? "Final round" : "Panel round"}
 						/>
 						<DateField
 							control={form.control}
@@ -108,20 +137,47 @@ export function RoundDialog({
 							min={hackathonDates?.start}
 							name="date"
 						/>
-						<div className="grid gap-4 sm:grid-cols-2">
-							<TimeField
-								control={form.control}
-								disabled={isPending}
-								label="Starts"
-								name="startTime"
-							/>
-							<TimeField
-								control={form.control}
-								disabled={isPending}
-								label="Ends"
-								name="endTime"
-							/>
-						</div>
+						{kind === "final" ? (
+							<>
+								<TimeField
+									control={form.control}
+									disabled={isPending}
+									label="Starts"
+									name="startTime"
+								/>
+								<div className="grid gap-4 sm:grid-cols-2">
+									<NumberField
+										control={form.control}
+										disabled={isPending}
+										label="Presentation (min)"
+										min={1}
+										name="presentationMinutes"
+									/>
+									<NumberField
+										control={form.control}
+										disabled={isPending}
+										label="Changeover (min)"
+										min={0}
+										name="changeoverMinutes"
+									/>
+								</div>
+							</>
+						) : (
+							<div className="grid gap-4 sm:grid-cols-2">
+								<TimeField
+									control={form.control}
+									disabled={isPending}
+									label="Starts"
+									name="startTime"
+								/>
+								<TimeField
+									control={form.control}
+									disabled={isPending}
+									label="Ends"
+									name="endTime"
+								/>
+							</div>
+						)}
 					</FieldGroup>
 					<DialogFooter>
 						<Button disabled={isPending} type="submit">

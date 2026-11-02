@@ -22,7 +22,6 @@ import {
 	TabsList,
 	TabsTrigger
 } from "@/app/components/ui/tabs";
-import type { HackathonDates } from "@/lib/validation/event";
 import { FinalistsDialog } from "./FinalistsDialog";
 import {
 	formatScore,
@@ -72,19 +71,17 @@ function RankingTable({ ranking }: { ranking: PanelRanking[] }) {
 }
 
 export function PanelResults({
-	round,
 	rankings,
-	hasFinalRound,
+	finalRound,
+	hasFinalists,
 	finalRoundHasScores,
-	hackathonDates,
-	onFinalRoundCreated
+	onFinalistsSaved
 }: {
-	round: Round;
 	rankings: PanelRankings;
-	hasFinalRound: boolean;
+	finalRound?: Round;
+	hasFinalists: boolean;
 	finalRoundHasScores: boolean;
-	hackathonDates: HackathonDates | null;
-	onFinalRoundCreated: (roundId: string) => void;
+	onFinalistsSaved: (roundId: string) => void;
 }) {
 	const [isPicking, setIsPicking] = useState(false);
 	const ranking = rankings.main;
@@ -95,17 +92,19 @@ export function PanelResults({
 			action={
 				hasScores ? (
 					<Button
-						disabled={finalRoundHasScores}
+						disabled={!finalRound || finalRoundHasScores}
 						onClick={() => setIsPicking(true)}
 						size="sm"
 						title={
-							finalRoundHasScores
-								? "The final round has been scored, so its finalists can’t change."
-								: undefined
+							!finalRound
+								? "Add a final round before picking finalists."
+								: finalRoundHasScores
+									? "The final round has been scored, so its finalists can’t change."
+									: undefined
 						}
-						variant={hasFinalRound ? "outline" : "default"}
+						variant={hasFinalists ? "outline" : "default"}
 					>
-						{hasFinalRound ? "Change finalists" : "Pick finalists"}
+						{hasFinalists ? "Change finalists" : "Pick finalists"}
 					</Button>
 				) : null
 			}
@@ -154,13 +153,12 @@ export function PanelResults({
 					</EmptyHeader>
 				</Empty>
 			)}
-			{isPicking ? (
+			{isPicking && finalRound ? (
 				<FinalistsDialog
-					hackathonDates={hackathonDates}
-					hasFinalRound={hasFinalRound}
+					finalRound={finalRound}
+					hasFinalists={hasFinalists}
 					onClose={() => setIsPicking(false)}
-					onCreated={onFinalRoundCreated}
-					panelRound={round}
+					onSaved={onFinalistsSaved}
 					ranking={ranking}
 				/>
 			) : null}

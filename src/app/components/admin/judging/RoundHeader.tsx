@@ -68,7 +68,6 @@ export function RoundHeader({
 		unpublish.isPending ||
 		setCurrent.isPending ||
 		deleteRound.isPending;
-	const isFinal = round.kind === "final";
 
 	async function requestDelete() {
 		const confirmed = await confirm({
@@ -128,15 +127,13 @@ export function RoundHeader({
 						<More1Line />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-56">
-						{isFinal ? null : (
-							<DropdownMenuItem
-								disabled={hasScores}
-								onClick={() => setIsEditing(true)}
-							>
-								<Edit2Line />
-								Edit round
-							</DropdownMenuItem>
-						)}
+						<DropdownMenuItem
+							disabled={hasScores}
+							onClick={() => setIsEditing(true)}
+						>
+							<Edit2Line />
+							Edit round
+						</DropdownMenuItem>
 						<DropdownMenuItem
 							disabled={isCurrent || busy}
 							onClick={() => setCurrent.mutate({ currentRoundId: round.id })}

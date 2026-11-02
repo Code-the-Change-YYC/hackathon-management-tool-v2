@@ -1,3 +1,5 @@
+import { addMinutes } from "date-fns";
+
 // Only winners_announced is read: it releases scores to participants. Their
 // judging stages otherwise follow the clock, pre-screening and scoring.
 export const JUDGING_PHASES = [
@@ -23,6 +25,40 @@ export const MIN_PRESENTATION_MINUTES = 5;
 export const MAX_PRESENTATION_MINUTES = 10;
 
 export const DEFAULT_FINALIST_COUNT = 5;
+
+export type FinalRoundTiming = {
+	startTime: Date;
+	presentationMinutes: number;
+	changeoverMinutes: number;
+};
+
+// Finalists present back to back, from the final round's start.
+export function getFinalistStartTime(timing: FinalRoundTiming, index: number) {
+	return addMinutes(
+		timing.startTime,
+		index * (timing.presentationMinutes + timing.changeoverMinutes)
+	);
+}
+
+// Finalists present back to back from the final round's start. Before they're
+// picked, the round is sized for the default finalist count.
+export function getFinalRoundEndTime({
+	startTime,
+	finalistCount,
+	presentationMinutes,
+	changeoverMinutes
+}: {
+	startTime: Date;
+	finalistCount: number;
+	presentationMinutes: number;
+	changeoverMinutes: number;
+}) {
+	const count = finalistCount || DEFAULT_FINALIST_COUNT;
+	return addMinutes(
+		startTime,
+		count * (presentationMinutes + changeoverMinutes) - changeoverMinutes
+	);
+}
 
 // Teams are asked to arrive this long before their first presentation.
 export const ARRIVAL_BUFFER_MINUTES = 10;

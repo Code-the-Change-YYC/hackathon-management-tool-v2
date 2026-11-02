@@ -155,16 +155,19 @@ export function JudgingView({
 										/>
 										{hasSchedule ? (
 											<PanelResults
+												finalRound={finalRound}
 												finalRoundHasScores={Boolean(
 													finalRound && scoredRoundIds.has(finalRound.id)
 												)}
-												hackathonDates={hackathonDates}
-												hasFinalRound={Boolean(finalRound)}
-												onFinalRoundCreated={setSelectedId}
+												hasFinalists={Boolean(
+													finalRound &&
+														layouts[finalRound.id]?.tables[0]?.assignments
+															.length
+												)}
+												onFinalistsSaved={setSelectedId}
 												rankings={
 													rankings[round.id] ?? { main: [], sidepots: [] }
 												}
-												round={round}
 											/>
 										) : null}
 									</>
@@ -197,6 +200,7 @@ export function JudgingView({
 
 			{isAddingRound ? (
 				<RoundDialog
+					canAddFinal={!finalRound}
 					hackathonDates={hackathonDates}
 					onClose={() => setIsAddingRound(false)}
 					onSaved={setSelectedId}

@@ -1,9 +1,14 @@
 import { TRPCError } from "@trpc/server";
-import { addMinutes } from "date-fns";
 import { eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import { criterionAppliesToRound } from "@/lib/judging";
+import {
+	criterionAppliesToRound,
+	getFinalistStartTime,
+	getFinalRoundEndTime,
+	MAX_PRESENTATION_MINUTES
+} from "@/lib/judging";
 import { type PanelScorecard, rankPanelTeams } from "@/lib/judging-ranking";
+import { scheduleFinalists } from "@/server/api/final-round";
 import { submittedScorecards } from "@/server/api/judging-results";
 import { assertRoundHasNoScores } from "@/server/api/routers/judging-tables";
 import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
@@ -107,16 +112,10 @@ export const judgingResultsRouter = createTRPCRouter({
 			};
 		}),
 
-	// Builds the single final round: one table of every judge, finalists in order
+	// Seats every judge at the final round's one table, with finalists
+	// presenting in the given order from the round's start
 	setFinalists: adminProcedure
-		.input(
-			z.object({
-				teamIds: z.array(z.string()).min(1),
-				startTime: z.coerce.date(),
-				presentationMinutes: z.number().int().min(1),
-				changeoverMinutes: z.number().int().min(0).default(2)
-			})
-		)
+		.input(z.object({ teamIds: z.array(z.string()).min(1) }))
 		.mutation(async ({ ctx, input }) => {
 			if (new Set(input.teamIds).size !== input.teamIds.length) {
 				throw new TRPCError({
@@ -126,6 +125,16 @@ export const judgingResultsRouter = createTRPCRouter({
 			}
 
 			return ctx.db.transaction(async (tx) => {
+				const round = await tx.query.judgingRounds.findFirst({
+					where: eq(judgingRounds.kind, "final")
+				});
+				if (!round) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Add a final round before picking finalists."
+					});
+				}
+				await assertRoundHasNoScores(tx, round.id);
 				const teams = await tx.query.organization.findMany({
 					where: inArray(organization.id, input.teamIds),
 					columns: { id: true }
@@ -147,51 +156,18 @@ export const judgingResultsRouter = createTRPCRouter({
 					});
 				}
 
-				const slotMinutes = input.presentationMinutes + input.changeoverMinutes;
-				const roundValues = {
-					name: "Final Round",
-					kind: "final" as const,
-					startTime: input.startTime,
-					endTime: addMinutes(
-						input.startTime,
-						input.teamIds.length * slotMinutes - input.changeoverMinutes
-					),
-					publishedAt: null,
-					presentationMinutes: input.presentationMinutes,
-					changeoverMinutes: input.changeoverMinutes
+				const timing = {
+					startTime: round.startTime,
+					presentationMinutes:
+						round.presentationMinutes ?? MAX_PRESENTATION_MINUTES,
+					changeoverMinutes: round.changeoverMinutes
 				};
-
-				const existing = await tx.query.judgingRounds.findFirst({
-					where: eq(judgingRounds.kind, "final")
-				});
-				let roundId: string;
-				if (existing) {
-					await assertRoundHasNoScores(tx, existing.id);
-					await tx
-						.delete(judgingTables)
-						.where(eq(judgingTables.roundId, existing.id));
-					await tx
-						.update(judgingRounds)
-						.set(roundValues)
-						.where(eq(judgingRounds.id, existing.id));
-					roundId = existing.id;
-				} else {
-					const [created] = await tx
-						.insert(judgingRounds)
-						.values(roundValues)
-						.returning({ id: judgingRounds.id });
-					if (!created) {
-						throw new TRPCError({
-							code: "INTERNAL_SERVER_ERROR",
-							message: "Failed to create the final round."
-						});
-					}
-					roundId = created.id;
-				}
-
+				await tx
+					.delete(judgingTables)
+					.where(eq(judgingTables.roundId, round.id));
 				const [table] = await tx
 					.insert(judgingTables)
-					.values({ roundId, tableNumber: 1 })
+					.values({ roundId: round.id, tableNumber: 1 })
 					.returning({ id: judgingTables.id });
 				if (!table) {
 					throw new TRPCError({
@@ -204,14 +180,74 @@ export const judgingResultsRouter = createTRPCRouter({
 					.values(
 						judges.map((judge) => ({ tableId: table.id, judgeId: judge.id }))
 					);
-				await tx.insert(judgingAssignments).values(
-					input.teamIds.map((teamId, index) => ({
-						teamId,
-						tableId: table.id,
-						startsAt: addMinutes(input.startTime, index * slotMinutes)
-					}))
-				);
-				return { roundId };
+				await scheduleFinalists(tx, table.id, input.teamIds, timing);
+				// New finalists need republishing before teams see their times.
+				await tx
+					.update(judgingRounds)
+					.set({
+						...timing,
+						endTime: getFinalRoundEndTime({
+							...timing,
+							finalistCount: input.teamIds.length
+						}),
+						publishedAt: null
+					})
+					.where(eq(judgingRounds.id, round.id));
+				return { roundId: round.id };
+			});
+		}),
+
+	// Moves finalists to new times without replacing their assignments, so
+	// scores already submitted stay with their teams
+	reorderFinalists: adminProcedure
+		.input(z.object({ assignmentIds: z.array(z.string().uuid()).min(1) }))
+		.mutation(async ({ ctx, input }) => {
+			return ctx.db.transaction(async (tx) => {
+				const round = await tx.query.judgingRounds.findFirst({
+					where: eq(judgingRounds.kind, "final"),
+					with: { tables: { with: { assignments: { columns: { id: true } } } } }
+				});
+				const table = round?.tables[0];
+				if (!round || !table) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Pick finalists before reordering them."
+					});
+				}
+				const currentIds = new Set(table.assignments.map(({ id }) => id));
+				const requestedIds = new Set(input.assignmentIds);
+				if (
+					requestedIds.size !== input.assignmentIds.length ||
+					requestedIds.size !== currentIds.size ||
+					input.assignmentIds.some((id) => !currentIds.has(id))
+				) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "The finalists have changed. Refresh and try again."
+					});
+				}
+
+				const timing = {
+					startTime: round.startTime,
+					presentationMinutes:
+						round.presentationMinutes ?? MAX_PRESENTATION_MINUTES,
+					changeoverMinutes: round.changeoverMinutes
+				};
+				// Start times are unique per table, so move every presentation out
+				// of the way before giving each its new slot.
+				await tx
+					.update(judgingAssignments)
+					.set({
+						startsAt: sql`${judgingAssignments.startsAt} - interval '100 years'`
+					})
+					.where(eq(judgingAssignments.tableId, table.id));
+				for (const [index, id] of input.assignmentIds.entries()) {
+					await tx
+						.update(judgingAssignments)
+						.set({ startsAt: getFinalistStartTime(timing, index) })
+						.where(eq(judgingAssignments.id, id));
+				}
+				return { roundId: round.id };
 			});
 		}),
 

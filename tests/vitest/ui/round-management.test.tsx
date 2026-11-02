@@ -74,9 +74,84 @@ describe("round dialog", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Add round" }));
 		await waitFor(() =>
 			expect(mocks.create).toHaveBeenCalledWith({
+				kind: "panel",
 				name: "Finals",
 				startTime: new Date("2026-09-12T10:00:00-06:00"),
 				endTime: new Date("2026-09-12T12:00:00-06:00")
+			})
+		);
+	});
+
+	it("only offers a final round while there isn't one", () => {
+		render(<RoundDialog hackathonDates={hackathonDates} onClose={vi.fn()} />);
+		expect(
+			screen.queryByRole("combobox", { name: "Type" })
+		).not.toBeInTheDocument();
+	});
+
+	it("adds a final round with its presentation timing", async () => {
+		render(
+			<RoundDialog
+				canAddFinal
+				hackathonDates={hackathonDates}
+				onClose={vi.fn()}
+			/>
+		);
+		fireEvent.click(screen.getByRole("combobox", { name: "Type" }));
+		const finalOption = await screen.findByRole("option", {
+			name: "Final round"
+		});
+		fireEvent.pointerDown(finalOption);
+		fireEvent.pointerUp(finalOption);
+		fireEvent.click(finalOption);
+		expect(await screen.findByLabelText("Presentation (min)")).toHaveValue(
+			"10"
+		);
+		expect(screen.queryByLabelText("Ends")).not.toBeInTheDocument();
+		change("Name", "Final Round");
+		fireEvent.click(screen.getByRole("button", { name: /^Date / }));
+		fireEvent.click(
+			await screen.findByRole("button", { name: /September 13th, 2026/ })
+		);
+		change("Starts", "16:30");
+		fireEvent.click(screen.getByRole("button", { name: "Add round" }));
+		await waitFor(() =>
+			expect(mocks.create).toHaveBeenCalledWith({
+				kind: "final",
+				name: "Final Round",
+				startTime: new Date("2026-09-13T16:30:00-06:00"),
+				presentationMinutes: 10,
+				changeoverMinutes: 2
+			})
+		);
+	});
+
+	it("edits a final round's timing", async () => {
+		render(
+			<RoundDialog
+				hackathonDates={hackathonDates}
+				onClose={vi.fn()}
+				round={judgingRound({
+					id: "final",
+					name: "Final Round",
+					kind: "final",
+					startTime: new Date("2026-09-13T22:30:00Z"),
+					presentationMinutes: 8,
+					changeoverMinutes: 2
+				})}
+			/>
+		);
+		expect(screen.getByLabelText("Starts")).toHaveValue("16:30");
+		change("Presentation (min)", "6");
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await waitFor(() =>
+			expect(mocks.update).toHaveBeenCalledWith({
+				id: "final",
+				kind: "final",
+				name: "Final Round",
+				startTime: new Date("2026-09-13T16:30:00-06:00"),
+				presentationMinutes: 6,
+				changeoverMinutes: 2
 			})
 		);
 	});
@@ -161,14 +236,14 @@ describe("round header", () => {
 		).toBeInTheDocument();
 	});
 
-	it("leaves the final round's times to the finalist picker", async () => {
+	it("lets the final round be edited", async () => {
 		renderHeader({
 			round: judgingRound({ name: "Final Round", kind: "final" })
 		});
 		const menu = await openMenu("Final Round");
 		expect(
-			within(menu).queryByRole("menuitem", { name: "Edit round" })
-		).not.toBeInTheDocument();
+			within(menu).getByRole("menuitem", { name: "Edit round" })
+		).not.toHaveAttribute("aria-disabled");
 	});
 
 	it("deletes a round only after confirmation", async () => {
