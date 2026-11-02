@@ -43,7 +43,7 @@ export function JudgeHeader({
 	return (
 		<header className="border-b bg-white">
 			<div className="mx-auto flex h-18 items-center justify-between gap-4 px-6">
-				<Link className="rounded-lg" href="/judge">
+				<Link className="rounded-lg" href="/">
 					<HackathonLogo />
 				</Link>
 				<DropdownMenu>
