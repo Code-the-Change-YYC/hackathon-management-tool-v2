@@ -33,8 +33,8 @@ const STATUSES: {
 	{
 		status: "passed",
 		label: "Passed",
-		icon: <CheckLine className="size-4" color="var(--color-green-700)" />,
-		barClassName: "bg-green-700"
+		icon: <CheckLine className="size-4" color="var(--color-primary)" />,
+		barClassName: "bg-primary"
 	}
 ];
 

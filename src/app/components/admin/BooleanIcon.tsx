@@ -5,7 +5,7 @@ export function BooleanIcon({ value }: { value: boolean }) {
 		<CheckLine
 			aria-label="Yes"
 			className="size-5"
-			color="var(--color-green-700)"
+			color="var(--color-primary)"
 			role="img"
 		/>
 	) : (
