@@ -77,6 +77,12 @@ const eventIdSchema = z.object({ id: z.string().uuid() });
 const eventNotFound = () =>
 	new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
 
+const notCheckedIn = () =>
+	new TRPCError({
+		code: "FORBIDDEN",
+		message: "This participant has not checked in yet."
+	});
+
 const ticketTokenSchema = z
 	.string()
 	.regex(EVENT_TICKET_TOKEN_PATTERN, "Invalid event ticket format.");
@@ -165,6 +171,10 @@ export const eventsRouter = createTRPCRouter({
 		.mutation(async ({ input, ctx }) => {
 			if (ctx.session.user.role !== Role.PARTICIPANT) {
 				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
+			if (!ctx.session.user.checkedIn) {
+				throw notCheckedIn();
 			}
 
 			return ctx.db.transaction(async (tx) => {
@@ -276,6 +286,7 @@ export const eventsRouter = createTRPCRouter({
 						participantName: user.name,
 						participantEmail: user.email,
 						participantRole: user.role,
+						participantCheckedIn: user.checkedIn,
 						eventTitle: event.title,
 						eventType: event.type,
 						eventStatus: event.status,
@@ -301,6 +312,10 @@ export const eventsRouter = createTRPCRouter({
 						code: "FORBIDDEN",
 						message: "Only participant tickets can be redeemed."
 					});
+				}
+
+				if (!ticket.participantCheckedIn) {
+					throw notCheckedIn();
 				}
 
 				if (ticket.eventId !== input.eventId) {
