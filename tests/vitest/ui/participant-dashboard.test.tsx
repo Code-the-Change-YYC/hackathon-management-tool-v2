@@ -23,6 +23,7 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[]}
 				firstName="Victoria"
+				needsCheckIn={false}
 				rounds={[]}
 				settings={null}
 			/>
@@ -40,6 +41,7 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[ongoingEvent("https://example.com/directions")]}
 				firstName="Victoria"
+				needsCheckIn={false}
 				rounds={[]}
 				settings={null}
 			/>
@@ -54,6 +56,7 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[ongoingEvent("javascript:alert(1)")]}
 				firstName="Victoria"
+				needsCheckIn={false}
 				rounds={[]}
 				settings={null}
 			/>
@@ -67,6 +70,7 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[]}
 				firstName="Victoria"
+				needsCheckIn={false}
 				rounds={[]}
 				settings={null}
 			/>
@@ -82,5 +86,28 @@ describe("participant dashboard page", () => {
 		expect(
 			screen.queryByRole("link", { name: "Navigate there" })
 		).not.toBeInTheDocument();
+	});
+	it("asks participants to check in until an admin checks them in", () => {
+		const { rerender } = render(
+			<DashboardView
+				events={[]}
+				firstName="Victoria"
+				needsCheckIn
+				rounds={[]}
+				settings={null}
+			/>
+		);
+		const heading = { name: "Check in to get your meal tickets" };
+		expect(screen.getByRole("heading", heading)).toBeInTheDocument();
+		rerender(
+			<DashboardView
+				events={[]}
+				firstName="Victoria"
+				needsCheckIn={false}
+				rounds={[]}
+				settings={null}
+			/>
+		);
+		expect(screen.queryByRole("heading", heading)).not.toBeInTheDocument();
 	});
 });

@@ -18,7 +18,11 @@ import {
 import { expect, test } from "../../fixtures/meal-info.fixture";
 
 test.use({
-	authUserOptions: { name: "Participant User", role: Role.PARTICIPANT }
+	authUserOptions: {
+		checkedIn: true,
+		name: "Participant User",
+		role: Role.PARTICIPANT
+	}
 });
 
 // Given I am signed in as a participant
@@ -44,6 +48,27 @@ test(
 		}
 	}
 );
+
+test.describe("not checked in", () => {
+	test.use({
+		authUserOptions: { checkedIn: false, role: Role.PARTICIPANT }
+	});
+
+	// Given I am a participant an admin has not checked in yet
+	// When I navigate to /participant/meals
+	// Then I see the check-in banner instead of my meal ticket.
+	test("locks the meal ticket until check-in", async ({
+		authenticatedPage: page
+	}) => {
+		await page.goto(path);
+		await expect(
+			page.getByRole("heading", { name: "Check in to get your meal tickets" })
+		).toBeVisible();
+		await expect(
+			page.getByRole("region", { name: "Meal ticket", exact: true })
+		).toHaveCount(0);
+	});
+});
 
 test.describe("admin access", () => {
 	test.use({ authUserOptions: { role: Role.ADMIN } });

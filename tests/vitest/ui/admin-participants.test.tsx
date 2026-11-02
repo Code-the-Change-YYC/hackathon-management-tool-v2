@@ -50,6 +50,7 @@ const participants: Participant[] = [
 		signedUpAt: new Date("2026-09-01T18:00:00Z"),
 		emailVerified: true,
 		completedRegistration: true,
+		checkedIn: false,
 		institution: "University of Calgary",
 		major: "computer_science",
 		registeredForFood: true
@@ -64,6 +65,7 @@ const participants: Participant[] = [
 		signedUpAt: new Date("2026-09-02T18:00:00Z"),
 		emailVerified: true,
 		completedRegistration: false,
+		checkedIn: false,
 		institution: "SAIT",
 		major: "software_engineering",
 		registeredForFood: false
@@ -78,6 +80,7 @@ const participants: Participant[] = [
 		signedUpAt: new Date("2026-09-03T18:00:00Z"),
 		emailVerified: false,
 		completedRegistration: false,
+		checkedIn: false,
 		institution: null,
 		major: null,
 		registeredForFood: null
@@ -240,5 +243,21 @@ describe("admin users", () => {
 			expect(mocks.removeUser).toHaveBeenCalledWith({ userId: "grace-id" })
 		);
 		expect(mocks.refresh).toHaveBeenCalledOnce();
+	});
+
+	it("checks in participants only", () => {
+		renderUsers();
+
+		expect(
+			screen.queryByRole("checkbox", { name: "Check in Grace Hopper" })
+		).not.toBeInTheDocument();
+		fireEvent.click(
+			screen.getByRole("checkbox", { name: "Check in Linus Torvalds" })
+		);
+
+		expect(mocks.mutate).toHaveBeenCalledWith({
+			id: "linus-id",
+			checkedIn: true
+		});
 	});
 });

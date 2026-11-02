@@ -22,7 +22,11 @@ import { assertE2EDatabaseSafety, assertLocalE2EOrigin } from "../../db";
 import { expect, test } from "../../fixtures/meal-info.fixture";
 
 test.use({
-	authUserOptions: { name: "Meal Ticket Participant", role: Role.PARTICIPANT }
+	authUserOptions: {
+		checkedIn: true,
+		name: "Meal Ticket Participant",
+		role: Role.PARTICIPANT
+	}
 });
 
 for (const timing of [
