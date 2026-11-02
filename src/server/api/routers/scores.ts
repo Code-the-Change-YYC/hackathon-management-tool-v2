@@ -34,7 +34,11 @@ async function requireAssignment(
 ) {
 	const assignment = await db.query.judgingAssignments.findFirst({
 		where: eq(judgingAssignments.id, assignmentId),
-		with: { table: { with: { judges: true } } }
+		with: {
+			table: {
+				with: { judges: true, round: { columns: { publishedAt: true } } }
+			}
+		}
 	});
 	if (!assignment)
 		throw new TRPCError({
@@ -45,6 +49,12 @@ async function requireAssignment(
 		throw new TRPCError({
 			code: "FORBIDDEN",
 			message: "You are not assigned to score this team."
+		});
+	}
+	if (!assignment.table.round.publishedAt) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "This round's schedule hasn't been published yet."
 		});
 	}
 	return assignment;

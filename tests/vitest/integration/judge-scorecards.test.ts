@@ -83,7 +83,11 @@ beforeEach(() => {
 	mocks.query.judgingScores.findMany.mockResolvedValue([]);
 	mocks.query.judgingAssignments.findFirst.mockResolvedValue({
 		startsAt: new Date(0),
-		table: { roundId, judges: [{ judgeId: "judge-a" }, { judgeId: "judge-b" }] }
+		table: {
+			roundId,
+			judges: [{ judgeId: "judge-a" }, { judgeId: "judge-b" }],
+			round: { publishedAt: new Date(0) }
+		}
 	});
 	mocks.query.judgingCriteria.findMany.mockResolvedValue([mainCriterion]);
 });
@@ -230,6 +234,32 @@ describe("individual judge scorecards", () => {
 		await api.getByJudge({ judgeId: "judge-a" });
 		const query = mocks.query.judgingAssignments.findMany.mock.lastCall?.[0];
 		expect(compile(query.with.scores.where).params).toEqual(["judge-a"]);
+	});
+	it("hides assignments in unpublished rounds from the judge's dashboard", async () => {
+		mocks.query.judgingTableJudges.findMany.mockResolvedValue([
+			{ tableId: "table" }
+		]);
+		mocks.query.judgingAssignments.findMany.mockResolvedValue([
+			{ id: "published", table: { round: { publishedAt: new Date(0) } } },
+			{ id: "draft", table: { round: { publishedAt: null } } }
+		]);
+		const api = judgingAssignmentsRouter.createCaller(await context());
+		const assignments = await api.getByJudge({ judgeId: "judge-a" });
+		expect(assignments.map(({ id }) => id)).toEqual(["published"]);
+	});
+	it("refuses scores for a round whose schedule isn't published", async () => {
+		mocks.query.judgingAssignments.findFirst.mockResolvedValue({
+			startsAt: new Date(0),
+			table: {
+				roundId,
+				judges: [{ judgeId: "judge-a" }],
+				round: { publishedAt: null }
+			}
+		});
+		await expect((await caller()).createMany(input(2))).rejects.toMatchObject({
+			code: "FORBIDDEN"
+		});
+		expect(mocks.insert).not.toHaveBeenCalled();
 	});
 	it("builds separate main totals per assignment and judge, excluding sidepots", async () => {
 		const select = {

@@ -67,3 +67,14 @@ export function criterionAppliesToRound(
 ) {
 	return !criterion.roundIds?.length || criterion.roundIds.includes(roundId);
 }
+
+// A criterion scoped only to final rounds is hidden from participants.
+export function isFinalOnlyCriterion(
+	criterion: { roundIds?: string[] },
+	finalRoundIds: ReadonlySet<string>
+) {
+	return (
+		!!criterion.roundIds?.length &&
+		criterion.roundIds.every((roundId) => finalRoundIds.has(roundId))
+	);
+}

@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { buildPanelSchedule, findLateTeamSlots } from "@/lib/judging-schedule";
+import { submittedScorecards } from "@/server/api/judging-results";
 import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
 import { organization, user } from "@/server/db/auth-schema";
@@ -109,22 +110,44 @@ export const judgingTablesRouter = createTRPCRouter({
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			const round = await requireRound(ctx.db, input.roundId);
-			const tables = await ctx.db.query.judgingTables.findMany({
-				where: eq(judgingTables.roundId, input.roundId),
-				with: {
-					judges: {
-						with: {
-							judge: { columns: { id: true, name: true, email: true } }
+			const [tables, scorecards] = await Promise.all([
+				ctx.db.query.judgingTables.findMany({
+					where: eq(judgingTables.roundId, input.roundId),
+					with: {
+						judges: {
+							with: {
+								judge: { columns: { id: true, name: true, email: true } }
+							}
+						},
+						assignments: {
+							with: { team: { columns: { id: true, name: true } } },
+							orderBy: (rows, { asc }) => [asc(rows.startsAt)]
 						}
 					},
-					assignments: {
-						with: { team: { columns: { id: true, name: true } } },
-						orderBy: (rows, { asc }) => [asc(rows.startsAt)]
-					}
-				},
-				orderBy: (rows, { asc }) => [asc(rows.tableNumber)]
-			});
-			return { round, tables };
+					orderBy: (rows, { asc }) => [asc(rows.tableNumber)]
+				}),
+				ctx.db.execute(sql`
+    SELECT card.assignment_id AS "assignmentId", card.judge_id AS "judgeId"
+    FROM ${submittedScorecards} card
+    WHERE card.round_id = ${input.roundId}
+  `) as unknown as Promise<{ assignmentId: string; judgeId: string }[]>
+			]);
+			const submitted = new Set(
+				scorecards.map((card) => `${card.assignmentId}:${card.judgeId}`)
+			);
+			// Only judges still at the table count toward a team's scoring progress.
+			return {
+				round,
+				tables: tables.map((table) => ({
+					...table,
+					assignments: table.assignments.map((assignment) => ({
+						...assignment,
+						scoredJudgeCount: table.judges.filter(({ judge }) =>
+							submitted.has(`${assignment.id}:${judge.id}`)
+						).length
+					}))
+				}))
+			};
 		}),
 
 	previewSchedule: adminProcedure

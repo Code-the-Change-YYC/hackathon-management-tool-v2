@@ -159,7 +159,7 @@ function NoAssignments() {
 			<EmptyHeader>
 				<EmptyTitle>No teams assigned yet</EmptyTitle>
 				<EmptyDescription>
-					Your assigned teams will appear here once the schedule is set.
+					Your assigned teams will appear here once the schedule is published.
 				</EmptyDescription>
 			</EmptyHeader>
 		</Empty>

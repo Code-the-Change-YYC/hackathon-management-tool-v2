@@ -61,7 +61,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 			});
 		}),
 
-	// Get assignments at every table a judge sits at, with only their own scores
+	// Get assignments at every table a judge sits at in published rounds, with only their own scores
 	getByJudge: protectedProcedure
 		.input(z.object({ judgeId: z.string() }))
 		.query(async ({ ctx, input }) => {
@@ -79,7 +79,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 			const tableIds = tableJudgeRows.map((row) => row.tableId);
 			if (tableIds.length === 0) return [];
 
-			return ctx.db.query.judgingAssignments.findMany({
+			const assignments = await ctx.db.query.judgingAssignments.findMany({
 				where: inArray(judgingAssignments.tableId, tableIds),
 				with: {
 					team: true,
@@ -88,6 +88,10 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				},
 				orderBy: (rows, { asc }) => [asc(rows.startsAt)]
 			});
+			// Judges, like teams, only see a round's schedule once it is published
+			return assignments.filter((assignment) =>
+				Boolean(assignment.table.round.publishedAt)
+			);
 		}),
 
 	// Get assignments for a specific team

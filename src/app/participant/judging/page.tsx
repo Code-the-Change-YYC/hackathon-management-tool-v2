@@ -14,7 +14,7 @@ export default async function JudgingPage() {
 	const [progress, status, criteria, results] = await Promise.all([
 		api.judgingProgress.get(),
 		api.judgingProgress.getMine(),
-		api.criteria.getAll(),
+		api.criteria.getPublic(),
 		api.scores.getMineReleased()
 	]);
 

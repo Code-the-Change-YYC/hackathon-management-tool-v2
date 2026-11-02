@@ -27,6 +27,7 @@ import {
 } from "@/app/components/ui/table";
 import { useRefresh } from "@/hooks/use-refresh";
 import { formatTime } from "@/lib/datetime";
+import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { AddTeamDialog } from "./AddTeamDialog";
 import {
@@ -79,6 +80,13 @@ function buildGrid(layout: Layout): GridRow[] {
 			slot
 		];
 	});
+}
+
+function scoringStatus(assignment: Assignment, judgeCount: number) {
+	if (judgeCount > 0 && assignment.scoredJudgeCount === judgeCount) {
+		return "complete";
+	}
+	return assignment.scoredJudgeCount > 0 ? "partial" : "none";
 }
 
 type OpenDialog = "generate" | "addTeam" | "moveJudge" | null;
@@ -205,31 +213,49 @@ export function PanelSchedule({
 									<TableCell className="px-3 py-2 tabular-nums">
 										{formatTime(row.startsAt)}
 									</TableCell>
-									{row.cells.map((assignment, index) => (
-										<TableCell
-											className="py-2 pr-1 pl-3"
-											key={tables[index]?.id}
-										>
-											{assignment ? (
-												<span className="flex items-center justify-between gap-2">
-													{assignment.team.name}
-													<Button
-														aria-label={`Remove ${assignment.team.name} from the schedule`}
-														className="text-muted-foreground"
-														disabled={removeTeam.isPending || isRefreshing}
-														onClick={() => void requestRemove(assignment)}
-														size="icon-xs"
-														title="Remove from the schedule"
-														variant="ghost"
+									{row.cells.map((assignment, index) => {
+										const status = assignment
+											? scoringStatus(
+													assignment,
+													tables[index]?.judges.length ?? 0
+												)
+											: "none";
+										return (
+											<TableCell className="p-0.5" key={tables[index]?.id}>
+												{assignment ? (
+													<span
+														className={cn(
+															"flex items-center justify-between gap-2 rounded-md py-1 pl-2",
+															status === "partial" && "bg-accent text-primary",
+															status === "complete" &&
+																"bg-primary text-primary-foreground"
+														)}
 													>
-														<CloseLine />
-													</Button>
-												</span>
-											) : (
-												<span className="text-muted-foreground">Free</span>
-											)}
-										</TableCell>
-									))}
+														{assignment.team.name}
+														<Button
+															aria-label={`Remove ${assignment.team.name} from the schedule`}
+															className={cn(
+																status === "none" && "text-muted-foreground",
+																status === "complete" &&
+																	"hover:bg-white/20 hover:text-primary-foreground"
+															)}
+															disabled={removeTeam.isPending || isRefreshing}
+															onClick={() => void requestRemove(assignment)}
+															size="icon-xs"
+															title="Remove from the schedule"
+															variant="ghost"
+														>
+															<CloseLine />
+														</Button>
+													</span>
+												) : (
+													<span className="block py-1 pl-2 text-muted-foreground">
+														Free
+													</span>
+												)}
+											</TableCell>
+										);
+									})}
 								</TableRow>
 							)
 						)}

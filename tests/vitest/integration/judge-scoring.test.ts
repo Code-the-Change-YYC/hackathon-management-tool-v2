@@ -47,7 +47,8 @@ beforeEach(() => {
 		startsAt: new Date(0),
 		table: {
 			roundId: "round",
-			judges: [{ judgeId: "judge-a" }, { judgeId: "judge-b" }]
+			judges: [{ judgeId: "judge-a" }, { judgeId: "judge-b" }],
+			round: { publishedAt: new Date(0) }
 		}
 	});
 	db.query.judgingCriteria.findMany.mockResolvedValue(rubric);
@@ -143,7 +144,11 @@ describe("individual scorecard API", () => {
 	it("enforces scheduled availability while allowing later updates", async () => {
 		db.query.judgingAssignments.findFirst.mockResolvedValue({
 			startsAt: new Date(Date.now() + 3600000),
-			table: { roundId: "round", judges: [{ judgeId: "judge-a" }] }
+			table: {
+				roundId: "round",
+				judges: [{ judgeId: "judge-a" }],
+				round: { publishedAt: new Date(0) }
+			}
 		});
 		db.query.judgingScores.findFirst.mockResolvedValue(undefined);
 		await expect(caller().createMany(valid)).rejects.toMatchObject({

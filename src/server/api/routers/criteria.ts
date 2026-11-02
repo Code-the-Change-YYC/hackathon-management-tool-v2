@@ -2,9 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
+import { getParticipantCriteria } from "@/server/api/participant-judging";
 import {
 	adminProcedure,
 	createTRPCRouter,
+	judgeProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
 import type { db } from "@/server/db";
@@ -25,11 +27,16 @@ async function validateRounds(database: typeof db, roundIds?: string[]) {
 }
 
 export const criteriaRouter = createTRPCRouter({
-	getAll: publicProcedure.query(async ({ ctx }) => {
+	getAll: judgeProcedure.query(async ({ ctx }) => {
 		return await ctx.db
 			.select()
 			.from(judgingCriteria)
 			.orderBy(asc(judgingCriteria.displayOrder), asc(judgingCriteria.name));
+	}),
+
+	// Excludes final-round-only criteria.
+	getPublic: publicProcedure.query(async ({ ctx }) => {
+		return await getParticipantCriteria(ctx.db);
 	}),
 
 	create: adminProcedure

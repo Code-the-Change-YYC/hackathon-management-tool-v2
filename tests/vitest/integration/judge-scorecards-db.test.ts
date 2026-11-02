@@ -32,7 +32,8 @@ describe("judge score ownership in PostgreSQL", () => {
 				name: "Score ownership test",
 				kind: "panel",
 				startTime: new Date(),
-				endTime: new Date(Date.now() + 60_000)
+				endTime: new Date(Date.now() + 60_000),
+				publishedAt: new Date()
 			});
 			await db.insert(organization).values({
 				id: teamId,

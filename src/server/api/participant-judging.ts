@@ -1,10 +1,12 @@
-import { eq, sql } from "drizzle-orm";
-import type { JudgingPhase } from "@/lib/judging";
+import { asc, eq, sql } from "drizzle-orm";
+import { isFinalOnlyCriterion, type JudgingPhase } from "@/lib/judging";
 import type { TeamJudging, TeamJudgingRound } from "@/lib/participant-judging";
 import { submittedScorecards } from "@/server/api/judging-results";
 import type { db as dbType } from "@/server/db";
 import {
 	judgingAssignments,
+	judgingCriteria,
+	judgingRounds,
 	judgingTableJudges,
 	judgingTables
 } from "@/server/db/judging-schema";
@@ -16,6 +18,23 @@ export function areScoresReleased(
 	settings: { judgingPhase: JudgingPhase } | null | undefined
 ) {
 	return settings?.judgingPhase === "winners_announced";
+}
+
+export async function getParticipantCriteria(db: DbClient) {
+	const [criteria, finalRounds] = await Promise.all([
+		db
+			.select()
+			.from(judgingCriteria)
+			.orderBy(asc(judgingCriteria.displayOrder), asc(judgingCriteria.name)),
+		db.query.judgingRounds.findMany({
+			where: eq(judgingRounds.kind, "final"),
+			columns: { id: true }
+		})
+	]);
+	const finalRoundIds = new Set(finalRounds.map((round) => round.id));
+	return criteria.filter(
+		(criterion) => !isFinalOnlyCriterion(criterion, finalRoundIds)
+	);
 }
 
 // The team's presentations in published rounds, grouped by round in start order.

@@ -26,7 +26,7 @@ vi.mock("@/trpc/server", () => ({
 			get: async () => progress,
 			getMine: async () => status
 		},
-		criteria: { getAll: async () => [] },
+		criteria: { getPublic: async () => [] },
 		scores: { getMineReleased: async () => ({ released: false, rounds: [] }) }
 	}
 }));

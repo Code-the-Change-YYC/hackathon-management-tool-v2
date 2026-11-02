@@ -1,11 +1,9 @@
 "use server";
 
-import { asc } from "drizzle-orm";
-
 import { tryCatch } from "@/lib/utils";
+import { getParticipantCriteria } from "@/server/api/participant-judging";
 import { fetchContentful } from "@/server/contentful";
 import { db } from "@/server/db";
-import { judgingCriteria } from "@/server/db/judging-schema";
 import { mapJudges } from "./components/landing-page/data/judges";
 import { mapPastHackathonWinners } from "./components/landing-page/data/winners";
 
@@ -22,12 +20,7 @@ export async function getWinners() {
 	return mapPastHackathonWinners(data);
 }
 export async function getCriteria() {
-	const { data, error } = await tryCatch(
-		db
-			.select()
-			.from(judgingCriteria)
-			.orderBy(asc(judgingCriteria.displayOrder), asc(judgingCriteria.name))
-	);
+	const { data, error } = await tryCatch(getParticipantCriteria(db));
 	if (!data) {
 		if (error) {
 			console.error("Error fetching judging criteria:", error);
