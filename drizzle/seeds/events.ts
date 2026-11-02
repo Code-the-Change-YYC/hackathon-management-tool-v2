@@ -138,13 +138,13 @@ const EVENT_SCHEDULE: ScheduledEvent[] = [
 	{
 		title: "Submissions Due",
 		description:
-			"Submit your project on Devpost by 11:30 AM. Late submissions won't be judged.",
+			"Submit your project on Devpost by 12:00 PM. Late submissions won't be judged.",
 		type: EventType.PROJECT,
 		location: "Devpost",
 		navigationUrl: DEVPOST_URL,
 		day: 1,
-		start: [11, 0],
-		end: [11, 30]
+		start: [11, 30],
+		end: [12, 0]
 	},
 	{
 		title: "Lunch: Shawarma Platters",
@@ -166,7 +166,7 @@ const EVENT_SCHEDULE: ScheduledEvent[] = [
 		navigationUrl: MACEWAN_HALL_URL,
 		day: 1,
 		start: [16, 30],
-		end: [17, 30]
+		end: [18, 0]
 	},
 	{
 		title: "Closing Dinner",
@@ -174,8 +174,8 @@ const EVENT_SCHEDULE: ScheduledEvent[] = [
 		type: EventType.FOOD,
 		location: "MacEwan Hall Lounge",
 		day: 1,
-		start: [17, 30],
-		end: [19, 0],
+		start: [18, 0],
+		end: [19, 30],
 		turnout: 0.7
 	}
 ];

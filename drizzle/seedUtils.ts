@@ -2,12 +2,13 @@ import { TZDate } from "@date-fns/tz";
 import { addDays, setHours, setMinutes, startOfHour } from "date-fns";
 import { CALGARY_TIME_ZONE } from "@/lib/datetime";
 
+// Day 0 is yesterday, so the seed always lands on the second and last day.
 // Hours are Calgary wall-clock times.
-export function getEventDate(dayOffset: number, hour: number, minute = 0) {
+export function getEventDate(day: number, hour: number, minute = 0) {
 	const today = new TZDate(Date.now(), CALGARY_TIME_ZONE);
 	const date = addDays(
 		setMinutes(startOfHour(setHours(today, hour)), minute),
-		dayOffset
+		day - 1
 	);
 	return new Date(date.getTime());
 }

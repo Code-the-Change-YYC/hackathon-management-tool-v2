@@ -14,7 +14,7 @@ async function main() {
 		const { admin, judges, participants } = await seedUsers();
 		const { teams, sampleTeam } = await seedTeams(participants);
 		const events = await seedEvents(participants);
-		const { mainRound, finalRound } = await seedJudging();
+		const { mainRound, finalRound, submissionDeadline } = await seedJudging();
 
 		const judge = judges.find((user) => user.email === SAMPLE_EMAILS.judge);
 		const participant = participants.find(
@@ -32,6 +32,7 @@ async function main() {
 			`Participants: ${participants.length} in ${teams.length} teams`
 		);
 		console.log(`Events: ${events.length} (${mealCount} meals)`);
+		console.log(`Submission deadline: ${formatDateTime(submissionDeadline)}`);
 		console.log(`${mainRound.name}: ${formatDateTime(mainRound.startTime)}`);
 		console.log(`${finalRound.name}: ${formatDateTime(finalRound.startTime)}`);
 		console.log(`\nLogins (password: ${SEED_PASSWORD}):`);

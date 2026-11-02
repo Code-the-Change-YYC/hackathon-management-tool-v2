@@ -1,4 +1,4 @@
-import { addMinutes, startOfMinute } from "date-fns";
+import { addMinutes } from "date-fns";
 import { getEventDate } from "drizzle/seedUtils";
 import {
 	DEFAULT_FINALIST_COUNT,
@@ -9,8 +9,8 @@ import { db } from "@/server/db";
 import { hackathonSettings } from "@/server/db/admin-schema";
 import { judgingCriteria, judgingRounds } from "@/server/db/judging-schema";
 
+const JUDGING_DELAY_MINUTES = 20;
 const MAIN_JUDGING_MINUTES = 180;
-const DELIBERATION_MINUTES = 60;
 const CHANGEOVER_MINUTES = 2;
 const PANEL_SIZE = 2;
 
@@ -18,9 +18,11 @@ export async function seedJudging() {
 	console.log("\nCreating judging rounds and criteria...");
 
 	// No team has passed prescreening, so neither round has a schedule yet.
-	const mainStart = startOfMinute(addMinutes(new Date(), 5));
+	const submissionDeadline = getEventDate(1, 12);
+	const mainStart = addMinutes(submissionDeadline, JUDGING_DELAY_MINUTES);
 	const mainEnd = addMinutes(mainStart, MAIN_JUDGING_MINUTES);
-	const finalStart = addMinutes(mainEnd, DELIBERATION_MINUTES);
+	// Finalists present at the closing ceremony.
+	const finalStart = getEventDate(1, 16, 30);
 	const rounds = await db
 		.insert(judgingRounds)
 		.values([
@@ -57,7 +59,7 @@ export async function seedJudging() {
 		id: 1,
 		startDate: getEventDate(0, 8),
 		endDate: getEventDate(1, 20),
-		submissionDeadline: getEventDate(1, 11, 30),
+		submissionDeadline,
 		isActive: true,
 		currentRoundId: mainRound.id
 	});
@@ -143,5 +145,5 @@ export async function seedJudging() {
 	console.log(
 		`Created ${rounds.length} judging rounds and ${criteria.length} criteria`
 	);
-	return { criteria, mainRound, finalRound };
+	return { criteria, mainRound, finalRound, submissionDeadline };
 }
