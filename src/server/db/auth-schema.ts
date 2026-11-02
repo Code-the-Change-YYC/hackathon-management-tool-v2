@@ -88,7 +88,8 @@ export const user = createTable("user", {
 	mlhEmailOptIn: boolean("mlh_email_opt_in").default(false).notNull(),
 	completedRegistration: boolean("completed_registration")
 		.default(false)
-		.notNull()
+		.notNull(),
+	checkedIn: boolean("checked_in").default(false).notNull()
 });
 
 export const session = createTable(

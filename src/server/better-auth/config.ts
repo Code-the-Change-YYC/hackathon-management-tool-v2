@@ -203,6 +203,12 @@ export const betterAuthDefaultConfig = {
 				type: "boolean",
 				required: false,
 				input: false
+			},
+			checkedIn: {
+				type: "boolean",
+				required: false,
+				defaultValue: false,
+				input: false
 			}
 		}
 	}
