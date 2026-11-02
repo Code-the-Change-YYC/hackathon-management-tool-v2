@@ -1,27 +1,45 @@
+import { seedEvents } from "drizzle/seeds/events";
 import { seedJudging } from "drizzle/seeds/judging";
-import { seedMeals } from "drizzle/seeds/meals";
+import { resetDatabase } from "drizzle/seeds/reset";
 import { seedTeams } from "drizzle/seeds/teams";
-import { seedUsers } from "drizzle/seeds/users";
+import { SAMPLE_EMAILS, SEED_PASSWORD, seedUsers } from "drizzle/seeds/users";
+import { formatDateTime } from "@/lib/datetime";
+import { EventType } from "@/types/types";
 
 async function main() {
 	console.log("Starting seed...");
 
 	try {
-		const { credentials, judges, participantUser } = await seedUsers();
-		const teams = await seedTeams({ participantUser });
-		const meals = await seedMeals(participantUser);
-		await seedJudging({ judges, teams });
+		await resetDatabase();
+		const { admin, judges, participants } = await seedUsers();
+		const { teams, sampleTeam } = await seedTeams(participants);
+		const events = await seedEvents(participants);
+		const { mainRound, finalRound } = await seedJudging();
+
+		const judge = judges.find((user) => user.email === SAMPLE_EMAILS.judge);
+		const participant = participants.find(
+			(user) => user.email === SAMPLE_EMAILS.participant
+		);
+		const mealCount = events.filter(
+			(seededEvent) => seededEvent.type === EventType.FOOD
+		).length;
 
 		console.log("\nSeed completed successfully!\n");
 		console.log("Summary:");
-		console.log(`Admin user: ${credentials.adminEmail}`);
-		console.log(`Organizations created or found: ${teams.length}`);
-		console.log(`Meals created or updated: ${meals.length}`);
-		console.log(`Participant user: ${credentials.participantEmail}`);
-		console.log("\nLogin credentials:");
-		console.log(`   Email: ${credentials.adminEmail}`);
-		console.log(`   Password: ${credentials.adminPassword}`);
-		console.log("Remember to change this email and password in production.");
+		console.log("Admins: 1");
+		console.log(`Judges: ${judges.length}`);
+		console.log(
+			`Participants: ${participants.length} in ${teams.length} teams`
+		);
+		console.log(`Events: ${events.length} (${mealCount} meals)`);
+		console.log(`${mainRound.name}: ${formatDateTime(mainRound.startTime)}`);
+		console.log(`${finalRound.name}: ${formatDateTime(finalRound.startTime)}`);
+		console.log(`\nLogins (password: ${SEED_PASSWORD}):`);
+		console.log(`Admin: ${admin.email} (${admin.name})`);
+		console.log(`Judge: ${judge?.email} (${judge?.name})`);
+		console.log(
+			`Participant: ${participant?.email} (${participant?.name}, owner of ${sampleTeam?.name})`
+		);
 		process.exit(0);
 	} catch (error) {
 		console.error("Seed failed:", error);
