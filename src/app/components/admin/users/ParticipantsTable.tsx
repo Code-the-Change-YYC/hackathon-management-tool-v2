@@ -1,6 +1,12 @@
 "use client";
 
-import { DeleteLine, EditLine, More1Line, User3Line } from "@mingcute/react";
+import {
+	DeleteLine,
+	EditLine,
+	MailSendLine,
+	More1Line,
+	User3Line
+} from "@mingcute/react";
 import { BooleanIcon } from "@/app/components/admin/BooleanIcon";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
@@ -42,12 +48,14 @@ const ROLE_BADGE_VARIANTS: Record<
 type ParticipantsTableProps = {
 	participants: Participant[];
 	onEdit: (participant: Participant) => void;
+	onResendAccessEmail: (participant: Participant) => void;
 	onDelete: (participant: Participant) => void;
 };
 
 export function ParticipantsTable({
 	participants,
 	onEdit,
+	onResendAccessEmail,
 	onDelete
 }: ParticipantsTableProps) {
 	if (participants.length === 0) {
@@ -139,12 +147,20 @@ export function ParticipantsTable({
 									>
 										<More1Line />
 									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end" className="w-40">
+									<DropdownMenuContent align="end" className="w-52">
 										<DropdownMenuGroup>
 											<DropdownMenuItem onClick={() => onEdit(participant)}>
 												<EditLine />
 												Edit user
 											</DropdownMenuItem>
+											{participant.role === Role.JUDGE && (
+												<DropdownMenuItem
+													onClick={() => onResendAccessEmail(participant)}
+												>
+													<MailSendLine />
+													Resend access email
+												</DropdownMenuItem>
+											)}
 											<DropdownMenuItem
 												onClick={() => onDelete(participant)}
 												variant="destructive"

@@ -26,8 +26,8 @@ vi.mock("@/server/better-auth/client", () => ({
 
 vi.mock("@/trpc/react", () => ({
 	api: {
-		invitations: {
-			invite: {
+		judges: {
+			resendAccessEmail: {
 				useMutation: () => ({ mutate: vi.fn(), isPending: false })
 			}
 		},

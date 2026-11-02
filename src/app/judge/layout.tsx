@@ -1,7 +1,6 @@
 import { resolveAvatarSrc } from "@/lib/avatars";
 import { getNameParts } from "@/lib/names";
-import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
-import { Role } from "@/types/types";
+import { requireJudge } from "@/server/better-auth/auth-helpers/helpers";
 import { JudgeHeader } from "../components/judge/JudgeHeader";
 import PageContainer from "../components/PageContainer";
 
@@ -10,7 +9,7 @@ export default async function JudgeLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const { user } = await requireRole([Role.JUDGE, Role.ADMIN]);
+	const { user } = await requireJudge();
 
 	return (
 		<div className="flex min-h-svh flex-col">

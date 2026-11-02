@@ -1,5 +1,5 @@
 import { generateId } from "better-auth";
-import { addMinutes, subDays, subHours, subMinutes } from "date-fns";
+import { addMinutes, subDays, subMinutes } from "date-fns";
 import { FIRST_NAMES, LAST_NAMES } from "drizzle/seeds/names";
 import { createRandom, type Random } from "drizzle/seedUtils";
 import { AVATAR_IDS, getAvatarSrc } from "@/lib/avatars";
@@ -13,7 +13,6 @@ import {
 } from "@/lib/validation/signup";
 import { auth } from "@/server/better-auth";
 import { db } from "@/server/db";
-import { roleInvitation } from "@/server/db/admin-schema";
 import { account, user } from "@/server/db/auth-schema";
 import { type Program, Role } from "@/types/types";
 
@@ -147,16 +146,6 @@ function participantBackground(random: Random): Background {
 	return { age: random.int(minAge, maxAge), levelOfStudy, school };
 }
 
-// Judges are mostly industry professionals, with a few graduate students.
-function judgeBackground(random: Random): Background {
-	const isStudent = random.chance(0.15);
-	return {
-		age: isStudent ? random.int(24, 32) : random.int(27, 58),
-		levelOfStudy: isStudent ? "graduate" : "not_a_student",
-		school: random.weighted(UNIVERSITIES)
-	};
-}
-
 // 555-0100 to 555-0199 are reserved for fiction, so these numbers reach no one.
 function createPhoneNumber(random: Random, countryOfResidence: string) {
 	const areaCode =
@@ -228,6 +217,29 @@ function createUser(
 	};
 }
 
+// Admins add judges with just a name and email, and judges never onboard.
+function createJudge({
+	name,
+	email,
+	addedAt
+}: {
+	name: Name;
+	email: string;
+	addedAt: Date;
+}): typeof user.$inferInsert {
+	return {
+		id: generateId(),
+		name: getFullName(name.firstName, name.lastName),
+		email,
+		emailVerified: true,
+		role: Role.JUDGE,
+		...name,
+		completedRegistration: true,
+		createdAt: addedAt,
+		updatedAt: addedAt
+	};
+}
+
 // Sign-ups pick up as the hackathon gets closer.
 function participantSignUpTime(random: Random, now: Date) {
 	const minMinutesAgo = 120;
@@ -253,15 +265,13 @@ export async function seedUsers() {
 	});
 	const newJudges = Array.from({ length: JUDGE_COUNT }, (_, index) => {
 		const name = nextName();
-		return createUser(random, {
+		return createJudge({
 			name,
 			email: index === 0 ? SAMPLE_EMAILS.judge : toEmail(name),
-			role: Role.JUDGE,
-			signedUpAt: subMinutes(
+			addedAt: subMinutes(
 				now,
 				random.int(MINUTES_PER_DAY, (SIGN_UP_WINDOW_DAYS - 3) * MINUTES_PER_DAY)
-			),
-			background: judgeBackground(random)
+			)
 		});
 	});
 	const newParticipants = Array.from(
@@ -303,17 +313,6 @@ export async function seedUsers() {
 	const judges = users.filter((seededUser) => seededUser.role === Role.JUDGE);
 	const participants = users.filter(
 		(seededUser) => seededUser.role === Role.PARTICIPANT
-	);
-
-	// Judges got their role by accepting the organizer's invitation.
-	await db.insert(roleInvitation).values(
-		judges.map((judge) => ({
-			email: judge.email,
-			role: Role.JUDGE,
-			invitedById: admin.id,
-			acceptedAt: judge.createdAt,
-			createdAt: subHours(judge.createdAt, random.int(1, 48))
-		}))
 	);
 
 	console.log(

@@ -60,7 +60,10 @@ export async function createTestUserWithPassword(
 /** The latest one-time code emailed to an address, read from the database. */
 export async function getVerificationCode(
 	email: string,
-	type: "email-verification" | "forget-password" = "email-verification"
+	type:
+		| "email-verification"
+		| "forget-password"
+		| "sign-in" = "email-verification"
 ) {
 	assertE2EDatabaseSafety();
 	// Resending can leave the old code's row behind until one is used.

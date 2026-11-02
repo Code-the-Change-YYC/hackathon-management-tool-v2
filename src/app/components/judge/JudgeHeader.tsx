@@ -19,6 +19,7 @@ import {
 	DropdownMenuTrigger
 } from "@/app/components/ui/dropdown-menu";
 import { getInitials } from "@/lib/names";
+import { AUTH_ROUTES } from "@/lib/routes";
 import { authClient } from "@/server/better-auth/client";
 
 export function JudgeHeader({
@@ -36,7 +37,7 @@ export function JudgeHeader({
 			toast.error("We couldn't log you out. Try again.");
 			return;
 		}
-		router.push("/");
+		router.push(AUTH_ROUTES.judgeLogin);
 		router.refresh();
 	}
 

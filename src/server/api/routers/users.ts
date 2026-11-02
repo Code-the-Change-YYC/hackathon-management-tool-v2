@@ -32,7 +32,6 @@ import {
 } from "@/server/api/trpc";
 import { user } from "@/server/db/auth-schema";
 import { Role } from "@/types/types";
-import { applyInvitedRole } from "./invitations";
 
 function getRole(role: string | null) {
 	if (role === null) return null;
@@ -288,26 +287,23 @@ export const usersRouter = createTRPCRouter({
 			});
 		}
 
-		return ctx.db.transaction(async (tx) => {
-			const [updated] = await tx
-				.update(user)
-				.set({
-					completedRegistration: true,
-					role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
-				})
-				.where(eq(user.id, ctx.session.user.id))
-				.returning({ id: user.id, email: user.email, role: user.role });
+		const [updated] = await ctx.db
+			.update(user)
+			.set({
+				completedRegistration: true,
+				role: sql`case when ${user.role} in (${Role.ADMIN}, ${Role.JUDGE}, ${Role.PARTICIPANT}) then ${user.role} else ${Role.PARTICIPANT} end`
+			})
+			.where(eq(user.id, ctx.session.user.id))
+			.returning({ role: user.role });
 
-			if (!updated) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Authenticated user not found"
-				});
-			}
+		if (!updated) {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message: "Authenticated user not found"
+			});
+		}
 
-			const invitedRole = await applyInvitedRole(tx, updated.id, updated.email);
-			return { role: invitedRole ?? updated.role };
-		});
+		return { role: updated.role };
 	}),
 	getDietaryAnalytics: adminProcedure.query(async ({ ctx }) => {
 		const users = await ctx.db.query.user.findMany({
