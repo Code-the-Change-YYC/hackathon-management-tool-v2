@@ -17,6 +17,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { useRefresh } from "@/hooks/use-refresh";
 import { downloadParticipantsCsv } from "@/lib/participants-csv";
 import { authClient } from "@/server/better-auth/client";
+import { api } from "@/trpc/react";
 import PageHeader from "../../PageHeader";
 import { Card, CardContent } from "../../ui/card";
 import { EditParticipantDialog } from "./EditParticipantDialog";
@@ -144,6 +145,15 @@ export function RegisteredUsersView({
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	const { refresh } = useRefresh();
+	const checkIn = api.users.update.useMutation({
+		onSuccess: ({ firstName, lastName, checkedIn }) => {
+			toast.success(
+				`${firstName} ${lastName} ${checkedIn ? "checked in" : "unchecked"}!`
+			);
+			refresh();
+		},
+		onError: (error) => toast.error(error.message)
+	});
 
 	const visibleParticipants = useMemo(
 		() =>
@@ -312,6 +322,9 @@ export function RegisteredUsersView({
 						</div>
 
 						<ParticipantsTable
+							onCheckIn={(participant, checkedIn) =>
+								checkIn.mutate({ id: participant.id, checkedIn })
+							}
 							onDelete={setDeleting}
 							onEdit={setEditing}
 							participants={visibleParticipants}
