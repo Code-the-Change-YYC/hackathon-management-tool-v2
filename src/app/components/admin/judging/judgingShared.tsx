@@ -22,8 +22,8 @@ export type Layouts = Record<string, Layout>;
 export type Judge = RouterOutputs["users"]["getAll"][number];
 export type Team = RouterOutputs["teams"]["getAll"][number];
 export type Criterion = RouterOutputs["criteria"]["getAll"][number];
-export type PanelRanking =
-	RouterOutputs["judgingResults"]["getPanelRanking"][number];
+export type PanelRankings = RouterOutputs["judgingResults"]["getPanelRanking"];
+export type PanelRanking = PanelRankings["main"][number];
 export type FinalResults = RouterOutputs["judgingResults"]["getFinalResults"];
 export type ScheduleSettings = Omit<
 	RouterInputs["judgingTables"]["previewSchedule"],

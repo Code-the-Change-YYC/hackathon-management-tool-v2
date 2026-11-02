@@ -292,7 +292,7 @@ function renderResults(
 			hackathonDates={null}
 			hasFinalRound={false}
 			onFinalRoundCreated={vi.fn()}
-			ranking={ranking}
+			rankings={{ main: ranking, sidepots: [] }}
 			round={round}
 			{...props}
 		/>
@@ -308,6 +308,26 @@ describe("panel results", () => {
 		expect(
 			await screen.findByRole("dialog", { name: "Create final round" })
 		).toBeVisible();
+	});
+
+	it("switches to a sidepot's ranking", async () => {
+		renderResults({
+			rankings: {
+				main: ranking,
+				sidepots: [
+					{
+						criterionId: "best-ui",
+						name: "Best UI",
+						ranking: ranking.slice().reverse()
+					}
+				]
+			}
+		});
+		expect(screen.getAllByRole("row")[1]).toHaveTextContent("Team A");
+		fireEvent.click(screen.getByRole("tab", { name: "Best UI" }));
+		await waitFor(() =>
+			expect(screen.getAllByRole("row")[1]).toHaveTextContent("Team C")
+		);
 	});
 
 	it("won't change finalists once the final round is scored", () => {

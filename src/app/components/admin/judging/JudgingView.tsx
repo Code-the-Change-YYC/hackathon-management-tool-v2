@@ -28,7 +28,7 @@ import type {
 	Judge,
 	Layout,
 	Layouts,
-	PanelRanking,
+	PanelRankings,
 	Round,
 	Team
 } from "./judgingShared";
@@ -71,7 +71,7 @@ export function JudgingView({
 	judges: Judge[];
 	teams: Team[];
 	criteria: Criterion[];
-	rankings: Record<string, PanelRanking[]>;
+	rankings: Record<string, PanelRankings>;
 	finalResults: FinalResults;
 	hackathonDates: HackathonDates | null;
 	scoresReleased: boolean;
@@ -161,7 +161,9 @@ export function JudgingView({
 												hackathonDates={hackathonDates}
 												hasFinalRound={Boolean(finalRound)}
 												onFinalRoundCreated={setSelectedId}
-												ranking={rankings[round.id] ?? []}
+												rankings={
+													rankings[round.id] ?? { main: [], sidepots: [] }
+												}
 												round={round}
 											/>
 										) : null}

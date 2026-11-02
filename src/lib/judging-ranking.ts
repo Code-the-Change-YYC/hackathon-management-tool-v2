@@ -1,7 +1,7 @@
-export type MainScorecard = {
+export type PanelScorecard = {
 	teamId: string;
 	judgeId: string;
-	mainScore: number;
+	score: number;
 };
 
 export type PanelRankingEntry = {
@@ -15,16 +15,16 @@ function average(values: number[]) {
 	return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-// Each judge's totals become z-scores against that judge's own scores, so a
+// Each judge's scores become z-scores against that judge's own scores, so a
 // lenient or strict table doesn't decide who reaches the final.
 export function rankPanelTeams(
-	scorecards: MainScorecard[]
+	scorecards: PanelScorecard[]
 ): PanelRankingEntry[] {
 	const scoresByJudge = new Map<string, number[]>();
 	for (const card of scorecards) {
 		scoresByJudge.set(card.judgeId, [
 			...(scoresByJudge.get(card.judgeId) ?? []),
-			card.mainScore
+			card.score
 		]);
 	}
 
@@ -38,7 +38,7 @@ export function rankPanelTeams(
 		})
 	);
 
-	const cardsByTeam = new Map<string, MainScorecard[]>();
+	const cardsByTeam = new Map<string, PanelScorecard[]>();
 	for (const card of scorecards) {
 		cardsByTeam.set(card.teamId, [
 			...(cardsByTeam.get(card.teamId) ?? []),
@@ -53,10 +53,10 @@ export function rankPanelTeams(
 				cards.map((card) => {
 					const stats = statsByJudge.get(card.judgeId);
 					if (!stats || stats.deviation === 0) return 0;
-					return (card.mainScore - stats.mean) / stats.deviation;
+					return (card.score - stats.mean) / stats.deviation;
 				})
 			),
-			rawAverage: average(cards.map((card) => card.mainScore)),
+			rawAverage: average(cards.map((card) => card.score)),
 			scorecardCount: cards.length
 		}))
 		.sort(

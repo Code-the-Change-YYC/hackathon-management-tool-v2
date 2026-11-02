@@ -16,31 +16,78 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger
+} from "@/app/components/ui/tabs";
 import type { HackathonDates } from "@/lib/validation/event";
 import { FinalistsDialog } from "./FinalistsDialog";
 import {
 	formatScore,
 	ManagementSection,
 	type PanelRanking,
+	type PanelRankings,
 	type Round
 } from "./judgingShared";
 
+function RankingTable({ ranking }: { ranking: PanelRanking[] }) {
+	return (
+		<Table className="min-w-140">
+			<TableHeader>
+				<TableRow>
+					<TableHead className="w-16 px-3 py-3">Rank</TableHead>
+					<TableHead className="px-3 py-3">Team</TableHead>
+					<TableHead className="px-3 py-3 text-right">
+						Normalized score
+					</TableHead>
+					<TableHead className="px-3 py-3 text-right">Raw average</TableHead>
+					<TableHead className="px-3 py-3 text-right">Scorecards</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				{ranking.map((entry, index) => (
+					<TableRow key={entry.teamId}>
+						<TableCell className="px-3 py-3 font-semibold text-primary">
+							{entry.normalizedScore === null ? "—" : index + 1}
+						</TableCell>
+						<TableCell className="wrap-break-word whitespace-normal px-3 py-3 font-medium">
+							{entry.teamName}
+						</TableCell>
+						<TableCell className="px-3 py-3 text-right tabular-nums">
+							{formatScore(entry.normalizedScore)}
+						</TableCell>
+						<TableCell className="px-3 py-3 text-right tabular-nums">
+							{formatScore(entry.rawAverage)}
+						</TableCell>
+						<TableCell className="px-3 py-3 text-right tabular-nums">
+							{entry.scorecardCount}/{entry.expectedScorecards}
+						</TableCell>
+					</TableRow>
+				))}
+			</TableBody>
+		</Table>
+	);
+}
+
 export function PanelResults({
 	round,
-	ranking,
+	rankings,
 	hasFinalRound,
 	finalRoundHasScores,
 	hackathonDates,
 	onFinalRoundCreated
 }: {
 	round: Round;
-	ranking: PanelRanking[];
+	rankings: PanelRankings;
 	hasFinalRound: boolean;
 	finalRoundHasScores: boolean;
 	hackathonDates: HackathonDates | null;
 	onFinalRoundCreated: (roundId: string) => void;
 }) {
 	const [isPicking, setIsPicking] = useState(false);
+	const ranking = rankings.main;
 	const hasScores = ranking.some((entry) => entry.normalizedScore !== null);
 
 	return (
@@ -66,42 +113,37 @@ export function PanelResults({
 			title="Results"
 		>
 			{hasScores ? (
-				<Table className="min-w-140">
-					<TableHeader>
-						<TableRow>
-							<TableHead className="w-16 px-3 py-3">Rank</TableHead>
-							<TableHead className="px-3 py-3">Team</TableHead>
-							<TableHead className="px-3 py-3 text-right">
-								Normalized score
-							</TableHead>
-							<TableHead className="px-3 py-3 text-right">
-								Raw average
-							</TableHead>
-							<TableHead className="px-3 py-3 text-right">Scorecards</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{ranking.map((entry, index) => (
-							<TableRow key={entry.teamId}>
-								<TableCell className="px-3 py-3 font-semibold text-primary">
-									{entry.normalizedScore === null ? "—" : index + 1}
-								</TableCell>
-								<TableCell className="wrap-break-word whitespace-normal px-3 py-3 font-medium">
-									{entry.teamName}
-								</TableCell>
-								<TableCell className="px-3 py-3 text-right tabular-nums">
-									{formatScore(entry.normalizedScore)}
-								</TableCell>
-								<TableCell className="px-3 py-3 text-right tabular-nums">
-									{formatScore(entry.rawAverage)}
-								</TableCell>
-								<TableCell className="px-3 py-3 text-right tabular-nums">
-									{entry.scorecardCount}/{entry.expectedScorecards}
-								</TableCell>
-							</TableRow>
+				rankings.sidepots.length ? (
+					<Tabs className="gap-4" defaultValue="main">
+						<TabsList>
+							<TabsTrigger className="flex-none px-3" value="main">
+								Main
+							</TabsTrigger>
+							{rankings.sidepots.map((sidepot) => (
+								<TabsTrigger
+									className="flex-none px-3"
+									key={sidepot.criterionId}
+									value={sidepot.criterionId}
+								>
+									{sidepot.name}
+								</TabsTrigger>
+							))}
+						</TabsList>
+						<TabsContent value="main">
+							<RankingTable ranking={ranking} />
+						</TabsContent>
+						{rankings.sidepots.map((sidepot) => (
+							<TabsContent
+								key={sidepot.criterionId}
+								value={sidepot.criterionId}
+							>
+								<RankingTable ranking={sidepot.ranking} />
+							</TabsContent>
 						))}
-					</TableBody>
-				</Table>
+					</Tabs>
+				) : (
+					<RankingTable ranking={ranking} />
+				)
 			) : (
 				<Empty>
 					<EmptyHeader>

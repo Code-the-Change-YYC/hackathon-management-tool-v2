@@ -2,19 +2,20 @@ import { TRPCError } from "@trpc/server";
 import { addMinutes } from "date-fns";
 import { eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import { rankPanelTeams } from "@/lib/judging-ranking";
+import { criterionAppliesToRound } from "@/lib/judging";
+import { type PanelScorecard, rankPanelTeams } from "@/lib/judging-ranking";
 import { submittedScorecards } from "@/server/api/judging-results";
 import { assertRoundHasNoScores } from "@/server/api/routers/judging-tables";
 import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
 import { organization, user } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
+	judgingCriteria,
 	judgingRounds,
+	judgingScores,
 	judgingTableJudges,
 	judgingTables
 } from "@/server/db/judging-schema";
-
-type RoundScorecard = { teamId: string; judgeId: string; mainScore: number };
 
 export const judgingResultsRouter = createTRPCRouter({
 	// Normalized ranking used to pick finalists, next to the raw averages
@@ -22,10 +23,31 @@ export const judgingResultsRouter = createTRPCRouter({
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			const cards = (await ctx.db.execute(sql`
-    SELECT card.team_id AS "teamId", card.judge_id AS "judgeId", card.main_score AS "mainScore"
+    SELECT card.team_id AS "teamId", card.judge_id AS "judgeId", card.main_score AS "score"
     FROM ${submittedScorecards} card
     WHERE card.round_id = ${input.roundId}
-   `)) as unknown as RoundScorecard[];
+   `)) as unknown as PanelScorecard[];
+			// Each sidepot is its own award, so it gets its own normalized ranking.
+			const sidepotCards = (await ctx.db.execute(sql`
+    SELECT card.team_id AS "teamId", card.judge_id AS "judgeId",
+     s.criteria_id AS "criterionId", s.value AS "score"
+    FROM ${submittedScorecards} card
+    INNER JOIN ${judgingScores} s
+     ON s.assignment_id = card.assignment_id AND s.judge_id = card.judge_id
+    INNER JOIN ${judgingCriteria} c ON c.id = s.criteria_id
+    WHERE card.round_id = ${input.roundId} AND c.is_sidepot = true
+   `)) as unknown as (PanelScorecard & { criterionId: string })[];
+			const sidepotCriteria = (
+				await ctx.db.query.judgingCriteria.findMany({
+					where: eq(judgingCriteria.isSidepot, true),
+					orderBy: (criteria, { asc }) => [
+						asc(criteria.displayOrder),
+						asc(criteria.name)
+					]
+				})
+			).filter((criterion) =>
+				criterionAppliesToRound(criterion, input.roundId)
+			);
 
 			const tables = await ctx.db.query.judgingTables.findMany({
 				where: eq(judgingTables.roundId, input.roundId),
@@ -52,22 +74,37 @@ export const judgingResultsRouter = createTRPCRouter({
 				}
 			}
 
-			const ranking = rankPanelTeams(cards);
-			const ranked = ranking.map((entry) => ({
-				...entry,
-				teamName: teams.get(entry.teamId)?.teamName ?? "Unknown team",
-				expectedScorecards: teams.get(entry.teamId)?.expectedScorecards ?? 0
-			}));
-			const unscored = [...teams]
-				.filter(([teamId]) => !ranking.some((entry) => entry.teamId === teamId))
-				.map(([teamId, team]) => ({
-					teamId,
-					normalizedScore: null,
-					rawAverage: null,
-					scorecardCount: 0,
-					...team
+			function withTeams(scorecards: PanelScorecard[]) {
+				const ranking = rankPanelTeams(scorecards);
+				const ranked = ranking.map((entry) => ({
+					...entry,
+					teamName: teams.get(entry.teamId)?.teamName ?? "Unknown team",
+					expectedScorecards: teams.get(entry.teamId)?.expectedScorecards ?? 0
 				}));
-			return [...ranked, ...unscored];
+				const unscored = [...teams]
+					.filter(
+						([teamId]) => !ranking.some((entry) => entry.teamId === teamId)
+					)
+					.map(([teamId, team]) => ({
+						teamId,
+						normalizedScore: null,
+						rawAverage: null,
+						scorecardCount: 0,
+						...team
+					}));
+				return [...ranked, ...unscored];
+			}
+
+			return {
+				main: withTeams(cards),
+				sidepots: sidepotCriteria.map((criterion) => ({
+					criterionId: criterion.id,
+					name: criterion.name,
+					ranking: withTeams(
+						sidepotCards.filter((card) => card.criterionId === criterion.id)
+					)
+				}))
+			};
 		}),
 
 	// Builds the single final round: one table of every judge, finalists in order
