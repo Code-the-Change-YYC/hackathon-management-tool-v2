@@ -15,7 +15,7 @@ import {
 } from "@/lib/participant-events";
 import {
 	getUpcomingJudging,
-	type JudgingRound,
+	type JudgingProgress,
 	type TeamJudging
 } from "@/lib/participant-judging";
 import type { RouterOutputs } from "@/trpc/react";
@@ -40,22 +40,19 @@ export function DashboardView({
 	firstName,
 	events,
 	settings,
-	rounds,
+	progress,
 	judging
 }: {
 	firstName: string;
 	events: DashboardEvent[];
 	settings: Settings;
-	rounds: JudgingRound[];
+	progress: JudgingProgress;
 	judging: TeamJudging;
 }) {
 	const now = useCurrentTime();
 	const currentEvent = getCurrentEvent(events, now);
 	const upcomingEvents = getTodayFutureEvents(events, now);
 	const upcomingJudging = getUpcomingJudging(judging, now);
-	const roundName = rounds.find(
-		(round) => round.id === settings?.currentRoundId
-	)?.name;
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -104,10 +101,7 @@ export function DashboardView({
 						</Card>
 						<Card>
 							<CardContent>
-								<JudgingStatus
-									phase={settings?.judgingPhase ?? "not_started"}
-									roundName={roundName}
-								/>
+								<JudgingStatus now={now} progress={progress} />
 							</CardContent>
 						</Card>
 					</div>

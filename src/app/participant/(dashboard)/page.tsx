@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
 	const { user } = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
-	const [events, settings, rounds, judging] = await Promise.all([
+	const [events, settings, progress, judging] = await Promise.all([
 		api.events.getActiveEvents(),
 		api.hackathonSettings.get(),
-		api.judgingRounds.getAll(),
+		api.judgingProgress.get(),
 		api.judgingAssignments.getMine()
 	]);
 
@@ -28,7 +28,7 @@ export default async function DashboardPage() {
 					user.firstName || getNameParts(user.name).firstName || "Participant"
 				}
 				judging={judging}
-				rounds={rounds}
+				progress={progress}
 				settings={settings}
 			/>
 		</>

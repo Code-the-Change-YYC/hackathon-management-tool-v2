@@ -1,4 +1,5 @@
-// Explicitly controlled by organizers; time alone never advances judging.
+// Only winners_announced is read: it releases scores to participants. Their
+// judging stages otherwise follow the clock, pre-screening and scoring.
 export const JUDGING_PHASES = [
 	"not_started",
 	"submissions_closed",
@@ -9,15 +10,6 @@ export const JUDGING_PHASES = [
 	"winners_announced"
 ] as const;
 export type JudgingPhase = (typeof JUDGING_PHASES)[number];
-export const JUDGING_PHASE_LABELS: Record<JudgingPhase, string> = {
-	not_started: "Judging has not started",
-	submissions_closed: "Submissions close",
-	review: "Submission review",
-	judging: "Judging",
-	deliberation: "Deliberation",
-	results_ready: "Results ready",
-	winners_announced: "Winners announced"
-};
 
 // Panel rounds split judges into tables. A final round has one table of every judge.
 export const JUDGING_ROUND_KINDS = ["panel", "final"] as const;

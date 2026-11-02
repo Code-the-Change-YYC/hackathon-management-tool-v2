@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { criterionAppliesToRound } from "@/lib/judging";
 import { db } from "@/server/db";
-import { member } from "@/server/db/auth-schema";
+import { member, organization } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
 	judgingCriteria,
@@ -53,6 +53,10 @@ async function assignTeam(user: User) {
 	};
 
 	const team = await teams.create("Judged");
+	await db
+		.update(organization)
+		.set({ prescreenStatus: "passed" })
+		.where(eq(organization.id, team.id));
 	await db.insert(member).values({
 		id: crypto.randomUUID(),
 		organizationId: team.id,
@@ -92,19 +96,16 @@ async function assignTeam(user: User) {
 	return { cleanup, criterion, round };
 }
 
-test("participant without an assignment sees the general banner", async ({
-	authenticatedPage: page,
-	setSettings
+test("participant without a team is asked to join one", async ({
+	authenticatedPage: page
 }) => {
-	await setSettings({ currentRoundId: null, judgingPhase: "not_started" });
 	await page.goto("/participant/judging");
 
 	await expect(
 		page.getByRole("heading", { name: "Judging", exact: true })
 	).toBeVisible();
-	await expect(
-		page.getByRole("heading", { name: /your team’s judging/ })
-	).toHaveCount(0);
+	await expect(page.getByText("You’re not on a team yet")).toBeVisible();
+	await expect(page.getByText(/your presentations/)).toHaveCount(0);
 	await expect(
 		page.getByRole("heading", { name: "Judging Rubric" })
 	).toBeVisible();
@@ -112,43 +113,34 @@ test("participant without an assignment sees the general banner", async ({
 
 test("assigned team sees its tables, times and when to arrive", async ({
 	authenticatedPage: page,
-	authUser,
-	setSettings
+	authUser
 }) => {
-	const { cleanup, round } = await assignTeam(authUser);
+	const { cleanup } = await assignTeam(authUser);
 	try {
-		await setSettings({
-			currentRoundId: round.id,
-			judgingPhase: "judging"
-		});
 		await page.goto("/participant/judging");
 
-		const banner = page
-			.getByRole("heading", { name: "E2E Round: your team’s judging" })
-			.locator("xpath=../..");
-		await expect(banner).toContainText("Table 1 → Table 2");
-		await expect(banner).toContainText(
-			"Arrive by 12:20 PM. Present at Table 1 at 12:30 PM, then Table 2 at 12:38 PM."
-		);
-		await expect(page.getByRole("link", { name: "Join meeting" })).toHaveCount(
-			0
-		);
+		await expect(page.getByText("Passed pre-screening")).toBeVisible();
+		await expect(page.getByText("E2E Round: your presentations")).toBeVisible();
+		await expect(
+			page.getByText(
+				"Arrive by 12:20 PM. Present at Table 1 at 12:30 PM, then Table 2 at 12:38 PM."
+			)
+		).toBeVisible();
 	} finally {
-		await setSettings({ currentRoundId: null });
 		await cleanup();
 	}
 });
 
 test(
-	"scores stay hidden until winners are announced",
+	"scores stay hidden until released, then replace the rubric",
 	{ tag: "@responsive" },
 	async ({ authenticatedPage: page, authUser, setSettings }) => {
-		const { cleanup, criterion, round } = await assignTeam(authUser);
+		const { cleanup, criterion } = await assignTeam(authUser);
 		const scoreTrigger = page
 			.getByRole("region", { name: "Team Scores" })
 			.getByRole("button", { name: new RegExp(criterion.name) });
 		try {
-			await setSettings({ currentRoundId: round.id, judgingPhase: "review" });
+			await setSettings({ judgingPhase: "review" });
 			await page.goto("/participant/judging");
 			await expect(
 				page.getByRole("heading", { name: "Judging Rubric" })
@@ -161,8 +153,10 @@ test(
 			await setSettings({ judgingPhase: "winners_announced" });
 			await page.reload();
 			await expect(scoreTrigger).toContainText("4 / 5");
+			await expect(
+				page.getByRole("heading", { name: "Judging Rubric" })
+			).toHaveCount(0);
 		} finally {
-			await setSettings({ currentRoundId: null });
 			await cleanup();
 		}
 	}

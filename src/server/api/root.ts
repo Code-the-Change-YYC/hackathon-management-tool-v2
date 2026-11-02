@@ -2,6 +2,7 @@ import { eventsRouter } from "@/server/api/routers/events";
 import { hackathonSettingsRouter } from "@/server/api/routers/hackathon-settings";
 import { invitationsRouter } from "@/server/api/routers/invitations";
 import { judgingAssignmentsRouter } from "@/server/api/routers/judging-assignments";
+import { judgingProgressRouter } from "@/server/api/routers/judging-progress";
 import { judgingResultsRouter } from "@/server/api/routers/judging-results";
 import { judgingRoundsRouter } from "@/server/api/routers/judging-rounds";
 import { judgingTablesRouter } from "@/server/api/routers/judging-tables";
@@ -21,6 +22,7 @@ export const appRouter = createTRPCRouter({
 	hackathonSettings: hackathonSettingsRouter,
 	judgingRounds: judgingRoundsRouter,
 	judgingAssignments: judgingAssignmentsRouter,
+	judgingProgress: judgingProgressRouter,
 	judgingTables: judgingTablesRouter,
 	judgingResults: judgingResultsRouter,
 	scores: scoresRouter,

@@ -47,6 +47,25 @@ export const hackathonSettingsRouter = createTRPCRouter({
 			return updated;
 		}),
 
+	// Show or hide every team's scores to participants (admin only).
+	// Hiding moves back to results_ready; see areScoresReleased.
+	setScoresReleased: adminProcedure
+		.input(z.object({ released: z.boolean() }))
+		.mutation(async ({ ctx, input }) => {
+			const judgingPhase = input.released
+				? "winners_announced"
+				: "results_ready";
+			const [updated] = await ctx.db
+				.insert(hackathonSettings)
+				.values({ id: 1, judgingPhase })
+				.onConflictDoUpdate({
+					target: hackathonSettings.id,
+					set: { judgingPhase }
+				})
+				.returning();
+			return updated;
+		}),
+
 	// Update the hackathon's start, end and submission deadline (admin only)
 	updateDates: adminProcedure
 		.input(hackathonDatesSchema)

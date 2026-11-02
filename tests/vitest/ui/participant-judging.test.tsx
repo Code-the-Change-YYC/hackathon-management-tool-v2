@@ -3,6 +3,16 @@ import { describe, expect, it, vi } from "vitest";
 import ParticipantError from "@/app/participant/error";
 import JudgingPage from "@/app/participant/judging/page";
 
+const { progress, status } = vi.hoisted(() => ({
+	progress: {
+		startDate: null,
+		submissionDeadline: null,
+		prescreenComplete: false,
+		rounds: [],
+		scoresReleased: false
+	},
+	status: { team: null, rounds: [], finalPublished: false }
+}));
 const mocks = vi.hoisted(() => ({
 	requireRole: vi.fn(),
 	judgingView: vi.fn()
@@ -12,11 +22,11 @@ vi.mock("@/server/better-auth/auth-helpers/helpers", () => ({
 }));
 vi.mock("@/trpc/server", () => ({
 	api: {
-		hackathonSettings: { get: async () => ({ judgingPhase: "judging" }) },
-		events: { getActiveEvents: async () => [] },
-		judgingRounds: { getAll: async () => [] },
+		judgingProgress: {
+			get: async () => progress,
+			getMine: async () => status
+		},
 		criteria: { getAll: async () => [] },
-		judgingAssignments: { getMine: async () => [] },
 		scores: { getMineReleased: async () => ({ released: false, rounds: [] }) }
 	}
 }));
@@ -37,11 +47,9 @@ describe("participant judging route", () => {
 		expect(screen.getByText("Participant judging information")).toBeVisible();
 		expect(mocks.judgingView).toHaveBeenCalledWith({
 			criteria: [],
-			events: [],
-			judging: [],
+			progress,
 			results: { released: false, rounds: [] },
-			rounds: [],
-			settings: { judgingPhase: "judging" }
+			status
 		});
 	});
 	it("lets participants retry a failed page", () => {

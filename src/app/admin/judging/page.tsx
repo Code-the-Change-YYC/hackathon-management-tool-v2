@@ -3,6 +3,7 @@ import { AutoRefresh } from "@/app/components/AutoRefresh";
 import { JudgingView } from "@/app/components/admin/judging/JudgingView";
 import { byNameThenId } from "@/app/components/admin/judging/judgingShared";
 import { toHackathonDates } from "@/lib/validation/event";
+import { areScoresReleased } from "@/server/api/participant-judging";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
@@ -62,6 +63,7 @@ export default async function JudgingPage() {
 				layouts={layouts}
 				rankings={rankings}
 				rounds={rounds}
+				scoresReleased={areScoresReleased(settings)}
 				teams={teams.slice().sort(byNameThenId)}
 			/>
 		</>

@@ -26,6 +26,7 @@ import type {
 	Criterion,
 	FinalResults,
 	Judge,
+	Layout,
 	Layouts,
 	PanelRanking,
 	Round,
@@ -35,6 +36,20 @@ import { PanelResults } from "./PanelResults";
 import { PanelSchedule } from "./PanelSchedule";
 import { RoundDialog } from "./RoundDialog";
 import { RoundHeader } from "./RoundHeader";
+import { ScoreRelease } from "./ScoreRelease";
+
+// Every judge at the final table has submitted a scorecard for every finalist.
+function isFinalRoundScored(layout: Layout | undefined, results: FinalResults) {
+	const table = layout?.tables[0];
+	if (!table?.assignments.length || !table.judges.length) return false;
+	return table.assignments.every((assignment) =>
+		results?.results.some(
+			(result) =>
+				result.teamId === assignment.team.id &&
+				result.scorecardCount >= table.judges.length
+		)
+	);
+}
 
 export function JudgingView({
 	rounds,
@@ -46,7 +61,8 @@ export function JudgingView({
 	criteria,
 	rankings,
 	finalResults,
-	hackathonDates
+	hackathonDates,
+	scoresReleased
 }: {
 	rounds: Round[];
 	activeRoundId: string | null;
@@ -58,6 +74,7 @@ export function JudgingView({
 	rankings: Record<string, PanelRanking[]>;
 	finalResults: FinalResults;
 	hackathonDates: HackathonDates | null;
+	scoresReleased: boolean;
 }) {
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [isAddingRound, setIsAddingRound] = useState(false);
@@ -84,11 +101,17 @@ export function JudgingView({
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				description="Schedule each round, publish times to teams, then pick finalists from the results."
+				description="Schedule each round, publish times to teams, pick finalists from the results, then release scores."
 				title="Judging"
 			/>
 
-			{/* TODO: There needs to be a way for admins to release the scores */}
+			<ScoreRelease
+				finalRoundScored={isFinalRoundScored(
+					finalRound && layouts[finalRound.id],
+					finalResults
+				)}
+				released={scoresReleased}
+			/>
 
 			{selected ? (
 				<Tabs

@@ -1,7 +1,7 @@
-import { BannerSkeleton } from "@/app/components/Banner";
 import PageHeader from "@/app/components/PageHeader";
 import { RubricCardSkeleton } from "@/app/components/rubric/RubricCard";
-import { JudgingStatusSkeleton } from "../dashboard/JudgingStatus";
+import { JudgingTimelineSkeleton } from "./JudgingTimeline";
+import { TeamJudgingCardSkeleton } from "./TeamJudgingCard";
 
 export function JudgingSkeleton() {
 	return (
@@ -15,8 +15,8 @@ export function JudgingSkeleton() {
 				title="Judging"
 			/>
 			<div className="flex flex-col gap-6">
-				<BannerSkeleton />
-				<JudgingStatusSkeleton variant="detailed" />
+				<TeamJudgingCardSkeleton />
+				<JudgingTimelineSkeleton />
 				<RubricCardSkeleton title="Judging Rubric" />
 			</div>
 		</section>

@@ -6,6 +6,7 @@ import {
 	MAIN_CRITERION_MAX_SCORE
 } from "@/lib/judging";
 import { submittedScorecards } from "@/server/api/judging-results";
+import { areScoresReleased } from "@/server/api/participant-judging";
 import {
 	adminProcedure,
 	type createTRPCContext,
@@ -78,8 +79,7 @@ export const scoresRouter = createTRPCRouter({
 		const settings = await ctx.db.query.hackathonSettings.findFirst({
 			where: eq(hackathonSettings.id, 1)
 		});
-		if (settings?.judgingPhase !== "winners_announced")
-			return { released: false, rounds: [] };
+		if (!areScoresReleased(settings)) return { released: false, rounds: [] };
 		const membership = await ctx.db.query.member.findFirst({
 			where: eq(member.userId, ctx.session.user.id),
 			columns: { organizationId: true }

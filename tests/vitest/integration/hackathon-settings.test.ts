@@ -124,3 +124,25 @@ describe("hackathonSettings.update", () => {
 		});
 	});
 });
+
+describe("hackathonSettings.setScoresReleased", () => {
+	it("rejects callers without an admin session", async () => {
+		const api = await caller("participant");
+
+		await expect(
+			api.hackathonSettings.setScoresReleased({ released: true })
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+		expect(mocks.insertValues).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[true, "winners_announced"],
+		[false, "results_ready"]
+	])("sets released to %s with the %s phase", async (released, judgingPhase) => {
+		const api = await caller();
+
+		await api.hackathonSettings.setScoresReleased({ released });
+
+		expect(mocks.insertValues).toHaveBeenCalledWith({ id: 1, judgingPhase });
+	});
+});

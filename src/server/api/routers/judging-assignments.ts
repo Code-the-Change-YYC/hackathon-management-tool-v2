@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
+import { getTeamSchedule } from "@/server/api/participant-judging";
 import {
 	adminProcedure,
 	createTRPCRouter,
@@ -110,50 +111,6 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 			columns: { organizationId: true }
 		});
 		if (!membership) return [];
-
-		const assignments = await ctx.db.query.judgingAssignments.findMany({
-			where: eq(judgingAssignments.teamId, membership.organizationId),
-			columns: { id: true, startsAt: true },
-			with: {
-				table: {
-					columns: { tableNumber: true },
-					with: {
-						round: {
-							columns: {
-								id: true,
-								name: true,
-								kind: true,
-								startTime: true,
-								presentationMinutes: true,
-								publishedAt: true
-							}
-						}
-					}
-				}
-			},
-			orderBy: (rows, { asc }) => [asc(rows.startsAt)]
-		});
-
-		const rounds = new Map<
-			string,
-			{
-				round: (typeof assignments)[number]["table"]["round"];
-				assignments: { id: string; tableNumber: number; startsAt: Date }[];
-			}
-		>();
-		for (const assignment of assignments) {
-			const { round } = assignment.table;
-			if (!round.publishedAt) continue;
-			const entry = rounds.get(round.id) ?? { round, assignments: [] };
-			entry.assignments.push({
-				id: assignment.id,
-				tableNumber: assignment.table.tableNumber,
-				startsAt: assignment.startsAt
-			});
-			rounds.set(round.id, entry);
-		}
-		return [...rounds.values()].sort(
-			(a, b) => a.round.startTime.getTime() - b.round.startTime.getTime()
-		);
+		return getTeamSchedule(ctx.db, membership.organizationId);
 	})
 });
