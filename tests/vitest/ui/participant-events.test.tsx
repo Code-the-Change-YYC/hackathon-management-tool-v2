@@ -7,7 +7,8 @@ import {
 	type DashboardEvent,
 	eventNavigationUrlSchema,
 	getCurrentEvent,
-	getTodayFutureEvents
+	getTodayFutureEvents,
+	hasHackathonDayStarted
 } from "@/lib/participant-events";
 import { EventType } from "@/types/types";
 
@@ -104,5 +105,14 @@ describe("shared participant event and status components", () => {
 		expect(
 			screen.getByText("Winners announced: current").closest("li")
 		).toHaveAttribute("aria-current", "step");
+	});
+	it("treats the whole Calgary start day as started", () => {
+		const kickoff = new Date("2026-11-07T16:00:00Z");
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-11-07T05:30:00Z"));
+		expect(hasHackathonDayStarted(kickoff)).toBe(false);
+		vi.setSystemTime(new Date("2026-11-07T15:00:00Z"));
+		expect(hasHackathonDayStarted(kickoff)).toBe(true);
+		expect(hasHackathonDayStarted(null)).toBe(false);
 	});
 });

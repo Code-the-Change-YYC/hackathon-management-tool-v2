@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AutoRefresh } from "@/app/components/AutoRefresh";
 import { DashboardView } from "@/app/components/participant/dashboard/DashboardView";
 import { getNameParts } from "@/lib/names";
+import { hasHackathonDayStarted } from "@/lib/participant-events";
 import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 import { Role } from "@/types/types";
@@ -26,7 +27,11 @@ export default async function DashboardPage() {
 				firstName={
 					user.firstName || getNameParts(user.name).firstName || "Participant"
 				}
-				needsCheckIn={user.role === Role.PARTICIPANT && !user.checkedIn}
+				needsCheckIn={
+					user.role === Role.PARTICIPANT &&
+					!user.checkedIn &&
+					hasHackathonDayStarted(settings?.startDate)
+				}
 				rounds={rounds}
 				settings={settings}
 			/>

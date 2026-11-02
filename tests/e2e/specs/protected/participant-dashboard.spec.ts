@@ -100,3 +100,38 @@ test("links to the full schedule and judging info", async ({
 	await page.getByRole("link", { name: "View judging info" }).click();
 	await expect(page).toHaveURL(/\/participant\/judging$/);
 });
+
+test.describe("not checked in", () => {
+	test.use({
+		authUserOptions: { checkedIn: false, role: Role.PARTICIPANT }
+	});
+
+	// Given I am a participant an admin has not checked in yet
+	// When the hackathon day has not come yet
+	// Then I see no check-in banner
+	// When the hackathon day has come
+	// Then the banner shows on my dashboard and replaces my meal ticket.
+	test("asks for check-in from the hackathon day", async ({
+		authenticatedPage: page,
+		setSettings
+	}) => {
+		const banner = page.getByRole("heading", {
+			name: "Check in to get your meal tickets"
+		});
+		await setSettings({ startDate: minutesFromNow(7 * 24 * 60) });
+		await page.goto("/participant");
+		await expect(
+			page.getByRole("heading", { name: "Welcome, Test!" })
+		).toBeVisible();
+		await expect(banner).toHaveCount(0);
+
+		await setSettings({ startDate: minutesFromNow(-60) });
+		await page.goto("/participant");
+		await expect(banner).toBeVisible();
+		await page.goto("/participant/meals");
+		await expect(banner).toBeVisible();
+		await expect(
+			page.getByRole("region", { name: "Meal ticket", exact: true })
+		).toHaveCount(0);
+	});
+});
