@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 interface BannerProps {
 	title: string;
 	description?: string;
-	buttonText: string;
+	buttonText?: string;
 	colour: "purple" | "red";
 	image?: ReactNode;
 	location?: string;

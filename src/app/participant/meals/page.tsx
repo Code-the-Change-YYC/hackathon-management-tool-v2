@@ -14,9 +14,10 @@ export default async function MealsPage() {
 		api.meals.getNextMeal(),
 		api.meals.getActiveMeals()
 	]);
+	const needsCheckIn = user.role === Role.PARTICIPANT && !user.checkedIn;
 	// Admins don't have meal tickets, but can still view this page.
 	const ticket =
-		nextMeal && user.role === Role.PARTICIPANT
+		nextMeal && user.role === Role.PARTICIPANT && !needsCheckIn
 			? await api.events.rotateParticipantEventTicket({ eventId: nextMeal.id })
 			: null;
 
@@ -25,6 +26,7 @@ export default async function MealsPage() {
 			dietaryRestrictions={user.dietaryRestrictions}
 			displayName={user.name?.trim() || "Participant"}
 			meals={meals}
+			needsCheckIn={needsCheckIn}
 			ticket={ticket}
 		/>
 	);

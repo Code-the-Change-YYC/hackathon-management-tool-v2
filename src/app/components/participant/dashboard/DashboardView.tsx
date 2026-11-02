@@ -15,6 +15,7 @@ import {
 } from "@/lib/participant-events";
 import type { JudgingRound } from "@/lib/participant-judging";
 import type { RouterOutputs } from "@/trpc/react";
+import { CheckInBanner } from "../CheckInBanner";
 import { CurrentEventBanner } from "../CurrentEventBanner";
 import { JudgingStatus } from "./JudgingStatus";
 import { SubmissionCountdown } from "./SubmissionCountdown";
@@ -35,9 +36,11 @@ export function DashboardView({
 	firstName,
 	events,
 	settings,
-	rounds
+	rounds,
+	needsCheckIn
 }: {
 	firstName: string;
+	needsCheckIn: boolean;
 	events: DashboardEvent[];
 	settings: Settings;
 	rounds: JudgingRound[];
@@ -55,6 +58,7 @@ export function DashboardView({
 				description={getDescription(settings?.startDate ?? null, now)}
 				title={`Welcome, ${firstName}!`}
 			/>
+			{needsCheckIn && <CheckInBanner />}
 			<CurrentEventBanner colour="red" event={currentEvent} />
 			<div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
 				<Card>
