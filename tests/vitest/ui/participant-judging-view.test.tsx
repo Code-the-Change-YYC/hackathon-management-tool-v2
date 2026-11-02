@@ -158,7 +158,7 @@ describe("participant judging information", () => {
 	it("keeps results hidden until scores are released", () => {
 		render(view());
 		expect(
-			screen.queryByRole("heading", { name: "Team Scores" })
+			screen.queryByRole("heading", { name: "Your Scores" })
 		).not.toBeInTheDocument();
 		expect(screen.queryByText(/3.5/)).not.toBeInTheDocument();
 	});
@@ -174,7 +174,7 @@ describe("participant judging information", () => {
 		expect(
 			screen.queryByRole("region", { name: "Judging Rubric" })
 		).not.toBeInTheDocument();
-		const section = screen.getByRole("region", { name: "Team Scores" });
+		const section = screen.getByRole("region", { name: "Your Scores" });
 		expect(within(section).getByText("3.5 / 5")).toBeVisible();
 		expect(
 			screen.queryByText(/Judge A|Judge comments/)
@@ -197,7 +197,7 @@ describe("participant judging information", () => {
 				}
 			})
 		);
-		const section = screen.getByRole("region", { name: "Team Scores" });
+		const section = screen.getByRole("region", { name: "Your Scores" });
 		expect(within(section).getByText("3.5 / 5")).toBeVisible();
 		expect(within(section).queryByText("4.5 / 5")).not.toBeInTheDocument();
 		expect(

@@ -137,7 +137,7 @@ test(
 	async ({ authenticatedPage: page, authUser, setSettings }) => {
 		const { cleanup, criterion } = await assignTeam(authUser);
 		const scoreTrigger = page
-			.getByRole("region", { name: "Team Scores" })
+			.getByRole("region", { name: "Your Scores" })
 			.getByRole("button", { name: new RegExp(criterion.name) });
 		try {
 			await setSettings({ judgingPhase: "review" });
@@ -146,7 +146,7 @@ test(
 				page.getByRole("heading", { name: "Judging Rubric" })
 			).toBeVisible();
 			await expect(
-				page.getByRole("heading", { name: "Team Scores" })
+				page.getByRole("heading", { name: "Your Scores" })
 			).toHaveCount(0);
 			await expect(page.getByText("4 / 5")).toHaveCount(0);
 

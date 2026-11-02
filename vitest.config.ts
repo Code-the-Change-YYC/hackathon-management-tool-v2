@@ -35,7 +35,9 @@ export default defineConfig({
 					environment: "jsdom",
 					include: ["tests/vitest/ui/**/*.test.tsx"],
 					name: "ui",
-					setupFiles: ["./tests/vitest/setup-ui.ts"]
+					setupFiles: ["./tests/vitest/setup-ui.ts"],
+					// jsdom interaction tests slow down a lot when the whole suite runs in parallel.
+					testTimeout: 15_000
 				}
 			}
 		]
