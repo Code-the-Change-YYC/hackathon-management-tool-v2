@@ -18,11 +18,14 @@ const mocks = vi.hoisted(() => ({
 	portal: vi.fn(),
 	saved: vi.fn(),
 	submit: vi.fn(),
-	invalidate: vi.fn()
+	invalidate: vi.fn(),
+	push: vi.fn(),
+	toast: vi.fn()
 }));
 vi.mock("next/navigation", () => ({
-	useRouter: () => ({ refresh: mocks.invalidate, push: vi.fn() })
+	useRouter: () => ({ refresh: mocks.invalidate, push: mocks.push })
 }));
+vi.mock("sonner", () => ({ toast: { success: mocks.toast } }));
 vi.mock("@/trpc/react", async () => {
 	const { useQuery, useMutation } = await import("@tanstack/react-query");
 	return {
@@ -75,7 +78,6 @@ function mount() {
 		<QueryClientProvider client={client}>
 			<ScoreView
 				assignment={{ ...assignment, scores: mocks.saved() }}
-				assignments={[assignment]}
 				criteria={mocks.portal().criteria}
 				userId="judge-a"
 			/>
@@ -220,7 +222,8 @@ describe("individual judge scoring", () => {
 			screen.getByRole("button", { name: /Innovation/ })
 		).toHaveTextContent("4/5");
 		fireEvent.click(screen.getByRole("button", { name: "Submit scores" }));
-		await screen.findByText("Scores submitted");
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/judge"));
+		expect(mocks.toast).toHaveBeenCalledWith("Scores submitted for Team One");
 		expect(localStorage.length).toBe(0);
 		expect(mocks.submit).toHaveBeenLastCalledWith(
 			[
@@ -230,7 +233,7 @@ describe("individual judge scoring", () => {
 			expect.anything()
 		);
 	});
-	it("prevents duplicate submissions and treats refresh failure as a successful save", async () => {
+	it("prevents duplicate submissions, then returns to the dashboard", async () => {
 		let finish!: (value: never[]) => void;
 		mocks.submit.mockImplementation(
 			() =>
@@ -238,7 +241,6 @@ describe("individual judge scoring", () => {
 					finish = resolve;
 				})
 		);
-		mocks.invalidate.mockReturnValue(undefined);
 		mount();
 		await complete();
 		const button = screen.getByRole("button", { name: "Submit scores" });
@@ -247,8 +249,11 @@ describe("individual judge scoring", () => {
 		await waitFor(() => expect(mocks.submit).toHaveBeenCalledTimes(1));
 		expect(screen.getByRole("button", { name: "Submitting…" })).toBeDisabled();
 		finish([]);
-		await screen.findByText("Scores submitted");
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/judge"));
+		expect(mocks.toast).toHaveBeenCalledTimes(1);
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		// The scorecard stays locked while the dashboard loads.
+		expect(screen.getByRole("button", { name: "Submitting…" })).toBeDisabled();
 	});
 	it("isolates a new judge's form and draft when switching accounts in one query client", async () => {
 		const { rerender } = mount();
@@ -258,7 +263,6 @@ describe("individual judge scoring", () => {
 			<QueryClientProvider client={client}>
 				<ScoreView
 					assignment={assignment}
-					assignments={[assignment]}
 					criteria={criteria}
 					userId="judge-b"
 				/>

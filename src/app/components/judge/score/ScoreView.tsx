@@ -14,7 +14,6 @@ import {
 	type Criterion,
 	formatTime,
 	getAssignmentCriteria,
-	isAssignmentScored,
 	isScoringOpen,
 	type JudgeAssignment,
 	sortCriteria
@@ -29,12 +28,10 @@ function canScoreAssignment(assignment: JudgeAssignment, currentTime: Date) {
 
 function ScoreMessage({
 	title,
-	children,
-	action
+	children
 }: {
 	title: string;
 	children: ReactNode;
-	action?: ReactNode;
 }) {
 	return (
 		<Empty className="mx-auto max-w-xl py-16">
@@ -44,53 +41,25 @@ function ScoreMessage({
 				</EmptyTitle>
 				<EmptyDescription>{children}</EmptyDescription>
 			</EmptyHeader>
-			<div className="flex flex-wrap justify-center gap-3">
-				{action}
-				<Link className={buttonVariants({ variant: "outline" })} href="/judge">
-					Back to dashboard
-				</Link>
-			</div>
+			<Link className={buttonVariants({ variant: "outline" })} href="/judge">
+				Back to dashboard
+			</Link>
 		</Empty>
 	);
 }
 
 function JudgeScorecard({
 	assignment,
-	assignments,
 	criteria,
 	userId
 }: {
 	assignment: JudgeAssignment;
-	assignments: JudgeAssignment[];
 	criteria: Criterion[];
 	userId: string;
 }) {
 	const currentTime = useCurrentTime();
 	const card = useJudgeScorecard(assignment, criteria, userId);
 
-	if (card.status === "saved") {
-		const next = assignments.find(
-			(item) =>
-				item.id !== assignment.id &&
-				item.table.roundId === assignment.table.roundId &&
-				!isAssignmentScored(item, criteria) &&
-				canScoreAssignment(item, currentTime)
-		);
-		return (
-			<ScoreMessage
-				action={
-					next && (
-						<Link className={buttonVariants()} href={`/judge/score/${next.id}`}>
-							Score {next.team.name}
-						</Link>
-					)
-				}
-				title="Scores submitted"
-			>
-				Your scores for {assignment.team.name} have been saved.
-			</ScoreMessage>
-		);
-	}
 	if (!card.initialized) return <ScoreSkeleton />;
 	if (!canScoreAssignment(assignment, currentTime))
 		return (
@@ -104,12 +73,10 @@ function JudgeScorecard({
 
 export function ScoreView({
 	assignment,
-	assignments,
 	criteria,
 	userId
 }: {
 	assignment: JudgeAssignment | null;
-	assignments: JudgeAssignment[];
 	criteria: Criterion[];
 	userId: string;
 }) {
@@ -130,7 +97,6 @@ export function ScoreView({
 	return (
 		<JudgeScorecard
 			assignment={assignment}
-			assignments={assignments}
 			criteria={roundCriteria.sort(sortCriteria)}
 			key={`${userId}:${assignment.id}`}
 			userId={userId}
