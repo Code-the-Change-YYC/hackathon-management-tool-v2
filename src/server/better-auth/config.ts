@@ -11,7 +11,7 @@ import {
 } from "@/lib/validation/auth";
 import { db } from "@/server/db";
 import { LEVELS_OF_STUDY, PROGRAMS, user } from "@/server/db/auth-schema";
-import { judgingScores } from "@/server/db/judging-schema";
+import { judgingScores, judgingVotes } from "@/server/db/judging-schema";
 import { sendEmail } from "@/server/email";
 import {
 	existingAccountEmail,
@@ -33,7 +33,7 @@ const JUDGE_NOT_FOUND = {
 const USER_HAS_SCORES = {
 	code: "USER_HAS_SCORES",
 	message:
-		"This judge has submitted scores, so they can’t be deleted. Remove them from their tables instead."
+		"This judge has submitted scores or a ranking, so they can’t be deleted. Remove them from their tables instead."
 };
 
 async function isJudge(email: string) {
@@ -45,11 +45,17 @@ async function isJudge(email: string) {
 }
 
 async function hasSubmittedScores(userId: string) {
-	const found = await db.query.judgingScores.findFirst({
-		columns: { id: true },
-		where: eq(judgingScores.judgeId, userId)
-	});
-	return Boolean(found);
+	const [score, vote] = await Promise.all([
+		db.query.judgingScores.findFirst({
+			columns: { id: true },
+			where: eq(judgingScores.judgeId, userId)
+		}),
+		db.query.judgingVotes.findFirst({
+			columns: { id: true },
+			where: eq(judgingVotes.judgeId, userId)
+		})
+	]);
+	return Boolean(score || vote);
 }
 
 const trustedOrigins = env.BETTER_AUTH_TRUSTED_ORIGINS
@@ -155,7 +161,7 @@ export const betterAuthDefaultConfig = {
 				throw APIError.from("BAD_REQUEST", JUDGE_NOT_FOUND);
 			}
 
-			// Scores keep their judge, so deleting a judge who has scored would
+			// Scores and votes keep their judge, so deleting a judge who has scored would
 			// fail partway (after their sessions are gone).
 			if (
 				ctx.path === "/admin/remove-user" &&

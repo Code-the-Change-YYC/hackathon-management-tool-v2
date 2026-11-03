@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AutoRefresh } from "@/app/components/AutoRefresh";
 import { DashboardView } from "@/app/components/judge/dashboard/DashboardView";
 import { getNameParts } from "@/lib/names";
+import { areScoresReleased } from "@/server/api/participant-judging";
 import { requireJudge } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 
@@ -24,6 +25,7 @@ export default async function DashboardPage() {
 				activeRoundId={settings?.currentRoundId ?? null}
 				assignments={assignments}
 				criteria={criteria}
+				scoresReleased={areScoresReleased(settings)}
 				userId={user.id}
 				userName={
 					user.firstName || getNameParts(user.name).firstName || "Judge"

@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/server/db", () => ({ db: {} }));
 vi.mock("@/server/better-auth", () => ({ auth: { api: {} } }));
 
-import { criteriaRouter } from "@/server/api/routers/criteria";
 import { scoresRouter } from "@/server/api/routers/scores";
 
 function caller(
@@ -90,23 +89,4 @@ describe("participant result access", () => {
 		});
 		expect(db.select).not.toHaveBeenCalled();
 	});
-});
-
-it("rejects criteria mapped to nonexistent rounds", async () => {
-	const db = {
-		query: { judgingRounds: { findMany: vi.fn().mockResolvedValue([]) } },
-		insert: vi.fn()
-	};
-	const client = criteriaRouter.createCaller({
-		db,
-		session: { user: { id: "admin-user", role: "admin" } },
-		headers: new Headers()
-	} as never);
-	await expect(
-		client.create({
-			name: "Innovation",
-			roundIds: ["11111111-1111-4111-8111-111111111111"]
-		})
-	).rejects.toMatchObject({ code: "BAD_REQUEST" });
-	expect(db.insert).not.toHaveBeenCalled();
 });

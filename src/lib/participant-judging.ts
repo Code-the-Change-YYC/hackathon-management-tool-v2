@@ -32,7 +32,8 @@ export type JudgingProgress = {
 	submissionDeadline: Date | null;
 	// Every team has passed or failed pre-screening.
 	prescreenComplete: boolean;
-	// scoringComplete: every judge has scored every team in the round.
+	// scoringComplete: every judge has scored every team in the round, or
+	// ranked the finalists in the final round.
 	rounds: (JudgingRound & { scoringComplete: boolean })[];
 	scoresReleased: boolean;
 };
@@ -45,7 +46,7 @@ export type TeamJudgingStatus = {
 		feedback: string | null;
 	} | null;
 	// Published rounds the team presents in. scored: every judge at the team's
-	// tables has scored it.
+	// tables has scored it, or ranked the finalists in the final round.
 	rounds: (TeamJudgingRound & { scored: boolean })[];
 	finalPublished: boolean;
 };

@@ -28,7 +28,7 @@ beforeEach(() => {
 
 describe("score release", () => {
 	it("releases scores after confirmation", async () => {
-		render(<ScoreRelease finalRoundScored released={false} />);
+		render(<ScoreRelease ballotsComplete released={false} />);
 		expect(screen.getByText("Not released")).toBeVisible();
 
 		fireEvent.click(screen.getByRole("button", { name: "Release scores" }));
@@ -36,7 +36,7 @@ describe("score release", () => {
 			name: "Release scores?"
 		});
 		expect(
-			within(dialog).queryByText(/Not every finalist/)
+			within(dialog).queryByText(/Not every judge/)
 		).not.toBeInTheDocument();
 		fireEvent.click(
 			within(dialog).getByRole("button", { name: "Release scores" })
@@ -45,18 +45,18 @@ describe("score release", () => {
 			expect(mocks.setReleased).toHaveBeenCalledWith({ released: true })
 		);
 	});
-	it("warns when finalists are still being scored", async () => {
-		render(<ScoreRelease finalRoundScored={false} released={false} />);
+	it("warns when judges are still ranking the finalists", async () => {
+		render(<ScoreRelease ballotsComplete={false} released={false} />);
 		fireEvent.click(screen.getByRole("button", { name: "Release scores" }));
 		const dialog = await screen.findByRole("alertdialog");
 		expect(
-			within(dialog).getByText(/Not every finalist has been scored yet/)
+			within(dialog).getByText(/Not every judge has ranked the finalists yet/)
 		).toBeVisible();
 		fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
 		expect(mocks.setReleased).not.toHaveBeenCalled();
 	});
 	it("hides released scores after confirmation", async () => {
-		render(<ScoreRelease finalRoundScored released />);
+		render(<ScoreRelease ballotsComplete released />);
 		expect(screen.getByText("Released")).toBeVisible();
 
 		fireEvent.click(screen.getByRole("button", { name: "Hide scores" }));

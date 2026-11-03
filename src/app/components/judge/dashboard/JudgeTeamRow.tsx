@@ -1,12 +1,14 @@
 import { RightLine } from "@mingcute/react";
 import Link from "next/link";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import { formatPlace } from "@/lib/judging";
 import { cn } from "@/lib/utils";
 import {
 	type Criterion,
 	formatTime,
 	getAssignmentScoreStatus,
 	getAssignmentTotal,
+	getBallotPlace,
 	getSlotStatus,
 	getTeamCode,
 	isPresenting,
@@ -152,6 +154,47 @@ export function JudgeTeamRow({
 			>
 				{content}
 			</Link>
+		</li>
+	);
+}
+
+// Finalists are ranked from the ballot card, so their rows don't link anywhere.
+export function FinalistRow({
+	assignment,
+	currentTime
+}: {
+	assignment: JudgeAssignment;
+	currentTime: Date;
+}) {
+	const place = getBallotPlace(assignment);
+
+	return (
+		<li
+			className={cn(
+				rowClass,
+				isPresenting(assignment, currentTime) && "bg-purple-50"
+			)}
+		>
+			<span className="w-16 shrink-0 whitespace-nowrap text-muted-foreground text-sm sm:w-20">
+				{formatTime(assignment.startsAt)}
+			</span>
+			<span className="flex min-w-0 flex-1 flex-col">
+				<span className="wrap-break-word font-medium text-base sm:text-lg">
+					{assignment.team.name}
+				</span>
+				<span className="text-muted-foreground text-sm tracking-wider">
+					{getTeamCode(assignment)}
+				</span>
+			</span>
+			{place ? (
+				<span className="shrink-0 font-semibold text-primary">
+					{formatPlace(place)}
+				</span>
+			) : isScoringOpen(assignment, currentTime) ? null : (
+				<span className="shrink-0 text-muted-foreground text-sm">
+					{getSlotStatus(assignment.startsAt, currentTime)}
+				</span>
+			)}
 		</li>
 	);
 }

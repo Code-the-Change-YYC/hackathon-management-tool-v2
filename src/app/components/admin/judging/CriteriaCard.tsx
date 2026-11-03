@@ -33,15 +33,9 @@ import {
 import { useRefresh } from "@/hooks/use-refresh";
 import { api } from "@/trpc/react";
 import { CriterionDialog } from "./CriterionDialog";
-import { type Criterion, ManagementSection, type Round } from "./judgingShared";
+import { type Criterion, ManagementSection } from "./judgingShared";
 
-export function CriteriaCard({
-	criteria,
-	rounds
-}: {
-	criteria: Criterion[];
-	rounds: Round[];
-}) {
+export function CriteriaCard({ criteria }: { criteria: Criterion[] }) {
 	const { confirm, dialogProps } = useConfirmDialog();
 	const { isRefreshing, refresh } = useRefresh();
 	const [editing, setEditing] = useState<Criterion | "new" | null>(null);
@@ -49,7 +43,6 @@ export function CriteriaCard({
 		onError: (error) => toast.error(error.message),
 		onSuccess: () => refresh(() => toast.success("Criterion deleted."))
 	});
-	const roundNames = new Map(rounds.map((round) => [round.id, round.name]));
 	// The same order judges see.
 	const orderedCriteria = criteria.slice().sort(sortCriteria);
 	const nextDisplayOrder =
@@ -73,18 +66,17 @@ export function CriteriaCard({
 					<AddLine data-icon="inline-end" />
 				</Button>
 			}
-			description="Main criteria decide the ranking. Sidepots are separate prizes."
+			description="Judges score the panel round on these. Main criteria pick the finalists; sidepots are separate prizes."
 			title="Rubric"
 		>
 			{criteria.length ? (
-				<Table className="min-w-140">
+				<Table className="min-w-120">
 					<TableHeader>
 						<TableRow>
 							<TableHead className="w-0 px-3 py-3">Order</TableHead>
 							<TableHead className="px-3 py-3">Name</TableHead>
 							<TableHead className="px-3 py-3">Type</TableHead>
 							<TableHead className="px-3 py-3">Scored</TableHead>
-							<TableHead className="px-3 py-3">Rounds</TableHead>
 							<TableHead className="w-0 px-3 py-3">
 								<span className="sr-only">Actions</span>
 							</TableHead>
@@ -113,19 +105,6 @@ export function CriteriaCard({
 								</TableCell>
 								<TableCell className="px-3 py-3 tabular-nums">
 									{criterion.isSidepot ? 0 : 1}–{criterion.maxScore}
-								</TableCell>
-								<TableCell className="whitespace-normal px-3 py-3">
-									<span className="flex flex-wrap gap-1.5">
-										{criterion.roundIds.length ? (
-											criterion.roundIds.map((id) => (
-												<Badge key={id} variant="outline">
-													{roundNames.get(id) ?? "Deleted round"}
-												</Badge>
-											))
-										) : (
-											<Badge variant="outline">All rounds</Badge>
-										)}
-									</span>
 								</TableCell>
 								<TableCell className="px-3 py-3 text-right">
 									<DropdownMenu>
@@ -176,7 +155,6 @@ export function CriteriaCard({
 					key={editing === "new" ? "new" : editing.id}
 					nextDisplayOrder={nextDisplayOrder}
 					onClose={() => setEditing(null)}
-					rounds={rounds}
 				/>
 			) : null}
 			<ConfirmAlertDialog {...dialogProps} />

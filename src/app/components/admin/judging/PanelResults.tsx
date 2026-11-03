@@ -99,7 +99,7 @@ export function PanelResults({
 							!finalRound
 								? "Add a final round before picking finalists."
 								: finalRoundHasScores
-									? "The final round has been scored, so its finalists can’t change."
+									? "Judges have started ranking the finalists, so they can’t change."
 									: undefined
 						}
 						variant={hasFinalists ? "outline" : "default"}

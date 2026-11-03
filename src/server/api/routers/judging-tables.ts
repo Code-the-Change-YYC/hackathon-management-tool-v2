@@ -11,7 +11,8 @@ import {
 	judgingRounds,
 	judgingScores,
 	judgingTableJudges,
-	judgingTables
+	judgingTables,
+	judgingVotes
 } from "@/server/db/judging-schema";
 
 export type DbClient =
@@ -26,6 +27,7 @@ const ScheduleSettingsSchema = z.object({
 	maxBlockMinutes: z.number().int().min(1)
 });
 
+// Scores and final-round votes both pin a round's teams and times.
 export async function assertRoundHasNoScores(db: DbClient, roundId: string) {
 	const scored = await db
 		.select({ id: judgingScores.id })
@@ -42,6 +44,23 @@ export async function assertRoundHasNoScores(db: DbClient, roundId: string) {
 			code: "BAD_REQUEST",
 			message:
 				"Cannot replace this schedule because at least one assignment has scores."
+		});
+	}
+	const voted = await db
+		.select({ id: judgingVotes.id })
+		.from(judgingVotes)
+		.innerJoin(
+			judgingAssignments,
+			eq(judgingVotes.assignmentId, judgingAssignments.id)
+		)
+		.innerJoin(judgingTables, eq(judgingAssignments.tableId, judgingTables.id))
+		.where(eq(judgingTables.roundId, roundId))
+		.limit(1);
+	if (voted.length > 0) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message:
+				"Cannot change this round because judges have started ranking the finalists."
 		});
 	}
 }

@@ -55,8 +55,7 @@ const criteria: Criterion[] = [
 		description: "Assess originality and execution.",
 		maxScore: 5,
 		displayOrder: 0,
-		isSidepot: false,
-		roundIds: ["round"]
+		isSidepot: false
 	},
 	{
 		id: "side",
@@ -117,25 +116,24 @@ afterEach(() => {
 });
 
 describe("individual judge scoring", () => {
-	it("leaves out criteria that belong to another round", async () => {
-		mocks.portal.mockReturnValue({
-			assignments: [assignment],
-			criteria: [
-				...criteria,
-				{
-					...criteria[1],
-					id: "final-only",
-					name: "Final only",
-					roundIds: ["final"]
-				}
-			],
-			isLoading: false,
-			error: null
-		});
-		mount();
-		await screen.findByRole("heading", { name: "Innovation" });
-		expect(screen.getByText("1 of 2")).toBeInTheDocument();
-		expect(screen.queryByText("Final only")).not.toBeInTheDocument();
+	it("doesn't open a scorecard for a finalist, who is ranked instead", () => {
+		render(
+			<QueryClientProvider client={client}>
+				<ScoreView
+					assignment={judgeAssignment({
+						table: judgeTable({
+							round: judgingRound({ id: "final", kind: "final" })
+						})
+					})}
+					criteria={criteria}
+					userId="judge-a"
+				/>
+			</QueryClientProvider>
+		);
+		expect(
+			screen.getByRole("heading", { name: "Finalists are ranked, not scored" })
+		).toBeVisible();
+		expect(screen.queryByText("Innovation")).not.toBeInTheDocument();
 	});
 	it("steps through each criterion, then reviews every score before submitting", async () => {
 		mount();

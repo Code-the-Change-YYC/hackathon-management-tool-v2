@@ -61,13 +61,21 @@ describe("judge score ownership in PostgreSQL", () => {
 			await db.insert(judgingCriteria).values({
 				id: criterionId,
 				name: "Technical",
-				maxScore: 5,
-				roundIds: [roundId]
+				maxScore: 5
 			});
 			assert(assignment);
 			const assignmentId = assignment.id;
+			// A scorecard covers every criterion, including any already in the database.
+			const otherCriteria = (await db.query.judgingCriteria.findMany()).filter(
+				(criterion) => criterion.id !== criterionId
+			);
 			const submit = (score: number) => [
-				{ assignmentId, criteriaId: criterionId, score }
+				{ assignmentId, criteriaId: criterionId, score },
+				...otherCriteria.map((criterion) => ({
+					assignmentId,
+					criteriaId: criterion.id,
+					score: 1
+				}))
 			];
 			await judgeA.caller.scores.createMany(submit(2));
 			await judgeB.caller.scores.createMany(submit(4));
@@ -78,30 +86,51 @@ describe("judge score ownership in PostgreSQL", () => {
 			const bScores = await judgeB.caller.scores.getByAssignment({
 				assignmentId
 			});
-			expect(aScores).toMatchObject([{ judgeId: judgeA.user.id, value: 3 }]);
-			expect(aScores).toHaveLength(1);
-			expect(bScores).toMatchObject([{ judgeId: judgeB.user.id, value: 4 }]);
-			expect(bScores).toHaveLength(1);
+			const testScores = (scores: typeof aScores) =>
+				scores.filter((score) => score.criteriaId === criterionId);
+			expect(testScores(aScores)).toMatchObject([
+				{ judgeId: judgeA.user.id, value: 3 }
+			]);
+			expect(aScores.every((score) => score.judgeId === judgeA.user.id)).toBe(
+				true
+			);
+			expect(testScores(bScores)).toMatchObject([
+				{ judgeId: judgeB.user.id, value: 4 }
+			]);
+			const judgeBId = judgeB.user.id;
+			expect(bScores.every((score) => score.judgeId === judgeBId)).toBe(true);
+			const otherMainCount = otherCriteria.filter(
+				(criterion) => !criterion.isSidepot
+			).length;
 			expect(
 				await judgeA.caller.scores.getJudgeTotals({ roundId })
 			).toMatchObject([
-				{ judgeId: judgeA.user.id, mainTotal: 3, mainCriteriaScored: 1 }
+				{
+					judgeId: judgeA.user.id,
+					mainTotal: 3 + otherMainCount,
+					mainCriteriaScored: 1 + otherMainCount
+				}
 			]);
 			expect(
 				await judgeB.caller.scores.getJudgeTotals({ roundId })
 			).toMatchObject([
-				{ judgeId: judgeB.user.id, mainTotal: 4, mainCriteriaScored: 1 }
+				{
+					judgeId: judgeB.user.id,
+					mainTotal: 4 + otherMainCount,
+					mainCriteriaScored: 1 + otherMainCount
+				}
 			]);
-			assert(aScores[0]);
+			const [aScore] = testScores(aScores);
+			assert(aScore);
 			await expect(
-				judgeB.caller.scores.update({ id: aScores[0].id, score: 1 })
+				judgeB.caller.scores.update({ id: aScore.id, score: 1 })
 			).rejects.toMatchObject({ code: "NOT_FOUND" });
 			expect(
 				await db
 					.select()
 					.from(judgingScores)
 					.where(eq(judgingScores.assignmentId, assignmentId))
-			).toHaveLength(2);
+			).toHaveLength(2 * (otherCriteria.length + 1));
 		} finally {
 			await db.delete(judgingRounds).where(eq(judgingRounds.id, roundId));
 			await db

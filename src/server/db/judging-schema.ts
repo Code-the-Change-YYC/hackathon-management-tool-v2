@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import {
 	boolean,
 	integer,
@@ -115,8 +115,6 @@ export const judgingCriteria = createTable("judging_criterion", {
 	name: text("name").notNull(),
 	description: text("description").notNull().default(""),
 	displayOrder: integer("display_order").notNull().default(0),
-	// Empty means the criterion applies to every round (including existing criteria).
-	roundIds: uuid("round_ids").array().notNull().default(sql`'{}'::uuid[]`),
 	maxScore: integer("max_score").notNull(),
 	isSidepot: boolean("is_sidepot").default(false).notNull()
 });
@@ -143,6 +141,31 @@ export const judgingScores = createTable(
 		uniqueIndex("one_score_per_judge_per_criteria_per_assignment").on(
 			t.assignmentId,
 			t.criteriaId,
+			t.judgeId
+		)
+	]
+);
+
+// A judge's top finalists in the final round, which has no scorecards.
+// Place 1 earns the most points; see getBallotPoints.
+export const judgingVotes = createTable(
+	"judging_vote",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		assignmentId: uuid("assignment_id")
+			.notNull()
+			.references(() => judgingAssignments.id, { onDelete: "cascade" }),
+		judgeId: text("judge_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "restrict" }),
+		place: integer("place").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+	},
+	(t) => [
+		uniqueIndex("judging_vote_assignment_judge_uniq").on(
+			t.assignmentId,
 			t.judgeId
 		)
 	]
@@ -189,7 +212,8 @@ export const judgingAssignmentRelations = relations(
 			fields: [judgingAssignments.tableId],
 			references: [judgingTables.id]
 		}),
-		scores: many(judgingScores)
+		scores: many(judgingScores),
+		votes: many(judgingVotes)
 	})
 );
 
@@ -201,5 +225,12 @@ export const judgingScoreRelations = relations(judgingScores, ({ one }) => ({
 	criteria: one(judgingCriteria, {
 		fields: [judgingScores.criteriaId],
 		references: [judgingCriteria.id]
+	})
+}));
+
+export const judgingVoteRelations = relations(judgingVotes, ({ one }) => ({
+	assignment: one(judgingAssignments, {
+		fields: [judgingVotes.assignmentId],
+		references: [judgingAssignments.id]
 	})
 }));

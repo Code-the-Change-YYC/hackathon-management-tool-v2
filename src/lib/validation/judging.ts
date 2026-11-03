@@ -133,8 +133,7 @@ export const criterionFormSchema = z
 		description: z.string().trim().max(CRITERION_DESCRIPTION_MAX_LENGTH),
 		displayOrder: numberField(0),
 		isSidepot: z.boolean(),
-		maxScore: z.number().nullable(),
-		roundIds: z.array(z.string())
+		maxScore: z.number().nullable()
 	})
 	.superRefine((data, ctx) => {
 		if (!data.isSidepot) return;

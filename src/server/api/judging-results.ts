@@ -1,15 +1,17 @@
 import { sql } from "drizzle-orm";
+import type { PanelScorecard } from "@/lib/judging-ranking";
+import type { DbClient } from "@/server/api/routers/judging-tables";
 import {
 	judgingAssignments,
 	judgingCriteria,
 	judgingScores,
-	judgingTables
+	judgingTables,
+	judgingVotes
 } from "@/server/db/judging-schema";
 
 /** Only complete scorecards contribute to published averages.
  * Every scorecard has equal weight, regardless of the team's panel size.
- * A scorecard is complete once it covers every criterion that applies to its
- * round; criteria with no round_ids apply to every round.
+ * A scorecard is complete once it covers every criterion.
  */
 export const submittedScorecards = sql`(
   SELECT a.id AS assignment_id, a.team_id, t.round_id, s.judge_id,
@@ -20,9 +22,22 @@ export const submittedScorecards = sql`(
   INNER JOIN ${judgingTables} t ON t.id = a.table_id
   INNER JOIN ${judgingCriteria} c ON c.id = s.criteria_id
   GROUP BY a.id, a.team_id, t.round_id, s.judge_id
-  HAVING COUNT(*) = (
-      SELECT COUNT(*) FROM ${judgingCriteria} rc
-      WHERE cardinality(rc.round_ids) = 0 OR t.round_id = ANY(rc.round_ids)
-    )
+  HAVING COUNT(*) = (SELECT COUNT(*) FROM ${judgingCriteria})
     AND BOOL_AND(s.value >= CASE WHEN c.is_sidepot THEN 0 ELSE 1 END AND s.value <= c.max_score)
 )`;
+
+// The judges at each final table who have submitted a ballot.
+export const submittedBallots = sql`(
+  SELECT DISTINCT a.table_id, v.judge_id
+  FROM ${judgingVotes} v
+  INNER JOIN ${judgingAssignments} a ON a.id = v.assignment_id
+)`;
+
+// Each complete panel scorecard's main total, for normalizing per judge.
+export async function getPanelScorecards(db: DbClient, roundId: string) {
+	return (await db.execute(sql`
+    SELECT card.team_id AS "teamId", card.judge_id AS "judgeId", card.main_score AS "score"
+    FROM ${submittedScorecards} card
+    WHERE card.round_id = ${roundId}
+  `)) as unknown as PanelScorecard[];
+}

@@ -123,8 +123,8 @@ function finalRoundItem(
 		end && now < end
 			? describeJudgingSchedule(judging)
 			: judging.scored
-				? "The judges have scored your final presentation. Winners are announced at the closing ceremony."
-				: "The judges are scoring your final presentation.";
+				? "The judges have ranked the finalists. Winners are announced at the closing ceremony."
+				: "The judges are ranking the finalists.";
 	return {
 		id: judging.round.id,
 		tone: "finalist",

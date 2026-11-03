@@ -1,13 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useController, useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { CheckboxField } from "@/app/components/forms/CheckboxField";
 import { NumberField } from "@/app/components/forms/NumberField";
 import { TextField } from "@/app/components/forms/TextField";
 import { Button } from "@/app/components/ui/button";
-import { Checkbox } from "@/app/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -20,9 +19,7 @@ import {
 	FieldDescription,
 	FieldError,
 	FieldGroup,
-	FieldLabel,
-	FieldLegend,
-	FieldSet
+	FieldLabel
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -36,7 +33,7 @@ import {
 	criterionFormSchema
 } from "@/lib/validation/judging";
 import { api } from "@/trpc/react";
-import type { Criterion, Round } from "./judgingShared";
+import type { Criterion } from "./judgingShared";
 
 function toFormInput(
 	criterion: Criterion | undefined,
@@ -49,19 +46,16 @@ function toFormInput(
 		isSidepot: criterion?.isSidepot ?? false,
 		maxScore: criterion?.isSidepot
 			? criterion.maxScore
-			: MAIN_CRITERION_MAX_SCORE,
-		roundIds: criterion?.roundIds ?? []
+			: MAIN_CRITERION_MAX_SCORE
 	};
 }
 
 export function CriterionDialog({
 	criterion,
-	rounds,
 	nextDisplayOrder,
 	onClose
 }: {
 	criterion?: Criterion;
-	rounds: Round[];
 	nextDisplayOrder: number;
 	onClose: () => void;
 }) {
@@ -71,10 +65,6 @@ export function CriterionDialog({
 		resolver: zodResolver(criterionFormSchema)
 	});
 	const isSidepot = useWatch({ control: form.control, name: "isSidepot" });
-	const { field: roundIds } = useController({
-		control: form.control,
-		name: "roundIds"
-	});
 	const callbacks = {
 		onSuccess: () =>
 			refresh(() => {
@@ -193,38 +183,6 @@ export function CriterionDialog({
 								</FieldDescription>
 							</div>
 						</div>
-						{rounds.length ? (
-							<FieldSet className="gap-3">
-								<FieldLegend className="mb-0" variant="label">
-									Rounds
-								</FieldLegend>
-								<FieldDescription>
-									Leave all unchecked to use it in every round.
-								</FieldDescription>
-								{rounds.map((round) => (
-									<Field key={round.id} orientation="horizontal">
-										<Checkbox
-											checked={roundIds.value.includes(round.id)}
-											disabled={isPending}
-											id={`criterion-round-${round.id}`}
-											onCheckedChange={(checked) =>
-												roundIds.onChange(
-													checked
-														? [...roundIds.value, round.id]
-														: roundIds.value.filter((id) => id !== round.id)
-												)
-											}
-										/>
-										<FieldLabel
-											className="font-normal"
-											htmlFor={`criterion-round-${round.id}`}
-										>
-											{round.name}
-										</FieldLabel>
-									</Field>
-								))}
-							</FieldSet>
-						) : null}
 					</FieldGroup>
 					<DialogFooter>
 						<Button disabled={isPending} type="submit">

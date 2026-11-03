@@ -65,6 +65,7 @@ export function judgeAssignment(
 		startsAt: judgingNow,
 		createdAt: judgingNow,
 		scores: [],
+		votes: [],
 		team: {
 			id: "team",
 			name: "Team",
@@ -90,6 +91,16 @@ export function judgeScore(criteriaId: string, value: number) {
 		judgeId: "judge",
 		criteriaId,
 		value,
+		createdAt: judgingNow
+	};
+}
+
+export function judgeVote(assignmentId: string, place: number) {
+	return {
+		id: `${assignmentId}-vote`,
+		assignmentId,
+		judgeId: "judge",
+		place,
 		createdAt: judgingNow
 	};
 }

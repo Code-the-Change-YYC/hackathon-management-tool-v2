@@ -252,8 +252,7 @@ describe("deleting a judge", () => {
 		await db.insert(judgingCriteria).values({
 			id: criterionId,
 			name: "Technical",
-			maxScore: 5,
-			roundIds: [roundId]
+			maxScore: 5
 		});
 		const [table] = await db
 			.insert(judgingTables)

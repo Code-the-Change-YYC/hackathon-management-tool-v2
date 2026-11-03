@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
 import { getParticipantCriteria } from "@/server/api/participant-judging";
@@ -9,22 +9,7 @@ import {
 	judgeProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
-import type { db } from "@/server/db";
-import { judgingCriteria, judgingRounds } from "@/server/db/judging-schema";
-
-async function validateRounds(database: typeof db, roundIds?: string[]) {
-	if (!roundIds?.length) return;
-	const ids = [...new Set(roundIds)];
-	const rounds = await database.query.judgingRounds.findMany({
-		where: inArray(judgingRounds.id, ids),
-		columns: { id: true }
-	});
-	if (rounds.length !== ids.length)
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "One or more judging rounds were not found."
-		});
-}
+import { judgingCriteria } from "@/server/db/judging-schema";
 
 export const criteriaRouter = createTRPCRouter({
 	getAll: judgeProcedure.query(async ({ ctx }) => {
@@ -34,7 +19,6 @@ export const criteriaRouter = createTRPCRouter({
 			.orderBy(asc(judgingCriteria.displayOrder), asc(judgingCriteria.name));
 	}),
 
-	// Excludes final-round-only criteria.
 	getPublic: publicProcedure.query(async ({ ctx }) => {
 		return await getParticipantCriteria(ctx.db);
 	}),
@@ -46,12 +30,10 @@ export const criteriaRouter = createTRPCRouter({
 				description: z.string().default(""),
 				displayOrder: z.number().int().default(0),
 				maxScore: z.number().int().positive().default(MAIN_CRITERION_MAX_SCORE),
-				roundIds: z.array(z.string().uuid()).default([]),
 				isSidepot: z.boolean().default(false)
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			await validateRounds(ctx.db, input.roundIds);
 			if (!input.isSidepot && input.maxScore !== MAIN_CRITERION_MAX_SCORE) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -69,13 +51,11 @@ export const criteriaRouter = createTRPCRouter({
 				description: z.string().optional(),
 				displayOrder: z.number().int().optional(),
 				maxScore: z.number().int().positive().optional(),
-				roundIds: z.array(z.string().uuid()).optional(),
 				isSidepot: z.boolean().optional()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
-			await validateRounds(ctx.db, data.roundIds);
 			const existing = await ctx.db.query.judgingCriteria.findFirst({
 				where: eq(judgingCriteria.id, id)
 			});

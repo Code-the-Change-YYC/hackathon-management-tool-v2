@@ -1,10 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import {
-	criterionAppliesToRound,
-	MAIN_CRITERION_MAX_SCORE
-} from "@/lib/judging";
+import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
 import { submittedScorecards } from "@/server/api/judging-results";
 import { areScoresReleased } from "@/server/api/participant-judging";
 import {
@@ -36,7 +33,10 @@ async function requireAssignment(
 		where: eq(judgingAssignments.id, assignmentId),
 		with: {
 			table: {
-				with: { judges: true, round: { columns: { publishedAt: true } } }
+				with: {
+					judges: true,
+					round: { columns: { kind: true, publishedAt: true } }
+				}
 			}
 		}
 	});
@@ -57,20 +57,19 @@ async function requireAssignment(
 			message: "This round's schedule hasn't been published yet."
 		});
 	}
+	if (assignment.table.round.kind === "final") {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Finalists are ranked, not scored."
+		});
+	}
 	return assignment;
 }
 
 function validateScore(
 	criterion: typeof judgingCriteria.$inferSelect,
-	value: number,
-	roundId: string
+	value: number
 ) {
-	if (!criterionAppliesToRound(criterion, roundId)) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "Criterion is not available for this judging round."
-		});
-	}
 	const min = criterion.isSidepot ? 0 : 1;
 	const max = criterion.isSidepot
 		? criterion.maxScore
@@ -360,11 +359,7 @@ export const scoresRouter = createTRPCRouter({
 					message: "Each criterion may only appear once."
 				});
 			}
-			const criteriaRows = (
-				await ctx.db.query.judgingCriteria.findMany()
-			).filter((criterion) =>
-				criterionAppliesToRound(criterion, assignment.table.roundId)
-			);
+			const criteriaRows = await ctx.db.query.judgingCriteria.findMany();
 			if (
 				criteriaRows.length !== input.length ||
 				criteriaRows.some((criterion) => !criteriaIds.includes(criterion.id))
@@ -396,7 +391,7 @@ export const scoresRouter = createTRPCRouter({
 						code: "BAD_REQUEST",
 						message: "One or more criteria were not found."
 					});
-				validateScore(criterion, item.score, assignment.table.roundId);
+				validateScore(criterion, item.score);
 			}
 
 			const results = await ctx.db
@@ -440,12 +435,12 @@ export const scoresRouter = createTRPCRouter({
 			});
 			if (!existing)
 				throw new TRPCError({ code: "NOT_FOUND", message: "Score not found." });
-			const assignment = await requireAssignment(
+			await requireAssignment(
 				ctx.db,
 				existing.assignmentId,
 				ctx.session.user.id
 			);
-			validateScore(existing.criteria, input.score, assignment.table.roundId);
+			validateScore(existing.criteria, input.score);
 			const [updated] = await ctx.db
 				.update(judgingScores)
 				.set({ value: input.score })

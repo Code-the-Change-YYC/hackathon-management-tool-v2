@@ -13,11 +13,9 @@ const valid = [
 	{ assignmentId, criteriaId: mainId, score: 4 },
 	{ assignmentId, criteriaId: sideId, score: 0 }
 ];
-const otherRoundId = "55555555-5555-4555-8555-555555555555";
 const rubric = [
-	{ id: mainId, maxScore: 5, isSidepot: false, roundIds: [] },
-	{ id: sideId, maxScore: 5, isSidepot: true, roundIds: ["round"] },
-	{ id: otherRoundId, maxScore: 5, isSidepot: true, roundIds: ["other-round"] }
+	{ id: mainId, maxScore: 5, isSidepot: false },
+	{ id: sideId, maxScore: 5, isSidepot: true }
 ];
 const db = {
 	query: {
@@ -48,7 +46,7 @@ beforeEach(() => {
 		table: {
 			roundId: "round",
 			judges: [{ judgeId: "judge-a" }, { judgeId: "judge-b" }],
-			round: { publishedAt: new Date(0) }
+			round: { kind: "panel", publishedAt: new Date(0) }
 		}
 	});
 	db.query.judgingCriteria.findMany.mockResolvedValue(rubric);
@@ -79,15 +77,21 @@ describe("individual scorecard API", () => {
 		await caller("judge-b").createMany(valid);
 		expect(write.values.mock.calls[1]?.[0][0].judgeId).toBe("judge-b");
 	});
-	it("only requires the criteria that apply to the assignment's round", async () => {
-		await expect(caller().createMany(valid)).resolves.toEqual([]);
-		await expect(
-			caller().createMany([
-				...valid,
-				{ assignmentId, criteriaId: otherRoundId, score: 0 }
-			])
-		).rejects.toMatchObject({ code: "BAD_REQUEST" });
-		expect(db.insert).toHaveBeenCalledOnce();
+	it("rejects scorecards for finalists, who are ranked instead", async () => {
+		db.query.judgingAssignments.findFirst.mockResolvedValue({
+			id: assignmentId,
+			startsAt: new Date(0),
+			table: {
+				roundId: "final",
+				judges: [{ judgeId: "judge-a" }],
+				round: { kind: "final", publishedAt: new Date(0) }
+			}
+		});
+		await expect(caller().createMany(valid)).rejects.toMatchObject({
+			code: "BAD_REQUEST",
+			message: "Finalists are ranked, not scored."
+		});
+		expect(db.insert).not.toHaveBeenCalled();
 	});
 	it.each([
 		["missing", valid.slice(0, 1)],
@@ -147,7 +151,7 @@ describe("individual scorecard API", () => {
 			table: {
 				roundId: "round",
 				judges: [{ judgeId: "judge-a" }],
-				round: { publishedAt: new Date(0) }
+				round: { kind: "panel", publishedAt: new Date(0) }
 			}
 		});
 		db.query.judgingScores.findFirst.mockResolvedValue(undefined);

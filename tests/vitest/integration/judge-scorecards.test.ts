@@ -48,8 +48,7 @@ const mainCriterion = {
 	id: criteriaId,
 	name: "Technical",
 	isSidepot: false,
-	maxScore: 5,
-	roundIds: [] as string[]
+	maxScore: 5
 };
 const input = (score = 4) => [{ assignmentId, criteriaId, score }];
 const dialect = new PgDialect();
@@ -86,7 +85,7 @@ beforeEach(() => {
 		table: {
 			roundId,
 			judges: [{ judgeId: "judge-a" }, { judgeId: "judge-b" }],
-			round: { publishedAt: new Date(0) }
+			round: { kind: "panel", publishedAt: new Date(0) }
 		}
 	});
 	mocks.query.judgingCriteria.findMany.mockResolvedValue([mainCriterion]);
@@ -284,53 +283,6 @@ describe("individual judge scorecards", () => {
 			judgingScores.assignmentId,
 			judgingScores.judgeId
 		]);
-	});
-	it("rejects creating or updating a score for a criterion scoped to another round", async () => {
-		const otherRoundCriterion = { ...mainCriterion, roundIds: [assignmentId] };
-		mocks.query.judgingCriteria.findMany.mockResolvedValue([
-			otherRoundCriterion
-		]);
-		mocks.query.judgingScores.findFirst.mockResolvedValue({
-			assignmentId,
-			criteria: otherRoundCriterion
-		});
-		const api = await caller();
-		await expect(api.createMany(input())).rejects.toMatchObject({
-			code: "BAD_REQUEST"
-		});
-		await expect(api.update({ id: scoreId, score: 3 })).rejects.toMatchObject({
-			code: "BAD_REQUEST"
-		});
-		expect(mocks.insert).not.toHaveBeenCalled();
-		expect(mocks.update).not.toHaveBeenCalled();
-	});
-
-	it("accepts a criterion assigned to the current judging round", async () => {
-		mocks.query.judgingCriteria.findMany.mockResolvedValue([
-			{ ...mainCriterion, roundIds: [roundId] }
-		]);
-		await (await caller()).createMany(input());
-		expect(mocks.insert).toHaveBeenCalledOnce();
-	});
-	it("keeps round validation when creating and updating criteria", async () => {
-		const api = criteriaRouter.createCaller(await context("admin", "admin"));
-		mocks.query.judgingRounds.findMany.mockResolvedValue([]);
-		await expect(
-			api.create({ name: "Technical", roundIds: [roundId] })
-		).rejects.toMatchObject({ code: "BAD_REQUEST" });
-		await expect(
-			api.update({ id: criteriaId, roundIds: [roundId] })
-		).rejects.toMatchObject({ code: "BAD_REQUEST" });
-		expect(mocks.insert).not.toHaveBeenCalled();
-		expect(mocks.update).not.toHaveBeenCalled();
-		mocks.query.judgingRounds.findMany.mockResolvedValue([{ id: roundId }]);
-		mocks.query.judgingCriteria.findFirst.mockResolvedValue(mainCriterion);
-		await api.create({ name: "Technical", roundIds: [roundId] });
-		expect(mocks.values).toHaveBeenCalledWith(
-			expect.objectContaining({ maxScore: 5, roundIds: [roundId] })
-		);
-		await api.update({ id: criteriaId, roundIds: [roundId] });
-		expect(mocks.set).toHaveBeenCalledWith({ roundIds: [roundId] });
 	});
 	it("keeps main criteria on a five-point scale when created or updated", async () => {
 		const api = criteriaRouter.createCaller(await context("admin", "admin"));

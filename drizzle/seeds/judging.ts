@@ -73,8 +73,7 @@ export async function seedJudging() {
 					"Is the idea original or a fresh take on existing solutions? Does it apply technology in a creative way to the problem it tackles?",
 				displayOrder: 1,
 				maxScore: MAIN_CRITERION_MAX_SCORE,
-				isSidepot: false,
-				roundIds: [mainRound.id]
+				isSidepot: false
 			},
 			{
 				name: "Impact & Relevance to Prompt",
@@ -82,8 +81,7 @@ export async function seedJudging() {
 					"Does the solution clearly address the hackathon prompt? Could it make a meaningful, positive difference for the people it serves?",
 				displayOrder: 2,
 				maxScore: MAIN_CRITERION_MAX_SCORE,
-				isSidepot: false,
-				roundIds: [mainRound.id]
+				isSidepot: false
 			},
 			{
 				name: "Feasibility & Scalability",
@@ -91,8 +89,7 @@ export async function seedJudging() {
 					"Is the solution practical given real constraints (budget, infrastructure, etc.)? Could it scale beyond a demo into a real-world setting?",
 				displayOrder: 3,
 				maxScore: MAIN_CRITERION_MAX_SCORE,
-				isSidepot: false,
-				roundIds: [mainRound.id]
+				isSidepot: false
 			},
 			{
 				name: "Technical Execution",
@@ -100,8 +97,7 @@ export async function seedJudging() {
 					"Quality of the implementation (working prototype, technical depth, stability). Use of appropriate technology stack. Is the solution technically sound and well-built?",
 				displayOrder: 4,
 				maxScore: MAIN_CRITERION_MAX_SCORE,
-				isSidepot: false,
-				roundIds: [mainRound.id]
+				isSidepot: false
 			},
 			{
 				name: "User Experience & Design",
@@ -109,8 +105,7 @@ export async function seedJudging() {
 					"Is the solution intuitive, accessible and user-friendly? Is it aesthetically pleasing? Does the design of the product elevate its function and original idea?",
 				displayOrder: 5,
 				maxScore: MAIN_CRITERION_MAX_SCORE,
-				isSidepot: false,
-				roundIds: [mainRound.id]
+				isSidepot: false
 			},
 			{
 				name: "Best use of AI",
@@ -118,8 +113,7 @@ export async function seedJudging() {
 					"How effectively does the solution use AI to address the challenge?",
 				displayOrder: 6,
 				maxScore: 5,
-				isSidepot: true,
-				roundIds: [mainRound.id]
+				isSidepot: true
 			},
 			{
 				name: "Best UI",
@@ -127,17 +121,7 @@ export async function seedJudging() {
 					"Is the solution intuitive, accessible and user-friendly? Is the solution aesthetically pleasing? Does the design of the product elevate its function and original idea?",
 				displayOrder: 7,
 				maxScore: 5,
-				isSidepot: true,
-				roundIds: [mainRound.id]
-			},
-			{
-				name: "Overall Impression",
-				description:
-					"Weighing the idea, its impact, the execution and the presentation together, how strong is this project as the winner of the hackathon?",
-				displayOrder: 8,
-				maxScore: MAIN_CRITERION_MAX_SCORE,
-				isSidepot: false,
-				roundIds: [finalRound.id]
+				isSidepot: true
 			}
 		])
 		.returning();

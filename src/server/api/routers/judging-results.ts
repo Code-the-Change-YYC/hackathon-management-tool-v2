@@ -2,14 +2,20 @@ import { TRPCError } from "@trpc/server";
 import { eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
-	criterionAppliesToRound,
 	getFinalistStartTime,
 	getFinalRoundEndTime,
 	MAX_PRESENTATION_MINUTES
 } from "@/lib/judging";
-import { type PanelScorecard, rankPanelTeams } from "@/lib/judging-ranking";
+import {
+	type PanelScorecard,
+	rankFinalists,
+	rankPanelTeams
+} from "@/lib/judging-ranking";
 import { scheduleFinalists } from "@/server/api/final-round";
-import { submittedScorecards } from "@/server/api/judging-results";
+import {
+	getPanelScorecards,
+	submittedScorecards
+} from "@/server/api/judging-results";
 import { assertRoundHasNoScores } from "@/server/api/routers/judging-tables";
 import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
 import { organization, user } from "@/server/db/auth-schema";
@@ -27,11 +33,7 @@ export const judgingResultsRouter = createTRPCRouter({
 	getPanelRanking: adminProcedure
 		.input(z.object({ roundId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
-			const cards = (await ctx.db.execute(sql`
-    SELECT card.team_id AS "teamId", card.judge_id AS "judgeId", card.main_score AS "score"
-    FROM ${submittedScorecards} card
-    WHERE card.round_id = ${input.roundId}
-   `)) as unknown as PanelScorecard[];
+			const cards = await getPanelScorecards(ctx.db, input.roundId);
 			// Each sidepot is its own award, so it gets its own normalized ranking.
 			const sidepotCards = (await ctx.db.execute(sql`
     SELECT card.team_id AS "teamId", card.judge_id AS "judgeId",
@@ -42,17 +44,13 @@ export const judgingResultsRouter = createTRPCRouter({
     INNER JOIN ${judgingCriteria} c ON c.id = s.criteria_id
     WHERE card.round_id = ${input.roundId} AND c.is_sidepot = true
    `)) as unknown as (PanelScorecard & { criterionId: string })[];
-			const sidepotCriteria = (
-				await ctx.db.query.judgingCriteria.findMany({
-					where: eq(judgingCriteria.isSidepot, true),
-					orderBy: (criteria, { asc }) => [
-						asc(criteria.displayOrder),
-						asc(criteria.name)
-					]
-				})
-			).filter((criterion) =>
-				criterionAppliesToRound(criterion, input.roundId)
-			);
+			const sidepotCriteria = await ctx.db.query.judgingCriteria.findMany({
+				where: eq(judgingCriteria.isSidepot, true),
+				orderBy: (criteria, { asc }) => [
+					asc(criteria.displayOrder),
+					asc(criteria.name)
+				]
+			});
 
 			const tables = await ctx.db.query.judgingTables.findMany({
 				where: eq(judgingTables.roundId, input.roundId),
@@ -251,28 +249,82 @@ export const judgingResultsRouter = createTRPCRouter({
 			});
 		}),
 
-	// The final round decides the winner on raw averages alone
+	// Ballot points decide the final; see rankFinalists for the tiebreakers.
 	getFinalResults: adminProcedure.query(async ({ ctx }) => {
-		const finalRound = await ctx.db.query.judgingRounds.findFirst({
-			where: eq(judgingRounds.kind, "final")
-		});
+		const [finalRound, panelRound] = await Promise.all([
+			ctx.db.query.judgingRounds.findFirst({
+				where: eq(judgingRounds.kind, "final"),
+				with: {
+					tables: {
+						with: {
+							judges: {
+								with: { judge: { columns: { id: true, name: true } } }
+							},
+							assignments: {
+								with: {
+									team: { columns: { id: true, name: true } },
+									votes: true
+								}
+							}
+						}
+					}
+				}
+			}),
+			ctx.db.query.judgingRounds.findFirst({
+				where: eq(judgingRounds.kind, "panel"),
+				columns: { id: true }
+			})
+		]);
 		if (!finalRound) return null;
 
-		const results = (await ctx.db.execute(sql`
-    SELECT o.id AS "teamId", o.name AS "teamName",
-     AVG(card.main_score)::float8 AS "rawAverage",
-     COUNT(*)::int AS "scorecardCount"
-    FROM ${submittedScorecards} card
-    INNER JOIN ${organization} o ON o.id = card.team_id
-    WHERE card.round_id = ${finalRound.id}
-    GROUP BY o.id, o.name
-    ORDER BY "rawAverage" DESC, o.name ASC
-   `)) as unknown as {
-			teamId: string;
-			teamName: string;
-			rawAverage: number;
-			scorecardCount: number;
-		}[];
-		return { round: finalRound, results };
+		const table = finalRound.tables[0];
+		const finalists = (table?.assignments ?? [])
+			.slice()
+			.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+		// Only judges still at the final table count.
+		const judgeIds = new Set(table?.judges.map(({ judge }) => judge.id));
+		const votes = finalists.flatMap((assignment) =>
+			assignment.votes
+				.filter((vote) => judgeIds.has(vote.judgeId))
+				.map((vote) => ({
+					teamId: assignment.team.id,
+					judgeId: vote.judgeId,
+					place: vote.place
+				}))
+		);
+		const panelCards = panelRound
+			? await getPanelScorecards(ctx.db, panelRound.id)
+			: [];
+		const panelScores = new Map(
+			rankPanelTeams(panelCards).map((entry) => [
+				entry.teamId,
+				entry.normalizedScore
+			])
+		);
+		const teamNames = new Map(
+			finalists.map(({ team }) => [team.id, team.name])
+		);
+
+		return {
+			results: rankFinalists(
+				finalists.map(({ team }) => team.id),
+				votes,
+				panelScores
+			).map((entry) => ({
+				...entry,
+				teamName: teamNames.get(entry.teamId) ?? "Unknown team"
+			})),
+			// Every judge at the final table, with the teams they placed, from 1st.
+			ballots: (table?.judges ?? [])
+				.map(({ judge }) => ({
+					judgeId: judge.id,
+					judgeName: judge.name,
+					teamNames: votes
+						.filter((vote) => vote.judgeId === judge.id)
+						.sort((a, b) => a.place - b.place)
+						.map((vote) => teamNames.get(vote.teamId) ?? "Unknown team")
+				}))
+				.sort((a, b) => a.judgeName.localeCompare(b.judgeName))
+		};
 	})
 });

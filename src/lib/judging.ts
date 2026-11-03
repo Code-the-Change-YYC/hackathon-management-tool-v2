@@ -13,7 +13,8 @@ export const JUDGING_PHASES = [
 ] as const;
 export type JudgingPhase = (typeof JUDGING_PHASES)[number];
 
-// Panel rounds split judges into tables. A final round has one table of every judge.
+// There is one panel round, which splits judges into tables and is scored on
+// the rubric, and one final round, where every judge ranks the finalists.
 export const JUDGING_ROUND_KINDS = ["panel", "final"] as const;
 export type JudgingRoundKind = (typeof JUDGING_ROUND_KINDS)[number];
 
@@ -25,6 +26,23 @@ export const MIN_PRESENTATION_MINUTES = 5;
 export const MAX_PRESENTATION_MINUTES = 10;
 
 export const DEFAULT_FINALIST_COUNT = 5;
+
+// Each final-round ballot ranks this many finalists, or every finalist when
+// there are fewer.
+export const BALLOT_PLACES = 3;
+
+export function getBallotPlaces(finalistCount: number) {
+	return Math.min(BALLOT_PLACES, finalistCount);
+}
+
+// 1st place earns 3 points, 2nd 2 and 3rd 1.
+export function getBallotPoints(place: number) {
+	return BALLOT_PLACES + 1 - place;
+}
+
+export function formatPlace(place: number) {
+	return ["1st", "2nd", "3rd"][place - 1] ?? `${place}th`;
+}
 
 export type FinalRoundTiming = {
 	startTime: Date;
@@ -95,22 +113,4 @@ export function getRubricBands(maxScore: number, includeZero = false) {
 			range: start === end ? `${start}` : `${start}–${end}`
 		};
 	});
-}
-
-export function criterionAppliesToRound(
-	criterion: { roundIds?: string[] },
-	roundId: string
-) {
-	return !criterion.roundIds?.length || criterion.roundIds.includes(roundId);
-}
-
-// A criterion scoped only to final rounds is hidden from participants.
-export function isFinalOnlyCriterion(
-	criterion: { roundIds?: string[] },
-	finalRoundIds: ReadonlySet<string>
-) {
-	return (
-		!!criterion.roundIds?.length &&
-		criterion.roundIds.every((roundId) => finalRoundIds.has(roundId))
-	);
 }

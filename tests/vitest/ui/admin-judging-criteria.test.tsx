@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CriterionDialog } from "@/app/components/admin/judging/CriterionDialog";
 import type { Criterion } from "@/app/components/admin/judging/judgingShared";
-import { judgingRound } from "../helpers/judging";
 
 const mocks = vi.hoisted(() => ({ create: vi.fn(), update: vi.fn() }));
 vi.mock("@/hooks/use-refresh", () => ({
@@ -26,7 +25,6 @@ const criterion: Criterion = {
 	name: "Impact",
 	description: "How much it matters",
 	displayOrder: 2,
-	roundIds: [],
 	maxScore: 5,
 	isSidepot: false
 };
@@ -37,7 +35,6 @@ function renderDialog(existing?: Criterion) {
 			criterion={existing}
 			nextDisplayOrder={4}
 			onClose={vi.fn()}
-			rounds={[judgingRound()]}
 		/>
 	);
 }
@@ -66,8 +63,7 @@ describe("criterion dialog", () => {
 				description: "Polish and clarity",
 				displayOrder: 7,
 				isSidepot: true,
-				maxScore: 10,
-				roundIds: []
+				maxScore: 10
 			})
 		);
 	});

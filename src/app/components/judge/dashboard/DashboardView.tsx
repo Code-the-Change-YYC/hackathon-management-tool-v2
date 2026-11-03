@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
+import { buttonVariants } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import {
 	Empty,
@@ -10,10 +12,13 @@ import {
 } from "@/app/components/ui/empty";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { formatTime } from "@/lib/datetime";
+import { getBallotPlaces } from "@/lib/judging";
 import { cn } from "@/lib/utils";
 import {
 	type Criterion,
 	getJudgeTable,
+	getRankingState,
+	hasSubmittedBallot,
 	isAssignmentScored,
 	type JudgeAssignment,
 	type ScheduleItem,
@@ -21,7 +26,7 @@ import {
 	withBreaks
 } from "../judgePortal";
 import { JudgeTableCard } from "./JudgeTableCard";
-import { JudgeTeamRow } from "./JudgeTeamRow";
+import { FinalistRow, JudgeTeamRow } from "./JudgeTeamRow";
 
 type Round = JudgeAssignment["table"]["round"];
 
@@ -29,6 +34,8 @@ type RoundGroup = {
 	round: Round;
 	assignments: JudgeAssignment[];
 	scoredCount: number;
+	// Every team is scored, or the finalists are ranked.
+	complete: boolean;
 };
 
 function groupByRound(
@@ -41,28 +48,31 @@ function groupByRound(
 		const group = groups.get(round.id) ?? {
 			round,
 			assignments: [],
-			scoredCount: 0
+			scoredCount: 0,
+			complete: false
 		};
 		group.assignments.push(assignment);
 		if (isAssignmentScored(assignment, criteria)) group.scoredCount++;
 		groups.set(round.id, group);
+	}
+	for (const group of groups.values()) {
+		group.complete =
+			group.round.kind === "final"
+				? hasSubmittedBallot(group.assignments)
+				: group.scoredCount === group.assignments.length;
 	}
 	return Array.from(groups.values()).sort(
 		(a, b) => a.round.startTime.getTime() - b.round.startTime.getTime()
 	);
 }
 
-function isIncomplete(group: RoundGroup) {
-	return group.scoredCount < group.assignments.length;
-}
-
 // The round the judge should be working on: the active round while it has
 // teams left, else the first round with teams left, else the active or last one.
 function getCurrentGroup(groups: RoundGroup[], activeRoundId: string | null) {
 	const active = groups.find((group) => group.round.id === activeRoundId);
-	if (active && isIncomplete(active)) return active;
+	if (active && !active.complete) return active;
 
-	const incomplete = groups.find(isIncomplete);
+	const incomplete = groups.find((group) => !group.complete);
 	if (incomplete) return incomplete;
 
 	return active ?? groups.at(-1);
@@ -153,6 +163,89 @@ function RoundSection({
 	);
 }
 
+function BallotCard({
+	group,
+	currentTime,
+	scoresReleased
+}: {
+	group: RoundGroup;
+	currentTime: Date;
+	scoresReleased: boolean;
+}) {
+	const state = getRankingState(group.round, currentTime, scoresReleased);
+	const submitted = group.complete;
+	const places = getBallotPlaces(group.assignments.length);
+	const description = {
+		upcoming: `Ranking opens at ${formatTime(group.round.startTime)}, when the final round starts.`,
+		open: submitted
+			? "You can change your ranking until the winners are announced."
+			: `After the last presentation, pick your ${places} favourite teams in order.`,
+		closed: "Ranking closed when the winners were announced."
+	}[state];
+
+	return (
+		<Card className="flex-row flex-wrap items-center gap-x-6 gap-y-4 px-4 py-4 sm:px-6">
+			<div className="flex min-w-0 flex-1 flex-col gap-1">
+				<h3 className="m-0 font-medium text-lg">
+					{submitted ? "Your ranking is in" : `Rank your top ${places}`}
+				</h3>
+				<p className="m-0 text-muted-foreground text-sm">{description}</p>
+			</div>
+			{state === "open" && (
+				<Link
+					className={buttonVariants({
+						variant: submitted ? "outline" : "default"
+					})}
+					href="/judge/rank"
+				>
+					{submitted ? "Change ranking" : "Rank finalists"}
+				</Link>
+			)}
+		</Card>
+	);
+}
+
+function FinalRoundSection({
+	group,
+	currentTime,
+	scoresReleased
+}: {
+	group: RoundGroup;
+	currentTime: Date;
+	scoresReleased: boolean;
+}) {
+	const titleId = `round-${group.round.id}-title`;
+
+	return (
+		<section aria-labelledby={titleId} className="flex flex-col gap-3">
+			<div className="flex flex-wrap items-baseline justify-between gap-2">
+				<h2 className="m-0 font-medium text-xl" id={titleId}>
+					{group.round.name}
+				</h2>
+				<p className="m-0 text-muted-foreground text-sm">
+					{group.complete ? "Ranking submitted" : "Not ranked yet"}
+				</p>
+			</div>
+			<Card className="py-0">
+				<ul className="m-0 list-none divide-y divide-grey-200 p-0">
+					{group.assignments.map((assignment) => (
+						<FinalistRow
+							assignment={assignment}
+							currentTime={currentTime}
+							key={assignment.id}
+						/>
+					))}
+				</ul>
+			</Card>
+			<BallotCard
+				currentTime={currentTime}
+				group={group}
+				scoresReleased={scoresReleased}
+			/>
+		</section>
+	);
+}
+
 function NoAssignments() {
 	return (
 		<Empty>
@@ -171,13 +264,15 @@ export function DashboardView({
 	userName,
 	activeRoundId,
 	assignments,
-	criteria
+	criteria,
+	scoresReleased
 }: {
 	userId: string;
 	userName: string;
 	activeRoundId: string | null;
 	assignments: JudgeAssignment[];
 	criteria: Criterion[];
+	scoresReleased: boolean;
 }) {
 	const currentTime = useCurrentTime();
 	const groups = groupByRound(assignments, criteria);
@@ -187,7 +282,7 @@ export function DashboardView({
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				description="Score each team after their presentation."
+				description="Score each team after their presentation, then rank the finalists."
 				title={`Hi, ${userName}!`}
 			/>
 			{currentGroup && table && (
@@ -195,14 +290,23 @@ export function DashboardView({
 			)}
 			<div className="flex flex-col gap-12">
 				{groups.length === 0 && <NoAssignments />}
-				{groups.map((group) => (
-					<RoundSection
-						criteria={criteria}
-						currentTime={currentTime}
-						group={group}
-						key={group.round.id}
-					/>
-				))}
+				{groups.map((group) =>
+					group.round.kind === "final" ? (
+						<FinalRoundSection
+							currentTime={currentTime}
+							group={group}
+							key={group.round.id}
+							scoresReleased={scoresReleased}
+						/>
+					) : (
+						<RoundSection
+							criteria={criteria}
+							currentTime={currentTime}
+							group={group}
+							key={group.round.id}
+						/>
+					)
+				)}
 			</div>
 		</div>
 	);

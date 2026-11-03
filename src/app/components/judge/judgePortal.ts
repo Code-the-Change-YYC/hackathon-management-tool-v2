@@ -1,14 +1,10 @@
 import { addMinutes, differenceInMinutes } from "date-fns";
 import { formatTime as formatClockTime, formatLongDate } from "@/lib/datetime";
-import { criterionAppliesToRound } from "@/lib/judging";
 import type { RouterOutputs } from "@/trpc/react";
 
 export type JudgeAssignment =
 	RouterOutputs["judgingAssignments"]["getByJudge"][number];
-export type Criterion = Omit<
-	RouterOutputs["criteria"]["getAll"][number],
-	"roundIds"
-> & { roundIds?: string[] };
+export type Criterion = RouterOutputs["criteria"]["getAll"][number];
 
 export function sortCriteria(a: Criterion, b: Criterion) {
 	return (
@@ -121,6 +117,25 @@ export function withBreaks(assignments: JudgeAssignment[]): ScheduleItem[] {
 	});
 }
 
+// The final round has no scorecards: each judge ranks their top finalists.
+export function getBallotPlace(assignment: JudgeAssignment) {
+	return assignment.votes[0]?.place;
+}
+
+export function hasSubmittedBallot(finalists: JudgeAssignment[]) {
+	return finalists.some((assignment) => assignment.votes.length > 0);
+}
+
+// Ranking opens when the final round starts and closes once scores are released.
+export function getRankingState(
+	round: JudgeAssignment["table"]["round"],
+	currentTime: Date,
+	scoresReleased: boolean
+) {
+	if (scoresReleased) return "closed";
+	return round.startTime <= currentTime ? "open" : "upcoming";
+}
+
 export function getCriteriaScore(
 	assignment: JudgeAssignment,
 	criterionId: string
@@ -129,13 +144,12 @@ export function getCriteriaScore(
 		?.value;
 }
 
+// The final round is ranked instead, so only panel teams have scorecards.
 export function getAssignmentCriteria(
 	assignment: JudgeAssignment,
 	criteria: Criterion[]
 ) {
-	return criteria.filter((criterion) =>
-		criterionAppliesToRound(criterion, assignment.table.roundId)
-	);
+	return assignment.table.round.kind === "panel" ? criteria : [];
 }
 
 export function isAssignmentScored(

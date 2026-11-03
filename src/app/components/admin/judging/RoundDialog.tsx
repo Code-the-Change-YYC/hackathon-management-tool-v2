@@ -40,8 +40,11 @@ const ROUND_KIND_OPTIONS: SelectOption<JudgingRoundKind>[] = [
 	{ value: "final", label: "Final round" }
 ];
 
-function toFormInput(round?: Round): RoundFormInput {
-	if (!round) return EMPTY_ROUND_FORM;
+function toFormInput(
+	round: Round | undefined,
+	kind: JudgingRoundKind
+): RoundFormInput {
+	if (!round) return { ...EMPTY_ROUND_FORM, kind };
 	return {
 		kind: round.kind,
 		name: round.name,
@@ -56,20 +59,20 @@ function toFormInput(round?: Round): RoundFormInput {
 
 export function RoundDialog({
 	round,
-	canAddFinal = false,
+	kinds = [],
 	hackathonDates,
 	onClose,
 	onSaved
 }: {
 	round?: Round;
-	canAddFinal?: boolean;
+	kinds?: readonly JudgingRoundKind[];
 	hackathonDates: HackathonDates | null;
 	onClose: () => void;
 	onSaved?: (roundId: string) => void;
 }) {
 	const { isRefreshing, refresh } = useRefresh();
 	const form = useForm<RoundFormInput, unknown, RoundFormValues>({
-		defaultValues: toFormInput(round),
+		defaultValues: toFormInput(round, kinds[0] ?? "panel"),
 		resolver: zodResolver(createRoundFormSchema(hackathonDates))
 	});
 	const kind = useWatch({ control: form.control, name: "kind" });
@@ -112,7 +115,7 @@ export function RoundDialog({
 					)}
 				>
 					<FieldGroup className="gap-4">
-						{!round && canAddFinal ? (
+						{!round && kinds.length > 1 ? (
 							<SelectField
 								control={form.control}
 								disabled={isPending}

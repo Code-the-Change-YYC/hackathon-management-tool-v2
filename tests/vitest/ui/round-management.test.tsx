@@ -82,18 +82,33 @@ describe("round dialog", () => {
 		);
 	});
 
-	it("only offers a final round while there isn't one", () => {
-		render(<RoundDialog hackathonDates={hackathonDates} onClose={vi.fn()} />);
+	it("only offers the round kinds there isn't one of yet", () => {
+		const { unmount } = render(
+			<RoundDialog hackathonDates={hackathonDates} onClose={vi.fn()} />
+		);
 		expect(
 			screen.queryByRole("combobox", { name: "Type" })
 		).not.toBeInTheDocument();
+		unmount();
+
+		render(
+			<RoundDialog
+				hackathonDates={hackathonDates}
+				kinds={["final"]}
+				onClose={vi.fn()}
+			/>
+		);
+		expect(
+			screen.queryByRole("combobox", { name: "Type" })
+		).not.toBeInTheDocument();
+		expect(screen.getByLabelText("Presentation (min)")).toHaveValue("10");
 	});
 
 	it("adds a final round with its presentation timing", async () => {
 		render(
 			<RoundDialog
-				canAddFinal
 				hackathonDates={hackathonDates}
+				kinds={["panel", "final"]}
 				onClose={vi.fn()}
 			/>
 		);

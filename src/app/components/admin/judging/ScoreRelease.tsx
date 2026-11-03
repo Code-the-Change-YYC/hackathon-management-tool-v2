@@ -13,10 +13,10 @@ import { api } from "@/trpc/react";
 
 export function ScoreRelease({
 	released,
-	finalRoundScored
+	ballotsComplete
 }: {
 	released: boolean;
-	finalRoundScored: boolean;
+	ballotsComplete: boolean;
 }) {
 	const { confirm, dialogProps } = useConfirmDialog();
 	const { isRefreshing, refresh } = useRefresh();
@@ -36,9 +36,9 @@ export function ScoreRelease({
 	async function requestRelease() {
 		const confirmed = await confirm({
 			title: "Release scores?",
-			description: finalRoundScored
-				? "Every team will see its panel-round scores, and the winners announcement is marked complete."
-				: "Not every finalist has been scored yet. Every team will see its panel-round scores, and the winners announcement is marked complete.",
+			description: ballotsComplete
+				? "Every team will see its panel-round scores, the winners announcement is marked complete, and judges can no longer change their rankings."
+				: "Not every judge has ranked the finalists yet. Every team will see its panel-round scores, the winners announcement is marked complete, and judges can no longer change their rankings.",
 			confirmLabel: "Release scores"
 		});
 		if (confirmed) setReleased.mutate({ released: true });
@@ -48,7 +48,7 @@ export function ScoreRelease({
 		const confirmed = await confirm({
 			title: "Hide scores?",
 			description:
-				"Teams will no longer see their scores until you release them again.",
+				"Teams will no longer see their scores until you release them again, and judges can change their rankings.",
 			confirmLabel: "Hide scores",
 			destructive: true
 		});

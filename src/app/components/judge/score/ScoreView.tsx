@@ -86,6 +86,12 @@ export function ScoreView({
 				This team is not assigned to your judging account.
 			</ScoreMessage>
 		);
+	if (assignment.table.round.kind === "final")
+		return (
+			<ScoreMessage title="Finalists are ranked, not scored">
+				Rank your top finalists from your dashboard.
+			</ScoreMessage>
+		);
 	const roundCriteria = getAssignmentCriteria(assignment, criteria);
 	if (!roundCriteria.length)
 		return (

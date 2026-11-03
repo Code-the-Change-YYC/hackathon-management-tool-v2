@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { criterionAppliesToRound } from "@/lib/judging";
 import { db } from "@/server/db";
 import { member, organization } from "@/server/db/auth-schema";
 import {
@@ -80,12 +79,10 @@ async function assignTeam(user: User) {
 		.returning();
 	if (!assignment) throw new Error("Failed to create a judging assignment");
 	// Published averages only count a judge's complete scorecard, so score every
-	// criterion that applies to the round.
-	const roundCriteria = (await db.query.judgingCriteria.findMany()).filter(
-		(item) => criterionAppliesToRound(item, round.id)
-	);
+	// criterion.
+	const criteria = await db.query.judgingCriteria.findMany();
 	await db.insert(judgingScores).values(
-		roundCriteria.map((item) => ({
+		criteria.map((item) => ({
 			assignmentId: assignment.id,
 			criteriaId: item.id,
 			judgeId: judge.user.id,

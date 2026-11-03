@@ -20,8 +20,9 @@ export const judgingRoundsRouter = createTRPCRouter({
 		return rounds;
 	}),
 
-	// A panel round sets a window for its schedule. There is at most one final
-	// round, and its finalists come from judgingResults.setFinalists.
+	// There is at most one round of each kind. The panel round sets a window
+	// for its schedule; the final round's finalists come from
+	// judgingResults.setFinalists.
 	create: adminProcedure
 		.input(
 			z
@@ -46,22 +47,22 @@ export const judgingRoundsRouter = createTRPCRouter({
 				)
 		)
 		.mutation(async ({ ctx, input }) => {
+			const existing = await ctx.db.query.judgingRounds.findFirst({
+				where: eq(judgingRounds.kind, input.kind),
+				columns: { id: true }
+			});
+			if (existing) {
+				throw new TRPCError({
+					code: "CONFLICT",
+					message: `There's already a ${input.kind} round.`
+				});
+			}
 			if (input.kind === "panel") {
 				const [round] = await ctx.db
 					.insert(judgingRounds)
 					.values(input)
 					.returning();
 				return round;
-			}
-			const existing = await ctx.db.query.judgingRounds.findFirst({
-				where: eq(judgingRounds.kind, "final"),
-				columns: { id: true }
-			});
-			if (existing) {
-				throw new TRPCError({
-					code: "CONFLICT",
-					message: "There's already a final round."
-				});
 			}
 			const [round] = await ctx.db
 				.insert(judgingRounds)

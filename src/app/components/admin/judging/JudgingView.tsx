@@ -26,7 +26,6 @@ import type {
 	Criterion,
 	FinalResults,
 	Judge,
-	Layout,
 	Layouts,
 	PanelRankings,
 	Round,
@@ -38,16 +37,11 @@ import { RoundDialog } from "./RoundDialog";
 import { RoundHeader } from "./RoundHeader";
 import { ScoreRelease } from "./ScoreRelease";
 
-// Every judge at the final table has submitted a scorecard for every finalist.
-function isFinalRoundScored(layout: Layout | undefined, results: FinalResults) {
-	const table = layout?.tables[0];
-	if (!table?.assignments.length || !table.judges.length) return false;
-	return table.assignments.every((assignment) =>
-		results?.results.some(
-			(result) =>
-				result.teamId === assignment.team.id &&
-				result.scorecardCount >= table.judges.length
-		)
+// Every judge at the final table has ranked the finalists.
+function areBallotsComplete(results: FinalResults) {
+	return Boolean(
+		results?.ballots.length &&
+			results.ballots.every((ballot) => ballot.teamNames.length > 0)
 	);
 }
 
@@ -85,18 +79,24 @@ export function JudgingView({
 		orderedRounds.find((round) => round.id === selectedId) ??
 		orderedRounds.find((round) => round.id === activeRoundId) ??
 		orderedRounds[0];
+	// Final-round votes pin a round the same way scores do.
 	const scoredRoundIds = new Set(
 		assignments
-			.filter((assignment) => assignment.scores.length > 0)
+			.filter(
+				(assignment) =>
+					assignment.scores.length > 0 || assignment.votes.length > 0
+			)
 			.map((assignment) => assignment.table.round.id)
 	);
+	const panelRound = orderedRounds.find((round) => round.kind === "panel");
 	const finalRound = orderedRounds.find((round) => round.kind === "final");
-	const addRoundButton = (
-		<Button onClick={() => setIsAddingRound(true)} size="sm">
-			Add round
-			<AddLine data-icon="inline-end" />
-		</Button>
-	);
+	const addRoundButton =
+		panelRound && finalRound ? null : (
+			<Button onClick={() => setIsAddingRound(true)} size="sm">
+				Add round
+				<AddLine data-icon="inline-end" />
+			</Button>
+		);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -106,10 +106,7 @@ export function JudgingView({
 			/>
 
 			<ScoreRelease
-				finalRoundScored={isFinalRoundScored(
-					finalRound && layouts[finalRound.id],
-					finalResults
-				)}
+				ballotsComplete={areBallotsComplete(finalResults)}
 				released={scoresReleased}
 			/>
 
@@ -176,6 +173,7 @@ export function JudgingView({
 										layout={layouts[round.id]}
 										results={finalResults}
 										round={round}
+										scoresReleased={scoresReleased}
 									/>
 								)}
 							</TabsContent>
@@ -196,12 +194,15 @@ export function JudgingView({
 				</Card>
 			)}
 
-			<CriteriaCard criteria={criteria} rounds={orderedRounds} />
+			<CriteriaCard criteria={criteria} />
 
 			{isAddingRound ? (
 				<RoundDialog
-					canAddFinal={!finalRound}
 					hackathonDates={hackathonDates}
+					kinds={[
+						...(panelRound ? [] : (["panel"] as const)),
+						...(finalRound ? [] : (["final"] as const))
+					]}
 					onClose={() => setIsAddingRound(false)}
 					onSaved={setSelectedId}
 				/>

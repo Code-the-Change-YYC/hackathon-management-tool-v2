@@ -431,7 +431,12 @@ describe("final round presentation order", () => {
 
 	it("reorders finalists, previewing their new times, then saves", () => {
 		render(
-			<FinalRound layout={finalLayout} results={null} round={finalRound} />
+			<FinalRound
+				layout={finalLayout}
+				results={null}
+				round={finalRound}
+				scoresReleased={false}
+			/>
 		);
 		expect(
 			screen.queryByRole("button", { name: "Move Team A later" })
@@ -456,12 +461,95 @@ describe("final round presentation order", () => {
 
 	it("discards a new order on cancel", () => {
 		render(
-			<FinalRound layout={finalLayout} results={null} round={finalRound} />
+			<FinalRound
+				layout={finalLayout}
+				results={null}
+				round={finalRound}
+				scoresReleased={false}
+			/>
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Reorder" }));
 		fireEvent.click(screen.getByRole("button", { name: "Move Team A later" }));
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 		expect(names()).toEqual(["Team A", "Team B", "Team C"]);
 		expect(mocks.reorderFinalists).not.toHaveBeenCalled();
+	});
+});
+
+describe("final round results", () => {
+	const result = (
+		teamName: string,
+		points: number,
+		rank: number,
+		tied = false
+	) => ({
+		teamId: teamName,
+		teamName,
+		points,
+		placeVotes: [0, 0, 0],
+		panelScore: 0.5,
+		rank,
+		tied
+	});
+
+	it("waits for the first ballot before ranking", () => {
+		render(
+			<FinalRound
+				results={{
+					results: [result("Team A", 0, 1, true), result("Team B", 0, 1, true)],
+					ballots: [{ judgeId: "j1", judgeName: "Dara", teamNames: [] }]
+				}}
+				round={finalRound}
+				scoresReleased={false}
+			/>
+		);
+		expect(screen.getByText("No ballots yet")).toBeVisible();
+		const ballots = screen.getByRole("region", { name: "Ballots" });
+		expect(ballots).toHaveTextContent("0/1 ballots in");
+		expect(
+			within(ballots).getByRole("row", { name: /Dara/ })
+		).toHaveTextContent("Not submitted");
+	});
+
+	it("ranks by points, flags ties and lists each judge's ballot", () => {
+		render(
+			<FinalRound
+				results={{
+					results: [
+						result("Team A", 5, 1),
+						result("Team B", 3, 2, true),
+						result("Team C", 3, 2, true),
+						result("Team D", 1, 4)
+					],
+					ballots: [
+						{
+							judgeId: "j1",
+							judgeName: "Dara",
+							teamNames: ["Team A", "Team B", "Team D"]
+						},
+						{ judgeId: "j2", judgeName: "Sam", teamNames: [] }
+					]
+				}}
+				round={finalRound}
+				scoresReleased={false}
+			/>
+		);
+		const results = screen.getByRole("region", { name: "Results" });
+		const rows = within(results).getAllByRole("row").slice(1);
+		expect(rows.map((row) => row.textContent)).toEqual([
+			expect.stringMatching(/^1Team A5/),
+			expect.stringMatching(/^2Team BTied3/),
+			expect.stringMatching(/^2Team CTied3/),
+			expect.stringMatching(/^4Team D1/)
+		]);
+		expect(results).toHaveTextContent("Decide their order in deliberation.");
+		const ballots = screen.getByRole("region", { name: "Ballots" });
+		expect(ballots).toHaveTextContent("1/2 ballots in");
+		expect(
+			within(ballots).getByRole("row", { name: /Dara/ })
+		).toHaveTextContent("DaraTeam ATeam BTeam D");
+		expect(within(ballots).getByRole("row", { name: /Sam/ })).toHaveTextContent(
+			"Not submitted"
+		);
 	});
 });

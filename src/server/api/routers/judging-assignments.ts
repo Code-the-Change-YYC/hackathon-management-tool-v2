@@ -12,7 +12,8 @@ import {
 	judgingAssignments,
 	judgingScores,
 	judgingTableJudges,
-	judgingTables
+	judgingTables,
+	judgingVotes
 } from "@/server/db/judging-schema";
 
 const tableWithRoundAndJudges = {
@@ -33,7 +34,8 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 			with: {
 				team: true,
 				table: tableWithRoundAndJudges,
-				scores: true
+				scores: true,
+				votes: { columns: { id: true } }
 			},
 			orderBy: (rows, { asc }) => [asc(rows.startsAt)]
 		});
@@ -61,7 +63,7 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 			});
 		}),
 
-	// Get assignments at every table a judge sits at in published rounds, with only their own scores
+	// Get assignments at every table a judge sits at in published rounds, with only their own scores and votes
 	getByJudge: protectedProcedure
 		.input(z.object({ judgeId: z.string() }))
 		.query(async ({ ctx, input }) => {
@@ -84,7 +86,8 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				with: {
 					team: true,
 					table: tableWithRoundAndJudges,
-					scores: { where: eq(judgingScores.judgeId, input.judgeId) }
+					scores: { where: eq(judgingScores.judgeId, input.judgeId) },
+					votes: { where: eq(judgingVotes.judgeId, input.judgeId) }
 				},
 				orderBy: (rows, { asc }) => [asc(rows.startsAt)]
 			});
