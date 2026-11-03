@@ -286,6 +286,10 @@ describe("individual judge scorecards", () => {
 	});
 	it("keeps main criteria on a five-point scale when created or updated", async () => {
 		const api = criteriaRouter.createCaller(await context("admin", "admin"));
+		// No scores yet, so the rubric is still editable.
+		mocks.select.mockReturnValue({
+			from: () => ({ limit: async () => [] })
+		});
 		await expect(
 			api.create({ name: "Technical", maxScore: 10 })
 		).rejects.toMatchObject({ code: "BAD_REQUEST" });

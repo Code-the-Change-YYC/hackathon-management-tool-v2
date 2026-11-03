@@ -52,10 +52,12 @@ function toFormInput(
 
 export function CriterionDialog({
 	criterion,
+	locked,
 	nextDisplayOrder,
 	onClose
 }: {
 	criterion?: Criterion;
+	locked: boolean;
 	nextDisplayOrder: number;
 	onClose: () => void;
 }) {
@@ -78,6 +80,8 @@ export function CriterionDialog({
 	const isPending =
 		createCriterion.isPending || updateCriterion.isPending || isRefreshing;
 	const descriptionError = form.formState.errors.description;
+	// Once judges score, the type and maximum stay as they are.
+	const scaleLocked = Boolean(criterion && locked);
 	// Older main criteria can have another maximum, which saving resets.
 	const oldMainMax =
 		criterion && !criterion.isSidepot && !isSidepot
@@ -99,11 +103,14 @@ export function CriterionDialog({
 				<form
 					className="flex flex-col gap-6"
 					noValidate
-					onSubmit={form.handleSubmit((values) =>
-						criterion
-							? updateCriterion.mutate({ id: criterion.id, ...values })
-							: createCriterion.mutate(values)
-					)}
+					onSubmit={form.handleSubmit(({ isSidepot, maxScore, ...values }) => {
+						const scale = scaleLocked ? {} : { isSidepot, maxScore };
+						if (criterion) {
+							updateCriterion.mutate({ id: criterion.id, ...values, ...scale });
+						} else {
+							createCriterion.mutate({ ...values, ...scale });
+						}
+					})}
 				>
 					<FieldGroup className="gap-5">
 						<TextField
@@ -134,7 +141,7 @@ export function CriterionDialog({
 						</Field>
 						<CheckboxField
 							control={form.control}
-							disabled={isPending}
+							disabled={isPending || scaleLocked}
 							name="isSidepot"
 						>
 							Sidepot
@@ -143,7 +150,22 @@ export function CriterionDialog({
 							</span>
 						</CheckboxField>
 						<div className="grid gap-4 sm:grid-cols-2">
-							{isSidepot ? (
+							{scaleLocked && criterion ? (
+								<Field data-disabled>
+									<FieldLabel htmlFor="criterion-locked-max">
+										Maximum score
+									</FieldLabel>
+									<Input
+										disabled
+										id="criterion-locked-max"
+										readOnly
+										value={criterion.maxScore}
+									/>
+									<FieldDescription>
+										Locked once judges start scoring.
+									</FieldDescription>
+								</Field>
+							) : isSidepot ? (
 								<NumberField
 									control={form.control}
 									disabled={isPending}

@@ -194,7 +194,10 @@ export function JudgingView({
 				</Card>
 			)}
 
-			<CriteriaCard criteria={criteria} />
+			<CriteriaCard
+				criteria={criteria}
+				locked={assignments.some((assignment) => assignment.scores.length > 0)}
+			/>
 
 			{isAddingRound ? (
 				<RoundDialog

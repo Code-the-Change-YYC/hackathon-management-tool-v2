@@ -35,7 +35,13 @@ import { api } from "@/trpc/react";
 import { CriterionDialog } from "./CriterionDialog";
 import { type Criterion, ManagementSection } from "./judgingShared";
 
-export function CriteriaCard({ criteria }: { criteria: Criterion[] }) {
+export function CriteriaCard({
+	criteria,
+	locked
+}: {
+	criteria: Criterion[];
+	locked: boolean;
+}) {
 	const { confirm, dialogProps } = useConfirmDialog();
 	const { isRefreshing, refresh } = useRefresh();
 	const [editing, setEditing] = useState<Criterion | "new" | null>(null);
@@ -61,12 +67,16 @@ export function CriteriaCard({ criteria }: { criteria: Criterion[] }) {
 	return (
 		<ManagementSection
 			action={
-				<Button onClick={() => setEditing("new")} size="sm">
+				<Button disabled={locked} onClick={() => setEditing("new")} size="sm">
 					Add criterion
 					<AddLine data-icon="inline-end" />
 				</Button>
 			}
-			description="Judges score the panel round on these. Main criteria pick the finalists; sidepots are separate prizes."
+			description={
+				locked
+					? "Judges have started scoring, so criteria can’t be added, removed, or rescored. You can still rename and reorder them."
+					: "Judges score the panel round on these. Main criteria pick the finalists; sidepots are separate prizes."
+			}
 			title="Rubric"
 		>
 			{criteria.length ? (
@@ -125,7 +135,9 @@ export function CriteriaCard({ criteria }: { criteria: Criterion[] }) {
 												Edit
 											</DropdownMenuItem>
 											<DropdownMenuItem
-												disabled={deleteCriterion.isPending || isRefreshing}
+												disabled={
+													locked || deleteCriterion.isPending || isRefreshing
+												}
 												onClick={() => void requestDelete(criterion)}
 												variant="destructive"
 											>
@@ -153,6 +165,7 @@ export function CriteriaCard({ criteria }: { criteria: Criterion[] }) {
 				<CriterionDialog
 					criterion={editing === "new" ? undefined : editing}
 					key={editing === "new" ? "new" : editing.id}
+					locked={locked}
 					nextDisplayOrder={nextDisplayOrder}
 					onClose={() => setEditing(null)}
 				/>

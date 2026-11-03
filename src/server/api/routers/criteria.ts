@@ -3,13 +3,30 @@ import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
 import { getParticipantCriteria } from "@/server/api/participant-judging";
+import type { DbClient } from "@/server/api/routers/judging-tables";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	judgeProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
-import { judgingCriteria } from "@/server/db/judging-schema";
+import { judgingCriteria, judgingScores } from "@/server/db/judging-schema";
+
+// A scorecard only counts once it scores every criterion within its maximum,
+// so adding, removing or rescaling one after scoring starts voids scorecards.
+async function assertRubricUnlocked(db: DbClient) {
+	const [score] = await db
+		.select({ id: judgingScores.id })
+		.from(judgingScores)
+		.limit(1);
+	if (score) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message:
+				"Judges have started scoring, so criteria can’t be added, removed, or rescored."
+		});
+	}
+}
 
 export const criteriaRouter = createTRPCRouter({
 	getAll: judgeProcedure.query(async ({ ctx }) => {
@@ -34,6 +51,7 @@ export const criteriaRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+			await assertRubricUnlocked(ctx.db);
 			if (!input.isSidepot && input.maxScore !== MAIN_CRITERION_MAX_SCORE) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -65,6 +83,12 @@ export const criteriaRouter = createTRPCRouter({
 					message: "Criterion not found."
 				});
 			if (
+				(data.maxScore !== undefined && data.maxScore !== existing.maxScore) ||
+				(data.isSidepot !== undefined && data.isSidepot !== existing.isSidepot)
+			) {
+				await assertRubricUnlocked(ctx.db);
+			}
+			if (
 				!(data.isSidepot ?? existing.isSidepot) &&
 				(data.maxScore ?? existing.maxScore) !== MAIN_CRITERION_MAX_SCORE
 			) {
@@ -84,6 +108,7 @@ export const criteriaRouter = createTRPCRouter({
 	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
+			await assertRubricUnlocked(ctx.db);
 			await ctx.db
 				.delete(judgingCriteria)
 				.where(eq(judgingCriteria.id, input.id));

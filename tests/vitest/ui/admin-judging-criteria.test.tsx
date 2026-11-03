@@ -29,10 +29,11 @@ const criterion: Criterion = {
 	isSidepot: false
 };
 
-function renderDialog(existing?: Criterion) {
+function renderDialog(existing?: Criterion, locked = false) {
 	return render(
 		<CriterionDialog
 			criterion={existing}
+			locked={locked}
 			nextDisplayOrder={4}
 			onClose={vi.fn()}
 		/>
@@ -94,6 +95,29 @@ describe("criterion dialog", () => {
 		expect(
 			screen.getByText("Now out of 10. Saving changes it to 5.")
 		).toBeInTheDocument();
+	});
+
+	it("keeps the type and maximum once judges have scored", async () => {
+		renderDialog({ ...criterion, isSidepot: true, maxScore: 10 }, true);
+		expect(screen.getByRole("checkbox", { name: /Sidepot/ })).toHaveAttribute(
+			"aria-disabled",
+			"true"
+		);
+		expect(screen.getByLabelText("Maximum score")).toBeDisabled();
+		expect(screen.getByLabelText("Maximum score")).toHaveValue("10");
+		expect(
+			screen.getByText("Locked once judges start scoring.")
+		).toBeInTheDocument();
+		change("Name", "Best Interface");
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await waitFor(() =>
+			expect(mocks.update).toHaveBeenCalledWith({
+				id: "criterion",
+				name: "Best Interface",
+				description: "How much it matters",
+				displayOrder: 2
+			})
+		);
 	});
 
 	it("needs a display order", async () => {
