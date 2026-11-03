@@ -309,4 +309,45 @@ describe("participant team judging card", () => {
 		);
 		expect(screen.getByText("Not selected for the final round")).toBeVisible();
 	});
+	it("stops saying judging is underway once scores are released", () => {
+		const released = {
+			progress: { ...progress, scoresReleased: true },
+			results: { ...results, released: true }
+		};
+		const { rerender } = render(
+			view({
+				...released,
+				status: {
+					rounds: [
+						teamRound("panel", "2026-11-08T17:00:00Z", [3], true),
+						teamRound("final", "2026-11-08T17:30:00Z", [1], true)
+					],
+					finalPublished: true
+				}
+			})
+		);
+		expect(
+			screen.getByText("Winners have been announced. Your scores are below.")
+		).toBeVisible();
+		expect(
+			screen.getByText("Winners were announced at the closing ceremony.")
+		).toBeVisible();
+		expect(
+			screen.queryByText(/Scores are shared once/)
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("The judges are ranking the finalists.")
+		).not.toBeInTheDocument();
+
+		rerender(
+			view({
+				...released,
+				status: {
+					rounds: [teamRound("panel", "2026-11-08T17:00:00Z", [3], true)]
+				}
+			})
+		);
+		expect(screen.getByText("Not selected for the final round")).toBeVisible();
+		expect(screen.queryByText("Finalists coming soon")).not.toBeInTheDocument();
+	});
 });

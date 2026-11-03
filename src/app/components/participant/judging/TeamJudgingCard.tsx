@@ -87,10 +87,20 @@ function prescreenItem(
 
 function panelRoundItem(
 	judging: TeamJudgingRound & { scored: boolean },
-	now: Date
+	now: Date,
+	scoresReleased: boolean
 ): StatusItem {
 	const { round } = judging;
 	const end = presentationsEnd(judging);
+	if (scoresReleased)
+		return {
+			id: round.id,
+			tone: "done",
+			title: judging.scored
+				? `Scored in ${round.name}`
+				: `${round.name} is over`,
+			description: "Winners have been announced. Your scores are below."
+		};
 	if (end && now < end)
 		return {
 			id: round.id,
@@ -116,11 +126,13 @@ function panelRoundItem(
 
 function finalRoundItem(
 	judging: TeamJudgingRound & { scored: boolean },
-	now: Date
+	now: Date,
+	scoresReleased: boolean
 ): StatusItem {
 	const end = presentationsEnd(judging);
-	const description =
-		end && now < end
+	const description = scoresReleased
+		? "Winners were announced at the closing ceremony."
+		: end && now < end
 			? describeJudgingSchedule(judging)
 			: judging.scored
 				? "The judges have ranked the finalists. Winners are announced at the closing ceremony."
@@ -136,6 +148,7 @@ function finalRoundItem(
 function teamStatusItems(
 	{ team, rounds, finalPublished }: TeamJudgingStatus,
 	submissionsClosed: boolean,
+	scoresReleased: boolean,
 	now: Date
 ): StatusItem[] {
 	if (!team)
@@ -165,7 +178,7 @@ function teamStatusItems(
 
 	const panelRounds = rounds.filter((entry) => entry.round.kind !== "final");
 	const finalRound = rounds.find((entry) => entry.round.kind === "final");
-	if (panelRounds.length === 0)
+	if (panelRounds.length === 0 && !scoresReleased)
 		items.push({
 			id: "schedule",
 			tone: "waiting",
@@ -173,10 +186,13 @@ function teamStatusItems(
 			description:
 				"Your presentation times will appear here once they’re published."
 		});
-	items.push(...panelRounds.map((entry) => panelRoundItem(entry, now)));
+	items.push(
+		...panelRounds.map((entry) => panelRoundItem(entry, now, scoresReleased))
+	);
 
-	if (finalRound) items.push(finalRoundItem(finalRound, now));
-	else if (finalPublished)
+	if (finalRound) items.push(finalRoundItem(finalRound, now, scoresReleased));
+	// Once winners are announced, a team without a final slot wasn't picked.
+	else if (finalPublished || scoresReleased)
 		items.push({
 			id: "final",
 			tone: "info",
@@ -203,10 +219,10 @@ export function TeamJudgingCard({
 	progress: JudgingProgress;
 	now: Date;
 }) {
-	const { submissionDeadline } = progress;
+	const { submissionDeadline, scoresReleased } = progress;
 	const submissionsClosed =
 		submissionDeadline !== null && submissionDeadline <= now;
-	const items = teamStatusItems(status, submissionsClosed, now);
+	const items = teamStatusItems(status, submissionsClosed, scoresReleased, now);
 
 	return (
 		<Card className="min-w-0">
