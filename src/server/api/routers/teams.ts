@@ -48,7 +48,7 @@ import {
 	judgingTableJudges,
 	judgingVotes
 } from "@/server/db/judging-schema";
-import { MEMBER_ROLES, type TeamRanking } from "@/types/types";
+import { MEMBER_ROLES, Role, type TeamRanking } from "@/types/types";
 
 type TeamMetadata = {
 	devpostLink?: string | null;
@@ -127,6 +127,17 @@ function parseDeadline(value: string | null | undefined): Date | null {
 
 	const date = new Date(value);
 	return isValid(date) ? date : null;
+}
+
+// Only participants are on teams. Sign-ups find a team before onboarding
+// makes them participants, so this turns away the other app roles instead.
+function ensureCanBeOnTeam(role: string | null | undefined) {
+	if (role === Role.JUDGE || role === Role.ADMIN) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Only participants can be on a team"
+		});
+	}
 }
 
 async function ensureNotInTeam(db: typeof dbType, userId: string) {
@@ -458,6 +469,7 @@ export const teamsRouter = createTRPCRouter({
 		.input(registerTeamSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
+			ensureCanBeOnTeam(ctx.session.user.role);
 			await ensureNotInTeam(ctx.db, userId);
 
 			const slug = input.name
@@ -517,6 +529,7 @@ export const teamsRouter = createTRPCRouter({
 		.input(joinTeamSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
+			ensureCanBeOnTeam(ctx.session.user.role);
 			await ensureNotInTeam(ctx.db, userId);
 
 			const team = await ctx.db.query.organization.findFirst({
