@@ -2,7 +2,6 @@ import { relations, sql } from "drizzle-orm";
 import {
 	check,
 	index,
-	pgTableCreator,
 	text,
 	timestamp,
 	unique,
@@ -15,8 +14,7 @@ import {
 	EventType
 } from "@/types/types";
 import { user } from "./auth-schema";
-
-export const createTable = pgTableCreator((name) => `hackathon_${name}`);
+import { createTable } from "./table";
 
 export const event = createTable(
 	"event",
@@ -54,6 +52,7 @@ export const event = createTable(
 	]
 );
 
+// TODO: It would be more clear if this table was called "meal_check_in"
 export const eventAttendance = createTable(
 	"event_attendance",
 	{
@@ -77,6 +76,7 @@ export const eventAttendance = createTable(
 	]
 );
 
+// TODO: It would be more clear if this table was called "meal_ticket"
 export const eventTicket = createTable(
 	"event_ticket",
 	{

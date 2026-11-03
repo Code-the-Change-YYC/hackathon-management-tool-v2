@@ -7,7 +7,7 @@ import {
 } from "@/lib/onboarding";
 import { AUTH_ROUTES, getDashboardHref, ONBOARDING_ROUTES } from "@/lib/routes";
 import { getSession } from "@/server/better-auth/server";
-import type { Role } from "@/types/types";
+import { Role } from "@/types/types";
 
 // Redirects to the home page when there is no session.
 export async function requireAuth() {
@@ -16,6 +16,15 @@ export async function requireAuth() {
 		redirect("/");
 	}
 	return session;
+}
+
+// For judge pages: judges have their own login page, so signed-out visitors
+// go there instead of the home page.
+export async function requireJudge() {
+	if (!(await getSession())) {
+		redirect(AUTH_ROUTES.judgeLogin);
+	}
+	return requireRole([Role.JUDGE, Role.ADMIN]);
 }
 
 // Redirects users without one of the allowed roles. Users who haven't finished

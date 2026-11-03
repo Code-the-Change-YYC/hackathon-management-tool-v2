@@ -1,27 +1,80 @@
-// Explicitly controlled by organizers; time alone never advances judging.
-export const JUDGING_PHASES = [
-	"not_started",
-	"submissions_closed",
-	"review",
-	"judging",
-	"deliberation",
-	"results_ready",
-	"winners_announced"
-] as const;
-export type JudgingPhase = (typeof JUDGING_PHASES)[number];
-export const JUDGING_PHASE_LABELS: Record<JudgingPhase, string> = {
-	not_started: "Judging has not started",
-	submissions_closed: "Submissions close",
-	review: "Submission review",
-	judging: "Judging",
-	deliberation: "Deliberation",
-	results_ready: "Results ready",
-	winners_announced: "Winners announced"
+import { addMinutes } from "date-fns";
+
+// There is one panel round, which splits judges into tables and is scored on
+// the rubric, and one final round, where every judge ranks the finalists.
+export const JUDGING_ROUND_KINDS = ["panel", "final"] as const;
+export type JudgingRoundKind = (typeof JUDGING_ROUND_KINDS)[number];
+
+// Sidepot criteria keep their own configurable maximum.
+export const MAIN_CRITERION_MAX_SCORE = 5;
+
+// Generated panel presentations (Q&A included) must fit this range.
+export const MIN_PRESENTATION_MINUTES = 5;
+export const MAX_PRESENTATION_MINUTES = 10;
+
+export const DEFAULT_FINALIST_COUNT = 5;
+
+// Each final-round ballot ranks this many finalists, or every finalist when
+// there are fewer.
+export const BALLOT_PLACES = 3;
+
+export function getBallotPlaces(finalistCount: number) {
+	return Math.min(BALLOT_PLACES, finalistCount);
+}
+
+// 1st place earns 3 points, 2nd 2 and 3rd 1.
+export function getBallotPoints(place: number) {
+	return BALLOT_PLACES + 1 - place;
+}
+
+export function formatPlace(place: number) {
+	return ["1st", "2nd", "3rd"][place - 1] ?? `${place}th`;
+}
+
+export type FinalRoundTiming = {
+	startTime: Date;
+	presentationMinutes: number;
+	changeoverMinutes: number;
 };
 
-/** Slot choices offered by the judging UI; the API accepts any positive duration. */
-export const SLOT_MINUTES_OPTIONS = [15, 30, 60] as const;
-export type SlotMinutes = (typeof SLOT_MINUTES_OPTIONS)[number];
+// Finalists present back to back, from the final round's start.
+export function getFinalistStartTime(timing: FinalRoundTiming, index: number) {
+	return addMinutes(
+		timing.startTime,
+		index * (timing.presentationMinutes + timing.changeoverMinutes)
+	);
+}
+
+// Finalists present back to back from the final round's start. Before they're
+// picked, the round is sized for the default finalist count.
+export function getFinalRoundEndTime({
+	startTime,
+	finalistCount,
+	presentationMinutes,
+	changeoverMinutes
+}: {
+	startTime: Date;
+	finalistCount: number;
+	presentationMinutes: number;
+	changeoverMinutes: number;
+}) {
+	const count = finalistCount || DEFAULT_FINALIST_COUNT;
+	return addMinutes(
+		startTime,
+		count * (presentationMinutes + changeoverMinutes) - changeoverMinutes
+	);
+}
+
+// Teams are asked to arrive this long before their first presentation.
+export const ARRIVAL_BUFFER_MINUTES = 10;
+
+// Tables run ahead when a team no-shows, so judges can score a team this long
+// before its scheduled time.
+export const SCORING_OPENS_EARLY_MINUTES = 15;
+
+export function getScoringOpensAt(startsAt: Date) {
+	return addMinutes(startsAt, -SCORING_OPENS_EARLY_MINUTES);
+}
 
 const RUBRIC_BAND_LABELS = [
 	"Minimal",
@@ -55,11 +108,4 @@ export function getRubricBands(maxScore: number, includeZero = false) {
 			range: start === end ? `${start}` : `${start}–${end}`
 		};
 	});
-}
-
-export function criterionAppliesToRound(
-	criterion: { roundIds?: string[] },
-	roundId: string
-) {
-	return !criterion.roundIds?.length || criterion.roundIds.includes(roundId);
 }

@@ -10,18 +10,19 @@ const assignmentId = "11111111-1111-4111-8111-111111111111";
 const mainId = "22222222-2222-4222-8222-222222222222";
 const sideId = "33333333-3333-4333-8333-333333333333";
 const valid = [
-	{ assignmentId, criteriaId: mainId, score: 8 },
+	{ assignmentId, criteriaId: mainId, score: 4 },
 	{ assignmentId, criteriaId: sideId, score: 0 }
 ];
 const rubric = [
-	{ id: mainId, maxScore: 10, isSidepot: false, roundIds: ["other-round"] },
-	{ id: sideId, maxScore: 5, isSidepot: true, roundIds: [] }
+	{ id: mainId, maxScore: 5, isSidepot: false },
+	{ id: sideId, maxScore: 5, isSidepot: true }
 ];
 const db = {
 	query: {
 		judgingAssignments: { findFirst: vi.fn() },
-		criteria: { findMany: vi.fn(), findFirst: vi.fn() },
-		scores: { findMany: vi.fn(), findFirst: vi.fn() }
+		judgingCriteria: { findMany: vi.fn(), findFirst: vi.fn() },
+		judgingScores: { findMany: vi.fn(), findFirst: vi.fn() },
+		hackathonSettings: { findFirst: vi.fn() }
 	},
 	insert: vi.fn(),
 	update: vi.fn()
@@ -42,14 +43,15 @@ beforeEach(() => {
 	vi.resetAllMocks();
 	db.query.judgingAssignments.findFirst.mockResolvedValue({
 		id: assignmentId,
-		timeSlot: null,
-		room: {
+		startsAt: new Date(0),
+		table: {
 			roundId: "round",
-			staff: [{ staffId: "judge-a" }, { staffId: "judge-b" }]
+			judges: [{ judgeId: "judge-a" }, { judgeId: "judge-b" }],
+			round: { kind: "panel", publishedAt: new Date(0) }
 		}
 	});
-	db.query.criteria.findMany.mockResolvedValue(rubric);
-	db.query.scores.findMany.mockResolvedValue([]);
+	db.query.judgingCriteria.findMany.mockResolvedValue(rubric);
+	db.query.judgingScores.findMany.mockResolvedValue([]);
 	db.insert.mockReturnValue(write);
 	write.values.mockReturnValue(write);
 	write.onConflictDoUpdate.mockReturnValue(write);
@@ -76,8 +78,21 @@ describe("individual scorecard API", () => {
 		await caller("judge-b").createMany(valid);
 		expect(write.values.mock.calls[1]?.[0][0].judgeId).toBe("judge-b");
 	});
-	it("uses the shared rubric even when a criterion has historical round scoping", async () => {
-		await expect(caller().createMany(valid)).resolves.toEqual([]);
+	it("rejects scorecards for finalists, who are ranked instead", async () => {
+		db.query.judgingAssignments.findFirst.mockResolvedValue({
+			id: assignmentId,
+			startsAt: new Date(0),
+			table: {
+				roundId: "final",
+				judges: [{ judgeId: "judge-a" }],
+				round: { kind: "final", publishedAt: new Date(0) }
+			}
+		});
+		await expect(caller().createMany(valid)).rejects.toMatchObject({
+			code: "BAD_REQUEST",
+			message: "Finalists are ranked, not scored."
+		});
+		expect(db.insert).not.toHaveBeenCalled();
 	});
 	it.each([
 		["missing", valid.slice(0, 1)],
@@ -89,7 +104,7 @@ describe("individual scorecard API", () => {
 				{ ...valid[1], criteriaId: "44444444-4444-4444-8444-444444444444" }
 			]
 		],
-		["out of range", [{ ...valid[0], score: 11 }, valid[1]]],
+		["out of range", [{ ...valid[0], score: 6 }, valid[1]]],
 		["negative", [{ ...valid[0], score: -1 }, valid[1]]],
 		["noninteger", [{ ...valid[0], score: 1.5 }, valid[1]]],
 		["mixed assignments", [valid[0], { ...valid[1], assignmentId: sideId }]]
@@ -107,7 +122,7 @@ describe("individual scorecard API", () => {
 		await expect(outsider.createMany(valid)).rejects.toMatchObject({
 			code: "FORBIDDEN"
 		});
-		expect(db.query.scores.findMany).not.toHaveBeenCalled();
+		expect(db.query.judgingScores.findMany).not.toHaveBeenCalled();
 		expect(db.insert).not.toHaveBeenCalled();
 	});
 	it("does not let an unassigned admin contribute a scorecard", async () => {
@@ -118,13 +133,13 @@ describe("individual scorecard API", () => {
 	it("scopes assignment scores to the signed-in judge", async () => {
 		await caller().getByAssignment({ assignmentId });
 		const query = new PgDialect().sqlToQuery(
-			db.query.scores.findMany.mock.calls[0]?.[0].where
+			db.query.judgingScores.findMany.mock.calls[0]?.[0].where
 		);
 		expect(query.params).toEqual([assignmentId, "judge-a"]);
 	});
 	it("scopes raw scores to the current judge and keeps team averages organizer-only", async () => {
 		await caller().getAll();
-		const where = db.query.scores.findMany.mock.lastCall?.[0].where;
+		const where = db.query.judgingScores.findMany.mock.lastCall?.[0].where;
 		expect(new PgDialect().sqlToQuery(where).params).toEqual(["judge-a"]);
 		await expect(caller().getAggregatedByTeam({})).rejects.toMatchObject({
 			code: "FORBIDDEN"
@@ -133,26 +148,64 @@ describe("individual scorecard API", () => {
 
 	it("enforces scheduled availability while allowing later updates", async () => {
 		db.query.judgingAssignments.findFirst.mockResolvedValue({
-			timeSlot: new Date(Date.now() + 3600000),
-			room: { staff: [{ staffId: "judge-a" }] }
+			startsAt: new Date(Date.now() + 3600000),
+			table: {
+				roundId: "round",
+				judges: [{ judgeId: "judge-a" }],
+				round: { kind: "panel", publishedAt: new Date(0) }
+			}
 		});
-		db.query.scores.findFirst.mockResolvedValue(undefined);
+		db.query.judgingScores.findFirst.mockResolvedValue(undefined);
 		await expect(caller().createMany(valid)).rejects.toMatchObject({
 			code: "FORBIDDEN"
 		});
-		db.query.scores.findFirst.mockResolvedValue({ judgeId: "judge-a" });
+		db.query.judgingScores.findFirst.mockResolvedValue({ judgeId: "judge-a" });
+		await expect(caller().createMany(valid)).resolves.toEqual([]);
+	});
+
+	it("opens scoring 15 minutes before the team's scheduled time", async () => {
+		db.query.judgingAssignments.findFirst.mockResolvedValue({
+			startsAt: new Date(Date.now() + 10 * 60_000),
+			table: {
+				roundId: "round",
+				judges: [{ judgeId: "judge-a" }],
+				round: { kind: "panel", publishedAt: new Date(0) }
+			}
+		});
+		db.query.judgingScores.findFirst.mockResolvedValue(undefined);
 		await expect(caller().createMany(valid)).resolves.toEqual([]);
 	});
 	it("prevents editing another judge's score through the single-score endpoint", async () => {
-		db.query.scores.findFirst.mockResolvedValue(undefined);
+		db.query.judgingScores.findFirst.mockResolvedValue(undefined);
 		await expect(
 			caller().update({ id: mainId, score: 2 })
 		).rejects.toMatchObject({ code: "NOT_FOUND" });
-		const where = db.query.scores.findFirst.mock.lastCall?.[0].where;
+		const where = db.query.judgingScores.findFirst.mock.lastCall?.[0].where;
 		expect(new PgDialect().sqlToQuery(where).params).toEqual([
 			mainId,
 			"judge-a"
 		]);
+		expect(db.update).not.toHaveBeenCalled();
+	});
+	it("closes scoring once scores are released", async () => {
+		db.query.hackathonSettings.findFirst.mockResolvedValue({
+			scoresReleased: true
+		});
+		db.query.judgingScores.findFirst.mockResolvedValue({
+			id: mainId,
+			assignmentId,
+			judgeId: "judge-a",
+			criteria: rubric[0]
+		});
+		const closed = {
+			code: "FORBIDDEN",
+			message: "Scoring closed when the winners were announced."
+		};
+		await expect(caller().createMany(valid)).rejects.toMatchObject(closed);
+		await expect(
+			caller().update({ id: mainId, score: 2 })
+		).rejects.toMatchObject(closed);
+		expect(db.insert).not.toHaveBeenCalled();
 		expect(db.update).not.toHaveBeenCalled();
 	});
 });

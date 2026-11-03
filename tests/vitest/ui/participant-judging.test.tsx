@@ -3,6 +3,16 @@ import { describe, expect, it, vi } from "vitest";
 import ParticipantError from "@/app/participant/error";
 import JudgingPage from "@/app/participant/judging/page";
 
+const { progress, status } = vi.hoisted(() => ({
+	progress: {
+		startDate: null,
+		submissionDeadline: null,
+		prescreenComplete: false,
+		rounds: [],
+		scoresReleased: false
+	},
+	status: { team: null, rounds: [], finalPublished: false }
+}));
 const mocks = vi.hoisted(() => ({
 	requireRole: vi.fn(),
 	judgingView: vi.fn()
@@ -12,11 +22,11 @@ vi.mock("@/server/better-auth/auth-helpers/helpers", () => ({
 }));
 vi.mock("@/trpc/server", () => ({
 	api: {
-		hackathonSettings: { get: async () => ({ judgingPhase: "judging" }) },
-		events: { getActiveEvents: async () => [] },
-		judgingRounds: { getAll: async () => [] },
-		criteria: { getAll: async () => [] },
-		judgingAssignments: { getMineForActiveRound: async () => null },
+		judgingProgress: {
+			get: async () => progress,
+			getMine: async () => status
+		},
+		criteria: { getPublic: async () => [] },
 		scores: { getMineReleased: async () => ({ released: false, rounds: [] }) }
 	}
 }));
@@ -36,12 +46,10 @@ describe("participant judging route", () => {
 		expect(mocks.requireRole).toHaveBeenCalledWith(["participant", "admin"]);
 		expect(screen.getByText("Participant judging information")).toBeVisible();
 		expect(mocks.judgingView).toHaveBeenCalledWith({
-			assignment: null,
 			criteria: [],
-			events: [],
+			progress,
 			results: { released: false, rounds: [] },
-			rounds: [],
-			settings: { judgingPhase: "judging" }
+			status
 		});
 	});
 	it("lets participants retry a failed page", () => {

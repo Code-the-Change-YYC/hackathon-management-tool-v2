@@ -6,7 +6,8 @@ export const AUTH_ROUTES = {
 	signup: "/signup",
 	verifyEmail: "/verify-email",
 	forgotPassword: "/forgot-password",
-	resetPassword: "/reset-password"
+	resetPassword: "/reset-password",
+	judgeLogin: "/judge-login"
 } as const;
 
 export const ONBOARDING_ROUTES = {
@@ -37,6 +38,13 @@ export function getForgotPasswordHref(email: string) {
 
 export function getResetPasswordHref(email: string) {
 	return `${AUTH_ROUTES.resetPassword}?${new URLSearchParams({ email })}`;
+}
+
+/** The judge access email fills in the judge's email. */
+export function getJudgeLoginHref(email?: string) {
+	return email
+		? `${AUTH_ROUTES.judgeLogin}?${new URLSearchParams({ email })}`
+		: AUTH_ROUTES.judgeLogin;
 }
 
 /** Users without an app role yet (mid-registration) land on the participant dashboard. */

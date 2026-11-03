@@ -1,13 +1,13 @@
 "use client";
 
 import {
-	CheckLine,
-	CloseLine,
 	DeleteLine,
 	EditLine,
+	MailSendLine,
 	More1Line,
 	User3Line
 } from "@mingcute/react";
+import { BooleanIcon } from "@/app/components/admin/BooleanIcon";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -45,33 +45,17 @@ const ROLE_BADGE_VARIANTS: Record<
 	[Role.PARTICIPANT]: "secondary"
 };
 
-function BooleanIcon({ value }: { value: boolean }) {
-	return value ? (
-		<CheckLine
-			aria-label="Yes"
-			className="size-5"
-			color="var(--color-green-700)"
-			role="img"
-		/>
-	) : (
-		<CloseLine
-			aria-label="No"
-			className="size-5"
-			color="var(--color-red-600)"
-			role="img"
-		/>
-	);
-}
-
 type ParticipantsTableProps = {
 	participants: Participant[];
 	onEdit: (participant: Participant) => void;
+	onResendAccessEmail: (participant: Participant) => void;
 	onDelete: (participant: Participant) => void;
 };
 
 export function ParticipantsTable({
 	participants,
 	onEdit,
+	onResendAccessEmail,
 	onDelete
 }: ParticipantsTableProps) {
 	if (participants.length === 0) {
@@ -130,10 +114,10 @@ export function ParticipantsTable({
 										{ROLE_LABELS[participant.role]}
 									</Badge>
 								) : (
-									<Badge variant={"secondary"}>N/A</Badge>
+									"-"
 								)}
 							</TableCell>
-							<TableCell>{participant.teamName ?? "n/a"}</TableCell>
+							<TableCell>{participant.teamName ?? "-"}</TableCell>
 							<TableCell>{formatShortDate(participant.signedUpAt)}</TableCell>
 							<TableCell>
 								<BooleanIcon value={participant.emailVerified} />
@@ -141,11 +125,11 @@ export function ParticipantsTable({
 							<TableCell>
 								<BooleanIcon value={participant.completedRegistration} />
 							</TableCell>
-							<TableCell>{participant.institution ?? "n/a"}</TableCell>
-							<TableCell>{participant.major ?? "n/a"}</TableCell>
+							<TableCell>{participant.institution ?? "-"}</TableCell>
+							<TableCell>{participant.major ?? "-"}</TableCell>
 							<TableCell>
 								{participant.registeredForFood === null ? (
-									"n/a"
+									"-"
 								) : (
 									<BooleanIcon value={participant.registeredForFood} />
 								)}
@@ -163,12 +147,20 @@ export function ParticipantsTable({
 									>
 										<More1Line />
 									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end" className="w-40">
+									<DropdownMenuContent align="end" className="w-52">
 										<DropdownMenuGroup>
 											<DropdownMenuItem onClick={() => onEdit(participant)}>
 												<EditLine />
 												Edit user
 											</DropdownMenuItem>
+											{participant.role === Role.JUDGE && (
+												<DropdownMenuItem
+													onClick={() => onResendAccessEmail(participant)}
+												>
+													<MailSendLine />
+													Resend access email
+												</DropdownMenuItem>
+											)}
 											<DropdownMenuItem
 												onClick={() => onDelete(participant)}
 												variant="destructive"

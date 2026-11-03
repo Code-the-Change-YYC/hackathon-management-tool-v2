@@ -42,7 +42,7 @@ describe("judge score drafts", () => {
 		const restored = renderHook(() => useJudgeScoreDraft(input));
 		expect(restored.result.current.scores).toEqual({ main: 0 });
 		expect(restored.result.current.dirty).toBe(true);
-		expect(restored.result.current.notice).toMatch(/restored/);
+		expect(restored.result.current.notice).toBe("");
 		const anotherJudge = renderHook(() =>
 			useJudgeScoreDraft({ ...input, userId: "judge-b" })
 		);

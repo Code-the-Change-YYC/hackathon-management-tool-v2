@@ -11,7 +11,7 @@ export const EVENT_TITLE_MAX_LENGTH = 120;
 export const EVENT_DESCRIPTION_MAX_LENGTH = 1000;
 export const EVENT_LOCATION_MAX_LENGTH = 200;
 
-const timeField = (message: string) =>
+export const timeField = (message: string) =>
 	z.string().regex(/^\d{2}:\d{2}$/, message);
 
 // The hackathon's first and last days, as "yyyy-MM-dd" in Calgary time.
@@ -49,7 +49,7 @@ function parseDate(value: string) {
 	return fromDateTimeLocalValue(`${value}T00:00`);
 }
 
-function dateField(hackathonDates: HackathonDates | null) {
+export function dateField(hackathonDates: HackathonDates | null) {
 	const date = z
 		.string()
 		.refine((value) => parseDate(value) !== null, "Choose a date.");

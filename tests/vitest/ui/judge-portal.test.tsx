@@ -1,204 +1,90 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { DashboardView } from "@/app/components/judge/dashboard/DashboardView";
-import { JudgeNextTeam } from "@/app/components/judge/dashboard/JudgeNextTeam";
 import { JudgeTeamRow } from "@/app/components/judge/dashboard/JudgeTeamRow";
 import {
 	type Criterion,
+	getAssignmentCriteria,
 	getAssignmentTotal,
 	getDraftScore,
-	getRoomName,
+	getJudgeTable,
 	getScoreOptions,
 	isAssignmentScored,
-	type JudgeAssignment,
-	sortAssignments
+	sortAssignments,
+	withBreaks
 } from "@/app/components/judge/judgePortal";
-import { JudgeScheduleEvent } from "@/app/components/judge/schedule/JudgeScheduleEvent";
-import { groupScheduleByDate } from "@/app/components/judge/schedule/judgeSchedule";
+import {
+	judgeAssignment as assignment,
+	judgeTable,
+	judgingRound,
+	judgingNow as now,
+	judgeScore as score,
+	judgeVote as vote
+} from "../helpers/judging";
 
-const now = new Date("2026-09-19T10:00:00Z");
 const main: Criterion = {
 	id: "main",
 	name: "Innovation",
 	description: "",
 	displayOrder: 0,
-	maxScore: 10,
+	maxScore: 5,
 	isSidepot: false
 };
 const sidepot: Criterion = { ...main, id: "sidepot", isSidepot: true };
 
-describe("judge schedule", () => {
-	it("groups scheduled teams by Calgary date without mutating query data", () => {
-		const first = assignment({
-			id: "first",
-			timeSlot: new Date("2026-09-19T23:59:00-06:00")
-		});
-		const next = assignment({
-			id: "next",
-			timeSlot: new Date("2026-09-20T00:01:00-06:00")
-		});
-		const input = [next, assignment({ timeSlot: null }), first];
-		expect(groupScheduleByDate(input)).toEqual([[first], [next]]);
-		expect(input[0]).toBe(next);
-		expect(groupScheduleByDate([])).toEqual([]);
-	});
-
-	it("opens scoring at the scheduled time without implying a live presentation status", () => {
-		const team = assignment();
-		const { rerender } = render(
-			<JudgeScheduleEvent
-				assignment={team}
-				criteria={[main]}
-				currentTime={new Date(now.getTime() - 60000)}
-			/>
-		);
-		expect(screen.getByText("In 1 min")).toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: "Score team for Team" })
-		).toBeDisabled();
-		rerender(
-			<JudgeScheduleEvent
-				assignment={team}
-				criteria={[main]}
-				currentTime={now}
-			/>
-		);
-		expect(screen.getByText("Scheduled time reached")).toBeInTheDocument();
-		expect(
-			screen.getByRole("link", { name: "Score team for Team" })
-		).toHaveAttribute("href", "/judge/score/assignment");
-	});
-
-	it("shows scored status and a saved main total", () => {
-		render(
-			<JudgeScheduleEvent
-				assignment={assignment({ scores: [score("main", 1)] })}
-				criteria={[main]}
-				currentTime={now}
-			/>
-		);
-		expect(screen.getByText("Scores recorded")).toBeInTheDocument();
-		expect(screen.getByText("Main score: 1/10")).toBeInTheDocument();
-	});
-});
-
-function assignment(overrides: Partial<JudgeAssignment> = {}): JudgeAssignment {
-	return {
-		id: "assignment",
-		teamId: "team",
-		roomId: "room",
-		createdAt: now,
-		timeSlot: now,
-		scores: [],
-		team: {
-			id: "team",
-			name: "Team",
-			slug: "team",
-			logo: null,
-			metadata: null,
-			createdAt: now,
-			teamCode: "ABCD",
-			prescreenStatus: "pending",
-			prescreenComments: null,
-			prescreenedBy: null,
-			prescreenedAt: null
-		},
-		room: {
-			id: "room",
-			name: "Room 1",
-			roundId: "round",
-			roomLink: "",
-			createdAt: now,
-			updatedAt: now,
-			round: {
-				id: "round",
-				name: "Round 1",
-				startTime: now,
-				endTime: now,
-				createdAt: now,
-				updatedAt: now
-			}
-		},
-		...overrides
-	};
-}
-
-function score(criteriaId: string, value: number) {
-	return {
-		id: criteriaId,
-		assignmentId: "assignment",
-		judgeId: "judge",
-		criteriaId,
-		value,
-		createdAt: now
-	};
-}
-
 describe("judge portal scoring contract", () => {
-	it("uses the entire shared rubric despite historical round metadata", () => {
-		const criteria = [
-			{ ...main, roundIds: ["round"] },
-			{ ...main, id: "final", name: "Final criterion", roundIds: ["final"] }
-		];
-		const team = assignment({ scores: [score("main", 7), score("final", 10)] });
-		expect(isAssignmentScored(team, criteria)).toBe(true);
-		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 17, max: 20 });
-		expect(
-			isAssignmentScored(assignment({ scores: [score("final", 10)] }), criteria)
-		).toBe(false);
+	it("only gives panel-round teams a scorecard, since finalists are ranked", () => {
+		const finalist = assignment({
+			table: judgeTable({ round: judgingRound({ id: "final", kind: "final" }) })
+		});
+		expect(getAssignmentCriteria(assignment(), [main])).toEqual([main]);
+		expect(getAssignmentCriteria(finalist, [main])).toEqual([]);
+		expect(isAssignmentScored(finalist, [main])).toBe(false);
 	});
 
-	it("requires every shared criterion and separates sidepots from main totals", () => {
-		const criteria = [
-			{ ...main, roundIds: ["round"] },
-			{ ...main, id: "shared", roundIds: [] },
-			{ ...sidepot, roundIds: ["round"] },
-			{ ...sidepot, id: "other-sidepot", roundIds: ["final"] }
-		];
+	it("requires every criterion for the round and separates sidepots from main totals", () => {
+		const criteria = [main, { ...main, id: "shared" }, sidepot];
 		const team = assignment({
 			scores: [
-				score("main", 7),
+				score("main", 4),
 				score("shared", 1),
 				score("sidepot", 4),
-				score("other-sidepot", 10)
+				score("removed-sidepot", 5)
 			]
 		});
 		expect(isAssignmentScored(team, criteria)).toBe(true);
-		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 8, max: 20 });
+		expect(getAssignmentTotal(team, criteria)).toEqual({ total: 5, max: 10 });
 		expect(getAssignmentTotal(team, criteria, true)).toEqual({
-			total: 22,
-			max: 40
+			total: 9,
+			max: 15
 		});
 		expect(
-			isAssignmentScored(assignment({ scores: [score("main", 7)] }), criteria)
+			isAssignmentScored(assignment({ scores: [score("main", 4)] }), criteria)
 		).toBe(false);
 	});
 
 	it("does not let a sidepot score replace a required main score", () => {
-		const criteria = [
-			{ ...sidepot, roundIds: ["round"] },
-			{ ...main, roundIds: ["final"] }
-		];
+		const criteria = [sidepot, main];
 		expect(
-			isAssignmentScored(assignment({ scores: [score("main", 10)] }), criteria)
+			isAssignmentScored(assignment({ scores: [score("main", 5)] }), criteria)
 		).toBe(false);
 		expect(
 			isAssignmentScored(
-				assignment({ scores: [score("sidepot", 0), score("main", 10)] }),
+				assignment({ scores: [score("sidepot", 0), score("main", 5)] }),
 				criteria
 			)
 		).toBe(true);
 	});
 	it("requires every answer and accepts an explicit sidepot zero", () => {
 		expect(
-			isAssignmentScored(assignment({ scores: [score("main", 8)] }), [
+			isAssignmentScored(assignment({ scores: [score("main", 4)] }), [
 				main,
 				sidepot
 			])
 		).toBe(false);
 		expect(
 			isAssignmentScored(
-				assignment({ scores: [score("main", 8), score("sidepot", 0)] }),
+				assignment({ scores: [score("main", 4), score("sidepot", 0)] }),
 				[main, sidepot]
 			)
 		).toBe(true);
@@ -221,15 +107,15 @@ describe("judge portal scoring contract", () => {
 
 	it("excludes sidepots and removed criteria from main totals", () => {
 		const team = assignment({
-			scores: [score("main", 7), score("sidepot", 4), score("removed", 9)]
+			scores: [score("main", 4), score("sidepot", 4), score("removed", 5)]
 		});
 		expect(getAssignmentTotal(team, [main, sidepot])).toEqual({
-			total: 7,
-			max: 10
+			total: 4,
+			max: 5
 		});
 		expect(getAssignmentTotal(team, [main, sidepot], true)).toEqual({
-			total: 11,
-			max: 20
+			total: 8,
+			max: 10
 		});
 	});
 
@@ -238,12 +124,10 @@ describe("judge portal scoring contract", () => {
 		expect(getDraftScore({}, "main")).toBeUndefined();
 		expect(getScoreOptions(main, false)[0]).toBe(1);
 		expect(getScoreOptions(main, false, 0)[0]).toBe(0);
-		expect(getScoreOptions(sidepot, true)).toEqual([
-			0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-		]);
+		expect(getScoreOptions(sidepot, true)).toEqual([0, 1, 2, 3, 4, 5]);
 	});
 
-	it("orders scheduled teams by time then name, with unscheduled teams last", () => {
+	it("orders teams by time then name", () => {
 		const alpha = assignment({
 			id: "alpha",
 			team: { ...assignment().team, name: "Alpha" }
@@ -254,160 +138,326 @@ describe("judge portal scoring contract", () => {
 		});
 		const later = assignment({
 			id: "later",
-			timeSlot: new Date(now.getTime() + 60_000)
+			startsAt: new Date(now.getTime() + 60_000)
 		});
-		const unscheduled = assignment({ id: "unscheduled", timeSlot: null });
 		expect(
-			[unscheduled, later, beta, alpha]
-				.sort(sortAssignments)
-				.map(({ id }) => id)
-		).toEqual(["alpha", "beta", "later", "unscheduled"]);
+			[later, beta, alpha].sort(sortAssignments).map(({ id }) => id)
+		).toEqual(["alpha", "beta", "later"]);
+	});
+
+	it("tells breaks, when no table presents, from free slots at the judge's table", () => {
+		const at = (minute: number) => new Date(now.getTime() + minute * 60_000);
+		const first = assignment({ id: "first" });
+		const afterGap = assignment({ id: "after-gap", startsAt: at(40) });
+		const next = assignment({ id: "next", startsAt: at(50) });
+		// Every table's slots; nobody presents from 20 to 30.
+		const roundTimes = [0, 10, 30, 40, 50].map(at);
+		expect(withBreaks([next, afterGap, first], roundTimes)).toEqual([
+			{ kind: "assignment", assignment: first },
+			{ kind: "free", startsAt: at(10), endsAt: at(20) },
+			{ kind: "break", startsAt: at(20), endsAt: at(30) },
+			{ kind: "free", startsAt: at(30), endsAt: at(40) },
+			{ kind: "assignment", assignment: afterGap },
+			{ kind: "assignment", assignment: next }
+		]);
+	});
+
+	it("joins back-to-back free slots", () => {
+		const at = (minute: number) => new Date(now.getTime() + minute * 60_000);
+		const first = assignment({ id: "first" });
+		const later = assignment({ id: "later", startsAt: at(30) });
+		expect(withBreaks([first, later], [0, 10, 20, 30].map(at))).toEqual([
+			{ kind: "assignment", assignment: first },
+			{ kind: "free", startsAt: at(10), endsAt: at(30) },
+			{ kind: "assignment", assignment: later }
+		]);
 	});
 });
 
-describe("judge room summary", () => {
-	it("uses the earliest assignment's room", () => {
+describe("judge table summary", () => {
+	it("uses the earliest assignment's table and lists the other judges", () => {
 		const later = assignment({
 			id: "later",
-			timeSlot: new Date(now.getTime() + 60 * 60_000),
-			room: { ...assignment().room, id: "later-room", name: "Room 2" }
+			startsAt: new Date(now.getTime() + 60 * 60_000),
+			table: judgeTable({ id: "later-table", tableNumber: 2 })
 		});
 		const earlier = assignment({ id: "earlier" });
-		expect(getRoomName([later, earlier])).toBe("Room 1");
-		expect(getRoomName([])).toBeNull();
+		expect(getJudgeTable([later, earlier], "judge")).toEqual({
+			name: "Table 1",
+			number: 1,
+			otherJudges: [{ id: "judge-2", name: "Sam", image: null }]
+		});
+		expect(getJudgeTable([], "judge")).toBeNull();
 	});
 });
+
+function expectTableCard(tableName: string, roundName: string) {
+	const card = screen.getByRole("region", { name: tableName });
+	expect(card).toHaveTextContent(`Your table for ${roundName}`);
+	expect(card).toHaveTextContent("Judging with");
+	expect(card).toHaveTextContent("Sam");
+}
 
 describe("judge dashboard", () => {
 	it("shows an empty state before any teams are assigned", () => {
 		render(
 			<DashboardView
-				activeRoundId={null}
 				assignments={[]}
 				criteria={[main]}
-				rounds={[]}
+				roundSlotTimes={{}}
+				scoresReleased={false}
+				userId="judge"
 				userName="Dara"
 			/>
 		);
-		expect(screen.getByText("No room assigned yet.")).toBeVisible();
+		expect(screen.queryByRole("region")).not.toBeInTheDocument();
 		expect(screen.getByText("No teams assigned yet")).toBeVisible();
 		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 	});
 
-	it("puts the next unscored team first and tracks progress", () => {
+	it("says when the judge is alone at their table", () => {
+		const [dara] = judgeTable().judges;
+		render(
+			<DashboardView
+				assignments={[
+					assignment({ table: judgeTable({ judges: dara ? [dara] : [] }) })
+				]}
+				criteria={[main]}
+				roundSlotTimes={{}}
+				scoresReleased={false}
+				userId="judge"
+				userName="Dara"
+			/>
+		);
+		expect(screen.getByRole("region", { name: "Table 1" })).toHaveTextContent(
+			"You’re the only judge at this table."
+		);
+	});
+
+	it("collapses a crowded table to three judges and a count", () => {
+		const [dara] = judgeTable().judges;
+		const seats = (count: number) =>
+			Array.from({ length: count }, (_, index) => ({
+				id: `seat-${index}`,
+				tableId: "table",
+				judgeId: `judge-${index}`,
+				createdAt: now,
+				judge: { id: `judge-${index}`, name: `Judge ${index}`, image: null }
+			}));
+		const renderTable = (otherJudges: number) =>
+			render(
+				<DashboardView
+					assignments={[
+						assignment({
+							table: judgeTable({
+								judges: [...(dara ? [dara] : []), ...seats(otherJudges)]
+							})
+						})
+					]}
+					criteria={[main]}
+					roundSlotTimes={{}}
+					scoresReleased={false}
+					userId="judge"
+					userName="Dara"
+				/>
+			);
+
+		const { unmount } = renderTable(24);
+		const crowded = screen.getByRole("region", { name: "Table 1" });
+		expect(within(crowded).getAllByRole("listitem")).toHaveLength(4);
+		expect(crowded).toHaveTextContent("Judge 2");
+		expect(crowded).not.toHaveTextContent("Judge 3");
+		expect(crowded).toHaveTextContent("+21 others");
+		unmount();
+
+		renderTable(4);
+		const four = screen.getByRole("region", { name: "Table 1" });
+		expect(within(four).getAllByRole("listitem")).toHaveLength(4);
+		expect(four).toHaveTextContent("Judge 3");
+		expect(four).not.toHaveTextContent("others");
+	});
+
+	it("lists the round's teams in time order and tracks progress", () => {
 		const done = assignment({
 			id: "done",
-			scores: [score("main", 7)],
+			scores: [score("main", 4)],
 			team: { ...assignment().team, name: "Done" }
 		});
 		const next = assignment({
 			id: "next",
-			timeSlot: new Date(now.getTime() + 60_000),
+			startsAt: new Date(now.getTime() + 60_000),
 			team: { ...assignment().team, name: "Next" }
 		});
 		render(
 			<DashboardView
-				activeRoundId="round"
 				assignments={[next, done]}
 				criteria={[main]}
-				rounds={[assignment().room.round]}
+				roundSlotTimes={{}}
+				scoresReleased={false}
+				userId="judge"
 				userName="Dara"
 			/>
 		);
-		expect(
-			screen.getByText("You’re judging in Room 1 for the Round 1.")
-		).toBeVisible();
-		expect(screen.getByRole("heading", { name: "Next" })).toBeVisible();
+		expectTableCard("Table 1", "Round 1");
+		const rows = within(
+			screen.getByRole("region", { name: "Round 1" })
+		).getAllByRole("listitem");
+		expect(rows.map((row) => row.textContent)).toEqual([
+			expect.stringContaining("Done"),
+			expect.stringContaining("Next")
+		]);
 		expect(screen.getByText("1 of 2 scored")).toBeVisible();
 		expect(
 			screen.getByRole("link", { name: "Edit score for Done" })
 		).toHaveAttribute("href", "/judge/score/done");
 	});
 
-	it("celebrates a finished round and switches rounds", () => {
-		const finals = {
-			...assignment().room.round,
+	it("stacks every round and moves on once the finalists are ranked", () => {
+		const finals = judgingRound({
 			id: "finals",
 			name: "Finals",
+			kind: "final",
 			startTime: new Date(now.getTime() + 60 * 60_000)
-		};
+		});
 		const finalsTeam = assignment({
 			id: "finals-team",
-			room: {
-				...assignment().room,
-				id: "finals-room",
-				name: "Room 2",
-				roundId: "finals",
-				roomLink: "https://example.com/finals",
-				round: finals
-			},
+			table: judgeTable({ id: "finals-table", round: finals }),
 			team: { ...assignment().team, name: "Finalist" }
+		});
+		const props = {
+			criteria: [main],
+			scoresReleased: false,
+			userId: "judge",
+			userName: "Dara"
+		};
+		const { rerender } = render(
+			<DashboardView
+				roundSlotTimes={{}}
+				{...props}
+				assignments={[assignment({ scores: [score("main", 4)] }), finalsTeam]}
+			/>
+		);
+		expect(screen.getByRole("region", { name: "Round 1" })).toHaveTextContent(
+			"1 of 1 scored"
+		);
+		const finalsRegion = screen.getByRole("region", { name: "Finals" });
+		expect(finalsRegion).toHaveTextContent("Not ranked yet");
+		expect(within(finalsRegion).getByText("Finalist")).toBeVisible();
+		expect(
+			within(finalsRegion).getByRole("link", { name: "Rank finalists" })
+		).toHaveAttribute("href", "/judge/rank");
+		expect(
+			within(finalsRegion).queryByRole("link", { name: /Finalist/ })
+		).not.toBeInTheDocument();
+		expectTableCard("Table 1", "Round 1");
+
+		rerender(
+			<DashboardView
+				roundSlotTimes={{}}
+				{...props}
+				assignments={[
+					assignment({ scores: [score("main", 4)] }),
+					{ ...finalsTeam, votes: [vote("finals-team", 1)] }
+				]}
+			/>
+		);
+		expect(screen.getByRole("region", { name: "Finals" })).toHaveTextContent(
+			"Ranking submitted"
+		);
+		expect(screen.getByRole("region", { name: "Finals" })).toHaveTextContent(
+			"1st"
+		);
+		expect(screen.getByRole("link", { name: "Change ranking" })).toBeVisible();
+		expectTableCard("Table 1", "Round 1");
+	});
+
+	it("shows no table card for a judge only in the final round", () => {
+		const finals = judgingRound({
+			id: "finals",
+			name: "Finals",
+			kind: "final"
 		});
 		render(
 			<DashboardView
-				activeRoundId="round"
-				assignments={[assignment({ scores: [score("main", 7)] }), finalsTeam]}
+				assignments={[
+					assignment({
+						id: "finals-team",
+						table: judgeTable({ id: "finals-table", round: finals }),
+						team: { ...assignment().team, name: "Finalist" }
+					})
+				]}
 				criteria={[main]}
-				rounds={[assignment().room.round, finals]}
+				roundSlotTimes={{}}
+				scoresReleased={false}
+				userId="judge"
 				userName="Dara"
 			/>
 		);
-		expect(screen.getByText("All 1 teams scored")).toBeVisible();
-		fireEvent.click(screen.getByRole("button", { name: /Finals/ }));
-		expect(screen.getByRole("heading", { name: "Finalist" })).toBeVisible();
+		expect(screen.getByRole("region", { name: "Finals" })).toBeVisible();
 		expect(
-			screen.getByText("You’re judging in Room 2 for the Finals.")
-		).toBeVisible();
-		expect(
-			screen.queryByRole("link", { name: /Join meeting/ })
+			screen.queryByRole("region", { name: "Final table" })
 		).not.toBeInTheDocument();
 	});
 });
 
 describe("dashboard team rows", () => {
-	it.each([
-		"team",
-		"schedule"
-	])("shows the correct completed total in the %s view with multiple rounds", (kind) => {
-		const criteria = [
-			{ ...main, roundIds: ["round"] },
-			{ ...main, id: "final", name: "Final criterion", roundIds: ["final"] }
-		];
-		const team = assignment({ scores: [score("main", 7), score("final", 10)] });
+	it("shows the completed total, leaving out deleted criteria", () => {
+		const team = assignment({
+			scores: [score("main", 4), score("removed", 5)]
+		});
 		render(
-			kind === "team" ? (
-				<JudgeTeamRow assignment={team} criteria={criteria} currentTime={now} />
-			) : (
-				<JudgeScheduleEvent
-					assignment={team}
-					criteria={criteria}
-					currentTime={now}
-				/>
-			)
+			<JudgeTeamRow
+				assignment={team}
+				criteria={[main]}
+				currentTime={now}
+				scoresReleased={false}
+			/>
 		);
-		if (kind === "team") {
-			expect(screen.getByText(/Scored/)).toBeInTheDocument();
-			expect(screen.getByRole("link")).toHaveTextContent("17/20");
-			expect(screen.getByRole("link")).toHaveTextContent("Final criterion 10");
-		} else {
-			expect(screen.getByText("Scores recorded")).toBeInTheDocument();
-			expect(screen.getByText("Main score: 17/20")).toBeInTheDocument();
-		}
+		expect(screen.getByRole("link")).toHaveTextContent("4/5");
 	});
 
-	it("locks future teams and opens scoring when the slot starts", () => {
+	it("stops linking to scorecards once scores are released", () => {
+		const { rerender } = render(
+			<JudgeTeamRow
+				assignment={assignment({ scores: [score("main", 4)] })}
+				criteria={[main]}
+				currentTime={now}
+				scoresReleased
+			/>
+		);
+		expect(screen.getByText("4")).toBeInTheDocument();
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
+		rerender(
+			<JudgeTeamRow
+				assignment={assignment()}
+				criteria={[main]}
+				currentTime={now}
+				scoresReleased
+			/>
+		);
+		expect(screen.getByText("Scoring closed")).toBeInTheDocument();
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
+	});
+
+	it("locks future teams and opens scoring 15 minutes before the slot", () => {
 		const team = assignment();
 		const { rerender } = render(
 			<JudgeTeamRow
 				assignment={team}
 				criteria={[main]}
-				currentTime={new Date(now.getTime() - 60_000)}
+				currentTime={new Date(now.getTime() - 16 * 60_000)}
+				scoresReleased={false}
 			/>
 		);
-		expect(screen.getByText("In 1 min")).toBeInTheDocument();
+		expect(screen.getByText("In 16 min")).toBeInTheDocument();
 		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 		rerender(
-			<JudgeTeamRow assignment={team} criteria={[main]} currentTime={now} />
+			<JudgeTeamRow
+				assignment={team}
+				criteria={[main]}
+				currentTime={new Date(now.getTime() - 15 * 60_000)}
+				scoresReleased={false}
+			/>
 		);
 		expect(screen.getByRole("link", { name: "Score Team" })).toHaveAttribute(
 			"href",
@@ -415,63 +465,87 @@ describe("dashboard team rows", () => {
 		);
 	});
 
-	it("keeps unscheduled teams scoreable", () => {
-		render(
+	it("marks the team presenting right now", () => {
+		const { rerender } = render(
 			<JudgeTeamRow
-				assignment={assignment({ timeSlot: null })}
+				assignment={assignment()}
 				criteria={[main]}
-				currentTime={now}
+				currentTime={new Date(now.getTime() + 60_000)}
+				scoresReleased={false}
 			/>
 		);
-		expect(screen.getByText("Unscheduled")).toBeInTheDocument();
-		expect(
-			screen.getByRole("link", { name: "Score Team" })
-		).toBeInTheDocument();
+		expect(screen.getByRole("listitem")).toHaveClass("bg-purple-50");
+		rerender(
+			<JudgeTeamRow
+				assignment={assignment()}
+				criteria={[main]}
+				currentTime={new Date(now.getTime() + 8 * 60_000)}
+				scoresReleased={false}
+			/>
+		);
+		expect(screen.getByRole("listitem")).not.toHaveClass("bg-purple-50");
 	});
 
-	it("allows editing a submitted scorecard before the slot and displays sidepots separately", () => {
+	it("puts a scored team on a primary background, even while presenting", () => {
+		render(
+			<JudgeTeamRow
+				assignment={assignment({ scores: [score("main", 4)] })}
+				criteria={[main]}
+				currentTime={new Date(now.getTime() + 60_000)}
+				scoresReleased={false}
+			/>
+		);
+		expect(screen.getByText("4:00 AM")).toBeInTheDocument();
+		expect(screen.getByRole("listitem")).toHaveClass("bg-primary");
+		expect(screen.getByRole("listitem")).not.toHaveClass("bg-purple-50");
+	});
+
+	it("allows editing a submitted scorecard before the slot and leaves sidepots out of the total", () => {
 		render(
 			<JudgeTeamRow
 				assignment={assignment({
 					scores: [score("main", 1), score("sidepot", 4)]
 				})}
 				criteria={[main, { ...sidepot, name: "Best AI" }]}
-				currentTime={new Date(now.getTime() - 1)}
+				currentTime={new Date(now.getTime() - 60 * 60_000)}
+				scoresReleased={false}
 			/>
 		);
 		const link = screen.getByRole("link", { name: "Edit score for Team" });
 		expect(link).toHaveAttribute("href", "/judge/score/assignment");
-		expect(link).toHaveTextContent("Innovation 1 · Best AI 4/10");
-		expect(link).toHaveTextContent("1/10");
+		expect(link).toHaveTextContent("1/5");
+		expect(link).not.toHaveTextContent("Best AI");
 		expect(screen.queryByRole("button")).not.toBeInTheDocument();
 	});
 
 	it("does not mark incomplete main scores as scored", () => {
 		render(
 			<JudgeTeamRow
-				assignment={assignment({ scores: [score("main", 8)] })}
+				assignment={assignment({ scores: [score("main", 4)] })}
 				criteria={[main, { ...main, id: "technical", name: "Technical" }]}
 				currentTime={now}
+				scoresReleased={false}
 			/>
 		);
-		expect(screen.queryByText(/Scored/)).not.toBeInTheDocument();
+		expect(screen.getByText("Partially scored")).toBeInTheDocument();
+		expect(screen.getByRole("link")).not.toHaveTextContent("4/");
 		expect(
-			screen.getByRole("link", { name: "Score Team" })
-		).toBeInTheDocument();
+			screen.getByRole("link", { name: "Continue scoring Team" })
+		).toHaveAttribute("href", "/judge/score/assignment");
 	});
-});
 
-describe("judge next team", () => {
-	it("waits for the slot before offering to score", () => {
+	it("lets judges continue a partial scorecard before the slot", () => {
 		render(
-			<JudgeNextTeam
-				assignment={assignment()}
-				currentTime={new Date(now.getTime() - 5 * 60_000)}
-				teamCount={1}
+			<JudgeTeamRow
+				assignment={assignment({ scores: [score("main", 4)] })}
+				criteria={[main, { ...main, id: "technical", name: "Technical" }]}
+				currentTime={new Date(now.getTime() - 60 * 60_000)}
+				scoresReleased={false}
 			/>
 		);
-		expect(screen.getByRole("button", { name: /Opens at/ })).toBeDisabled();
-		expect(screen.getByText(/In 5 min/)).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Continue scoring Team" })
+		).toBeInTheDocument();
 	});
 });
 
@@ -481,8 +555,13 @@ describe("team code", () => {
 			team: { ...assignment().team, teamCode: null }
 		});
 		render(
-			<JudgeTeamRow assignment={team} criteria={[main]} currentTime={now} />
+			<JudgeTeamRow
+				assignment={team}
+				criteria={[main]}
+				currentTime={now}
+				scoresReleased={false}
+			/>
 		);
-		expect(screen.getByText("Team ID ------")).toBeInTheDocument();
+		expect(screen.getByText("------")).toBeInTheDocument();
 	});
 });

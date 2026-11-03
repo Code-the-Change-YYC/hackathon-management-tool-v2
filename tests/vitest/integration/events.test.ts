@@ -1,8 +1,8 @@
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/server/db";
+import { hackathonSettings } from "@/server/db/admin-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
-import { hackathonSettings } from "@/server/db/schema";
 import { EventStatus, EventType, Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
 import { createAuthenticatedCaller } from "../helpers/auth";

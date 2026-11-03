@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { JUDGING_PHASES } from "@/lib/judging";
 import {
 	countEventsOutside,
 	eventsOutsideMessage,
@@ -12,8 +11,8 @@ import {
 	createTRPCRouter,
 	publicProcedure
 } from "@/server/api/trpc";
+import { hackathonSettings } from "@/server/db/admin-schema";
 import { event } from "@/server/db/event-schema";
-import { hackathonSettings } from "@/server/db/schema";
 
 export const hackathonSettingsRouter = createTRPCRouter({
 	// Get current hackathon settings
@@ -24,24 +23,16 @@ export const hackathonSettingsRouter = createTRPCRouter({
 		return settings ?? null;
 	}),
 
-	// Update hackathon settings (admin only)
-	update: adminProcedure
-		.input(
-			z.object({
-				judgingPhase: z.enum(JUDGING_PHASES).optional(),
-				currentRoundId: z.string().uuid().optional().nullable()
-			})
-		)
+	// Show or hide every team's scores to participants (admin only).
+	setScoresReleased: adminProcedure
+		.input(z.object({ released: z.boolean() }))
 		.mutation(async ({ ctx, input }) => {
 			const [updated] = await ctx.db
 				.insert(hackathonSettings)
-				.values({
-					id: 1,
-					...input
-				})
+				.values({ id: 1, scoresReleased: input.released })
 				.onConflictDoUpdate({
 					target: hackathonSettings.id,
-					set: input
+					set: { scoresReleased: input.released }
 				})
 				.returning();
 			return updated;
