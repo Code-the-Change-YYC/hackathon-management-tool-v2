@@ -28,6 +28,7 @@ export default async function DashboardPage() {
 					user.firstName || getNameParts(user.name).firstName || "Participant"
 				}
 				judging={judging}
+				needsCheckIn={user.role === Role.PARTICIPANT && !user.checkedIn}
 				progress={progress}
 				settings={settings}
 			/>

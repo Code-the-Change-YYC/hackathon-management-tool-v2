@@ -10,6 +10,7 @@ import {
 import { BooleanIcon } from "@/app/components/admin/BooleanIcon";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
+import { Checkbox } from "@/app/components/ui/checkbox";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -50,13 +51,15 @@ type ParticipantsTableProps = {
 	onEdit: (participant: Participant) => void;
 	onResendAccessEmail: (participant: Participant) => void;
 	onDelete: (participant: Participant) => void;
+	onCheckIn: (participant: Participant, checkedIn: boolean) => void;
 };
 
 export function ParticipantsTable({
 	participants,
 	onEdit,
 	onResendAccessEmail,
-	onDelete
+	onDelete,
+	onCheckIn
 }: ParticipantsTableProps) {
 	if (participants.length === 0) {
 		return (
@@ -82,6 +85,7 @@ export function ParticipantsTable({
 						<TableHead className="min-w-36 pl-4">First Name</TableHead>
 						<TableHead className="min-w-36">Last Name</TableHead>
 						<TableHead className="min-w-64">Email Address</TableHead>
+						<TableHead className="min-w-28">Checked In</TableHead>
 						<TableHead className="min-w-28">Role</TableHead>
 						<TableHead className="min-w-44">Team Name</TableHead>
 						<TableHead className="min-w-36">Sign-up Date</TableHead>
@@ -107,6 +111,19 @@ export function ParticipantsTable({
 							<TableCell>{participant.lastName || "-"}</TableCell>
 							<TableCell className="text-muted-foreground">
 								{participant.email}
+							</TableCell>
+							<TableCell>
+								{participant.role === Role.PARTICIPANT ? (
+									<Checkbox
+										aria-label={`Check in ${participant.firstName} ${participant.lastName}`}
+										checked={participant.checkedIn}
+										onCheckedChange={(checked) =>
+											onCheckIn(participant, checked)
+										}
+									/>
+								) : (
+									"n/a"
+								)}
 							</TableCell>
 							<TableCell>
 								{participant.role ? (

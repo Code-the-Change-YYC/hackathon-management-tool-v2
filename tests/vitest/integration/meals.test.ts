@@ -14,7 +14,7 @@ import {
 	hashEventTicketToken,
 	isValidMealScannerLease
 } from "@/server/lib/event-tickets";
-import { EventStatus, EventType, Role } from "@/types/types";
+import { EventStatus, EventTicketStatus, EventType, Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
 import { EventFixtureTracker } from "../../utils/events";
 import {
@@ -36,6 +36,7 @@ describe("meal scanner lease", () => {
 		const fixtures = new EventFixtureTracker();
 		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
 		const participant = await createAuthenticatedCaller({
+			checkedIn: true,
 			role: Role.PARTICIPANT
 		});
 		onTestFinished(async () => {
@@ -120,6 +121,64 @@ describe("meal scanner lease", () => {
 				scannerLease: lease
 			})
 		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+	});
+});
+
+describe("meal ticket check-in gate", () => {
+	beforeAll(() => {
+		assertE2EDatabaseSafety();
+	});
+
+	// Given a participant an admin has not checked in
+	// When they request a ticket, or an admin unchecks them after one was issued
+	// Then neither the ticket nor the scan goes through.
+	it("blocks tickets for participants who have not checked in", async () => {
+		const fixtures = new EventFixtureTracker();
+		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
+		const participant = await createAuthenticatedCaller({
+			role: Role.PARTICIPANT
+		});
+		onTestFinished(async () => {
+			await fixtures.cleanup();
+			await admin.cleanup();
+			await participant.cleanup();
+		});
+		const now = Date.now();
+		const meal = await fixtures.create({
+			title: "Check-in lunch",
+			type: EventType.FOOD,
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - hour),
+			endTime: new Date(now + hour)
+		});
+
+		await expect(
+			participant.caller.events.rotateParticipantEventTicket({
+				eventId: meal.id
+			})
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+		await admin.caller.users.update({
+			id: participant.user.id,
+			checkedIn: true
+		});
+		const ticket = await participant.caller.events.rotateParticipantEventTicket(
+			{ eventId: meal.id }
+		);
+		if (ticket.status !== EventTicketStatus.ACTIVE) {
+			throw new Error("Expected an active ticket");
+		}
+
+		await admin.caller.users.update({
+			id: participant.user.id,
+			checkedIn: false
+		});
+		await expect(
+			admin.caller.events.redeemEventTicket({
+				eventId: meal.id,
+				token: ticket.token
+			})
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
 	});
 });
 

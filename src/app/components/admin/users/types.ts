@@ -11,6 +11,7 @@ export type Participant = {
 	signedUpAt: Date;
 	emailVerified: boolean;
 	completedRegistration: boolean;
+	checkedIn: boolean;
 	institution: string | null;
 	major: Program | null;
 	registeredForFood: boolean | null;

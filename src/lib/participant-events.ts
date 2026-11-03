@@ -1,6 +1,11 @@
 import { differenceInSeconds } from "date-fns";
 import { z } from "zod";
-import { formatFullDate, formatTime, isSameCalgaryDay } from "@/lib/datetime";
+import {
+	formatDateKey,
+	formatFullDate,
+	formatTime,
+	isSameCalgaryDay
+} from "@/lib/datetime";
 import type { EventType } from "@/types/types";
 
 export const eventNavigationUrlSchema = z
@@ -22,6 +27,12 @@ export type DashboardEvent = {
 
 export function hasHackathonStarted(startDate: Date | null | undefined) {
 	return startDate != null && Date.now() >= startDate.getTime();
+}
+
+export function hasHackathonDayStarted(startDate: Date | null | undefined) {
+	return (
+		startDate != null && formatDateKey(new Date()) >= formatDateKey(startDate)
+	);
 }
 
 export function getCurrentEvent(events: DashboardEvent[], now: Date) {

@@ -69,7 +69,8 @@ export const usersRouter = createTRPCRouter({
 				wantsFood: true,
 				createdAt: true,
 				emailVerified: true,
-				completedRegistration: true
+				completedRegistration: true,
+				checkedIn: true
 			},
 			with: {
 				members: {
@@ -97,6 +98,7 @@ export const usersRouter = createTRPCRouter({
 				signedUpAt: person.createdAt,
 				emailVerified: person.emailVerified,
 				completedRegistration: person.completedRegistration,
+				checkedIn: person.checkedIn,
 				institution: person.school,
 				major: person.program,
 				registeredForFood: person.wantsFood
@@ -229,6 +231,7 @@ export const usersRouter = createTRPCRouter({
 					school: z.string().optional().nullable(),
 					program: z.enum(PROGRAMS).optional().nullable(),
 					completedRegistration: z.boolean().optional(),
+					checkedIn: z.boolean().optional(),
 					banned: z.boolean().optional()
 				})
 				.superRefine(({ firstName, lastName }, ctx) => {

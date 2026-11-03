@@ -3,6 +3,7 @@
 import PageHeader from "@/app/components/PageHeader";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import type { RouterOutputs } from "@/trpc/react";
+import { CheckInBanner } from "../CheckInBanner";
 import { DietaryRestriction } from "./DietaryRestriction";
 import { MealScheduleSection } from "./MealScheduleSection";
 import { MealTicket } from "./MealTicket";
@@ -12,11 +13,13 @@ type Meal = RouterOutputs["meals"]["getActiveMeals"][number];
 
 export function MealsView({
 	displayName,
+	needsCheckIn,
 	ticket,
 	dietaryRestrictions,
 	meals
 }: {
 	displayName: string;
+	needsCheckIn: boolean;
 	ticket: Ticket | null;
 	dietaryRestrictions: string[];
 	meals: Meal[];
@@ -30,7 +33,11 @@ export function MealsView({
 				title="Meals"
 			/>
 			<div className="flex flex-col gap-6">
-				<MealTicket displayName={displayName} ticket={ticket} />
+				{needsCheckIn ? (
+					<CheckInBanner />
+				) : (
+					<MealTicket displayName={displayName} ticket={ticket} />
+				)}
 				<DietaryRestriction dietaryRestrictions={dietaryRestrictions} />
 				<MealScheduleSection meals={meals} now={now} />
 			</div>

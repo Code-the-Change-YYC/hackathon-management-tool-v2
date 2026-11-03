@@ -18,7 +18,11 @@ import {
 import { expect, test } from "../../fixtures/meal-info.fixture";
 
 test.use({
-	authUserOptions: { name: "Participant User", role: Role.PARTICIPANT }
+	authUserOptions: {
+		checkedIn: true,
+		name: "Participant User",
+		role: Role.PARTICIPANT
+	}
 });
 
 // Given I am signed in as a participant

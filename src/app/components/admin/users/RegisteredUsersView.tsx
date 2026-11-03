@@ -145,6 +145,15 @@ export function RegisteredUsersView({
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	const { refresh } = useRefresh();
+	const checkIn = api.users.update.useMutation({
+		onSuccess: ({ firstName, lastName, checkedIn }) => {
+			toast.success(
+				`${firstName} ${lastName} ${checkedIn ? "checked in" : "unchecked"}!`
+			);
+			refresh();
+		},
+		onError: (error) => toast.error(error.message)
+	});
 
 	const resendAccessEmail = api.judges.resendAccessEmail.useMutation({
 		onSuccess: (_, { id }) => {
@@ -323,6 +332,9 @@ export function RegisteredUsersView({
 						</div>
 
 						<ParticipantsTable
+							onCheckIn={(participant, checkedIn) =>
+								checkIn.mutate({ id: participant.id, checkedIn })
+							}
 							onDelete={setDeleting}
 							onEdit={setEditing}
 							onResendAccessEmail={(participant) =>
