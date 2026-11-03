@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { WarningLine } from "@mingcute/react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { DateField } from "@/app/components/forms/DateField";
@@ -11,6 +12,7 @@ import {
 } from "@/app/components/forms/SelectField";
 import { TextField } from "@/app/components/forms/TextField";
 import { TimeField } from "@/app/components/forms/TimeField";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button } from "@/app/components/ui/button";
 import {
 	Dialog,
@@ -60,12 +62,14 @@ function toFormInput(
 export function RoundDialog({
 	round,
 	kinds = [],
+	hasSchedule = false,
 	hackathonDates,
 	onClose,
 	onSaved
 }: {
 	round?: Round;
 	kinds?: readonly JudgingRoundKind[];
+	hasSchedule?: boolean;
 	hackathonDates: HackathonDates | null;
 	onClose: () => void;
 	onSaved?: (roundId: string) => void;
@@ -114,6 +118,17 @@ export function RoundDialog({
 							: createRound.mutate(values)
 					)}
 				>
+					{/* Final rounds move their finalists; panel schedules stay put. */}
+					{round?.kind === "panel" && hasSchedule ? (
+						<Alert className="border-none bg-muted p-4" role="status">
+							<WarningLine />
+							<AlertTitle>The schedule won’t move</AlertTitle>
+							<AlertDescription>
+								Changing the times doesn’t update the schedule. Regenerate it
+								after saving so presentations fit the new times.
+							</AlertDescription>
+						</Alert>
+					) : null}
 					<FieldGroup className="gap-4">
 						{!round && kinds.length > 1 ? (
 							<SelectField

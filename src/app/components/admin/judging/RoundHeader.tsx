@@ -163,6 +163,7 @@ export function RoundHeader({
 			{isEditing ? (
 				<RoundDialog
 					hackathonDates={hackathonDates}
+					hasSchedule={hasSchedule}
 					onClose={() => setIsEditing(false)}
 					round={round}
 				/>

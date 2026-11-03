@@ -196,6 +196,42 @@ describe("round dialog", () => {
 		);
 	});
 
+	it("warns that a generated panel schedule keeps its times", () => {
+		const round = judgingRound({ kind: "panel" });
+		const { rerender } = render(
+			<RoundDialog
+				hackathonDates={hackathonDates}
+				onClose={vi.fn()}
+				round={round}
+			/>
+		);
+		expect(
+			screen.queryByText("The schedule won’t move")
+		).not.toBeInTheDocument();
+		rerender(
+			<RoundDialog
+				hackathonDates={hackathonDates}
+				hasSchedule
+				onClose={vi.fn()}
+				round={round}
+			/>
+		);
+		expect(screen.getByRole("status")).toHaveTextContent(
+			"Changing the times doesn’t update the schedule. Regenerate it after saving so presentations fit the new times."
+		);
+		rerender(
+			<RoundDialog
+				hackathonDates={hackathonDates}
+				hasSchedule
+				onClose={vi.fn()}
+				round={judgingRound({ kind: "final" })}
+			/>
+		);
+		expect(
+			screen.queryByText("The schedule won’t move")
+		).not.toBeInTheDocument();
+	});
+
 	it("can't submit while a creation is pending", () => {
 		mocks.pending = true;
 		render(<RoundDialog hackathonDates={hackathonDates} onClose={vi.fn()} />);
