@@ -1,5 +1,13 @@
+import { Book2Line } from "@mingcute/react";
 import { getResources } from "@/app/actions";
 import { Card, CardContent, CardHeader } from "../../ui/card";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle
+} from "../../ui/empty";
 import ResourceCard from "./ResourceCard";
 
 export default async function ResourcesSection() {
@@ -19,7 +27,17 @@ export default async function ResourcesSection() {
 							))}
 						</div>
 					) : (
-						<p className="text-dark-grey">Resources will be announced soon.</p>
+						<Empty>
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<Book2Line />
+								</EmptyMedia>
+								<EmptyTitle>No resources yet</EmptyTitle>
+								<EmptyDescription>
+									Resources will be announced soon.
+								</EmptyDescription>
+							</EmptyHeader>
+						</Empty>
 					)}
 				</CardContent>
 			</Card>
