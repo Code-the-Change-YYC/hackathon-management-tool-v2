@@ -19,15 +19,16 @@ import { api } from "@/trpc/react";
 import PageHeader from "../../PageHeader";
 import { Card, CardContent } from "../../ui/card";
 import { PrescreenDialog } from "./PrescreenDialog";
-import { ReviewFeedbackDialog } from "./ReviewFeedbackDialog";
+import { PrescreeningCard } from "./PrescreeningCard";
 import { TeamsTable } from "./TeamsTable";
 import { TeamsToolbar } from "./TeamsToolbar";
 import {
-	FILTER_OPTIONS,
 	type FilterOption,
+	getFilterOptions,
 	SORT_OPTIONS,
 	type SortOption,
-	type Team
+	type Team,
+	type TeamRound
 } from "./types";
 
 type ActiveChip = {
@@ -43,43 +44,33 @@ function matchesSearch(team: Team, search: string) {
 		return true;
 	}
 
-	return [team.id, team.name, team.feedback ?? "", team.members].some((value) =>
-		value.toLowerCase().includes(needle)
-	);
+	return [
+		team.name,
+		team.teamCode ?? "",
+		team.feedback ?? "",
+		...team.members.flatMap((member) => [member.name, member.email])
+	].some((value) => value.toLowerCase().includes(needle));
 }
 
 function matchesFilters(team: Team, filters: FilterOption[]) {
 	if (filters.length === 0) return true;
 
-	if (filters.includes("prescreen") && team.prescreen !== "passed") {
-		return false;
-	}
-
-	if (filters.includes("round-one") && !team.round1) {
-		return false;
-	}
-
-	if (
-		filters.includes("round-two") &&
-		team.round2 !== "winner" &&
-		team.round2 !== "sp-winner"
-	) {
-		return false;
-	}
-
-	if (filters.includes("lt-two") && team.memberCount >= 2) {
-		return false;
-	}
-
-	return true;
+	return filters.every((filter) => {
+		switch (filter) {
+			case "prescreen":
+				return team.prescreen === "passed";
+			case "finalist":
+				return team.finalist === true;
+			case "lt-two":
+				return team.members.length < 2;
+			default:
+				return team.rounds[filter.slice("round:".length)] === true;
+		}
+	});
 }
 
 function compareTeams(a: Team, b: Team, sort: SortOption | null) {
 	switch (sort) {
-		case "rank-asc":
-			return a.rank - b.rank;
-		case "rank-desc":
-			return b.rank - a.rank;
 		case "name-asc":
 			return a.name.localeCompare(b.name);
 		case "name-desc":
@@ -91,14 +82,14 @@ function compareTeams(a: Team, b: Team, sort: SortOption | null) {
 
 type TeamsViewProps = {
 	teams: Team[];
+	rounds: TeamRound[];
 };
 
-export function TeamsView({ teams }: TeamsViewProps) {
+export function TeamsView({ teams, rounds }: TeamsViewProps) {
 	const [search, setSearch] = useState("");
 	const [filters, setFilters] = useState<FilterOption[]>([]);
 	const [sort, setSort] = useState<SortOption | null>(null);
-	const [reviewing, setReviewing] = useState<Team | null>(null);
-	const [prescreening, setPrescreening] = useState<Team | null>(null);
+	const [isPrescreening, setIsPrescreening] = useState(false);
 	const [deleting, setDeleting] = useState<Team | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 
@@ -114,11 +105,13 @@ export function TeamsView({ teams }: TeamsViewProps) {
 		[teams, search, filters, sort]
 	);
 
+	const filterOptions = useMemo(() => getFilterOptions(rounds), [rounds]);
+
 	const activeChips: ActiveChip[] = [
 		...filters.map((filter) => ({
 			key: `${filter}`,
 			label:
-				FILTER_OPTIONS.find((option) => option.value === filter)?.label ??
+				filterOptions.find((option) => option.value === filter)?.label ??
 				filter,
 			onRemove: () =>
 				setFilters((current) => current.filter((value) => value !== filter))
@@ -136,8 +129,7 @@ export function TeamsView({ teams }: TeamsViewProps) {
 
 	function handleCopyEmails() {
 		const emails = visibleTeams
-			.map((team) => team.members)
-			.filter((members) => members !== "")
+			.flatMap((team) => team.members.map((member) => member.email))
 			.join(", ");
 
 		void navigator.clipboard?.writeText(emails);
@@ -182,9 +174,14 @@ export function TeamsView({ teams }: TeamsViewProps) {
 					description="Manage teams and prescreening."
 					title="Teams"
 				/>
+				<PrescreeningCard
+					onStart={() => setIsPrescreening(true)}
+					teams={teams}
+				/>
 				<Card>
 					<CardContent className="flex flex-col gap-6">
 						<TeamsToolbar
+							filterOptions={filterOptions}
 							filters={filters}
 							onCopyEmails={handleCopyEmails}
 							onDownloadCsv={handleDownloadCsv}
@@ -216,31 +213,19 @@ export function TeamsView({ teams }: TeamsViewProps) {
 
 						<TeamsTable
 							onDelete={setDeleting}
-							onPrescreen={setPrescreening}
-							onReview={setReviewing}
+							rounds={rounds}
 							teams={visibleTeams}
 						/>
 					</CardContent>
 				</Card>
 			</div>
 
-			<PrescreenDialog
-				onOpenChange={(open) => {
-					if (!open) {
-						setPrescreening(null);
-					}
-				}}
-				team={prescreening}
-			/>
-			{/* TODO: Reimplement after judging issues have been settled (round1, round2, and final round data are not yet in the db, so this dialog is pointless for now) */}
-			{/* <ReviewFeedbackDialog
-				onOpenChange={(open) => {
-					if (!open) {
-						setReviewing(null);
-					}
-				}}
-				team={reviewing}
-			/> */}
+			{isPrescreening ? (
+				<PrescreenDialog
+					onClose={() => setIsPrescreening(false)}
+					teams={teams}
+				/>
+			) : null}
 
 			<AlertDialog
 				onOpenChange={(open) => {
@@ -252,21 +237,31 @@ export function TeamsView({ teams }: TeamsViewProps) {
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete this team?</AlertDialogTitle>
+						<AlertDialogTitle>
+							{deleting?.judged
+								? "This team can’t be deleted"
+								: "Delete this team?"}
+						</AlertDialogTitle>
 						<AlertDialogDescription>
-							{deleting
-								? `Team ${deleting.name} will be removed. This cannot be undone.`
-								: null}
+							{deleting?.judged
+								? `${deleting.name} has judging scores or final-round votes. Deleting it would erase the judges’ work and change other teams’ rankings.`
+								: deleting
+									? `Team ${deleting.name} will be removed. This cannot be undone.`
+									: null}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDelete}
-							variant="destructive-solid"
-						>
-							{isDeleting ? "Deleting..." : "Delete team"}
-						</AlertDialogAction>
+						<AlertDialogCancel>
+							{deleting?.judged ? "Close" : "Cancel"}
+						</AlertDialogCancel>
+						{deleting?.judged ? null : (
+							<AlertDialogAction
+								onClick={handleDelete}
+								variant="destructive-solid"
+							>
+								{isDeleting ? "Deleting..." : "Delete team"}
+							</AlertDialogAction>
+						)}
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>

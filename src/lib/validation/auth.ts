@@ -64,6 +64,10 @@ export const forgotPasswordSchema = z.object({
 	email: emailSchema
 });
 
+export const judgeLoginSchema = z.object({
+	email: emailSchema
+});
+
 export const resetPasswordSchema = z.object({
 	code: verificationCodeSchema,
 	password: newPasswordSchema
@@ -73,4 +77,5 @@ export type LoginValues = z.infer<typeof loginSchema>;
 export type SignupValues = z.infer<typeof signupSchema>;
 export type VerifyEmailValues = z.infer<typeof verifyEmailSchema>;
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
+export type JudgeLoginValues = z.infer<typeof judgeLoginSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;

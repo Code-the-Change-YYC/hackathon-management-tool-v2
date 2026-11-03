@@ -50,6 +50,7 @@ const MESSAGES: Record<string, string> = {
 	INVALID_EMAIL: "Enter a valid email address",
 	INVALID_EMAIL_OR_PASSWORD: "Incorrect email or password",
 	INVALID_OTP: "That code isn’t right. Check your email and try again.",
+	JUDGE_NOT_FOUND: "We couldn’t find a judge account for that email",
 	OTP_EXPIRED: "That code has expired. Resend the code to get a new one.",
 	TOO_MANY_ATTEMPTS:
 		"Too many incorrect attempts. Resend the code to get a new one.",

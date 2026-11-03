@@ -19,7 +19,7 @@ type ParticipantsToolbarProps = {
 	onFiltersChange: (filters: ParticipantFilters) => void;
 	sort: SortOption | null;
 	onSortChange: (sort: SortOption) => void;
-	onInvite: () => void;
+	onAddJudge: () => void;
 	onEmail: () => void;
 	onCopyEmails: () => void;
 	onDownloadCsv: () => void;
@@ -32,7 +32,7 @@ export function ParticipantsToolbar({
 	onFiltersChange,
 	sort,
 	onSortChange,
-	onInvite,
+	onAddJudge,
 	onEmail,
 	onCopyEmails,
 	onDownloadCsv
@@ -56,16 +56,15 @@ export function ParticipantsToolbar({
 					onFiltersChange={onFiltersChange}
 				/>
 				<ParticipantsSortMenu onSortChange={onSortChange} sort={sort} />
-				{/* TODO: Fully implement user invites */}
-				{/* <Button
+				<Button
 					aria-haspopup="dialog"
-					aria-label="Invite a user"
-					onClick={onInvite}
+					onClick={onAddJudge}
 					size="sm"
 					variant="outline"
 				>
-					<UserAddLine /> Invite user
-				</Button> */}
+					<UserAddLine data-icon="inline-start" />
+					Add judge
+				</Button>
 				<ParticipantsExportMenu
 					onCopyEmails={onCopyEmails}
 					onDownloadCsv={onDownloadCsv}

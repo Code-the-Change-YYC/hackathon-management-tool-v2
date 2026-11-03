@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { ScoreView } from "@/app/components/judge/score/ScoreView";
-import { requireRole } from "@/server/better-auth/auth-helpers/helpers";
+import { areScoresReleased } from "@/server/api/participant-judging";
+import { requireJudge } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
-import { Role } from "@/types/types";
 
 export const metadata: Metadata = {
 	title: "Score | Hack the Change"
@@ -15,9 +15,10 @@ export default async function ScorePage({
 }) {
 	const [{ assignmentId }, { user }] = await Promise.all([
 		params,
-		requireRole([Role.JUDGE, Role.ADMIN])
+		requireJudge()
 	]);
-	const [assignments, criteria] = await Promise.all([
+	const [settings, assignments, criteria] = await Promise.all([
+		api.hackathonSettings.get(),
 		api.judgingAssignments.getByJudge({ judgeId: user.id }),
 		api.criteria.getAll()
 	]);
@@ -25,11 +26,10 @@ export default async function ScorePage({
 	return (
 		<ScoreView
 			assignment={assignments.find(({ id }) => id === assignmentId) ?? null}
-			assignments={assignments}
 			criteria={criteria}
 			key={`${user.id}:${assignmentId}`}
+			scoresReleased={areScoresReleased(settings)}
 			userId={user.id}
-			userName={user.firstName || user.name || "Judge"}
 		/>
 	);
 }

@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { DashboardView } from "@/app/components/participant/dashboard/DashboardView";
 import type { DashboardEvent } from "@/lib/participant-events";
+import type { JudgingProgress } from "@/lib/participant-judging";
 import { EventType } from "@/types/types";
 
 function ongoingEvent(navigationUrl: string | null): DashboardEvent {
@@ -17,14 +18,23 @@ function ongoingEvent(navigationUrl: string | null): DashboardEvent {
 	};
 }
 
+const progress: JudgingProgress = {
+	startDate: null,
+	submissionDeadline: null,
+	prescreenComplete: false,
+	rounds: [],
+	scoresReleased: false
+};
+
 describe("participant dashboard page", () => {
 	it("shows honest empty and unconfigured states", () => {
 		render(
 			<DashboardView
 				events={[]}
 				firstName="Victoria"
+				judging={[]}
 				needsCheckIn={false}
-				rounds={[]}
+				progress={progress}
 				settings={null}
 			/>
 		);
@@ -41,8 +51,9 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[ongoingEvent("https://example.com/directions")]}
 				firstName="Victoria"
+				judging={[]}
 				needsCheckIn={false}
-				rounds={[]}
+				progress={progress}
 				settings={null}
 			/>
 		);
@@ -56,8 +67,9 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[ongoingEvent("javascript:alert(1)")]}
 				firstName="Victoria"
+				judging={[]}
 				needsCheckIn={false}
-				rounds={[]}
+				progress={progress}
 				settings={null}
 			/>
 		);
@@ -70,8 +82,9 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[]}
 				firstName="Victoria"
+				judging={[]}
 				needsCheckIn={false}
-				rounds={[]}
+				progress={progress}
 				settings={null}
 			/>
 		);
@@ -92,8 +105,9 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[]}
 				firstName="Victoria"
+				judging={[]}
 				needsCheckIn
-				rounds={[]}
+				progress={progress}
 				settings={null}
 			/>
 		);
@@ -103,8 +117,9 @@ describe("participant dashboard page", () => {
 			<DashboardView
 				events={[]}
 				firstName="Victoria"
+				judging={[]}
 				needsCheckIn={false}
-				rounds={[]}
+				progress={progress}
 				settings={null}
 			/>
 		);

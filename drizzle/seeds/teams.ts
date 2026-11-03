@@ -1,131 +1,134 @@
 import { generateId } from "better-auth";
-import { and, eq } from "drizzle-orm";
+import { addMinutes, max, min, subMinutes } from "date-fns";
+import { TEAM_NAMES } from "drizzle/seeds/names";
+import { SAMPLE_EMAILS } from "drizzle/seeds/users";
+import { createRandom, type Random } from "drizzle/seedUtils";
+import { TEAM_CODE_LENGTH } from "@/lib/validation/team";
 import { db } from "@/server/db";
 import { member, organization } from "@/server/db/auth-schema";
-import {
-	MEMBER_ROLES,
-	type Organization,
-	Role,
-	type User
-} from "@/types/types";
-import { createOrGetUser } from "./users";
+import { MEMBER_ROLES, type User } from "@/types/types";
 
-const TEAM_DEFINITIONS = [
-	{ name: "Team One", slug: "team-1", teamCode: "TEAM01" },
-	{ name: "Team Two", slug: "team-2", teamCode: "TEAM02" },
-	{ name: "Team Three", slug: "team-3", teamCode: "TEAM03" },
-	{ name: "Team Four", slug: "team-4", teamCode: "TEAM04" },
-	{ name: "Team Five", slug: "team-5", teamCode: "TEAM05" },
-	{ name: "Team Six", slug: "team-6", teamCode: "TEAM06" }
-];
+const TEAM_CODE_CHARACTERS = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"];
+const MAX_TEAM_SIZE = 5;
+const MINUTES_PER_DAY = 24 * 60;
 
-type SeedTeamsInput = {
-	participantUser: User;
-};
+// Most teams fill up to four. Teams need between two and five members.
+const TEAM_SIZE_WEIGHTS = [
+	[2, 10],
+	[3, 25],
+	[4, 45],
+	[5, 20]
+] as const;
 
-export async function seedTeams({
-	participantUser
-}: SeedTeamsInput): Promise<Organization[]> {
+function planTeamSizes(random: Random, participantCount: number) {
+	const sizes: number[] = [];
+	let remaining = participantCount;
+	while (remaining > 0) {
+		const size = Math.min(remaining, random.weighted(TEAM_SIZE_WEIGHTS));
+		sizes.push(size);
+		remaining -= size;
+	}
+	// A leftover participant joins a team with room instead of hacking alone.
+	if (sizes.at(-1) === 1) {
+		sizes.pop();
+		const index = sizes.findIndex((size) => size < MAX_TEAM_SIZE);
+		sizes[index] = (sizes[index] ?? 0) + 1;
+	}
+	return sizes;
+}
+
+// Matches the slugs the app gives new teams.
+function createSlug(random: Random, name: string) {
+	const slug = name
+		.normalize("NFD")
+		.replace(/\p{M}/gu, "")
+		.toLowerCase()
+		.replace(/\s+/g, "-")
+		.replace(/[^a-z0-9-]/g, "");
+	return `${slug}-${random.int(0, 0xffff).toString(16).padStart(4, "0")}`;
+}
+
+function createTeamCode(random: Random, taken: Set<string>) {
+	let code: string;
+	do {
+		code = Array.from({ length: TEAM_CODE_LENGTH }, () =>
+			random.pick(TEAM_CODE_CHARACTERS)
+		).join("");
+	} while (taken.has(code));
+	taken.add(code);
+	return code;
+}
+
+export async function seedTeams(participants: User[]) {
 	console.log("\nCreating teams...");
 
-	const teams: Organization[] = [];
+	const random = createRandom(2);
+	const now = new Date();
 
-	for (const definition of TEAM_DEFINITIONS) {
-		const team = await db.transaction(async (tx) => {
-			let team = await tx.query.organization.findFirst({
-				where: eq(organization.slug, definition.slug)
-			});
-
-			if (!team) {
-				[team] = await tx
-					.insert(organization)
-					.values({
-						id: generateId(),
-						name: definition.name,
-						slug: definition.slug,
-						teamCode: definition.teamCode,
-						createdAt: new Date()
-					})
-					.returning();
-			} else if (!team.teamCode) {
-				[team] = await tx
-					.update(organization)
-					.set({ teamCode: definition.teamCode })
-					.where(eq(organization.id, team.id))
-					.returning();
-			}
-
-			if (!team) {
-				throw new Error(`Failed to create team: ${definition.name}`);
-			}
-
-			// Preserve existing owners, but repair teams left ownerless by earlier seeds.
-			const existingOwner = await tx.query.member.findFirst({
-				where: and(
-					eq(member.organizationId, team.id),
-					eq(member.role, MEMBER_ROLES.OWNER)
-				)
-			});
-
-			if (!existingOwner) {
-				// Stable, distinct accounts respect the one-team-per-user unique index.
-				const owner = await createOrGetUser({
-					email: `${definition.slug}-owner@hackathon.com`,
-					password: process.env.PARTICIPANT_PASSWORD || "Password123!",
-					name: `${definition.name} Owner`,
-					role: Role.PARTICIPANT
-				});
-				const membership = await tx.query.member.findFirst({
-					where: eq(member.userId, owner.id)
-				});
-
-				if (membership && membership.organizationId !== team.id) {
-					throw new Error(
-						`Cannot seed ${definition.name}: ${owner.email} already belongs to another team.`
-					);
-				}
-
-				if (membership) {
-					await tx
-						.update(member)
-						.set({ role: MEMBER_ROLES.OWNER })
-						.where(eq(member.id, membership.id));
-				} else {
-					await tx.insert(member).values({
-						id: generateId(),
-						organizationId: team.id,
-						userId: owner.id,
-						role: MEMBER_ROLES.OWNER,
-						createdAt: new Date()
-					});
-				}
-			}
-
-			return team;
-		});
-
-		teams.push(team);
-		console.log(`Team ready: ${team.name}`);
+	// The sample participant owns the first team, so that login can manage it.
+	const isSample = (participant: User) =>
+		participant.email === SAMPLE_EMAILS.participant;
+	const queue = [
+		...participants.filter(isSample),
+		...random.shuffle(
+			participants.filter((participant) => !isSample(participant))
+		)
+	];
+	const sizes = planTeamSizes(random, queue.length);
+	const teamNames = random.shuffle(TEAM_NAMES);
+	if (sizes.length > teamNames.length) {
+		throw new Error(
+			`${sizes.length} teams need names, but there are only ${teamNames.length}.`
+		);
 	}
 
-	const participantTeam = teams[0];
-	if (participantTeam) {
-		// Reseeding must not move a participant who has joined a different team.
-		const existingMembership = await db.query.member.findFirst({
-			where: eq(member.userId, participantUser.id)
+	const teamCodes = new Set<string>();
+	const newTeams: (typeof organization.$inferInsert)[] = [];
+	const newMembers: (typeof member.$inferInsert)[] = [];
+	for (const [index, size] of sizes.entries()) {
+		const members = queue.splice(0, size);
+		const owner = members[0];
+		const name = teamNames[index];
+		if (!owner || !name) throw new Error("Ran out of participants or names.");
+
+		const teamId = generateId();
+		const createdAt = min([
+			addMinutes(owner.createdAt, random.int(10, 3 * MINUTES_PER_DAY)),
+			subMinutes(now, 30)
+		]);
+		newTeams.push({
+			id: teamId,
+			name,
+			slug: createSlug(random, name),
+			teamCode: createTeamCode(random, teamCodes),
+			createdAt
 		});
 
-		if (!existingMembership) {
-			await db.insert(member).values({
+		for (const participant of members) {
+			const isOwner = participant === owner;
+			newMembers.push({
 				id: generateId(),
-				organizationId: participantTeam.id,
-				userId: participantUser.id,
-				role: MEMBER_ROLES.MEMBER,
-				createdAt: new Date()
+				organizationId: teamId,
+				userId: participant.id,
+				role: isOwner ? MEMBER_ROLES.OWNER : MEMBER_ROLES.MEMBER,
+				// Teammates join with the team code once they've signed up.
+				createdAt: isOwner
+					? createdAt
+					: min([
+							addMinutes(
+								max([participant.createdAt, createdAt]),
+								random.int(5, 2 * MINUTES_PER_DAY)
+							),
+							subMinutes(now, 5)
+						])
 			});
-			console.log(`Added participant to ${participantTeam.name}`);
 		}
 	}
 
-	return teams;
+	const teams = await db.insert(organization).values(newTeams).returning();
+	await db.insert(member).values(newMembers);
+
+	const sampleTeam = teams.find((team) => team.id === newTeams[0]?.id);
+	console.log(`Created ${teams.length} teams`);
+	return { teams, sampleTeam };
 }

@@ -109,18 +109,24 @@ describe("hackathonSettings.updateDates", () => {
 	});
 });
 
-describe("hackathonSettings.update", () => {
-	it("leaves the hackathon dates to updateDates", async () => {
+describe("hackathonSettings.setScoresReleased", () => {
+	it("rejects callers without an admin session", async () => {
+		const api = await caller("participant");
+
+		await expect(
+			api.hackathonSettings.setScoresReleased({ released: true })
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+		expect(mocks.insertValues).not.toHaveBeenCalled();
+	});
+
+	it.each([true, false])("sets released to %s", async (released) => {
 		const api = await caller();
 
-		await api.hackathonSettings.update({
-			currentRoundId: null,
-			...dates
-		} as Parameters<typeof api.hackathonSettings.update>[0]);
+		await api.hackathonSettings.setScoresReleased({ released });
 
 		expect(mocks.insertValues).toHaveBeenCalledWith({
 			id: 1,
-			currentRoundId: null
+			scoresReleased: released
 		});
 	});
 });

@@ -54,10 +54,7 @@ function ScoringScale({
 						score !== undefined && score > band.min - 1 && score <= band.max;
 					return (
 						<li
-							className={cn(
-								"flex @min-[28rem]/scale:flex-col items-center @min-[28rem]/scale:items-stretch gap-x-3 gap-y-2 rounded-lg p-2",
-								containsScore && "bg-card ring-1 ring-primary"
-							)}
+							className="flex @min-[28rem]/scale:flex-col items-center @min-[28rem]/scale:items-stretch gap-x-3 gap-y-2 rounded-lg p-2"
 							key={band.label}
 						>
 							<span

@@ -2,6 +2,15 @@ import type { Email } from ".";
 
 type EmailContent = Omit<Email, "to">;
 
+// For text people typed, like names, that goes into an email's HTML.
+function escapeHtml(text: string) {
+	return text
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll('"', "&quot;");
+}
+
 function layout(body: string) {
 	return `<div style="font-family: Helvetica, Arial, sans-serif; color: #292929; font-size: 16px; line-height: 24px; max-width: 480px;">${body}<p style="color: #575757; font-size: 14px;">— The Code the Change YYC team</p></div>`;
 }
@@ -88,19 +97,35 @@ export function existingAccountEmail({
 	};
 }
 
-export function roleInvitationEmail({
-	roleLabel,
-	signupUrl
+/** Sent when an admin adds a judge, and again whenever they resend it. */
+export function judgeAccessEmail({
+	firstName,
+	loginUrl
 }: {
-	roleLabel: string;
-	signupUrl: string;
+	firstName: string;
+	loginUrl: string;
 }): EmailContent {
-	const withArticle = `${/^[aeiou]/i.test(roleLabel) ? "an" : "a"} ${roleLabel}`;
 	return {
-		subject: `You’re invited to Hack the Change 2026 as ${withArticle}`,
-		text: `You’ve been invited to join Hack the Change 2026 as ${withArticle}. To accept, create your account using this email address, and your ${roleLabel} access will be applied automatically: ${signupUrl}\n\nIf you weren’t expecting this invitation, you can ignore this email.`,
+		subject: "You’re a judge for Hack the Change 2026",
+		text: `Hi ${firstName},\n\nYou’ve been added as a judge for Hack the Change 2026. To sign in, open the judge login page and enter this email address. We’ll email you a one-time code, so there’s no password to remember: ${loginUrl}\n\nIf you weren’t expecting this, you can ignore this email.`,
 		html: layout(
-			`<p>You’ve been invited to join <strong>Hack the Change 2026</strong> as ${withArticle}.</p><p>To accept, <a href="${signupUrl}" style="color: #2911a7;">create your account</a> using this email address, and your ${roleLabel} access will be applied automatically.</p><p>If you weren’t expecting this invitation, you can ignore this email.</p>`
+			`<p>Hi ${escapeHtml(firstName)},</p><p>You’ve been added as a judge for <strong>Hack the Change 2026</strong>. To sign in, open the <a href="${loginUrl}" style="color: #2911a7;">judge login page</a> and enter this email address. We’ll email you a one-time code, so there’s no password to remember.</p><p>If you weren’t expecting this, you can ignore this email.</p>`
+		)
+	};
+}
+
+export function judgeSignInCodeEmail({
+	code,
+	expiresInMinutes
+}: {
+	code: string;
+	expiresInMinutes: number;
+}): EmailContent {
+	return {
+		subject: `${code} is your Hack the Change sign-in code`,
+		text: `Your Hack the Change judge sign-in code is ${code}. It expires in ${expiresInMinutes} minutes.\n\nIf you didn’t try to sign in, you can ignore this email.`,
+		html: layout(
+			`<p>Enter this code to sign in to judge Hack the Change:</p><p style="font-size: 32px; line-height: 40px; font-weight: 600; letter-spacing: 8px;">${code}</p><p>It expires in ${expiresInMinutes} minutes. If you didn’t try to sign in, you can ignore this email.</p>`
 		)
 	};
 }

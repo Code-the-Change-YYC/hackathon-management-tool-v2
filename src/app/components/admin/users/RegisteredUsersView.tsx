@@ -20,8 +20,8 @@ import { authClient } from "@/server/better-auth/client";
 import { api } from "@/trpc/react";
 import PageHeader from "../../PageHeader";
 import { Card, CardContent } from "../../ui/card";
+import { AddJudgeDialog } from "./AddJudgeDialog";
 import { EditParticipantDialog } from "./EditParticipantDialog";
-import { InviteUserDialog } from "./InviteUserDialog";
 import { ParticipantsTable } from "./ParticipantsTable";
 import { ParticipantsToolbar } from "./ParticipantsToolbar";
 import { RegistrationsChartCard } from "./RegistrationsChartCard";
@@ -138,7 +138,7 @@ export function RegisteredUsersView({
 	const [search, setSearch] = useState("");
 	const [filters, setFilters] = useState<ParticipantFilters>(EMPTY_FILTERS);
 	const [sort, setSort] = useState<SortOption | null>(null);
-	const [inviteOpen, setInviteOpen] = useState(false);
+	const [addJudgeOpen, setAddJudgeOpen] = useState(false);
 	const [emailOpen, setEmailOpen] = useState(false);
 	const [editing, setEditing] = useState<Participant | null>(null);
 	const [deleting, setDeleting] = useState<Participant | null>(null);
@@ -151,6 +151,16 @@ export function RegisteredUsersView({
 				`${firstName} ${lastName} ${checkedIn ? "checked in" : "unchecked"}!`
 			);
 			refresh();
+		},
+		onError: (error) => toast.error(error.message)
+	});
+
+	const resendAccessEmail = api.judges.resendAccessEmail.useMutation({
+		onSuccess: (_, { id }) => {
+			const judge = participants.find((participant) => participant.id === id);
+			toast.success(
+				judge ? `Access email sent to ${judge.email}.` : "Access email sent."
+			);
 		},
 		onError: (error) => toast.error(error.message)
 	});
@@ -291,11 +301,11 @@ export function RegisteredUsersView({
 					<CardContent className="flex flex-col gap-6">
 						<ParticipantsToolbar
 							filters={filters}
+							onAddJudge={() => setAddJudgeOpen(true)}
 							onCopyEmails={handleCopyEmails}
 							onDownloadCsv={handleDownloadCsv}
 							onEmail={() => setEmailOpen(true)}
 							onFiltersChange={setFilters}
-							onInvite={() => setInviteOpen(true)}
 							onSearchChange={setSearch}
 							onSortChange={setSort}
 							search={search}
@@ -327,13 +337,18 @@ export function RegisteredUsersView({
 							}
 							onDelete={setDeleting}
 							onEdit={setEditing}
+							onResendAccessEmail={(participant) =>
+								resendAccessEmail.mutate({ id: participant.id })
+							}
 							participants={visibleParticipants}
 						/>
 					</CardContent>
 				</Card>
 			</div>
 
-			<InviteUserDialog onOpenChange={setInviteOpen} open={inviteOpen} />
+			{addJudgeOpen && (
+				<AddJudgeDialog onClose={() => setAddJudgeOpen(false)} />
+			)}
 			<SendEmailDialog onOpenChange={setEmailOpen} open={emailOpen} />
 			<EditParticipantDialog
 				onOpenChange={(open) => {

@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => {
 		member: { findFirst: vi.fn(), findMany: vi.fn() },
 		organization: { findFirst: vi.fn(), findMany: vi.fn() },
 		judgingAssignments: { findFirst: vi.fn() },
-		criteria: { findMany: vi.fn() }
+		judgingCriteria: { findMany: vi.fn() }
 	};
 	const write = { set: vi.fn(), where: vi.fn(), returning: vi.fn() };
 	const scoreQuery = {
@@ -124,6 +124,10 @@ describe("merged team and judging workflows", () => {
 	});
 	it("allows admins to edit existing prescreen decisions", async () => {
 		const api = await caller();
+		// Failing frees the team's unjudged slots; it has none here.
+		mocks.remove.mockReturnValue({
+			where: () => ({ returning: async () => [] })
+		});
 		mocks.query.organization.findFirst
 			.mockResolvedValueOnce({
 				id: "team-1",

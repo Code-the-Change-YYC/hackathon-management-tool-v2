@@ -1,35 +1,43 @@
 import { TRPCError } from "@trpc/server";
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
+import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
+import { getParticipantCriteria } from "@/server/api/participant-judging";
+import type { DbClient } from "@/server/api/routers/judging-tables";
 import {
 	adminProcedure,
 	createTRPCRouter,
+	judgeProcedure,
 	publicProcedure
 } from "@/server/api/trpc";
-import type { db } from "@/server/db";
-import { judgingRounds } from "@/server/db/schema";
-import { criteria } from "@/server/db/scores-schema";
+import { judgingCriteria, judgingScores } from "@/server/db/judging-schema";
 
-async function validateRounds(database: typeof db, roundIds?: string[]) {
-	if (!roundIds?.length) return;
-	const ids = [...new Set(roundIds)];
-	const rounds = await database.query.judgingRounds.findMany({
-		where: inArray(judgingRounds.id, ids),
-		columns: { id: true }
-	});
-	if (rounds.length !== ids.length)
+// A scorecard only counts once it scores every criterion within its maximum,
+// so adding, removing or rescaling one after scoring starts voids scorecards.
+async function assertRubricUnlocked(db: DbClient) {
+	const [score] = await db
+		.select({ id: judgingScores.id })
+		.from(judgingScores)
+		.limit(1);
+	if (score) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
-			message: "One or more judging rounds were not found."
+			message:
+				"Judges have started scoring, so criteria can’t be added, removed, or rescored."
 		});
+	}
 }
 
 export const criteriaRouter = createTRPCRouter({
-	getAll: publicProcedure.query(async ({ ctx }) => {
+	getAll: judgeProcedure.query(async ({ ctx }) => {
 		return await ctx.db
 			.select()
-			.from(criteria)
-			.orderBy(asc(criteria.displayOrder), asc(criteria.name));
+			.from(judgingCriteria)
+			.orderBy(asc(judgingCriteria.displayOrder), asc(judgingCriteria.name));
+	}),
+
+	getPublic: publicProcedure.query(async ({ ctx }) => {
+		return await getParticipantCriteria(ctx.db);
 	}),
 
 	create: adminProcedure
@@ -38,20 +46,19 @@ export const criteriaRouter = createTRPCRouter({
 				name: z.string().min(1),
 				description: z.string().default(""),
 				displayOrder: z.number().int().default(0),
-				maxScore: z.number().int().positive().default(10),
-				roundIds: z.array(z.string().uuid()).default([]),
+				maxScore: z.number().int().positive().default(MAIN_CRITERION_MAX_SCORE),
 				isSidepot: z.boolean().default(false)
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			await validateRounds(ctx.db, input.roundIds);
-			if (!input.isSidepot && input.maxScore !== 10) {
+			await assertRubricUnlocked(ctx.db);
+			if (!input.isSidepot && input.maxScore !== MAIN_CRITERION_MAX_SCORE) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "Main criteria must have a maximum score of 10."
+					message: `Main criteria must have a maximum score of ${MAIN_CRITERION_MAX_SCORE}.`
 				});
 			}
-			return await ctx.db.insert(criteria).values(input).returning();
+			return await ctx.db.insert(judgingCriteria).values(input).returning();
 		}),
 
 	update: adminProcedure
@@ -62,15 +69,13 @@ export const criteriaRouter = createTRPCRouter({
 				description: z.string().optional(),
 				displayOrder: z.number().int().optional(),
 				maxScore: z.number().int().positive().optional(),
-				roundIds: z.array(z.string().uuid()).optional(),
 				isSidepot: z.boolean().optional()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
-			await validateRounds(ctx.db, data.roundIds);
-			const existing = await ctx.db.query.criteria.findFirst({
-				where: eq(criteria.id, id)
+			const existing = await ctx.db.query.judgingCriteria.findFirst({
+				where: eq(judgingCriteria.id, id)
 			});
 			if (!existing)
 				throw new TRPCError({
@@ -78,18 +83,24 @@ export const criteriaRouter = createTRPCRouter({
 					message: "Criterion not found."
 				});
 			if (
+				(data.maxScore !== undefined && data.maxScore !== existing.maxScore) ||
+				(data.isSidepot !== undefined && data.isSidepot !== existing.isSidepot)
+			) {
+				await assertRubricUnlocked(ctx.db);
+			}
+			if (
 				!(data.isSidepot ?? existing.isSidepot) &&
-				(data.maxScore ?? existing.maxScore) !== 10
+				(data.maxScore ?? existing.maxScore) !== MAIN_CRITERION_MAX_SCORE
 			) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "Main criteria must have a maximum score of 10."
+					message: `Main criteria must have a maximum score of ${MAIN_CRITERION_MAX_SCORE}.`
 				});
 			}
 			const [updated] = await ctx.db
-				.update(criteria)
+				.update(judgingCriteria)
 				.set(data)
-				.where(eq(criteria.id, id))
+				.where(eq(judgingCriteria.id, id))
 				.returning();
 			return updated;
 		}),
@@ -97,7 +108,10 @@ export const criteriaRouter = createTRPCRouter({
 	delete: adminProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
-			await ctx.db.delete(criteria).where(eq(criteria.id, input.id));
+			await assertRubricUnlocked(ctx.db);
+			await ctx.db
+				.delete(judgingCriteria)
+				.where(eq(judgingCriteria.id, input.id));
 			return { success: true };
 		})
 });
