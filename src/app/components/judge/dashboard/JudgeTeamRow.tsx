@@ -21,22 +21,25 @@ const rowClass = "flex min-h-20 items-center gap-2 px-4 py-3 sm:px-6";
 const mutedClass =
 	"text-muted-foreground group-data-[state=scored]:text-primary-foreground/80";
 
-type RowState = "scored" | "partial" | "open" | "upcoming";
+type RowState = "scored" | "partial" | "open" | "upcoming" | "closed";
 
 function getRowState(
 	assignment: JudgeAssignment,
 	criteria: Criterion[],
-	currentTime: Date
+	currentTime: Date,
+	scoresReleased: boolean
 ): RowState {
 	const status = getAssignmentScoreStatus(assignment, criteria);
 	if (status === "Scores recorded") return "scored";
+	// Released scores are published, so unfinished scorecards stay unfinished.
+	if (scoresReleased) return "closed";
 	// A criterion added after submission leaves a scorecard partly filled in.
 	if (status === "Partially scored") return "partial";
 	if (isScoringOpen(assignment, currentTime)) return "open";
 	return "upcoming";
 }
 
-const LINK_LABELS: Record<Exclude<RowState, "upcoming">, string> = {
+const LINK_LABELS: Record<Exclude<RowState, "upcoming" | "closed">, string> = {
 	scored: "Edit score for",
 	partial: "Continue scoring",
 	open: "Score"
@@ -86,19 +89,27 @@ function RowStatus({
 					{getSlotStatus(assignment.startsAt, currentTime)}
 				</span>
 			);
+		case "closed":
+			return (
+				<span className="shrink-0 text-muted-foreground text-sm">
+					Scoring closed
+				</span>
+			);
 	}
 }
 
 export function JudgeTeamRow({
 	assignment,
 	criteria,
-	currentTime
+	currentTime,
+	scoresReleased
 }: {
 	assignment: JudgeAssignment;
 	criteria: Criterion[];
 	currentTime: Date;
+	scoresReleased: boolean;
 }) {
-	const state = getRowState(assignment, criteria, currentTime);
+	const state = getRowState(assignment, criteria, currentTime, scoresReleased);
 
 	const content = (
 		<>
@@ -133,7 +144,7 @@ export function JudgeTeamRow({
 		state === "scored" && "bg-primary text-primary-foreground"
 	);
 
-	if (state === "upcoming") {
+	if (state === "upcoming" || state === "closed" || scoresReleased) {
 		return (
 			<li className={rowBackground} data-state={state}>
 				<div className={rowClass}>{content}</div>

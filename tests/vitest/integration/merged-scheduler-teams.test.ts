@@ -124,6 +124,10 @@ describe("merged team and judging workflows", () => {
 	});
 	it("allows admins to edit existing prescreen decisions", async () => {
 		const api = await caller();
+		// Failing frees the team's unjudged slots; it has none here.
+		mocks.remove.mockReturnValue({
+			where: () => ({ returning: async () => [] })
+		});
 		mocks.query.organization.findFirst
 			.mockResolvedValueOnce({
 				id: "team-1",

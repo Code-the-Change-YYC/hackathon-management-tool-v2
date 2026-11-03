@@ -235,21 +235,31 @@ export function TeamsView({ teams, rounds }: TeamsViewProps) {
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete this team?</AlertDialogTitle>
+						<AlertDialogTitle>
+							{deleting?.judged
+								? "This team can’t be deleted"
+								: "Delete this team?"}
+						</AlertDialogTitle>
 						<AlertDialogDescription>
-							{deleting
-								? `Team ${deleting.name} will be removed. This cannot be undone.`
-								: null}
+							{deleting?.judged
+								? `${deleting.name} has judging scores or final-round votes. Deleting it would erase the judges’ work and change other teams’ rankings.`
+								: deleting
+									? `Team ${deleting.name} will be removed. This cannot be undone.`
+									: null}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDelete}
-							variant="destructive-solid"
-						>
-							{isDeleting ? "Deleting..." : "Delete team"}
-						</AlertDialogAction>
+						<AlertDialogCancel>
+							{deleting?.judged ? "Close" : "Cancel"}
+						</AlertDialogCancel>
+						{deleting?.judged ? null : (
+							<AlertDialogAction
+								onClick={handleDelete}
+								variant="destructive-solid"
+							>
+								{isDeleting ? "Deleting..." : "Delete team"}
+							</AlertDialogAction>
+						)}
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>

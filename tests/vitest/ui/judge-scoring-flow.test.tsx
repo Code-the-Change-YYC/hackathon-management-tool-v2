@@ -78,6 +78,7 @@ function mount() {
 			<ScoreView
 				assignment={{ ...assignment, scores: mocks.saved() }}
 				criteria={mocks.portal().criteria}
+				scoresReleased={false}
 				userId="judge-a"
 			/>
 		</QueryClientProvider>
@@ -126,6 +127,7 @@ describe("individual judge scoring", () => {
 						})
 					})}
 					criteria={criteria}
+					scoresReleased={false}
 					userId="judge-a"
 				/>
 			</QueryClientProvider>
@@ -262,6 +264,7 @@ describe("individual judge scoring", () => {
 				<ScoreView
 					assignment={assignment}
 					criteria={criteria}
+					scoresReleased={false}
 					userId="judge-b"
 				/>
 			</QueryClientProvider>

@@ -153,6 +153,12 @@ export function PanelResults({
 					</EmptyHeader>
 				</Empty>
 			)}
+			{rankings.failedTeamNames.length ? (
+				<p className="mt-4 text-muted-foreground text-sm">
+					Not ranked because they failed pre-screening:{" "}
+					{rankings.failedTeamNames.join(", ")}.
+				</p>
+			) : null}
 			{isPicking && finalRound ? (
 				<FinalistsDialog
 					finalRound={finalRound}

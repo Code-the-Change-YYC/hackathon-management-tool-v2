@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ScoreView } from "@/app/components/judge/score/ScoreView";
+import { areScoresReleased } from "@/server/api/participant-judging";
 import { requireJudge } from "@/server/better-auth/auth-helpers/helpers";
 import { api } from "@/trpc/server";
 
@@ -16,7 +17,8 @@ export default async function ScorePage({
 		params,
 		requireJudge()
 	]);
-	const [assignments, criteria] = await Promise.all([
+	const [settings, assignments, criteria] = await Promise.all([
+		api.hackathonSettings.get(),
 		api.judgingAssignments.getByJudge({ judgeId: user.id }),
 		api.criteria.getAll()
 	]);
@@ -26,6 +28,7 @@ export default async function ScorePage({
 			assignment={assignments.find(({ id }) => id === assignmentId) ?? null}
 			criteria={criteria}
 			key={`${user.id}:${assignmentId}`}
+			scoresReleased={areScoresReleased(settings)}
 			userId={user.id}
 		/>
 	);

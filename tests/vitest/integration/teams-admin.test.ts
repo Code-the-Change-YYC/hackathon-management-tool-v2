@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => ({
 	txDelete: vi.fn(),
 	txWhere: vi.fn(),
 	txReturning: vi.fn(),
+	txLimit: vi.fn(),
+	judged: vi.fn(),
 	session: vi.fn()
 }));
 
@@ -34,6 +36,7 @@ vi.mock("@/server/db", () => ({
 			judgingRounds: { findMany: mocks.findRounds }
 		},
 		update: mocks.update,
+		selectDistinct: () => ({ from: () => ({ where: mocks.judged }) }),
 		transaction: mocks.transaction
 	}
 }));
@@ -60,11 +63,17 @@ beforeEach(() => {
 	mocks.txDelete.mockReturnValue({ where: mocks.txWhere });
 	mocks.txWhere.mockReturnValue({ returning: mocks.txReturning });
 	mocks.txReturning.mockResolvedValue([]);
+	mocks.txLimit.mockResolvedValue([]);
+	mocks.judged.mockResolvedValue([]);
 	mocks.transaction.mockImplementation(
 		async (callback: (tx: unknown) => Promise<unknown>) =>
 			callback({
 				execute: mocks.txExecute,
-				delete: mocks.txDelete
+				delete: mocks.txDelete,
+				update: mocks.update,
+				select: () => ({
+					from: () => ({ where: () => ({ limit: mocks.txLimit }) })
+				})
 			})
 	);
 });
@@ -135,6 +144,7 @@ describe("admin teams procedures", () => {
 			},
 			{ id: "final", name: "Final Round", kind: "final", tables: [] }
 		]);
+		mocks.judged.mockResolvedValue([{ teamId: "team-1" }]);
 
 		const api = await caller("admin");
 
@@ -150,6 +160,7 @@ describe("admin teams procedures", () => {
 					teamCode: "ABC123",
 					prescreen: "passed",
 					feedback: null,
+					judged: true,
 					members: [
 						{ name: "Ada Lovelace", email: "alpha@example.com" },
 						{ name: "Alan Turing", email: "teammate@example.com" }
@@ -162,6 +173,7 @@ describe("admin teams procedures", () => {
 					teamCode: null,
 					prescreen: "pending",
 					feedback: null,
+					judged: false,
 					members: [],
 					rounds: { "round-1": false, "round-2": null }
 				}
@@ -220,7 +232,7 @@ describe("admin teams procedures", () => {
 				comments: "Reviewed"
 			})
 		).rejects.toMatchObject({ code: "NOT_FOUND" });
-		expect(mocks.update).not.toHaveBeenCalled();
+		expect(mocks.txDelete).not.toHaveBeenCalled();
 	});
 
 	it("saves a prescreen result with the current admin and timestamp", async () => {
@@ -242,7 +254,7 @@ describe("admin teams procedures", () => {
 				status: "failed",
 				comments: "  Missing a working demo  "
 			})
-		).resolves.toEqual(updatedTeam);
+		).resolves.toEqual({ ...updatedTeam, removedSlots: 0 });
 		expect(mocks.set).toHaveBeenCalledWith(
 			expect.objectContaining({
 				prescreenStatus: "failed",
@@ -264,8 +276,21 @@ describe("admin teams procedures", () => {
 		});
 		expect(mocks.transaction).toHaveBeenCalledOnce();
 		expect(mocks.txExecute).toHaveBeenCalledOnce();
-		expect(mocks.txDelete).toHaveBeenCalledOnce();
+		// Its assignments and members go first, then the team.
+		expect(mocks.txDelete).toHaveBeenCalledTimes(3);
 		expect(mocks.txReturning).toHaveBeenCalledOnce();
+	});
+
+	it("refuses to delete a team with judging scores or votes", async () => {
+		mocks.txLimit.mockResolvedValue([{ id: "scored-assignment" }]);
+		const api = await caller("admin");
+
+		await expect(api.teams.delete({ id: "team-1" })).rejects.toMatchObject({
+			code: "CONFLICT",
+			message:
+				"This team has judging scores or final-round votes, so it can’t be deleted."
+		});
+		expect(mocks.txDelete).not.toHaveBeenCalled();
 	});
 
 	it("returns not found when deleting an unknown team", async () => {

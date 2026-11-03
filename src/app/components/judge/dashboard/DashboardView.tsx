@@ -118,11 +118,13 @@ function BreakRow({
 function RoundSection({
 	group,
 	criteria,
-	currentTime
+	currentTime,
+	scoresReleased
 }: {
 	group: RoundGroup;
 	criteria: Criterion[];
 	currentTime: Date;
+	scoresReleased: boolean;
 }) {
 	const titleId = `round-${group.round.id}-title`;
 
@@ -154,6 +156,7 @@ function RoundSection({
 								criteria={criteria}
 								currentTime={currentTime}
 								key={item.assignment.id}
+								scoresReleased={scoresReleased}
 							/>
 						);
 					})}
@@ -304,6 +307,7 @@ export function DashboardView({
 							currentTime={currentTime}
 							group={group}
 							key={group.round.id}
+							scoresReleased={scoresReleased}
 						/>
 					)
 				)}

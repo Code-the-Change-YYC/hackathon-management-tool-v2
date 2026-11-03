@@ -14,7 +14,8 @@ const mocks = vi.hoisted(() => ({
 		judgingCriteria: { findMany: vi.fn(), findFirst: vi.fn() },
 		judgingAssignments: { findFirst: vi.fn(), findMany: vi.fn() },
 		judgingTableJudges: { findMany: vi.fn() },
-		judgingRounds: { findMany: vi.fn() }
+		judgingRounds: { findMany: vi.fn() },
+		hackathonSettings: { findFirst: vi.fn() }
 	},
 	insert: vi.fn(),
 	update: vi.fn(),

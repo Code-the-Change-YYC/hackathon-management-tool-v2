@@ -42,7 +42,9 @@ export const judgingResultsRouter = createTRPCRouter({
     INNER JOIN ${judgingScores} s
      ON s.assignment_id = card.assignment_id AND s.judge_id = card.judge_id
     INNER JOIN ${judgingCriteria} c ON c.id = s.criteria_id
+    INNER JOIN ${organization} o ON o.id = card.team_id
     WHERE card.round_id = ${input.roundId} AND c.is_sidepot = true
+     AND o.prescreen_status <> 'failed'
    `)) as unknown as (PanelScorecard & { criterionId: string })[];
 			const sidepotCriteria = await ctx.db.query.judgingCriteria.findMany({
 				where: eq(judgingCriteria.isSidepot, true),
@@ -58,7 +60,9 @@ export const judgingResultsRouter = createTRPCRouter({
 					judges: { columns: { judgeId: true } },
 					assignments: {
 						columns: {},
-						with: { team: { columns: { id: true, name: true } } }
+						with: {
+							team: { columns: { id: true, name: true, prescreenStatus: true } }
+						}
 					}
 				}
 			});
@@ -66,8 +70,14 @@ export const judgingResultsRouter = createTRPCRouter({
 				string,
 				{ teamName: string; expectedScorecards: number }
 			>();
+			// Failed teams can keep slots judges scored, but aren't ranked.
+			const failedTeams = new Map<string, string>();
 			for (const table of tables) {
 				for (const { team } of table.assignments) {
+					if (team.prescreenStatus === "failed") {
+						failedTeams.set(team.id, team.name);
+						continue;
+					}
 					const entry = teams.get(team.id) ?? {
 						teamName: team.name,
 						expectedScorecards: 0
@@ -100,6 +110,9 @@ export const judgingResultsRouter = createTRPCRouter({
 
 			return {
 				main: withTeams(cards),
+				failedTeamNames: [...failedTeams.values()].sort((a, b) =>
+					a.localeCompare(b)
+				),
 				sidepots: sidepotCriteria.map((criterion) => ({
 					criterionId: criterion.id,
 					name: criterion.name,
@@ -135,12 +148,18 @@ export const judgingResultsRouter = createTRPCRouter({
 				await assertRoundHasNoScores(tx, round.id);
 				const teams = await tx.query.organization.findMany({
 					where: inArray(organization.id, input.teamIds),
-					columns: { id: true }
+					columns: { id: true, prescreenStatus: true }
 				});
 				if (teams.length !== input.teamIds.length) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
 						message: "One or more finalists were not found."
+					});
+				}
+				if (teams.some((team) => team.prescreenStatus !== "passed")) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Finalists must have passed pre-screening."
 					});
 				}
 				const judges = await tx.query.user.findMany({
@@ -262,7 +281,9 @@ export const judgingResultsRouter = createTRPCRouter({
 							},
 							assignments: {
 								with: {
-									team: { columns: { id: true, name: true } },
+									team: {
+										columns: { id: true, name: true, prescreenStatus: true }
+									},
 									votes: true
 								}
 							}
@@ -304,11 +325,18 @@ export const judgingResultsRouter = createTRPCRouter({
 		const teamNames = new Map(
 			finalists.map(({ team }) => [team.id, team.name])
 		);
+		// A finalist that failed pre-screening after judges ranked it can't
+		// win, and votes for it don't count toward anyone else.
+		const eligibleIds = new Set(
+			finalists
+				.filter(({ team }) => team.prescreenStatus !== "failed")
+				.map(({ team }) => team.id)
+		);
 
 		return {
 			results: rankFinalists(
-				finalists.map(({ team }) => team.id),
-				votes,
+				[...eligibleIds],
+				votes.filter((vote) => eligibleIds.has(vote.teamId)),
 				panelScores
 			).map((entry) => ({
 				...entry,

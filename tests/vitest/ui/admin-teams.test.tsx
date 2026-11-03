@@ -59,6 +59,7 @@ const teams: Team[] = [
 		teamCode: "BETA01",
 		prescreen: "pending",
 		feedback: null,
+		judged: false,
 		members: [{ name: "Bea Smith", email: "beta@example.com" }],
 		rounds: { "round-1": false, "round-2": null }
 	},
@@ -68,6 +69,7 @@ const teams: Team[] = [
 		teamCode: "ALPHA1",
 		prescreen: "passed",
 		feedback: null,
+		judged: false,
 		members: [
 			{ name: "Ada Lovelace", email: "alpha@example.com" },
 			{ name: "Alan Turing", email: "teammate@example.com" }
@@ -80,6 +82,7 @@ const teams: Team[] = [
 		teamCode: null,
 		prescreen: "failed",
 		feedback: "Needs work",
+		judged: false,
 		members: [
 			{ name: "Cy", email: "cy@example.com" },
 			{ name: "Cam", email: "cam@example.com" },
@@ -93,6 +96,7 @@ const teams: Team[] = [
 		teamCode: "DELTA1",
 		prescreen: "pending",
 		feedback: null,
+		judged: false,
 		members: [],
 		rounds: { "round-1": false, "round-2": null }
 	}
@@ -115,8 +119,10 @@ function openPrescreening() {
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.setPrescreen.mockImplementation(
-		(_input: unknown, options?: { onSuccess?: () => void }) =>
-			options?.onSuccess?.()
+		(
+			_input: unknown,
+			options?: { onSuccess?: (result: { removedSlots: number }) => void }
+		) => options?.onSuccess?.({ removedSlots: 0 })
 	);
 });
 
@@ -305,6 +311,30 @@ describe("admin teams UI", () => {
 		await waitFor(() =>
 			expect(mocks.deleteTeam).toHaveBeenCalledWith({ id: "team-beta" })
 		);
+	});
+
+	it("explains why a judged team can't be deleted", async () => {
+		render(
+			<TeamsView
+				rounds={rounds}
+				teams={teams.map((team) =>
+					team.id === "team-beta" ? { ...team, judged: true } : team
+				)}
+			/>
+		);
+		openTeamMenu("Beta Builders");
+		fireEvent.click(
+			await screen.findByRole("menuitem", { name: "Delete team" })
+		);
+
+		expect(
+			screen.getByRole("alertdialog", { name: "This team can’t be deleted" })
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Delete team" })
+		).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Close" }));
+		expect(mocks.deleteTeam).not.toHaveBeenCalled();
 	});
 
 	it("only offers deletion in each team's actions", () => {

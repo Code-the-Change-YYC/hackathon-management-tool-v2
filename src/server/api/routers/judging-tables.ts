@@ -139,7 +139,11 @@ export const judgingTablesRouter = createTRPCRouter({
 							}
 						},
 						assignments: {
-							with: { team: { columns: { id: true, name: true } } },
+							with: {
+								team: {
+									columns: { id: true, name: true, prescreenStatus: true }
+								}
+							},
 							orderBy: (rows, { asc }) => [asc(rows.startsAt)]
 						}
 					},

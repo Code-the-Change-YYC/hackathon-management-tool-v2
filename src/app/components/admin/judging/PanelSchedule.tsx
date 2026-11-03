@@ -231,7 +231,20 @@ export function PanelSchedule({
 																"bg-primary text-primary-foreground"
 														)}
 													>
-														{assignment.team.name}
+														{assignment.team.prescreenStatus === "failed" ? (
+															<span
+																className="line-through"
+																title="Failed pre-screening, so not ranked"
+															>
+																{assignment.team.name}
+																<span className="sr-only">
+																	{" "}
+																	(failed pre-screening)
+																</span>
+															</span>
+														) : (
+															assignment.team.name
+														)}
 														<Button
 															aria-label={`Remove ${assignment.team.name} from the schedule`}
 															className={cn(

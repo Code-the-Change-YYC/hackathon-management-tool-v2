@@ -87,9 +87,11 @@ export const judgingAssignments = createTable(
 	"judging_assignment",
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
+		// Deleting a team would take its scores and votes with it, so its
+		// assignments have to go first; see deleteTeam.
 		teamId: text("team_id")
 			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
+			.references(() => organization.id, { onDelete: "restrict" }),
 		tableId: uuid("table_id")
 			.notNull()
 			.references(() => judgingTables.id, { onDelete: "cascade" }),
@@ -126,9 +128,10 @@ export const judgingScores = createTable(
 		assignmentId: uuid("assignment_id")
 			.notNull()
 			.references(() => judgingAssignments.id, { onDelete: "cascade" }),
+		// Scores outlive edits to the rubric; see assertRubricUnlocked.
 		criteriaId: uuid("criteria_id")
 			.notNull()
-			.references(() => judgingCriteria.id, { onDelete: "cascade" }),
+			.references(() => judgingCriteria.id, { onDelete: "restrict" }),
 		judgeId: text("judge_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "restrict" }),

@@ -398,9 +398,37 @@ describe("dashboard team rows", () => {
 			scores: [score("main", 4), score("removed", 5)]
 		});
 		render(
-			<JudgeTeamRow assignment={team} criteria={[main]} currentTime={now} />
+			<JudgeTeamRow
+				assignment={team}
+				criteria={[main]}
+				currentTime={now}
+				scoresReleased={false}
+			/>
 		);
 		expect(screen.getByRole("link")).toHaveTextContent("4/5");
+	});
+
+	it("stops linking to scorecards once scores are released", () => {
+		const { rerender } = render(
+			<JudgeTeamRow
+				assignment={assignment({ scores: [score("main", 4)] })}
+				criteria={[main]}
+				currentTime={now}
+				scoresReleased
+			/>
+		);
+		expect(screen.getByText("4")).toBeInTheDocument();
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
+		rerender(
+			<JudgeTeamRow
+				assignment={assignment()}
+				criteria={[main]}
+				currentTime={now}
+				scoresReleased
+			/>
+		);
+		expect(screen.getByText("Scoring closed")).toBeInTheDocument();
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 	});
 
 	it("locks future teams and opens scoring when the slot starts", () => {
@@ -410,12 +438,18 @@ describe("dashboard team rows", () => {
 				assignment={team}
 				criteria={[main]}
 				currentTime={new Date(now.getTime() - 60_000)}
+				scoresReleased={false}
 			/>
 		);
 		expect(screen.getByText("In 1 min")).toBeInTheDocument();
 		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 		rerender(
-			<JudgeTeamRow assignment={team} criteria={[main]} currentTime={now} />
+			<JudgeTeamRow
+				assignment={team}
+				criteria={[main]}
+				currentTime={now}
+				scoresReleased={false}
+			/>
 		);
 		expect(screen.getByRole("link", { name: "Score Team" })).toHaveAttribute(
 			"href",
@@ -429,6 +463,7 @@ describe("dashboard team rows", () => {
 				assignment={assignment()}
 				criteria={[main]}
 				currentTime={new Date(now.getTime() + 60_000)}
+				scoresReleased={false}
 			/>
 		);
 		expect(screen.getByRole("listitem")).toHaveClass("bg-purple-50");
@@ -437,6 +472,7 @@ describe("dashboard team rows", () => {
 				assignment={assignment()}
 				criteria={[main]}
 				currentTime={new Date(now.getTime() + 8 * 60_000)}
+				scoresReleased={false}
 			/>
 		);
 		expect(screen.getByRole("listitem")).not.toHaveClass("bg-purple-50");
@@ -448,6 +484,7 @@ describe("dashboard team rows", () => {
 				assignment={assignment({ scores: [score("main", 4)] })}
 				criteria={[main]}
 				currentTime={new Date(now.getTime() + 60_000)}
+				scoresReleased={false}
 			/>
 		);
 		expect(screen.getByText("4:00 AM")).toBeInTheDocument();
@@ -463,6 +500,7 @@ describe("dashboard team rows", () => {
 				})}
 				criteria={[main, { ...sidepot, name: "Best AI" }]}
 				currentTime={new Date(now.getTime() - 1)}
+				scoresReleased={false}
 			/>
 		);
 		const link = screen.getByRole("link", { name: "Edit score for Team" });
@@ -478,6 +516,7 @@ describe("dashboard team rows", () => {
 				assignment={assignment({ scores: [score("main", 4)] })}
 				criteria={[main, { ...main, id: "technical", name: "Technical" }]}
 				currentTime={now}
+				scoresReleased={false}
 			/>
 		);
 		expect(screen.getByText("Partially scored")).toBeInTheDocument();
@@ -493,6 +532,7 @@ describe("dashboard team rows", () => {
 				assignment={assignment({ scores: [score("main", 4)] })}
 				criteria={[main, { ...main, id: "technical", name: "Technical" }]}
 				currentTime={new Date(now.getTime() - 60_000)}
+				scoresReleased={false}
 			/>
 		);
 		expect(
@@ -507,7 +547,12 @@ describe("team code", () => {
 			team: { ...assignment().team, teamCode: null }
 		});
 		render(
-			<JudgeTeamRow assignment={team} criteria={[main]} currentTime={now} />
+			<JudgeTeamRow
+				assignment={team}
+				criteria={[main]}
+				currentTime={now}
+				scoresReleased={false}
+			/>
 		);
 		expect(screen.getByText("------")).toBeInTheDocument();
 	});

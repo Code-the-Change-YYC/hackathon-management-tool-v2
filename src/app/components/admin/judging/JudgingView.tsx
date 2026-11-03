@@ -163,7 +163,11 @@ export function JudgingView({
 												)}
 												onFinalistsSaved={setSelectedId}
 												rankings={
-													rankings[round.id] ?? { main: [], sidepots: [] }
+													rankings[round.id] ?? {
+														main: [],
+														failedTeamNames: [],
+														sidepots: []
+													}
 												}
 											/>
 										) : null}

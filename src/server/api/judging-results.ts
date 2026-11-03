@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { PanelScorecard } from "@/lib/judging-ranking";
 import type { DbClient } from "@/server/api/routers/judging-tables";
+import { organization } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
 	judgingCriteria,
@@ -34,10 +35,13 @@ export const submittedBallots = sql`(
 )`;
 
 // Each complete panel scorecard's main total, for normalizing per judge.
+// A team that failed pre-screening after presenting is left out entirely, as
+// if it never presented, so it doesn't sway judges' normalization either.
 export async function getPanelScorecards(db: DbClient, roundId: string) {
 	return (await db.execute(sql`
     SELECT card.team_id AS "teamId", card.judge_id AS "judgeId", card.main_score AS "score"
     FROM ${submittedScorecards} card
-    WHERE card.round_id = ${roundId}
+    INNER JOIN ${organization} o ON o.id = card.team_id
+    WHERE card.round_id = ${roundId} AND o.prescreen_status <> 'failed'
   `)) as unknown as PanelScorecard[];
 }

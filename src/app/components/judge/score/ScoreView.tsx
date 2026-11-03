@@ -74,10 +74,12 @@ function JudgeScorecard({
 export function ScoreView({
 	assignment,
 	criteria,
+	scoresReleased,
 	userId
 }: {
 	assignment: JudgeAssignment | null;
 	criteria: Criterion[];
+	scoresReleased: boolean;
 	userId: string;
 }) {
 	if (!assignment)
@@ -90,6 +92,13 @@ export function ScoreView({
 		return (
 			<ScoreMessage title="Finalists are ranked, not scored">
 				Rank your top finalists from your dashboard.
+			</ScoreMessage>
+		);
+	if (scoresReleased)
+		return (
+			<ScoreMessage title="Scoring is closed">
+				Scores were released when the winners were announced, so they can’t be
+				changed.
 			</ScoreMessage>
 		);
 	const roundCriteria = getAssignmentCriteria(assignment, criteria);

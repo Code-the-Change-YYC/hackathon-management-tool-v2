@@ -21,7 +21,7 @@
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { isValid } from "date-fns";
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, not, sql } from "drizzle-orm";
 import { z } from "zod";
 import { resolveAvatarSrc } from "@/lib/avatars";
 import { tryCatch } from "@/lib/utils";
@@ -44,7 +44,9 @@ import { member, organization } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
 	judgingRounds,
-	judgingTableJudges
+	judgingScores,
+	judgingTableJudges,
+	judgingVotes
 } from "@/server/db/judging-schema";
 import { MEMBER_ROLES, type TeamRanking } from "@/types/types";
 
@@ -152,12 +154,39 @@ async function getUserMembership(db: typeof dbType, userId: string) {
 	return membership;
 }
 
-async function deleteTeam(
-	tx: Parameters<Parameters<typeof dbType.transaction>[0]>[0],
-	organizationId: string
-) {
+type Transaction = Parameters<Parameters<typeof dbType.transaction>[0]>[0];
+
+// Scores and final-round votes are judges' work, and every team's ranking is
+// normalized against them, so an assignment that has either has to stay.
+const hasJudgingResults = sql`(
+	EXISTS (SELECT 1 FROM ${judgingScores} WHERE ${judgingScores.assignmentId} = ${judgingAssignments.id})
+	OR EXISTS (SELECT 1 FROM ${judgingVotes} WHERE ${judgingVotes.assignmentId} = ${judgingAssignments.id})
+)`;
+
+const JUDGED_TEAM_MESSAGE =
+	"This team has judging scores or final-round votes, so it can’t be deleted.";
+
+async function isTeamJudged(tx: Transaction, organizationId: string) {
+	const [judged] = await tx
+		.select({ id: judgingAssignments.id })
+		.from(judgingAssignments)
+		.where(
+			and(eq(judgingAssignments.teamId, organizationId), hasJudgingResults)
+		)
+		.limit(1);
+	return Boolean(judged);
+}
+
+// Only for teams without judging results: their slots in the schedule free up.
+async function deleteTeam(tx: Transaction, organizationId: string) {
+	await tx
+		.delete(judgingAssignments)
+		.where(eq(judgingAssignments.teamId, organizationId));
 	await tx.delete(member).where(eq(member.organizationId, organizationId));
-	await tx.delete(organization).where(eq(organization.id, organizationId));
+	return tx
+		.delete(organization)
+		.where(eq(organization.id, organizationId))
+		.returning({ id: organization.id });
 }
 
 async function fetchTeamRankings(db: typeof dbType): Promise<TeamRanking[]> {
@@ -229,7 +258,7 @@ export const teamsRouter = createTRPCRouter({
 	// stays empty (null) until the next one is scheduled. The final round gets
 	// no column because winners aren't recorded.
 	getTeamsWithMembers: adminProcedure.query(async ({ ctx }) => {
-		const [rows, rounds] = await Promise.all([
+		const [rows, rounds, judged] = await Promise.all([
 			ctx.db.query.organization.findMany({
 				orderBy: [desc(organization.createdAt)],
 				columns: {
@@ -255,8 +284,13 @@ export const teamsRouter = createTRPCRouter({
 						with: { assignments: { columns: { teamId: true } } }
 					}
 				}
-			})
+			}),
+			ctx.db
+				.selectDistinct({ teamId: judgingAssignments.teamId })
+				.from(judgingAssignments)
+				.where(hasJudgingResults)
 		]);
+		const judgedTeamIds = new Set(judged.map(({ teamId }) => teamId));
 
 		const advancedTeamIds = rounds.flatMap((round, index) => {
 			if (round.kind === "final") return [];
@@ -280,6 +314,8 @@ export const teamsRouter = createTRPCRouter({
 				teamCode: team.teamCode,
 				prescreen: team.prescreenStatus,
 				feedback: team.prescreenComments,
+				// Judged teams can't be deleted.
+				judged: judgedTeamIds.has(team.id),
 				members: members.map(({ user }) => ({
 					name: user.name,
 					email: user.email
@@ -299,26 +335,39 @@ export const teamsRouter = createTRPCRouter({
 	setPrescreen: adminProcedure
 		.input(prescreenSchema)
 		.mutation(async ({ ctx, input }) => {
-			const team = await ctx.db.query.organization.findFirst({
-				where: eq(organization.id, input.teamId)
+			return ctx.db.transaction(async (tx) => {
+				const [updated] = await tx
+					.update(organization)
+					.set({
+						prescreenStatus: input.status,
+						prescreenComments: input.comments || null,
+						prescreenedBy: ctx.session.user.id,
+						prescreenedAt: new Date()
+					})
+					.where(eq(organization.id, input.teamId))
+					.returning();
+				if (!updated) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Team not found"
+					});
+				}
+				// A failed team won't present, so slots judges haven't scored or
+				// ranked free up. The rest stay, but failed teams aren't ranked.
+				const removed =
+					input.status === "failed"
+						? await tx
+								.delete(judgingAssignments)
+								.where(
+									and(
+										eq(judgingAssignments.teamId, input.teamId),
+										not(hasJudgingResults)
+									)
+								)
+								.returning({ id: judgingAssignments.id })
+						: [];
+				return { ...updated, removedSlots: removed.length };
 			});
-			if (!team) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Team not found"
-				});
-			}
-			const [updated] = await ctx.db
-				.update(organization)
-				.set({
-					prescreenStatus: input.status,
-					prescreenComments: input.comments || null,
-					prescreenedBy: ctx.session.user.id,
-					prescreenedAt: new Date()
-				})
-				.where(eq(organization.id, input.teamId))
-				.returning();
-			return updated;
 		}),
 
 	getMyTeam: protectedProcedure.query(async ({ ctx }) => {
@@ -545,7 +594,11 @@ export const teamsRouter = createTRPCRouter({
 
 			const [earliest] = remainingMembers;
 			if (!earliest) {
-				await deleteTeam(tx, organizationId);
+				// A judged team stays without members, so its scores and votes,
+				// and the rankings built on them, don't change.
+				if (!(await isTeamJudged(tx, organizationId))) {
+					await deleteTeam(tx, organizationId);
+				}
 				return;
 			}
 
@@ -631,11 +684,13 @@ export const teamsRouter = createTRPCRouter({
 					sql`select pg_advisory_xact_lock(hashtext(${input.id}))`
 				);
 
-				const [row] = await tx
-					.delete(organization)
-					.where(eq(organization.id, input.id))
-					.returning({ id: organization.id });
-
+				if (await isTeamJudged(tx, input.id)) {
+					throw new TRPCError({
+						code: "CONFLICT",
+						message: JUDGED_TEAM_MESSAGE
+					});
+				}
+				const [row] = await deleteTeam(tx, input.id);
 				return row;
 			});
 

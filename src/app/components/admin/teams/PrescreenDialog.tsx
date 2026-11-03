@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { plural } from "@/app/components/admin/judging/judgingShared";
 import { Button } from "@/app/components/ui/button";
 import {
 	Dialog,
@@ -140,10 +141,12 @@ export function PrescreenDialog({ teams, onClose }: PrescreenDialogProps) {
 						comments: input.feedback ?? ""
 					},
 			{
-				onSuccess: () =>
+				onSuccess: ({ removedSlots }) =>
 					refresh(() => {
 						toast.success(
-							`${decided.name} ${input.passed ? "passed" : "failed"} pre-screening.`
+							removedSlots
+								? `${decided.name} failed pre-screening and was taken out of ${plural(removedSlots, "presentation slot")}.`
+								: `${decided.name} ${input.passed ? "passed" : "failed"} pre-screening.`
 						);
 						advanceFrom(decided);
 					})

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { eq } from "drizzle-orm";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { db } from "@/server/db";
 import { organization } from "@/server/db/auth-schema";
 import {
@@ -14,6 +14,15 @@ import {
 import { Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
 import { createAuthenticatedCaller } from "../helpers/auth";
+
+// Released scores can't change, and the shared test database may be in any
+// judging phase.
+vi.mock("@/server/api/participant-judging", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@/server/api/participant-judging")
+	>()),
+	areScoresReleased: () => false
+}));
 
 describe("judge score ownership in PostgreSQL", () => {
 	it("keeps two judges' scores independent across writes, reads, and totals", async () => {

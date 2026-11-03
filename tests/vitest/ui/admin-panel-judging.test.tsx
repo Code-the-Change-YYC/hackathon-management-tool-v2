@@ -306,7 +306,7 @@ function renderResults(
 			finalRoundHasScores={false}
 			hasFinalists={false}
 			onFinalistsSaved={vi.fn()}
-			rankings={{ main: ranking, sidepots: [] }}
+			rankings={{ main: ranking, failedTeamNames: [], sidepots: [] }}
 			{...props}
 		/>
 	);
@@ -323,6 +323,21 @@ describe("panel results", () => {
 		).toBeVisible();
 	});
 
+	it("names teams left out for failing pre-screening", () => {
+		renderResults({
+			rankings: {
+				main: ranking,
+				failedTeamNames: ["Hello World"],
+				sidepots: []
+			}
+		});
+		expect(
+			screen.getByText(
+				"Not ranked because they failed pre-screening: Hello World."
+			)
+		).toBeInTheDocument();
+	});
+
 	it("waits for a final round before picking finalists", () => {
 		renderResults({ finalRound: undefined });
 		expect(
@@ -334,6 +349,7 @@ describe("panel results", () => {
 		renderResults({
 			rankings: {
 				main: ranking,
+				failedTeamNames: [],
 				sidepots: [
 					{
 						criterionId: "best-ui",

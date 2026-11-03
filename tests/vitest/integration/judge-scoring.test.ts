@@ -21,7 +21,8 @@ const db = {
 	query: {
 		judgingAssignments: { findFirst: vi.fn() },
 		judgingCriteria: { findMany: vi.fn(), findFirst: vi.fn() },
-		judgingScores: { findMany: vi.fn(), findFirst: vi.fn() }
+		judgingScores: { findMany: vi.fn(), findFirst: vi.fn() },
+		hackathonSettings: { findFirst: vi.fn() }
 	},
 	insert: vi.fn(),
 	update: vi.fn()
@@ -171,6 +172,27 @@ describe("individual scorecard API", () => {
 			mainId,
 			"judge-a"
 		]);
+		expect(db.update).not.toHaveBeenCalled();
+	});
+	it("closes scoring once scores are released", async () => {
+		db.query.hackathonSettings.findFirst.mockResolvedValue({
+			judgingPhase: "winners_announced"
+		});
+		db.query.judgingScores.findFirst.mockResolvedValue({
+			id: mainId,
+			assignmentId,
+			judgeId: "judge-a",
+			criteria: rubric[0]
+		});
+		const closed = {
+			code: "FORBIDDEN",
+			message: "Scoring closed when the winners were announced."
+		};
+		await expect(caller().createMany(valid)).rejects.toMatchObject(closed);
+		await expect(
+			caller().update({ id: mainId, score: 2 })
+		).rejects.toMatchObject(closed);
+		expect(db.insert).not.toHaveBeenCalled();
 		expect(db.update).not.toHaveBeenCalled();
 	});
 });

@@ -66,6 +66,19 @@ async function requireAssignment(
 	return assignment;
 }
 
+// Released scores are published, so changing one would rewrite the results.
+async function assertScoringOpen(db: ScoreContext["db"]) {
+	const settings = await db.query.hackathonSettings.findFirst({
+		where: eq(hackathonSettings.id, 1)
+	});
+	if (areScoresReleased(settings)) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Scoring closed when the winners were announced."
+		});
+	}
+}
+
 function validateScore(
 	criterion: typeof judgingCriteria.$inferSelect,
 	value: number
@@ -351,6 +364,7 @@ export const scoresRouter = createTRPCRouter({
 				assignmentId,
 				ctx.session.user.id
 			);
+			await assertScoringOpen(ctx.db);
 
 			const criteriaIds = [...new Set(input.map((item) => item.criteriaId))];
 			if (criteriaIds.length !== input.length) {
@@ -440,6 +454,7 @@ export const scoresRouter = createTRPCRouter({
 				existing.assignmentId,
 				ctx.session.user.id
 			);
+			await assertScoringOpen(ctx.db);
 			validateScore(existing.criteria, input.score);
 			const [updated] = await ctx.db
 				.update(judgingScores)
