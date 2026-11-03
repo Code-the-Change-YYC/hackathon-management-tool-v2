@@ -1,4 +1,3 @@
-import { TrophyLine } from "@mingcute/react";
 import { useId } from "react";
 import {
 	Avatar,
@@ -26,7 +25,7 @@ function TableBadge({ table }: { table: JudgeTable }) {
 			aria-hidden
 			className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-fuzzy-peach font-semibold text-2xl text-grapefruit"
 		>
-			{table.isFinal ? <TrophyLine className="size-7" /> : table.number}
+			{table.number}
 		</span>
 	);
 }

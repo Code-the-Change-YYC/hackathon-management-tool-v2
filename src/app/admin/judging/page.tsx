@@ -52,7 +52,6 @@ export default async function JudgingPage() {
 		<>
 			<AutoRefresh />
 			<JudgingView
-				activeRoundId={settings?.currentRoundId ?? null}
 				assignments={assignments}
 				criteria={criteria}
 				finalResults={finalResults}

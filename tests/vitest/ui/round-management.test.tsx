@@ -36,9 +36,6 @@ vi.mock("@/trpc/react", () => ({
 			delete: {
 				useMutation: () => ({ mutate: mocks.remove, isPending: false })
 			}
-		},
-		hackathonSettings: {
-			update: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) }
 		}
 	}
 }));
@@ -245,7 +242,6 @@ function renderHeader(props: Partial<Parameters<typeof RoundHeader>[0]> = {}) {
 			hackathonDates={null}
 			hasSchedule
 			hasScores={false}
-			isCurrent={false}
 			round={judgingRound({ publishedAt: null })}
 			{...props}
 		/>

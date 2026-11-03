@@ -34,8 +34,6 @@ type RoundGroup = {
 	round: Round;
 	assignments: JudgeAssignment[];
 	scoredCount: number;
-	// Every team is scored, or the finalists are ranked.
-	complete: boolean;
 };
 
 function groupByRound(
@@ -48,34 +46,15 @@ function groupByRound(
 		const group = groups.get(round.id) ?? {
 			round,
 			assignments: [],
-			scoredCount: 0,
-			complete: false
+			scoredCount: 0
 		};
 		group.assignments.push(assignment);
 		if (isAssignmentScored(assignment, criteria)) group.scoredCount++;
 		groups.set(round.id, group);
 	}
-	for (const group of groups.values()) {
-		group.complete =
-			group.round.kind === "final"
-				? hasSubmittedBallot(group.assignments)
-				: group.scoredCount === group.assignments.length;
-	}
 	return Array.from(groups.values()).sort(
 		(a, b) => a.round.startTime.getTime() - b.round.startTime.getTime()
 	);
-}
-
-// The round the judge should be working on: the active round while it has
-// teams left, else the first round with teams left, else the active or last one.
-function getCurrentGroup(groups: RoundGroup[], activeRoundId: string | null) {
-	const active = groups.find((group) => group.round.id === activeRoundId);
-	if (active && !active.complete) return active;
-
-	const incomplete = groups.find((group) => !group.complete);
-	if (incomplete) return incomplete;
-
-	return active ?? groups.at(-1);
 }
 
 function RoundProgress({
@@ -181,7 +160,7 @@ function BallotCard({
 	scoresReleased: boolean;
 }) {
 	const state = getRankingState(group.round, currentTime, scoresReleased);
-	const submitted = group.complete;
+	const submitted = hasSubmittedBallot(group.assignments);
 	const places = getBallotPlaces(group.assignments.length);
 	const description = {
 		upcoming: `Ranking opens at ${formatTime(group.round.startTime)}, when the final round starts.`,
@@ -231,7 +210,9 @@ function FinalRoundSection({
 					{group.round.name}
 				</h2>
 				<p className="m-0 text-muted-foreground text-sm">
-					{group.complete ? "Ranking submitted" : "Not ranked yet"}
+					{hasSubmittedBallot(group.assignments)
+						? "Ranking submitted"
+						: "Not ranked yet"}
 				</p>
 			</div>
 			<Card className="py-0">
@@ -270,7 +251,6 @@ function NoAssignments() {
 export function DashboardView({
 	userId,
 	userName,
-	activeRoundId,
 	assignments,
 	criteria,
 	roundSlotTimes,
@@ -278,7 +258,6 @@ export function DashboardView({
 }: {
 	userId: string;
 	userName: string;
-	activeRoundId: string | null;
 	assignments: JudgeAssignment[];
 	criteria: Criterion[];
 	roundSlotTimes: Record<string, Date[]>;
@@ -286,8 +265,10 @@ export function DashboardView({
 }) {
 	const currentTime = useCurrentTime();
 	const groups = groupByRound(assignments, criteria);
-	const currentGroup = getCurrentGroup(groups, activeRoundId);
-	const table = currentGroup && getJudgeTable(currentGroup.assignments, userId);
+	// Every judge sits together for the final round, so only the panel round
+	// gets a table card.
+	const panelGroup = groups.find((group) => group.round.kind === "panel");
+	const table = panelGroup && getJudgeTable(panelGroup.assignments, userId);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -295,8 +276,8 @@ export function DashboardView({
 				description="Score each team after their presentation, then rank the finalists."
 				title={`Hi, ${userName}!`}
 			/>
-			{currentGroup && table && (
-				<JudgeTableCard roundName={currentGroup.round.name} table={table} />
+			{panelGroup && table && (
+				<JudgeTableCard roundName={panelGroup.round.name} table={table} />
 			)}
 			<div className="flex flex-col gap-12">
 				{groups.length === 0 && <NoAssignments />}

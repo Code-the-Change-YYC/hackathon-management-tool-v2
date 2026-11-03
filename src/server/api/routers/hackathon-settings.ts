@@ -23,28 +23,6 @@ export const hackathonSettingsRouter = createTRPCRouter({
 		return settings ?? null;
 	}),
 
-	// Update hackathon settings (admin only)
-	update: adminProcedure
-		.input(
-			z.object({
-				currentRoundId: z.string().uuid().optional().nullable()
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			const [updated] = await ctx.db
-				.insert(hackathonSettings)
-				.values({
-					id: 1,
-					...input
-				})
-				.onConflictDoUpdate({
-					target: hackathonSettings.id,
-					set: input
-				})
-				.returning();
-			return updated;
-		}),
-
 	// Show or hide every team's scores to participants (admin only).
 	setScoresReleased: adminProcedure
 		.input(z.object({ released: z.boolean() }))

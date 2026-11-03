@@ -60,8 +60,7 @@ export async function seedJudging() {
 		startDate: getEventDate(0, 8),
 		endDate: getEventDate(1, 20),
 		submissionDeadline,
-		isActive: true,
-		currentRoundId: mainRound.id
+		isActive: true
 	});
 
 	const criteria = await db

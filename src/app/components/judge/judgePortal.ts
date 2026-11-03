@@ -78,7 +78,6 @@ export function getJudgeTable(assignments: JudgeAssignment[], userId: string) {
 	return {
 		name: getTableName(first),
 		number: first.table.tableNumber,
-		isFinal: first.table.round.kind === "final",
 		otherJudges: first.table.judges
 			.filter(({ judge }) => judge.id !== userId)
 			.map(({ judge }) => judge)

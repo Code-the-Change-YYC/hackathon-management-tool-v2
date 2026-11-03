@@ -23,7 +23,6 @@ export default async function DashboardPage() {
 		<>
 			<AutoRefresh />
 			<DashboardView
-				activeRoundId={settings?.currentRoundId ?? null}
 				assignments={assignments}
 				criteria={criteria}
 				roundSlotTimes={roundSlotTimes}

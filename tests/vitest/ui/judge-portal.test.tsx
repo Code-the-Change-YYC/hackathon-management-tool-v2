@@ -185,7 +185,6 @@ describe("judge table summary", () => {
 		expect(getJudgeTable([later, earlier], "judge")).toEqual({
 			name: "Table 1",
 			number: 1,
-			isFinal: false,
 			otherJudges: [{ id: "judge-2", name: "Sam", image: null }]
 		});
 		expect(getJudgeTable([], "judge")).toBeNull();
@@ -203,7 +202,6 @@ describe("judge dashboard", () => {
 	it("shows an empty state before any teams are assigned", () => {
 		render(
 			<DashboardView
-				activeRoundId={null}
 				assignments={[]}
 				criteria={[main]}
 				roundSlotTimes={{}}
@@ -221,7 +219,6 @@ describe("judge dashboard", () => {
 		const [dara] = judgeTable().judges;
 		render(
 			<DashboardView
-				activeRoundId="round"
 				assignments={[
 					assignment({ table: judgeTable({ judges: dara ? [dara] : [] }) })
 				]}
@@ -250,7 +247,6 @@ describe("judge dashboard", () => {
 		const renderTable = (otherJudges: number) =>
 			render(
 				<DashboardView
-					activeRoundId="round"
 					assignments={[
 						assignment({
 							table: judgeTable({
@@ -294,7 +290,6 @@ describe("judge dashboard", () => {
 		});
 		render(
 			<DashboardView
-				activeRoundId="round"
 				assignments={[next, done]}
 				criteria={[main]}
 				roundSlotTimes={{}}
@@ -330,7 +325,6 @@ describe("judge dashboard", () => {
 			team: { ...assignment().team, name: "Finalist" }
 		});
 		const props = {
-			activeRoundId: "round",
 			criteria: [main],
 			scoresReleased: false,
 			userId: "judge",
@@ -355,7 +349,7 @@ describe("judge dashboard", () => {
 		expect(
 			within(finalsRegion).queryByRole("link", { name: /Finalist/ })
 		).not.toBeInTheDocument();
-		expectTableCard("Final table", "Finals");
+		expectTableCard("Table 1", "Round 1");
 
 		rerender(
 			<DashboardView
@@ -377,7 +371,7 @@ describe("judge dashboard", () => {
 		expectTableCard("Table 1", "Round 1");
 	});
 
-	it("describes the active round's table ahead of earlier leftovers", () => {
+	it("shows no table card for a judge only in the final round", () => {
 		const finals = judgingRound({
 			id: "finals",
 			name: "Finals",
@@ -385,9 +379,7 @@ describe("judge dashboard", () => {
 		});
 		render(
 			<DashboardView
-				activeRoundId="finals"
 				assignments={[
-					assignment({ team: { ...assignment().team, name: "Leftover" } }),
 					assignment({
 						id: "finals-team",
 						table: judgeTable({ id: "finals-table", round: finals }),
@@ -401,7 +393,10 @@ describe("judge dashboard", () => {
 				userName="Dara"
 			/>
 		);
-		expectTableCard("Final table", "Finals");
+		expect(screen.getByRole("region", { name: "Finals" })).toBeVisible();
+		expect(
+			screen.queryByRole("region", { name: "Final table" })
+		).not.toBeInTheDocument();
 	});
 });
 

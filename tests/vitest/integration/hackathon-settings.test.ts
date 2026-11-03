@@ -109,22 +109,6 @@ describe("hackathonSettings.updateDates", () => {
 	});
 });
 
-describe("hackathonSettings.update", () => {
-	it("leaves the hackathon dates to updateDates", async () => {
-		const api = await caller();
-
-		await api.hackathonSettings.update({
-			currentRoundId: null,
-			...dates
-		} as Parameters<typeof api.hackathonSettings.update>[0]);
-
-		expect(mocks.insertValues).toHaveBeenCalledWith({
-			id: 1,
-			currentRoundId: null
-		});
-	});
-});
-
 describe("hackathonSettings.setScoresReleased", () => {
 	it("rejects callers without an admin session", async () => {
 		const api = await caller("participant");

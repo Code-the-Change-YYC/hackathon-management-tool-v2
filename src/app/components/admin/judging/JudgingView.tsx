@@ -47,7 +47,6 @@ function areBallotsComplete(results: FinalResults) {
 
 export function JudgingView({
 	rounds,
-	activeRoundId,
 	layouts,
 	assignments,
 	judges,
@@ -59,7 +58,6 @@ export function JudgingView({
 	scoresReleased
 }: {
 	rounds: Round[];
-	activeRoundId: string | null;
 	layouts: Layouts;
 	assignments: Assignment[];
 	judges: Judge[];
@@ -76,9 +74,7 @@ export function JudgingView({
 		.slice()
 		.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 	const selected =
-		orderedRounds.find((round) => round.id === selectedId) ??
-		orderedRounds.find((round) => round.id === activeRoundId) ??
-		orderedRounds[0];
+		orderedRounds.find((round) => round.id === selectedId) ?? orderedRounds[0];
 	// Final-round votes pin a round the same way scores do.
 	const scoredRoundIds = new Set(
 		assignments
@@ -138,7 +134,6 @@ export function JudgingView({
 									hackathonDates={hackathonDates}
 									hasSchedule={hasSchedule}
 									hasScores={scoredRoundIds.has(round.id)}
-									isCurrent={round.id === activeRoundId}
 									round={round}
 								/>
 								{round.kind === "panel" ? (

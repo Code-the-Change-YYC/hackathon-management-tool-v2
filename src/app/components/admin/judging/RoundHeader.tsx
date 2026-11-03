@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	CheckCircleLine,
-	Delete2Line,
-	Edit2Line,
-	More1Line
-} from "@mingcute/react";
+import { Delete2Line, Edit2Line, More1Line } from "@mingcute/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -29,13 +24,11 @@ import { RoundDialog } from "./RoundDialog";
 
 export function RoundHeader({
 	round,
-	isCurrent,
 	hasSchedule,
 	hasScores,
 	hackathonDates
 }: {
 	round: Round;
-	isCurrent: boolean;
 	hasSchedule: boolean;
 	hasScores: boolean;
 	hackathonDates: HackathonDates | null;
@@ -54,10 +47,6 @@ export function RoundHeader({
 		onSuccess: () =>
 			refresh(() => toast.success("Unpublished. Teams no longer see times."))
 	});
-	const setCurrent = api.hackathonSettings.update.useMutation({
-		onError,
-		onSuccess: () => refresh(() => toast.success("Current round updated."))
-	});
 	const deleteRound = api.judgingRounds.delete.useMutation({
 		onError,
 		onSuccess: () => refresh(() => toast.success("Round deleted."))
@@ -66,7 +55,6 @@ export function RoundHeader({
 		isRefreshing ||
 		publish.isPending ||
 		unpublish.isPending ||
-		setCurrent.isPending ||
 		deleteRound.isPending;
 
 	async function requestDelete() {
@@ -84,7 +72,6 @@ export function RoundHeader({
 		<div className="flex flex-wrap items-center justify-between gap-3">
 			<div className="flex flex-wrap items-center gap-2">
 				<span className="font-medium">{formatRoundTimes(round)}</span>
-				{isCurrent ? <Badge>Current</Badge> : null}
 				{hasSchedule ? (
 					round.publishedAt ? (
 						<Badge variant="secondary">Published</Badge>
@@ -133,13 +120,6 @@ export function RoundHeader({
 						>
 							<Edit2Line />
 							Edit round
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							disabled={isCurrent || busy}
-							onClick={() => setCurrent.mutate({ currentRoundId: round.id })}
-						>
-							<CheckCircleLine />
-							Set as current round
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							disabled={hasScores || busy}
