@@ -21,7 +21,7 @@ export default async function ResourcesSection() {
 				</CardHeader>
 				<CardContent>
 					{resources.length ? (
-						<div className="grid grid-cols-1 justify-items-center gap-4 md:grid-cols-2 2xl:grid-cols-4">
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-4">
 							{resources.map((resource) => (
 								<ResourceCard key={resource.sys.id} resource={resource} />
 							))}

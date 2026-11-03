@@ -87,7 +87,6 @@ export interface ResourceFields {
 	name: EntryFieldTypes.Symbol;
 	description: EntryFieldTypes.Symbol;
 	link: EntryFieldTypes.Symbol;
-	image: EntryFieldTypes.AssetLink;
 }
 
 type ResourceSkeleton = EntrySkeletonType<ResourceFields, "hackathonResource">;

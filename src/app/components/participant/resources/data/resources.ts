@@ -1,4 +1,4 @@
-import { getAssetUrl, getFields, getString } from "@/lib/contentful";
+import { getFields, getString } from "@/lib/contentful";
 import type { Resource } from "@/types/contentfulTypes";
 
 function compareResources(left: Resource, right: Resource): number {
@@ -19,14 +19,25 @@ function compareResources(left: Resource, right: Resource): number {
 	);
 }
 
+export function getResourceUrl(entry: Resource): URL | undefined {
+	const link = getString(getFields(entry).link)?.trim();
+	if (!link || !URL.canParse(link)) {
+		return undefined;
+	}
+
+	const url = new URL(link);
+	return url.protocol === "https:" || url.protocol === "http:"
+		? url
+		: undefined;
+}
+
 function isRenderableResource(entry: Resource): boolean {
 	const fields = getFields(entry);
 
 	return Boolean(
 		getString(fields.name)?.trim() &&
 			getString(fields.description)?.trim() &&
-			getString(fields.link)?.trim() &&
-			getAssetUrl(fields.image)
+			getResourceUrl(entry)
 	);
 }
 
