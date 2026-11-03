@@ -1,7 +1,5 @@
 import { Group3Line } from "@mingcute/react";
 import { getMentors } from "@/app/actions";
-import { cn } from "@/lib/utils";
-import { MENTOR_CATEGORIES } from "@/types/contentfulTypes";
 import { Card, CardContent, CardHeader } from "../../ui/card";
 import {
 	Empty,
@@ -10,7 +8,7 @@ import {
 	EmptyMedia,
 	EmptyTitle
 } from "../../ui/empty";
-import MentorEntry from "./MentorEntry";
+import MentorCard from "./MentorCard";
 
 export default async function MentorsSection() {
 	const mentors = await getMentors();
@@ -21,26 +19,13 @@ export default async function MentorsSection() {
 				<CardHeader>
 					<h2 className="font-medium text-xl">Mentors</h2>
 				</CardHeader>
-				<CardContent
-					className={cn("flex flex-col gap-4", mentors.size > 0 && "pb-28")}
-				>
-					{mentors.size > 0 ? (
-						MENTOR_CATEGORIES.map((category) => {
-							const categoryList = mentors.get(category) ?? [];
-
-							return (
-								categoryList.length > 0 && (
-									<div
-										className="grid grid-cols-[repeat(auto-fill,192px)] justify-evenly gap-8 md:justify-between"
-										key={category}
-									>
-										{categoryList.map((mentor) => (
-											<MentorEntry key={mentor.sys.id} mentor={mentor} />
-										))}
-									</div>
-								)
-							);
-						})
+				<CardContent>
+					{mentors.length > 0 ? (
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+							{mentors.map((mentor) => (
+								<MentorCard key={mentor.sys.id} mentor={mentor} />
+							))}
+						</div>
 					) : (
 						<Empty>
 							<EmptyHeader>

@@ -1,11 +1,19 @@
 import { getFields, getString } from "@/lib/contentful";
-import {
-	MENTOR_CATEGORIES,
-	type Mentor,
-	type MentorCategory
-} from "@/types/contentfulTypes";
+import { MENTOR_CATEGORIES, type Mentor } from "@/types/contentfulTypes";
+
+function getCategoryOrder(entry: Mentor): number {
+	const index = (MENTOR_CATEGORIES as readonly unknown[]).indexOf(
+		getString(getFields(entry).category)
+	);
+	return index === -1 ? MENTOR_CATEGORIES.length : index;
+}
 
 function compareMentors(left: Mentor, right: Mentor): number {
+	const categoryComparison = getCategoryOrder(left) - getCategoryOrder(right);
+	if (categoryComparison !== 0) {
+		return categoryComparison;
+	}
+
 	const leftFields = getFields(left);
 	const rightFields = getFields(right);
 
@@ -23,35 +31,14 @@ function compareMentors(left: Mentor, right: Mentor): number {
 	);
 }
 
-function isMentorCategory(value: unknown): value is MentorCategory {
-	return (MENTOR_CATEGORIES as readonly unknown[]).includes(value);
-}
-
 function isRenderableMentor(entry: Mentor): boolean {
 	const fields = getFields(entry);
 
 	return Boolean(
-		getString(fields.name)?.trim() &&
-			getString(fields.role)?.trim() &&
-			isMentorCategory(getString(fields.category))
+		getString(fields.name)?.trim() && getString(fields.role)?.trim()
 	);
 }
 
-export function processMentors(
-	entries: readonly Mentor[]
-): Map<MentorCategory, Mentor[]> {
-	return entries
-		.filter(isRenderableMentor)
-		.sort(compareMentors)
-		.reduce((map, entry) => {
-			const fields = getFields(entry);
-			const category = getString(fields.category) as MentorCategory;
-
-			const group = map.get(category) ?? [];
-			group.push(entry);
-
-			map.set(category, group);
-
-			return map;
-		}, new Map<MentorCategory, Mentor[]>());
+export function processMentors(entries: readonly Mentor[]): Mentor[] {
+	return entries.filter(isRenderableMentor).sort(compareMentors);
 }

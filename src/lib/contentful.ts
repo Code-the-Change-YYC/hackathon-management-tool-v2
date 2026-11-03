@@ -12,6 +12,18 @@ export function getNumber(value: unknown): number | undefined {
 	return typeof value === "number" ? value : undefined;
 }
 
+export function getHttpUrl(value: unknown): URL | undefined {
+	const link = getString(value)?.trim();
+	if (!link || !URL.canParse(link)) {
+		return undefined;
+	}
+
+	const url = new URL(link);
+	return url.protocol === "https:" || url.protocol === "http:"
+		? url
+		: undefined;
+}
+
 export function getAssetUrl(asset: unknown): string | undefined {
 	if (!asset || typeof asset !== "object" || !("fields" in asset)) {
 		return undefined;

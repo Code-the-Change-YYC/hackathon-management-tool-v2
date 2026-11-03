@@ -4,7 +4,6 @@ import { tryCatch } from "@/lib/utils";
 import { getParticipantCriteria } from "@/server/api/participant-judging";
 import { fetchContentful } from "@/server/contentful";
 import { db } from "@/server/db";
-import type { Mentor, MentorCategory } from "@/types/contentfulTypes";
 import { mapJudges } from "./components/landing-page/data/judges";
 import { mapPastHackathonWinners } from "./components/landing-page/data/winners";
 import { processMentors } from "./components/participant/resources/data/mentors";
@@ -51,7 +50,7 @@ export async function getMentors() {
 		if (error) {
 			console.error("Error fetching mentors:", error);
 		}
-		return new Map<MentorCategory, Mentor[]>();
+		return [];
 	}
 
 	return processMentors(data);
