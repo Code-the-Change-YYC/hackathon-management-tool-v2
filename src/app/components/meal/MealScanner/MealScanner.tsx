@@ -4,6 +4,10 @@ import { type IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import { useRef } from "react";
 import { toast } from "sonner";
 import { formatTime } from "@/lib/datetime";
+import {
+	DIETARY_RESTRICTION_LABELS,
+	toDietaryRestrictions
+} from "@/lib/validation/signup";
 import { api } from "@/trpc/react";
 import { EVENT_TICKET_TOKEN_PATTERN } from "@/types/types";
 
@@ -52,11 +56,17 @@ export default function MealScanner({
 				{
 					onSuccess: async (result) => {
 						const alreadyCheckedIn = result.status === "already_checked_in";
+						const restrictions = toDietaryRestrictions(
+							result.participant.dietaryRestrictions
+						).map((restriction) => DIETARY_RESTRICTION_LABELS[restriction]);
 						const message = alreadyCheckedIn
 							? `${result.participant.name} already checked in at ${formatTime(result.checkedInAt)}.`
 							: `${result.participant.name} checked in at ${formatTime(result.checkedInAt)}.`;
+						const messageWithRestrictions = restrictions.length
+							? `${message} Dietary restrictions: ${restrictions.join(", ")}.`
+							: message;
 						if (alreadyCheckedIn) {
-							toast.error(message, {
+							toast.error(messageWithRestrictions, {
 								style: {
 									background: "var(--destructive)",
 									borderColor: "var(--destructive)",
@@ -64,7 +74,7 @@ export default function MealScanner({
 								}
 							});
 						} else {
-							toast.success(message);
+							toast.success(messageWithRestrictions);
 						}
 						await utils.events.getEventAttendees.invalidate({ eventId });
 						onScanResult(result.participant.id, alreadyCheckedIn);
