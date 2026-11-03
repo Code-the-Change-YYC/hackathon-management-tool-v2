@@ -136,6 +136,47 @@ describe("buildPanelSchedule", () => {
 		expect(offsets).toEqual([1, 2, 3]);
 	});
 
+	it.each([
+		180, 240, 360
+	])("still fits short blocks when the round runs %i minutes", (minutes) => {
+		const scheduleInput = input({
+			endTime: addMinutes(start, minutes),
+			panelSize: 2,
+			maxBlockMinutes: 20,
+			judgeIds: ids("judge", 25),
+			teamIds: ids("team", 66)
+		});
+		const result = buildPanelSchedule(scheduleInput);
+		if (!result.ok) throw new Error(result.message);
+		const { schedule } = result;
+		expect(schedule.presentationMinutes).toBe(8);
+		expectValidSchedule(schedule, scheduleInput);
+		const blockStarts = [start, ...schedule.breaks.map((b) => b.endsAt)];
+		const blockEnds = [
+			...schedule.breaks.map((b) => b.startsAt),
+			schedule.endsAt
+		];
+		blockStarts.forEach((blockStart, index) => {
+			const blockEnd = blockEnds[index] ?? schedule.endsAt;
+			expect(
+				(blockEnd.getTime() - blockStart.getTime()) / 60_000
+			).toBeLessThanOrEqual(20);
+		});
+	});
+
+	it("blames max continuous judging only when the shortest presentation can't fit", () => {
+		expect(
+			buildPanelSchedule(
+				input({ endTime: addMinutes(start, 600), maxBlockMinutes: 10 })
+			)
+		).toMatchObject({
+			ok: false,
+			message: expect.stringContaining(
+				"Max continuous judging is too short to fit one team's two presentations."
+			)
+		});
+	});
+
 	it("caps presentations at ten minutes and ends early when there is spare time", () => {
 		const schedule = build({
 			judgeIds: ids("judge", 3),

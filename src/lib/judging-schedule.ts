@@ -32,31 +32,48 @@ export type PanelScheduleResult =
 	| { ok: true; schedule: PanelSchedule }
 	| { ok: false; message: string };
 
-// Fewest breaks wins, as long as no block runs longer than maxBlockMinutes.
+// The longest slot wins, then the fewest breaks. A slot has to fit the
+// window, the presentation cap, and maxBlockMinutes for the block with the
+// most waves, so a longer window never stops a schedule from fitting.
 function planBlocks(
 	windowMinutes: number,
 	waveCount: number,
 	settings: PanelScheduleSettings
 ) {
 	const slotCount = waveCount * 2;
+	let best:
+		| { blockCount: number; slotMinutes: number; limitedByBlock: boolean }
+		| undefined;
 	for (let blockCount = 1; blockCount <= waveCount; blockCount++) {
 		const available = windowMinutes - (blockCount - 1) * settings.breakMinutes;
-		const slotMinutes = Math.min(
+		const unblockedSlot = Math.min(
 			Math.floor(available / slotCount),
 			MAX_PRESENTATION_MINUTES + settings.changeoverMinutes
 		);
-		const longestBlock = Math.ceil(waveCount / blockCount) * 2 * slotMinutes;
-		if (longestBlock <= settings.maxBlockMinutes) {
-			const wavesPerBlock = Array.from(
-				{ length: blockCount },
-				(_, block) =>
-					Math.floor(waveCount / blockCount) +
-					(block < waveCount % blockCount ? 1 : 0)
-			);
-			return { slotMinutes, wavesPerBlock };
+		const blockSlot = Math.floor(
+			settings.maxBlockMinutes / (Math.ceil(waveCount / blockCount) * 2)
+		);
+		const slotMinutes = Math.min(unblockedSlot, blockSlot);
+		if (!best || slotMinutes > best.slotMinutes) {
+			best = {
+				blockCount,
+				slotMinutes,
+				limitedByBlock: blockSlot < unblockedSlot
+			};
 		}
 	}
-	return null;
+	const blockCount = best?.blockCount ?? 1;
+	const wavesPerBlock = Array.from(
+		{ length: blockCount },
+		(_, block) =>
+			Math.floor(waveCount / blockCount) +
+			(block < waveCount % blockCount ? 1 : 0)
+	);
+	return {
+		slotMinutes: best?.slotMinutes ?? 0,
+		limitedByBlock: best?.limitedByBlock ?? false,
+		wavesPerBlock
+	};
 }
 
 function schedulePanel(input: PanelScheduleInput): PanelScheduleResult {
@@ -77,16 +94,15 @@ function schedulePanel(input: PanelScheduleInput): PanelScheduleResult {
 		waveCount,
 		input
 	);
-	if (!plan) {
-		return {
-			ok: false,
-			message:
-				"Max continuous judging is too short to fit one team's two presentations."
-		};
-	}
-
 	const presentationMinutes = plan.slotMinutes - input.changeoverMinutes;
 	if (presentationMinutes < MIN_PRESENTATION_MINUTES) {
+		if (plan.limitedByBlock) {
+			return {
+				ok: false,
+				message:
+					"Max continuous judging is too short to fit one team's two presentations."
+			};
+		}
 		return {
 			ok: false,
 			message: `Presentations would only be ${Math.max(0, presentationMinutes)} minutes. They need at least ${MIN_PRESENTATION_MINUTES}.`
