@@ -135,14 +135,14 @@ describe("hackathonSettings.setScoresReleased", () => {
 		expect(mocks.insertValues).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		[true, "winners_announced"],
-		[false, "results_ready"]
-	])("sets released to %s with the %s phase", async (released, judgingPhase) => {
+	it.each([true, false])("sets released to %s", async (released) => {
 		const api = await caller();
 
 		await api.hackathonSettings.setScoresReleased({ released });
 
-		expect(mocks.insertValues).toHaveBeenCalledWith({ id: 1, judgingPhase });
+		expect(mocks.insertValues).toHaveBeenCalledWith({
+			id: 1,
+			scoresReleased: released
+		});
 	});
 });

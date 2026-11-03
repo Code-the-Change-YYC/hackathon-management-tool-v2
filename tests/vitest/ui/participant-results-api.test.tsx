@@ -7,7 +7,7 @@ vi.mock("@/server/better-auth", () => ({ auth: { api: {} } }));
 import { scoresRouter } from "@/server/api/routers/scores";
 
 function caller(
-	phase: string,
+	scoresReleased: boolean,
 	organizationId: string | null = "own-team",
 	loggedIn = true
 ) {
@@ -22,7 +22,7 @@ function caller(
 	const db = {
 		query: {
 			hackathonSettings: {
-				findFirst: vi.fn().mockResolvedValue({ judgingPhase: phase })
+				findFirst: vi.fn().mockResolvedValue({ scoresReleased })
 			},
 			member: {
 				findFirst: vi
@@ -43,15 +43,8 @@ function caller(
 }
 
 describe("participant result access", () => {
-	it.each([
-		"not_started",
-		"submissions_closed",
-		"review",
-		"judging",
-		"deliberation",
-		"results_ready"
-	])("does not read scores or membership in %s", async (phase) => {
-		const { client, db } = caller(phase);
+	it("does not read scores or membership before scores are released", async () => {
+		const { client, db } = caller(false);
 		expect(await client.getMineReleased()).toEqual({
 			released: false,
 			rounds: []
@@ -60,14 +53,14 @@ describe("participant result access", () => {
 		expect(db.select).not.toHaveBeenCalled();
 	});
 	it("rejects an unauthenticated caller", async () => {
-		const { client, db } = caller("winners_announced", null, false);
+		const { client, db } = caller(true, null, false);
 		await expect(client.getMineReleased()).rejects.toMatchObject({
 			code: "UNAUTHORIZED"
 		});
 		expect(db.select).not.toHaveBeenCalled();
 	});
 	it("uses the session user’s membership and restricts the SQL query to that team", async () => {
-		const { client, db, where } = caller("winners_announced");
+		const { client, db, where } = caller(true);
 		expect(await client.getMineReleased()).toEqual({
 			released: true,
 			rounds: [{ roundId: "round", criterionId: "criterion", value: 7.5 }]
@@ -82,7 +75,7 @@ describe("participant result access", () => {
 		]);
 	});
 	it("returns no scores when the user has no team", async () => {
-		const { client, db } = caller("winners_announced", null);
+		const { client, db } = caller(true, null);
 		expect(await client.getMineReleased()).toEqual({
 			released: true,
 			rounds: []

@@ -137,7 +137,7 @@ test(
 			.getByRole("region", { name: "Your Scores" })
 			.getByRole("button", { name: new RegExp(criterion.name) });
 		try {
-			await setSettings({ judgingPhase: "review" });
+			await setSettings({ scoresReleased: false });
 			await page.goto("/participant/judging");
 			await expect(
 				page.getByRole("heading", { name: "Judging Rubric" })
@@ -147,7 +147,7 @@ test(
 			).toHaveCount(0);
 			await expect(page.getByText("4 / 5")).toHaveCount(0);
 
-			await setSettings({ judgingPhase: "winners_announced" });
+			await setSettings({ scoresReleased: true });
 			await page.reload();
 			await expect(scoreTrigger).toContainText("4 / 5");
 			await expect(

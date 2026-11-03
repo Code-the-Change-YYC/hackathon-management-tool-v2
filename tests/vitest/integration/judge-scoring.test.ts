@@ -176,7 +176,7 @@ describe("individual scorecard API", () => {
 	});
 	it("closes scoring once scores are released", async () => {
 		db.query.hackathonSettings.findFirst.mockResolvedValue({
-			judgingPhase: "winners_announced"
+			scoresReleased: true
 		});
 		db.query.judgingScores.findFirst.mockResolvedValue({
 			id: mainId,

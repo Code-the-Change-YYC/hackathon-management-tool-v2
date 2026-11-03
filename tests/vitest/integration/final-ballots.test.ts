@@ -58,7 +58,7 @@ beforeEach(() => {
 	vi.resetAllMocks();
 	db.query.judgingRounds.findFirst.mockResolvedValue(finalRound());
 	db.query.hackathonSettings.findFirst.mockResolvedValue({
-		judgingPhase: "judging"
+		scoresReleased: false
 	});
 	db.delete.mockReturnValue(write);
 	db.insert.mockReturnValue(write);
@@ -137,7 +137,7 @@ describe("final ballots", () => {
 
 		db.query.judgingRounds.findFirst.mockResolvedValue(finalRound());
 		db.query.hackathonSettings.findFirst.mockResolvedValue({
-			judgingPhase: "winners_announced"
+			scoresReleased: true
 		});
 		await expect(
 			caller().submit({ assignmentIds: [first, second, third] })

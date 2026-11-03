@@ -79,7 +79,7 @@ describe("judgingResults.setFinalJudges", () => {
 
 	it("locks the table once scores are released", async () => {
 		db.query.hackathonSettings.findFirst.mockResolvedValue({
-			judgingPhase: "winners_announced"
+			scoresReleased: true
 		});
 		await expect(seat(["j1"])).rejects.toMatchObject({ code: "FORBIDDEN" });
 		expect(db.delete).not.toHaveBeenCalled();

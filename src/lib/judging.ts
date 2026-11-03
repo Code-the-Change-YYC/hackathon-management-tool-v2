@@ -1,18 +1,5 @@
 import { addMinutes } from "date-fns";
 
-// Only winners_announced is read: it releases scores to participants. Their
-// judging stages otherwise follow the clock, pre-screening and scoring.
-export const JUDGING_PHASES = [
-	"not_started",
-	"submissions_closed",
-	"review",
-	"judging",
-	"deliberation",
-	"results_ready",
-	"winners_announced"
-] as const;
-export type JudgingPhase = (typeof JUDGING_PHASES)[number];
-
 // There is one panel round, which splits judges into tables and is scored on
 // the rubric, and one final round, where every judge ranks the finalists.
 export const JUDGING_ROUND_KINDS = ["panel", "final"] as const;

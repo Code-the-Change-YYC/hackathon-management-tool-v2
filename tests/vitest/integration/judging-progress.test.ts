@@ -32,7 +32,7 @@ describe("judgingProgress.get", () => {
 		db.query.hackathonSettings.findFirst.mockResolvedValue({
 			startDate: null,
 			submissionDeadline: start,
-			judgingPhase: "winners_announced"
+			scoresReleased: true
 		});
 		const round = (id: string) => ({
 			id,

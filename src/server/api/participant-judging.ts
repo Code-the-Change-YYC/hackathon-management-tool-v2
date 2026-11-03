@@ -1,5 +1,4 @@
 import { asc, eq, sql } from "drizzle-orm";
-import type { JudgingPhase } from "@/lib/judging";
 import type { TeamJudging, TeamJudgingRound } from "@/lib/participant-judging";
 import {
 	submittedBallots,
@@ -15,11 +14,11 @@ import {
 
 type DbClient = typeof dbType;
 
-// Participants only see scores once winners are announced.
+// Participants only see scores once an admin releases them.
 export function areScoresReleased(
-	settings: { judgingPhase: JudgingPhase } | null | undefined
+	settings: { scoresReleased: boolean } | null | undefined
 ) {
-	return settings?.judgingPhase === "winners_announced";
+	return settings?.scoresReleased ?? false;
 }
 
 export async function getParticipantCriteria(db: DbClient) {
