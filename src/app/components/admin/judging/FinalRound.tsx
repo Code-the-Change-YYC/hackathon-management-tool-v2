@@ -29,9 +29,11 @@ import {
 } from "@/lib/judging";
 import { range } from "@/lib/utils";
 import { api } from "@/trpc/react";
+import { FinalJudgesDialog } from "./FinalJudgesDialog";
 import {
 	type FinalResults,
 	formatScore,
+	type Judge,
 	type Layout,
 	type LayoutTable,
 	ManagementSection,
@@ -229,17 +231,35 @@ function ResultsTable({ results }: { results: FinalResultsData["results"] }) {
 
 function Ballots({
 	ballots,
+	judges,
 	scoresReleased
 }: {
 	ballots: FinalResultsData["ballots"];
+	judges: Judge[];
 	scoresReleased: boolean;
 }) {
+	const [isManaging, setIsManaging] = useState(false);
 	const submittedCount = ballots.filter(
 		(ballot) => ballot.teamNames.length > 0
 	).length;
 
 	return (
 		<ManagementSection
+			action={
+				<Button
+					disabled={scoresReleased}
+					onClick={() => setIsManaging(true)}
+					size="sm"
+					title={
+						scoresReleased
+							? "The final table can’t change once scores are released."
+							: undefined
+					}
+					variant="outline"
+				>
+					Manage judges
+				</Button>
+			}
 			description={
 				scoresReleased
 					? `${submittedCount}/${ballots.length} ballots in. Ranking closed when scores were released.`
@@ -285,6 +305,16 @@ function Ballots({
 					))}
 				</TableBody>
 			</Table>
+			{isManaging ? (
+				<FinalJudgesDialog
+					judges={judges}
+					onClose={() => setIsManaging(false)}
+					rankedIds={ballots
+						.filter((ballot) => ballot.teamNames.length > 0)
+						.map((ballot) => ballot.judgeId)}
+					seatedIds={ballots.map((ballot) => ballot.judgeId)}
+				/>
+			) : null}
 		</ManagementSection>
 	);
 }
@@ -293,11 +323,13 @@ export function FinalRound({
 	round,
 	layout,
 	results,
+	judges,
 	scoresReleased
 }: {
 	round: Round;
 	layout?: Layout;
 	results: FinalResults;
+	judges: Judge[];
 	scoresReleased: boolean;
 }) {
 	const table = layout?.tables[0];
@@ -341,7 +373,11 @@ export function FinalRound({
 				)}
 			</ManagementSection>
 			{ballots.length ? (
-				<Ballots ballots={ballots} scoresReleased={scoresReleased} />
+				<Ballots
+					ballots={ballots}
+					judges={judges}
+					scoresReleased={scoresReleased}
+				/>
 			) : null}
 		</>
 	);

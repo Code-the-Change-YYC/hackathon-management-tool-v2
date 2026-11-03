@@ -174,6 +174,7 @@ export function JudgingView({
 									</>
 								) : (
 									<FinalRound
+										judges={judges}
 										layout={layouts[round.id]}
 										results={finalResults}
 										round={round}

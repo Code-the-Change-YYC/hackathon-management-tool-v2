@@ -123,6 +123,12 @@ export const finalistsFormSchema = z.object({
 
 export type FinalistsFormValues = z.infer<typeof finalistsFormSchema>;
 
+export const finalJudgesFormSchema = z.object({
+	judgeIds: z.array(z.string()).min(1, "Seat at least one judge.")
+});
+
+export type FinalJudgesFormValues = z.infer<typeof finalJudgesFormSchema>;
+
 export const criterionFormSchema = z
 	.object({
 		name: z

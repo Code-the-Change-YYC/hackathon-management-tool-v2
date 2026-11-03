@@ -25,7 +25,8 @@ const { mocks, mutation } = vi.hoisted(() => ({
 		generate: vi.fn(),
 		removeTeam: vi.fn(),
 		setFinalists: vi.fn(),
-		reorderFinalists: vi.fn()
+		reorderFinalists: vi.fn(),
+		setFinalJudges: vi.fn()
 	},
 	mutation: (mutate: () => void) => ({
 		useMutation: () => ({ mutate, isPending: false })
@@ -45,7 +46,8 @@ vi.mock("@/trpc/react", () => ({
 		},
 		judgingResults: {
 			setFinalists: mutation(mocks.setFinalists),
-			reorderFinalists: mutation(mocks.reorderFinalists)
+			reorderFinalists: mutation(mocks.reorderFinalists),
+			setFinalJudges: mutation(mocks.setFinalJudges)
 		}
 	}
 }));
@@ -448,6 +450,7 @@ describe("final round presentation order", () => {
 	it("reorders finalists, previewing their new times, then saves", () => {
 		render(
 			<FinalRound
+				judges={[]}
 				layout={finalLayout}
 				results={null}
 				round={finalRound}
@@ -478,6 +481,7 @@ describe("final round presentation order", () => {
 	it("discards a new order on cancel", () => {
 		render(
 			<FinalRound
+				judges={[]}
 				layout={finalLayout}
 				results={null}
 				round={finalRound}
@@ -511,6 +515,7 @@ describe("final round results", () => {
 	it("waits for the first ballot before ranking", () => {
 		render(
 			<FinalRound
+				judges={[]}
 				results={{
 					results: [result("Team A", 0, 1, true), result("Team B", 0, 1, true)],
 					ballots: [{ judgeId: "j1", judgeName: "Dara", teamNames: [] }]
@@ -530,6 +535,7 @@ describe("final round results", () => {
 	it("ranks by points, flags ties and lists each judge's ballot", () => {
 		render(
 			<FinalRound
+				judges={[]}
 				results={{
 					results: [
 						result("Team A", 5, 1),
@@ -567,5 +573,60 @@ describe("final round results", () => {
 		expect(within(ballots).getByRole("row", { name: /Sam/ })).toHaveTextContent(
 			"Not submitted"
 		);
+	});
+
+	it("seats judges at the final table, keeping those who have ranked", async () => {
+		const judge = (id: string, name: string) =>
+			({ id, name }) as Parameters<typeof FinalRound>[0]["judges"][number];
+		render(
+			<FinalRound
+				judges={[judge("j1", "Dara"), judge("j2", "Sam"), judge("j3", "Ira")]}
+				results={{
+					results: [result("Team A", 3, 1)],
+					ballots: [
+						{ judgeId: "j1", judgeName: "Dara", teamNames: ["Team A"] },
+						{ judgeId: "j2", judgeName: "Sam", teamNames: [] }
+					]
+				}}
+				round={finalRound}
+				scoresReleased={false}
+			/>
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Manage judges" }));
+		const dialog = await screen.findByRole("dialog", {
+			name: "Final table judges"
+		});
+		const box = (name: string | RegExp) =>
+			within(dialog).getByRole("checkbox", { name });
+		expect(box(/^Dara/)).toHaveAttribute("aria-disabled", "true");
+		expect(box("Sam")).toBeChecked();
+		expect(box("Ira")).not.toBeChecked();
+		fireEvent.click(box("Sam"));
+		fireEvent.click(box("Ira"));
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Save judges" })
+		);
+		await waitFor(() =>
+			expect(mocks.setFinalJudges).toHaveBeenCalledWith({
+				judgeIds: ["j1", "j3"]
+			})
+		);
+	});
+
+	it("locks the final table once scores are released", () => {
+		render(
+			<FinalRound
+				judges={[]}
+				results={{
+					results: [],
+					ballots: [{ judgeId: "j1", judgeName: "Dara", teamNames: [] }]
+				}}
+				round={finalRound}
+				scoresReleased
+			/>
+		);
+		expect(
+			screen.getByRole("button", { name: "Manage judges" })
+		).toBeDisabled();
 	});
 });

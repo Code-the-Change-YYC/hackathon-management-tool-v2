@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	getFinalistStartTime,
@@ -16,8 +16,10 @@ import {
 	getPanelScorecards,
 	submittedScorecards
 } from "@/server/api/judging-results";
+import { areScoresReleased } from "@/server/api/participant-judging";
 import { assertRoundHasNoScores } from "@/server/api/routers/judging-tables";
 import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
+import { hackathonSettings } from "@/server/db/admin-schema";
 import { organization, user } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
@@ -25,7 +27,8 @@ import {
 	judgingRounds,
 	judgingScores,
 	judgingTableJudges,
-	judgingTables
+	judgingTables,
+	judgingVotes
 } from "@/server/db/judging-schema";
 
 export const judgingResultsRouter = createTRPCRouter({
@@ -210,6 +213,78 @@ export const judgingResultsRouter = createTRPCRouter({
 						publishedAt: null
 					})
 					.where(eq(judgingRounds.id, round.id));
+				return { roundId: round.id };
+			});
+		}),
+
+	// Seats exactly these judges at the final table, so judges who left early
+	// don't hold up the ballots. Judges who have ranked the finalists keep
+	// their seats so their ballots keep counting.
+	setFinalJudges: adminProcedure
+		.input(z.object({ judgeIds: z.array(z.string()).min(1) }))
+		.mutation(async ({ ctx, input }) => {
+			const judgeIds = [...new Set(input.judgeIds)];
+			return ctx.db.transaction(async (tx) => {
+				const [round, settings] = await Promise.all([
+					tx.query.judgingRounds.findFirst({
+						where: eq(judgingRounds.kind, "final"),
+						with: { tables: { columns: { id: true } } }
+					}),
+					tx.query.hackathonSettings.findFirst({
+						where: eq(hackathonSettings.id, 1)
+					})
+				]);
+				const table = round?.tables[0];
+				if (!round || !table) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Pick finalists before seating the final table."
+					});
+				}
+				if (areScoresReleased(settings)) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message: "The final table can’t change once scores are released."
+					});
+				}
+				const judges = await tx.query.user.findMany({
+					where: and(inArray(user.id, judgeIds), eq(user.role, "judge")),
+					columns: { id: true }
+				});
+				if (judges.length !== judgeIds.length) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "One or more judges were not found."
+					});
+				}
+				const voters = await tx
+					.selectDistinct({ judgeId: judgingVotes.judgeId })
+					.from(judgingVotes)
+					.innerJoin(
+						judgingAssignments,
+						eq(judgingVotes.assignmentId, judgingAssignments.id)
+					)
+					.where(eq(judgingAssignments.tableId, table.id));
+				if (voters.some(({ judgeId }) => !judgeIds.includes(judgeId))) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message:
+							"Judges who have ranked the finalists have to stay at the final table."
+					});
+				}
+
+				await tx
+					.delete(judgingTableJudges)
+					.where(
+						and(
+							eq(judgingTableJudges.tableId, table.id),
+							notInArray(judgingTableJudges.judgeId, judgeIds)
+						)
+					);
+				await tx
+					.insert(judgingTableJudges)
+					.values(judgeIds.map((judgeId) => ({ tableId: table.id, judgeId })))
+					.onConflictDoNothing();
 				return { roundId: round.id };
 			});
 		}),
