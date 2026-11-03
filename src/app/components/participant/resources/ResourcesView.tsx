@@ -9,8 +9,8 @@ export function ResourcesView() {
 				description="Helpful resources and mentors!"
 				title="Resources and Help"
 			/>
-			<ResourcesSection />
 			<MentorsSection />
+			<ResourcesSection />
 		</div>
 	);
 }
