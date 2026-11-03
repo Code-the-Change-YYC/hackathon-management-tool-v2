@@ -6,6 +6,8 @@ import { fetchContentful } from "@/server/contentful";
 import { db } from "@/server/db";
 import { mapJudges } from "./components/landing-page/data/judges";
 import { mapPastHackathonWinners } from "./components/landing-page/data/winners";
+import { processMentors } from "./components/participant/resources/data/mentors";
+import { mapResources } from "./components/participant/resources/data/resources";
 
 export async function getWinners() {
 	const { data, error } = await tryCatch(
@@ -40,4 +42,28 @@ export async function getJudges() {
 	}
 
 	return mapJudges(data);
+}
+
+export async function getMentors() {
+	const { data, error } = await tryCatch(fetchContentful("hackathonMentor"));
+	if (!data) {
+		if (error) {
+			console.error("Error fetching mentors:", error);
+		}
+		return [];
+	}
+
+	return processMentors(data);
+}
+
+export async function getResources() {
+	const { data, error } = await tryCatch(fetchContentful("hackathonResource"));
+	if (!data) {
+		if (error) {
+			console.error("Error fetching resources:", error);
+		}
+		return [];
+	}
+
+	return mapResources(data);
 }

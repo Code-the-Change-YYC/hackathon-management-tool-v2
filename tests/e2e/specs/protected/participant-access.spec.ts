@@ -108,7 +108,7 @@ test.describe("participants", () => {
 			page.getByRole("heading", { name: "Resources and Help" })
 		).toBeVisible();
 		await expect(
-			page.getByRole("heading", { name: "Resources", exact: true })
+			page.getByRole("heading", { name: "APIs and Datasets" })
 		).toBeVisible();
 		await expect(page.getByRole("heading", { name: "Mentors" })).toBeVisible();
 	});
