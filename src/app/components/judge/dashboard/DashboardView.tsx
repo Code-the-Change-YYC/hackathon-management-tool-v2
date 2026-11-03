@@ -100,17 +100,20 @@ function RoundProgress({
 	);
 }
 
-function BreakRow({
+function GapRow({
 	item
 }: {
-	item: Extract<ScheduleItem, { kind: "break" }>;
+	item: Exclude<ScheduleItem, { kind: "assignment" }>;
 }) {
 	return (
 		<li className="flex min-h-12 items-center gap-4 bg-muted/50 px-4 py-2 text-muted-foreground text-sm sm:px-6">
 			<span className="w-16 shrink-0 whitespace-nowrap sm:w-20">
 				{formatTime(item.startsAt)}
 			</span>
-			<span>Break until {formatTime(item.endsAt)}</span>
+			<span>
+				{item.kind === "break" ? "Break" : "No team"} until{" "}
+				{formatTime(item.endsAt)}
+			</span>
 		</li>
 	);
 }
@@ -119,12 +122,14 @@ function RoundSection({
 	group,
 	criteria,
 	currentTime,
-	scoresReleased
+	scoresReleased,
+	slotTimes
 }: {
 	group: RoundGroup;
 	criteria: Criterion[];
 	currentTime: Date;
 	scoresReleased: boolean;
+	slotTimes: Date[];
 }) {
 	const titleId = `round-${group.round.id}-title`;
 
@@ -141,12 +146,12 @@ function RoundSection({
 			<RoundProgress assignments={group.assignments} criteria={criteria} />
 			<Card className="py-0">
 				<ul className="m-0 list-none divide-y divide-grey-200 p-0">
-					{withBreaks(group.assignments).map((item) => {
-						if (item.kind === "break") {
+					{withBreaks(group.assignments, slotTimes).map((item) => {
+						if (item.kind !== "assignment") {
 							return (
-								<BreakRow
+								<GapRow
 									item={item}
-									key={`break-${item.startsAt.getTime()}`}
+									key={`${item.kind}-${item.startsAt.getTime()}`}
 								/>
 							);
 						}
@@ -268,6 +273,7 @@ export function DashboardView({
 	activeRoundId,
 	assignments,
 	criteria,
+	roundSlotTimes,
 	scoresReleased
 }: {
 	userId: string;
@@ -275,6 +281,7 @@ export function DashboardView({
 	activeRoundId: string | null;
 	assignments: JudgeAssignment[];
 	criteria: Criterion[];
+	roundSlotTimes: Record<string, Date[]>;
 	scoresReleased: boolean;
 }) {
 	const currentTime = useCurrentTime();
@@ -308,6 +315,7 @@ export function DashboardView({
 							group={group}
 							key={group.round.id}
 							scoresReleased={scoresReleased}
+							slotTimes={roundSlotTimes[group.round.id] ?? []}
 						/>
 					)
 				)}

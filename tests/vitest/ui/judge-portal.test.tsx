@@ -145,25 +145,31 @@ describe("judge portal scoring contract", () => {
 		).toEqual(["alpha", "beta", "later"]);
 	});
 
-	it("shows a gap longer than one slot as a break", () => {
+	it("tells breaks, when no table presents, from free slots at the judge's table", () => {
+		const at = (minute: number) => new Date(now.getTime() + minute * 60_000);
 		const first = assignment({ id: "first" });
-		const afterBreak = assignment({
-			id: "after-break",
-			startsAt: new Date(now.getTime() + 30 * 60_000)
-		});
-		const next = assignment({
-			id: "next",
-			startsAt: new Date(now.getTime() + 40 * 60_000)
-		});
-		expect(withBreaks([next, afterBreak, first])).toEqual([
+		const afterGap = assignment({ id: "after-gap", startsAt: at(40) });
+		const next = assignment({ id: "next", startsAt: at(50) });
+		// Every table's slots; nobody presents from 20 to 30.
+		const roundTimes = [0, 10, 30, 40, 50].map(at);
+		expect(withBreaks([next, afterGap, first], roundTimes)).toEqual([
 			{ kind: "assignment", assignment: first },
-			{
-				kind: "break",
-				startsAt: new Date(now.getTime() + 8 * 60_000),
-				endsAt: afterBreak.startsAt
-			},
-			{ kind: "assignment", assignment: afterBreak },
+			{ kind: "free", startsAt: at(10), endsAt: at(20) },
+			{ kind: "break", startsAt: at(20), endsAt: at(30) },
+			{ kind: "free", startsAt: at(30), endsAt: at(40) },
+			{ kind: "assignment", assignment: afterGap },
 			{ kind: "assignment", assignment: next }
+		]);
+	});
+
+	it("joins back-to-back free slots", () => {
+		const at = (minute: number) => new Date(now.getTime() + minute * 60_000);
+		const first = assignment({ id: "first" });
+		const later = assignment({ id: "later", startsAt: at(30) });
+		expect(withBreaks([first, later], [0, 10, 20, 30].map(at))).toEqual([
+			{ kind: "assignment", assignment: first },
+			{ kind: "free", startsAt: at(10), endsAt: at(30) },
+			{ kind: "assignment", assignment: later }
 		]);
 	});
 });
@@ -200,6 +206,7 @@ describe("judge dashboard", () => {
 				activeRoundId={null}
 				assignments={[]}
 				criteria={[main]}
+				roundSlotTimes={{}}
 				scoresReleased={false}
 				userId="judge"
 				userName="Dara"
@@ -219,6 +226,7 @@ describe("judge dashboard", () => {
 					assignment({ table: judgeTable({ judges: dara ? [dara] : [] }) })
 				]}
 				criteria={[main]}
+				roundSlotTimes={{}}
 				scoresReleased={false}
 				userId="judge"
 				userName="Dara"
@@ -251,6 +259,7 @@ describe("judge dashboard", () => {
 						})
 					]}
 					criteria={[main]}
+					roundSlotTimes={{}}
 					scoresReleased={false}
 					userId="judge"
 					userName="Dara"
@@ -288,6 +297,7 @@ describe("judge dashboard", () => {
 				activeRoundId="round"
 				assignments={[next, done]}
 				criteria={[main]}
+				roundSlotTimes={{}}
 				scoresReleased={false}
 				userId="judge"
 				userName="Dara"
@@ -328,6 +338,7 @@ describe("judge dashboard", () => {
 		};
 		const { rerender } = render(
 			<DashboardView
+				roundSlotTimes={{}}
 				{...props}
 				assignments={[assignment({ scores: [score("main", 4)] }), finalsTeam]}
 			/>
@@ -348,6 +359,7 @@ describe("judge dashboard", () => {
 
 		rerender(
 			<DashboardView
+				roundSlotTimes={{}}
 				{...props}
 				assignments={[
 					assignment({ scores: [score("main", 4)] }),
@@ -383,6 +395,7 @@ describe("judge dashboard", () => {
 					})
 				]}
 				criteria={[main]}
+				roundSlotTimes={{}}
 				scoresReleased={false}
 				userId="judge"
 				userName="Dara"

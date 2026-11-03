@@ -1,15 +1,17 @@
 import { TRPCError } from "@trpc/server";
-import { eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 import { getTeamSchedule } from "@/server/api/participant-judging";
 import {
 	adminProcedure,
 	createTRPCRouter,
+	judgeProcedure,
 	protectedProcedure
 } from "@/server/api/trpc";
 import { member } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
+	judgingRounds,
 	judgingScores,
 	judgingTableJudges,
 	judgingTables,
@@ -96,6 +98,46 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 				Boolean(assignment.table.round.publishedAt)
 			);
 		}),
+
+	// Every presentation time in the published rounds the judge sits in, across
+	// all tables, by round ID. Without it, an empty slot at the judge's table
+	// would look like a break.
+	getRoundSlotTimes: judgeProcedure.query(async ({ ctx }) => {
+		const seats = await ctx.db
+			.select({ roundId: judgingTables.roundId })
+			.from(judgingTableJudges)
+			.innerJoin(
+				judgingTables,
+				eq(judgingTableJudges.tableId, judgingTables.id)
+			)
+			.where(eq(judgingTableJudges.judgeId, ctx.session.user.id));
+		const roundIds = [...new Set(seats.map(({ roundId }) => roundId))];
+		if (roundIds.length === 0) return {};
+
+		const rows = await ctx.db
+			.selectDistinct({
+				roundId: judgingTables.roundId,
+				startsAt: judgingAssignments.startsAt
+			})
+			.from(judgingAssignments)
+			.innerJoin(
+				judgingTables,
+				eq(judgingAssignments.tableId, judgingTables.id)
+			)
+			.innerJoin(judgingRounds, eq(judgingTables.roundId, judgingRounds.id))
+			.where(
+				and(
+					inArray(judgingTables.roundId, roundIds),
+					isNotNull(judgingRounds.publishedAt)
+				)
+			)
+			.orderBy(asc(judgingAssignments.startsAt));
+		const slotTimes: Record<string, Date[]> = {};
+		for (const { roundId, startsAt } of rows) {
+			slotTimes[roundId] = [...(slotTimes[roundId] ?? []), startsAt];
+		}
+		return slotTimes;
+	}),
 
 	// Get assignments for a specific team
 	getByTeam: adminProcedure

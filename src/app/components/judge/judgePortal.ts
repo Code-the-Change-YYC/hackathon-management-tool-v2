@@ -87,11 +87,17 @@ export function getJudgeTable(assignments: JudgeAssignment[], userId: string) {
 
 export type ScheduleItem =
 	| { kind: "assignment"; assignment: JudgeAssignment }
-	| { kind: "break"; startsAt: Date; endsAt: Date };
+	| { kind: "break" | "free"; startsAt: Date; endsAt: Date };
 
-// A gap longer than one slot between a table's presentations is free time.
-export function withBreaks(assignments: JudgeAssignment[]): ScheduleItem[] {
+// Fills the gaps between a judge's teams. A break is a gap when no table
+// presents, from the end of the slot before it; a slot other tables use is
+// free time at this table. roundSlotTimes holds every table's start times.
+export function withBreaks(
+	assignments: JudgeAssignment[],
+	roundSlotTimes: Date[]
+): ScheduleItem[] {
 	const sorted = assignments.slice().sort(sortAssignments);
+	const roundTimes = roundSlotTimes.map((time) => time.getTime());
 	return sorted.flatMap((assignment, index): ScheduleItem[] => {
 		const previous = sorted[index - 1];
 		const item = { kind: "assignment" as const, assignment };
@@ -100,20 +106,42 @@ export function withBreaks(assignments: JudgeAssignment[]): ScheduleItem[] {
 		}
 		const { presentationMinutes, changeoverMinutes } = assignment.table.round;
 		if (presentationMinutes === null) return [item];
-		const slotEnd = addMinutes(
-			previous.startsAt,
-			presentationMinutes + changeoverMinutes
-		);
-		return assignment.startsAt > slotEnd
-			? [
-					{
-						kind: "break",
-						startsAt: getPresentationEnd(previous),
-						endsAt: assignment.startsAt
-					},
-					item
-				]
-			: [item];
+		const slotMs = (presentationMinutes + changeoverMinutes) * 60_000;
+		const from = previous.startsAt.getTime();
+		const to = assignment.startsAt.getTime();
+		const times = [
+			...new Set([
+				from,
+				...roundTimes.filter((time) => time > from && time < to),
+				to
+			])
+		].sort((a, b) => a - b);
+
+		const gaps: ScheduleItem[] = [];
+		times.slice(0, -1).forEach((time, step) => {
+			const next = times[step + 1] ?? to;
+			const last = gaps.at(-1);
+			if (time !== from) {
+				// Back-to-back empty slots read as one stretch of free time.
+				if (last?.kind === "free" && last.endsAt.getTime() === time) {
+					last.endsAt = new Date(time + slotMs);
+				} else {
+					gaps.push({
+						kind: "free",
+						startsAt: new Date(time),
+						endsAt: new Date(time + slotMs)
+					});
+				}
+			}
+			if (next - time > slotMs) {
+				gaps.push({
+					kind: "break",
+					startsAt: new Date(time + slotMs),
+					endsAt: new Date(next)
+				});
+			}
+		});
+		return [...gaps, item];
 	});
 }
 

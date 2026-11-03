@@ -12,10 +12,11 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
 	const { user } = await requireJudge();
-	const [settings, assignments, criteria] = await Promise.all([
+	const [settings, assignments, criteria, roundSlotTimes] = await Promise.all([
 		api.hackathonSettings.get(),
 		api.judgingAssignments.getByJudge({ judgeId: user.id }),
-		api.criteria.getAll()
+		api.criteria.getAll(),
+		api.judgingAssignments.getRoundSlotTimes()
 	]);
 
 	return (
@@ -25,6 +26,7 @@ export default async function DashboardPage() {
 				activeRoundId={settings?.currentRoundId ?? null}
 				assignments={assignments}
 				criteria={criteria}
+				roundSlotTimes={roundSlotTimes}
 				scoresReleased={areScoresReleased(settings)}
 				userId={user.id}
 				userName={

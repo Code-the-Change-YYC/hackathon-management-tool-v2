@@ -1,7 +1,6 @@
 "use client";
 
 import { CloseLine } from "@mingcute/react";
-import { addMinutes } from "date-fns";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -74,7 +73,8 @@ function buildGrid(layout: Layout): GridRow[] {
 		return [
 			{
 				kind: "break",
-				startsAt: addMinutes(new Date(previous), presentationMinutes ?? 0),
+				// Breaks start when the slot before them ends, as when generated.
+				startsAt: new Date(previous + slotMs),
 				endsAt: startsAt
 			},
 			slot

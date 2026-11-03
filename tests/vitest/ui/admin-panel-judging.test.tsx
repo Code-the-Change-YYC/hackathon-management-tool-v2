@@ -223,7 +223,7 @@ describe("panel schedule", () => {
 		expect(
 			screen.getByRole("columnheader", { name: /Table 1\s*Ada, Bo/ })
 		).toBeVisible();
-		expect(screen.getByText(/Break · 4:18 AM – 4:30 AM/)).toBeVisible();
+		expect(screen.getByText(/Break · 4:20 AM – 4:30 AM/)).toBeVisible();
 	});
 
 	it("removes a team only after confirmation", async () => {
