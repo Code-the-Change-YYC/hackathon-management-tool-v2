@@ -1,13 +1,13 @@
-import ScanMealTicketsImages from "@/app/components/admin/meals/ScanMealTicketsImages";
 import Banner from "@/app/components/Banner";
+import CheckInImages from "./CheckInImages";
 
 export function CheckInBanner() {
 	return (
 		<Banner
 			colour="purple"
-			description="Visit the check-in desk to unlock your meal tickets. Once you're checked in, your digital ticket appears on the Meals page and you'll get your physical tickets."
-			image={<ScanMealTicketsImages />}
-			title="Check in to get your meal tickets"
+			description="Stop by the check-in desk when you arrive so we know you're here. Once you're checked in, you're all set for the event."
+			image={<CheckInImages />}
+			title="Check in to the hackathon"
 		/>
 	);
 }

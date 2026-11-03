@@ -109,14 +109,16 @@ test.describe("not checked in", () => {
 	// Given I am a participant an admin has not checked in yet
 	// When the hackathon day has not come yet
 	// Then I see no check-in banner
-	// When the hackathon day has come
-	// Then the banner shows on my dashboard and replaces my meal ticket.
-	test("asks for check-in from the hackathon day", async ({
+	// When it is the hackathon's first day
+	// Then the banner shows on my dashboard and replaces my meal ticket
+	// When the first day has passed
+	// Then the banner only stays on my meals page.
+	test("asks for check-in on the hackathon's first day", async ({
 		authenticatedPage: page,
 		setSettings
 	}) => {
 		const banner = page.getByRole("heading", {
-			name: "Check in to get your meal tickets"
+			name: "Check in to the hackathon"
 		});
 		await setSettings({ startDate: minutesFromNow(7 * 24 * 60) });
 		await page.goto("/participant");
@@ -125,7 +127,7 @@ test.describe("not checked in", () => {
 		).toBeVisible();
 		await expect(banner).toHaveCount(0);
 
-		await setSettings({ startDate: minutesFromNow(-60) });
+		await setSettings({ startDate: minutesFromNow(-1) });
 		await page.goto("/participant");
 		await expect(banner).toBeVisible();
 		await page.goto("/participant/meals");
@@ -133,5 +135,14 @@ test.describe("not checked in", () => {
 		await expect(
 			page.getByRole("region", { name: "Meal ticket", exact: true })
 		).toHaveCount(0);
+
+		await setSettings({ startDate: minutesFromNow(-2 * 24 * 60) });
+		await page.goto("/participant");
+		await expect(
+			page.getByRole("heading", { name: "Welcome, Test!" })
+		).toBeVisible();
+		await expect(banner).toHaveCount(0);
+		await page.goto("/participant/meals");
+		await expect(banner).toBeVisible();
 	});
 });

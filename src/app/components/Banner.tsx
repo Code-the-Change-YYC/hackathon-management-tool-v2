@@ -59,7 +59,12 @@ export default function Banner({
 					image && !hasAction && "@4xl:pb-6 pb-49"
 				)}
 			>
-				<div className="z-1 flex w-full min-w-0 max-w-100 flex-col gap-8">
+				<div
+					className={cn(
+						"z-1 flex w-full min-w-0 max-w-100 flex-col gap-8",
+						!location && !(startTime || endTime) && "gap-4"
+					)}
+				>
 					<div className="flex flex-col gap-4">
 						<h2 className="font-medium text-3xl text-white">{title}</h2>
 						{location && (startTime || endTime) && (

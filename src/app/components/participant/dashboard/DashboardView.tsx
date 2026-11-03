@@ -7,6 +7,7 @@ import { Schedule } from "@/app/components/Schedule";
 import { buttonVariants } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { useCurrentTime } from "@/hooks/use-current-time";
+import { isSameCalgaryDay } from "@/lib/datetime";
 import {
 	type DashboardEvent,
 	formatDashboardDate,
@@ -56,6 +57,10 @@ export function DashboardView({
 	const currentEvent = getCurrentEvent(events, now);
 	const upcomingEvents = getTodayFutureEvents(events, now);
 	const upcomingJudging = getUpcomingJudging(judging, now);
+	const showCheckIn =
+		needsCheckIn &&
+		settings?.startDate != null &&
+		isSameCalgaryDay(settings.startDate, now);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -63,8 +68,9 @@ export function DashboardView({
 				description={getDescription(settings?.startDate ?? null, now)}
 				title={`Welcome, ${firstName}!`}
 			/>
-			{needsCheckIn && <CheckInBanner />}
-			{upcomingJudging ? (
+			{showCheckIn ? (
+				<CheckInBanner />
+			) : upcomingJudging ? (
 				<TeamJudgingBanner judging={upcomingJudging} />
 			) : (
 				<CurrentEventBanner colour="red" event={currentEvent} />
