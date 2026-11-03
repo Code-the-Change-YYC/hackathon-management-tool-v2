@@ -390,6 +390,52 @@ export const judgingTablesRouter = createTRPCRouter({
 				});
 			}
 
+			const seat =
+				tableIds.length === 0
+					? undefined
+					: await ctx.db.query.judgingTableJudges.findFirst({
+							where: and(
+								eq(judgingTableJudges.judgeId, input.judgeId),
+								inArray(judgingTableJudges.tableId, tableIds)
+							),
+							with: {
+								table: {
+									columns: { tableNumber: true },
+									with: { judges: { columns: { judgeId: true } } }
+								}
+							}
+						});
+			if (seat && seat.tableId !== input.tableId) {
+				// A judge's scorecards count for the table they scored at, and every
+				// team at a table needs a judge to be scored.
+				const [scored] = await ctx.db
+					.select({ id: judgingScores.id })
+					.from(judgingScores)
+					.innerJoin(
+						judgingAssignments,
+						eq(judgingScores.assignmentId, judgingAssignments.id)
+					)
+					.where(
+						and(
+							eq(judgingScores.judgeId, input.judgeId),
+							eq(judgingAssignments.tableId, seat.tableId)
+						)
+					)
+					.limit(1);
+				if (scored) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: `This judge has already scored teams at Table ${seat.table.tableNumber}, so they can’t move.`
+					});
+				}
+				if (seat.table.judges.length === 1) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: `This judge is the only one at Table ${seat.table.tableNumber}. Move another judge there first.`
+					});
+				}
+			}
+
 			await ctx.db.transaction(async (tx) => {
 				if (tableIds.length > 0) {
 					await tx

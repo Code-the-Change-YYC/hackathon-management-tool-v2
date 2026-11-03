@@ -38,6 +38,7 @@ const db = {
 	query: {
 		judgingRounds: { findFirst: vi.fn() },
 		judgingTables: { findFirst: vi.fn(), findMany: vi.fn() },
+		judgingTableJudges: { findFirst: vi.fn() },
 		judgingAssignments: { findMany: vi.fn() },
 		organization: { findFirst: vi.fn(), findMany: vi.fn() },
 		user: { findFirst: vi.fn(), findMany: vi.fn() },
@@ -186,6 +187,57 @@ describe("judgingTables", () => {
 			})
 		).rejects.toMatchObject({ code: "BAD_REQUEST" });
 		expect(db.delete).not.toHaveBeenCalled();
+	});
+
+	describe("moving a seated judge", () => {
+		const seatAtTableA = (judgeIds: string[]) =>
+			db.query.judgingTableJudges.findFirst.mockResolvedValue({
+				tableId: tableA,
+				judgeId: "judge-1",
+				table: {
+					tableNumber: 3,
+					judges: judgeIds.map((judgeId) => ({ judgeId }))
+				}
+			});
+		const move = (tableId: string | null) =>
+			judgingTablesRouter
+				.createCaller(context())
+				.assignJudge({ roundId, judgeId: "judge-1", tableId });
+
+		beforeEach(() => {
+			db.query.user.findFirst.mockResolvedValue({ role: "judge" });
+		});
+
+		it("keeps a judge who has scored at their table", async () => {
+			seatAtTableA(["judge-1", "judge-2"]);
+			scoreCheck.limit.mockResolvedValue([{ id: "score" }]);
+			await expect(move(tableB)).rejects.toMatchObject({
+				code: "BAD_REQUEST",
+				message:
+					"This judge has already scored teams at Table 3, so they can’t move."
+			});
+			expect(db.delete).not.toHaveBeenCalled();
+		});
+
+		it("never leaves a table without judges", async () => {
+			seatAtTableA(["judge-1"]);
+			await expect(move(null)).rejects.toMatchObject({
+				code: "BAD_REQUEST",
+				message:
+					"This judge is the only one at Table 3. Move another judge there first."
+			});
+			expect(db.delete).not.toHaveBeenCalled();
+		});
+
+		it("moves a judge who hasn't scored from a shared table", async () => {
+			seatAtTableA(["judge-1", "judge-2"]);
+			await move(tableB);
+			expect(db.delete).toHaveBeenCalledOnce();
+			expect(write.values).toHaveBeenCalledWith({
+				tableId: tableB,
+				judgeId: "judge-1"
+			});
+		});
 	});
 });
 
