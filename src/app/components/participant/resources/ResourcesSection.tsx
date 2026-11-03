@@ -17,7 +17,7 @@ export default async function ResourcesSection() {
 		<div className="flex h-full w-full flex-col gap-4">
 			<Card>
 				<CardHeader>
-					<h2 className="font-medium text-xl">Resources</h2>
+					<h2 className="font-medium text-xl">APIs and Datasets</h2>
 				</CardHeader>
 				<CardContent>
 					{resources.length ? (
