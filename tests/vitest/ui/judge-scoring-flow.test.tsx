@@ -1,165 +1,279 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	Criterion,
 	JudgeAssignment
 } from "@/app/components/judge/judgePortal";
 import { ScoreView } from "@/app/components/judge/score/ScoreView";
+import { judgeAssignment, judgeTable, judgingRound } from "../helpers/judging";
 
 const mocks = vi.hoisted(() => ({
+	portal: vi.fn(),
+	saved: vi.fn(),
+	submit: vi.fn(),
+	invalidate: vi.fn(),
 	push: vi.fn(),
-	confirm: vi.fn(),
-	mutate: vi.fn()
+	toast: vi.fn()
 }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
-vi.mock("@/app/components/ConfirmAlertDialog", () => ({
-	ConfirmAlertDialog: () => null,
-	useConfirmDialog: () => ({ confirm: mocks.confirm, dialogProps: {} })
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({ refresh: mocks.invalidate, push: mocks.push })
 }));
-vi.mock("@/trpc/react", () => ({
-	api: {
-		scores: {
-			createMany: { useMutation: () => ({ mutateAsync: mocks.mutate }) }
-		}
-	}
-}));
-const main = {
-	id: "main",
-	name: "Technical",
-	description: "Working implementation",
-	maxScore: 10,
-	isSidepot: false,
-	displayOrder: 0
-};
-const sidepot = {
-	...main,
-	id: "sidepot",
-	name: "Best AI",
-	maxScore: 5,
-	isSidepot: true
-};
-function assignment(
-	id = "assignment-a",
-	scores: { criteriaId: string; value: number }[] = []
-) {
+vi.mock("sonner", () => ({ toast: { success: mocks.toast } }));
+vi.mock("@/trpc/react", async () => {
+	const { useQuery, useMutation } = await import("@tanstack/react-query");
 	return {
-		id,
-		team: { id: "team", name: id, teamCode: "TEAM" },
-		room: { roundId: "round", round: { id: "round", name: "Round 1" } },
-		timeSlot: null,
-		scores
-	} as unknown as JudgeAssignment;
+		api: {
+			useUtils: () => ({
+				scores: { invalidate: mocks.invalidate },
+				judgingAssignments: { getByJudge: { invalidate: mocks.invalidate } },
+				teams: { getRankings: { invalidate: mocks.invalidate } }
+			}),
+			scores: {
+				getByAssignment: {
+					useQuery: () =>
+						useQuery({ queryKey: ["scores"], queryFn: mocks.saved })
+				},
+				createMany: {
+					useMutation: () => useMutation({ mutationFn: mocks.submit })
+				}
+			}
+		}
+	};
+});
+const now = new Date("2026-01-01T12:00:00Z");
+const criteria: Criterion[] = [
+	{
+		id: "main",
+		name: "Innovation",
+		description: "Assess originality and execution.",
+		maxScore: 5,
+		displayOrder: 0,
+		isSidepot: false
+	},
+	{
+		id: "side",
+		name: "Best AI",
+		description: "Assess the effective use of AI.",
+		maxScore: 5,
+		displayOrder: 1,
+		isSidepot: true
+	}
+];
+const assignment: JudgeAssignment = judgeAssignment({
+	startsAt: now,
+	team: { ...judgeAssignment().team, name: "Team One" },
+	table: judgeTable({ round: judgingRound({ name: "Preliminary" }) })
+});
+let client: QueryClient;
+function mount() {
+	return render(
+		<QueryClientProvider client={client}>
+			<ScoreView
+				assignment={{ ...assignment, scores: mocks.saved() }}
+				criteria={mocks.portal().criteria}
+				scoresReleased={false}
+				userId="judge-a"
+			/>
+		</QueryClientProvider>
+	);
 }
-function scoreView(
-	item: JudgeAssignment = assignment(),
-	criteria: Criterion[] = [main, sidepot] as Criterion[]
-) {
-	return <ScoreView assignment={item} criteria={criteria} key={item.id} />;
+// Picking a score moves on to the next step by itself after a short pause.
+async function complete() {
+	await screen.findByRole("heading", { name: "Innovation" });
+	fireEvent.click(screen.getByRole("button", { name: "4 points" }));
+	await screen.findByRole("heading", { name: "Best AI" });
+	fireEvent.click(screen.getByRole("button", { name: "0 points" }));
+	await screen.findByRole("heading", { name: "Review your scores" });
 }
 beforeEach(() => {
 	vi.resetAllMocks();
-	mocks.confirm.mockResolvedValue(true);
-	mocks.mutate.mockResolvedValue([]);
+	localStorage.clear();
+	client = new QueryClient({
+		defaultOptions: {
+			queries: { retry: false, staleTime: Infinity },
+			mutations: { retry: false }
+		}
+	});
+	mocks.portal.mockReturnValue({
+		assignments: [assignment],
+		criteria,
+		isLoading: false,
+		error: null
+	});
+	mocks.saved.mockReturnValue([]);
+	mocks.submit.mockResolvedValue([]);
+	mocks.invalidate.mockResolvedValue(undefined);
 });
-function review() {
-	fireEvent.click(screen.getByRole("button", { name: "Next" }));
-	fireEvent.click(screen.getByRole("button", { name: "Review scores" }));
-}
-describe("judge scoring flow", () => {
-	it("only shows and submits criteria for the assignment's round", async () => {
+afterEach(() => {
+	cleanup();
+	client.clear();
+});
+
+describe("individual judge scoring", () => {
+	it("doesn't open a scorecard for a finalist, who is ranked instead", () => {
 		render(
-			scoreView(
-				assignment("assignment-a", [{ criteriaId: "final", value: 9 }]),
-				[
-					{ ...main, roundIds: ["round"] },
-					{
-						...main,
-						id: "final",
-						name: "Final round only",
-						roundIds: ["final"]
-					},
-					sidepot
-				] as Criterion[]
-			)
+			<QueryClientProvider client={client}>
+				<ScoreView
+					assignment={judgeAssignment({
+						table: judgeTable({
+							round: judgingRound({ id: "final", kind: "final" })
+						})
+					})}
+					criteria={criteria}
+					scoresReleased={false}
+					userId="judge-a"
+				/>
+			</QueryClientProvider>
 		);
-		expect(screen.queryByText("Final round only")).not.toBeInTheDocument();
-		fireEvent.click(screen.getByRole("radio", { name: "8 out of 10" }));
-		review();
 		expect(
-			screen.getAllByRole("status", { name: "Main score total" })[0]
-		).toHaveTextContent("8");
-		fireEvent.click(screen.getByRole("button", { name: "Submit scores" }));
-		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/judge"));
-		expect(mocks.mutate).toHaveBeenCalledExactlyOnceWith([
-			{ assignmentId: "assignment-a", criteriaId: "main", score: 8 }
-		]);
+			screen.getByRole("heading", { name: "Finalists are ranked, not scored" })
+		).toBeVisible();
+		expect(screen.queryByText("Innovation")).not.toBeInTheDocument();
 	});
-	it("requires a main score, allows an unscored sidepot, and submits only selected scores", async () => {
-		render(scoreView());
-		expect(screen.getAllByRole("radio")).toHaveLength(10);
-		review();
+	it("steps through each criterion, then reviews every score before submitting", async () => {
+		mount();
+		await complete();
 		expect(
-			screen.getByRole("button", { name: "Submit scores" })
-		).toBeDisabled();
-		fireEvent.click(screen.getByRole("button", { name: "Edit Technical" }));
-		fireEvent.click(screen.getByRole("radio", { name: "8 out of 10" }));
-		review();
-		expect(screen.getByText("Best AI: Not scored (optional)")).toBeVisible();
-		fireEvent.click(screen.getByRole("button", { name: "Submit scores" }));
-		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/judge"));
-		expect(mocks.mutate).toHaveBeenCalledExactlyOnceWith([
-			{ assignmentId: "assignment-a", criteriaId: "main", score: 8 }
-		]);
+			screen.getByRole("button", { name: /Innovation/ })
+		).toHaveTextContent("4/5");
+		expect(screen.getByRole("button", { name: /Best AI/ })).toHaveTextContent(
+			"0/5"
+		);
+		expect(screen.getByRole("button", { name: "Submit scores" })).toBeEnabled();
+		expect(mocks.submit).not.toHaveBeenCalled();
 	});
-	it("keeps sidepot scores out of the main total and saves a deliberate zero", async () => {
-		render(scoreView());
-		fireEvent.click(screen.getByRole("radio", { name: "7 out of 10" }));
-		fireEvent.click(screen.getByRole("button", { name: "Next" }));
-		fireEvent.click(screen.getByRole("radio", { name: "5 out of 5" }));
+	it("returns to review after changing a score from the review step", async () => {
+		mount();
+		await complete();
+		fireEvent.click(screen.getByRole("button", { name: /Innovation/ }));
+		await screen.findByRole("heading", { name: "Innovation" });
+		expect(screen.getByRole("button", { name: "4 points" })).toHaveAttribute(
+			"aria-pressed",
+			"true"
+		);
+		fireEvent.click(screen.getByRole("button", { name: "2 points" }));
+		await screen.findByRole("heading", { name: "Review your scores" });
 		expect(
-			screen.getByRole("status", { name: "Main score total" })
-		).toHaveTextContent("7");
-		fireEvent.click(screen.getByRole("radio", { name: "0 out of 5" }));
-		fireEvent.click(screen.getByRole("button", { name: "Review scores" }));
-		fireEvent.click(screen.getByRole("button", { name: "Submit scores" }));
-		await waitFor(() =>
-			expect(mocks.mutate).toHaveBeenCalledWith([
-				{ assignmentId: "assignment-a", criteriaId: "main", score: 7 },
-				{ assignmentId: "assignment-a", criteriaId: "sidepot", score: 0 }
-			])
+			screen.getByRole("button", { name: /Innovation/ })
+		).toHaveTextContent("2/5");
+	});
+	it("only moves forward once the current criterion is scored", async () => {
+		mount();
+		await screen.findByRole("heading", { name: "Innovation" });
+		expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+		expect(
+			screen.queryByRole("button", { name: "Back" })
+		).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "5 points" }));
+		expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
+		await screen.findByRole("heading", { name: "Best AI" });
+		fireEvent.click(screen.getByRole("button", { name: "Back" }));
+		await screen.findByRole("heading", { name: "Innovation" });
+		expect(screen.getByRole("button", { name: "5 points" })).toHaveAttribute(
+			"aria-pressed",
+			"true"
 		);
 	});
-	it("retains edits after a failed submission and allows retry", async () => {
-		mocks.mutate.mockRejectedValueOnce(new Error("Connection failed"));
-		render(scoreView());
-		fireEvent.click(screen.getByRole("radio", { name: "6 out of 10" }));
-		review();
+	it("opens a fully scored team on the review step", async () => {
+		mocks.saved.mockReturnValue([
+			{ criteriaId: "main", value: 5 },
+			{ criteriaId: "side", value: 4 }
+		]);
+		mount();
+		await screen.findByRole("heading", { name: "Review your scores" });
+		expect(screen.getByRole("button", { name: "Update scores" })).toBeEnabled();
+	});
+	it("resumes a partly scored team at the first unscored criterion", async () => {
+		mocks.saved.mockReturnValue([{ criteriaId: "main", value: 4 }]);
+		mount();
+		await screen.findByRole("heading", { name: "Best AI" });
+		expect(screen.getByText("2 of 2 · Side pot")).toBeInTheDocument();
+	});
+	it("accepts zero for a side pot", async () => {
+		mocks.portal.mockReturnValue({
+			assignments: [assignment],
+			criteria: criteria.slice(1),
+			isLoading: false,
+			error: null
+		});
+		mount();
+		await screen.findByRole("heading", { name: "Best AI" });
+		fireEvent.click(screen.getByRole("button", { name: "0 points" }));
+		await screen.findByRole("heading", { name: "Review your scores" });
+		expect(screen.getByRole("button", { name: "Submit scores" })).toBeEnabled();
+	});
+	it("retains answers and the device draft after failed submission, then retries successfully", async () => {
+		mocks.submit.mockRejectedValueOnce(new Error("Network unavailable"));
+		mount();
+		await complete();
 		fireEvent.click(screen.getByRole("button", { name: "Submit scores" }));
 		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Connection failed"
+			"Network unavailable"
 		);
-		expect(mocks.push).not.toHaveBeenCalled();
+		expect(localStorage.length).toBe(1);
+		expect(
+			screen.getByRole("button", { name: /Innovation/ })
+		).toHaveTextContent("4/5");
 		fireEvent.click(screen.getByRole("button", { name: "Submit scores" }));
 		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/judge"));
-		expect(mocks.mutate).toHaveBeenCalledTimes(2);
-	});
-	it("loads existing scores and resets unsaved values when the assignment changes", () => {
-		const { rerender } = render(
-			scoreView(assignment("assignment-a", [{ criteriaId: "main", value: 4 }]))
+		expect(mocks.toast).toHaveBeenCalledWith("Scores submitted for Team One");
+		expect(localStorage.length).toBe(0);
+		expect(mocks.submit).toHaveBeenLastCalledWith(
+			[
+				{ assignmentId: "assignment", criteriaId: "main", score: 4 },
+				{ assignmentId: "assignment", criteriaId: "side", score: 0 }
+			],
+			expect.anything()
 		);
-		expect(screen.getByRole("radio", { name: "4 out of 10" })).toBeChecked();
-		fireEvent.click(screen.getByRole("radio", { name: "9 out of 10" }));
-		rerender(scoreView(assignment("assignment-b")));
-		expect(
-			screen.getByRole("radio", { name: "9 out of 10" })
-		).not.toBeChecked();
 	});
-	it("confirms discarding edits when leaving through the breadcrumb", async () => {
-		mocks.confirm.mockResolvedValue(false);
-		render(scoreView());
-		fireEvent.click(screen.getByRole("radio", { name: "8 out of 10" }));
-		fireEvent.click(screen.getByRole("link", { name: "Dashboard" }));
-		await waitFor(() => expect(mocks.confirm).toHaveBeenCalled());
-		expect(mocks.push).not.toHaveBeenCalled();
+	it("prevents duplicate submissions, then returns to the dashboard", async () => {
+		let finish!: (value: never[]) => void;
+		mocks.submit.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				})
+		);
+		mount();
+		await complete();
+		const button = screen.getByRole("button", { name: "Submit scores" });
+		fireEvent.click(button);
+		fireEvent.click(button);
+		await waitFor(() => expect(mocks.submit).toHaveBeenCalledTimes(1));
+		expect(screen.getByRole("button", { name: "Submitting…" })).toBeDisabled();
+		finish([]);
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/judge"));
+		expect(mocks.toast).toHaveBeenCalledTimes(1);
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		// The scorecard stays locked while the dashboard loads.
+		expect(screen.getByRole("button", { name: "Submitting…" })).toBeDisabled();
+	});
+	it("isolates a new judge's form and draft when switching accounts in one query client", async () => {
+		const { rerender } = mount();
+		await screen.findByRole("heading", { name: "Innovation" });
+		fireEvent.click(screen.getByRole("button", { name: "4 points" }));
+		rerender(
+			<QueryClientProvider client={client}>
+				<ScoreView
+					assignment={assignment}
+					criteria={criteria}
+					scoresReleased={false}
+					userId="judge-b"
+				/>
+			</QueryClientProvider>
+		);
+		// Judge A's draft would have scored Innovation and skipped past it.
+		await screen.findByRole("heading", { name: "Innovation" });
+		expect(screen.getByRole("button", { name: "4 points" })).toHaveAttribute(
+			"aria-pressed",
+			"false"
+		);
 	});
 });

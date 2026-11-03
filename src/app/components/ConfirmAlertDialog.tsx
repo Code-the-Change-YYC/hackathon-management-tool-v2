@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -15,6 +15,7 @@ import {
 type ConfirmOptions = {
 	title: string;
 	description: string;
+	details?: ReactNode;
 	confirmLabel?: string;
 	destructive?: boolean;
 };
@@ -71,11 +72,12 @@ export function ConfirmAlertDialog({
 					<AlertDialogTitle>{state?.title}</AlertDialogTitle>
 					<AlertDialogDescription>{state?.description}</AlertDialogDescription>
 				</AlertDialogHeader>
+				{state?.details}
 				<AlertDialogFooter>
 					<AlertDialogCancel>Cancel</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={() => onClose(true)}
-						variant={state?.destructive ? "destructive" : "default"}
+						variant={state?.destructive ? "destructive-solid" : "default"}
 					>
 						{state?.confirmLabel ?? "Continue"}
 					</AlertDialogAction>

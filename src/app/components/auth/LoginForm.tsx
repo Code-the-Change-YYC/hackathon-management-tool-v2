@@ -105,6 +105,12 @@ export function LoginForm({ googleError }: { googleError?: string }) {
 							Sign up
 						</Link>
 					</p>
+					<p className="text-center font-medium text-sm">
+						Judging?{" "}
+						<Link className="link text-sm" href={AUTH_ROUTES.judgeLogin}>
+							Sign in here
+						</Link>
+					</p>
 				</AuthActions>
 			</form>
 		</>

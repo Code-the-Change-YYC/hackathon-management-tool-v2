@@ -11,7 +11,9 @@ const mocks = vi.hoisted(() => {
 		member: { findFirst: vi.fn(), findMany: vi.fn() },
 		organization: { findFirst: vi.fn(), findMany: vi.fn() },
 		judgingAssignments: { findFirst: vi.fn() },
-		criteria: { findMany: vi.fn() }
+		judgingRounds: { findFirst: vi.fn() },
+		user: { findMany: vi.fn() },
+		judgingCriteria: { findMany: vi.fn() }
 	};
 	const write = { set: vi.fn(), where: vi.fn(), returning: vi.fn() };
 	const scoreQuery = {
@@ -124,15 +126,28 @@ describe("merged team and judging workflows", () => {
 			teamCode: expect.stringMatching(/^[A-Z0-9]{6}$/)
 		});
 	});
-	it("preserves admin prescreen decisions and rejects repeated decisions", async () => {
+	it("allows admins to edit existing prescreen decisions", async () => {
 		const api = await caller();
-		mocks.query.organization.findFirst.mockResolvedValue({
-			id: "team-1",
-			prescreenStatus: "pending"
+		// Failing frees the team's unjudged slots; it has none here.
+		mocks.remove.mockReturnValue({
+			where: () => ({ returning: async () => [] })
 		});
-		mocks.write.returning.mockResolvedValue([
-			{ id: "team-1", prescreenStatus: "passed", teamCode: "ABC123" }
-		]);
+		mocks.query.organization.findFirst
+			.mockResolvedValueOnce({
+				id: "team-1",
+				prescreenStatus: "pending"
+			})
+			.mockResolvedValueOnce({
+				id: "team-1",
+				prescreenStatus: "passed"
+			});
+		mocks.write.returning
+			.mockResolvedValueOnce([
+				{ id: "team-1", prescreenStatus: "passed", teamCode: "ABC123" }
+			])
+			.mockResolvedValueOnce([
+				{ id: "team-1", prescreenStatus: "failed", teamCode: "ABC123" }
+			]);
 		await expect(
 			api.teams.setPrescreen({
 				teamId: "team-1",
@@ -140,15 +155,11 @@ describe("merged team and judging workflows", () => {
 				comments: "Reviewed submission"
 			})
 		).resolves.toMatchObject({ prescreenStatus: "passed", teamCode: "ABC123" });
-		expect(mocks.write.set).toHaveBeenCalledWith({
+		expect(mocks.write.set).toHaveBeenNthCalledWith(1, {
 			prescreenStatus: "passed",
 			prescreenComments: "Reviewed submission",
 			prescreenedBy: "current-user",
 			prescreenedAt: expect.any(Date)
-		});
-		mocks.query.organization.findFirst.mockResolvedValue({
-			id: "team-1",
-			prescreenStatus: "passed"
 		});
 		await expect(
 			api.teams.setPrescreen({
@@ -156,8 +167,14 @@ describe("merged team and judging workflows", () => {
 				status: "failed",
 				comments: "Second review"
 			})
-		).rejects.toMatchObject({ code: "CONFLICT" });
-		expect(mocks.update).toHaveBeenCalledTimes(1);
+		).resolves.toMatchObject({ prescreenStatus: "failed", teamCode: "ABC123" });
+		expect(mocks.write.set).toHaveBeenNthCalledWith(2, {
+			prescreenStatus: "failed",
+			prescreenComments: "Second review",
+			prescreenedBy: "current-user",
+			prescreenedAt: expect.any(Date)
+		});
+		expect(mocks.update).toHaveBeenCalledTimes(2);
 	});
 	it("keeps prescreening admin-only and assignment lookup scoped to the judge", async () => {
 		const participant = await caller("participant");
@@ -174,13 +191,25 @@ describe("merged team and judging workflows", () => {
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
 		expect(mocks.update).not.toHaveBeenCalled();
 	});
-	it("retains scored-assignment protection before deleting any room layout", async () => {
+	it("retains scored-assignment protection before regenerating a schedule", async () => {
 		mocks.scoreQuery.limit.mockResolvedValue([{ id: "existing-score" }]);
+		mocks.query.judgingRounds.findFirst.mockResolvedValue({
+			id: "11111111-1111-4111-8111-111111111111",
+			kind: "panel",
+			startTime: new Date(0),
+			endTime: new Date(3 * 3600000),
+			publishedAt: null
+		});
+		mocks.query.user.findMany.mockResolvedValue([]);
+		mocks.query.organization.findMany.mockResolvedValue([]);
 		const api = await caller();
 		await expect(
-			api.judgingRooms.saveLayoutByRound({
+			api.judgingTables.generateSchedule({
 				roundId: "11111111-1111-4111-8111-111111111111",
-				layout: { rooms: [] }
+				panelSize: 4,
+				changeoverMinutes: 2,
+				breakMinutes: 10,
+				maxBlockMinutes: 50
 			})
 		).rejects.toMatchObject({
 			code: "BAD_REQUEST",
@@ -188,9 +217,9 @@ describe("merged team and judging workflows", () => {
 		});
 		expect(mocks.remove).not.toHaveBeenCalled();
 	});
-	it("rejects scoring by a judge who is not assigned to the room", async () => {
+	it("rejects scoring by a judge who is not assigned to the table", async () => {
 		mocks.query.judgingAssignments.findFirst.mockResolvedValue({
-			room: { staff: [{ staffId: "another-judge" }] }
+			table: { judges: [{ judgeId: "another-judge" }] }
 		});
 		const api = await caller("judge");
 		await expect(

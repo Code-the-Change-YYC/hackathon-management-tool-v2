@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { CheckboxField } from "@/app/components/forms/CheckboxField";
 import { DateField } from "@/app/components/forms/DateField";
 import { TextField } from "@/app/components/forms/TextField";
+import { TimeField } from "@/app/components/forms/TimeField";
 import {
 	EVENT_TYPE_THEMES,
 	EventTypeIcon
@@ -42,9 +43,6 @@ import {
 } from "@/lib/validation/event";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { EVENT_TYPES, EventStatus } from "@/types/types";
-
-const TIME_INPUT_CLASS_NAME =
-	"appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none";
 
 export type AdminEvent = RouterOutputs["events"]["getAllEvents"][number];
 
@@ -156,21 +154,17 @@ export function EventDialog({
 							name="date"
 						/>
 						<div className="grid gap-4 sm:grid-cols-2">
-							<TextField
-								className={TIME_INPUT_CLASS_NAME}
+							<TimeField
 								control={form.control}
 								disabled={isPending}
 								label="Starts"
 								name="startTime"
-								type="time"
 							/>
-							<TextField
-								className={TIME_INPUT_CLASS_NAME}
+							<TimeField
 								control={form.control}
 								disabled={isPending}
 								label="Ends"
 								name="endTime"
-								type="time"
 							/>
 						</div>
 						<div className="grid gap-4 sm:grid-cols-2">

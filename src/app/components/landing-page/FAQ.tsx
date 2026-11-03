@@ -15,11 +15,12 @@ const FAQ_ITEMS = [
 		question: "What is Code the Change YYC?",
 		answer: (
 			<p>
-				Code the Change YYC is a student-led initiative where students in
-				technology-focused programs volunteer their time to work on projects for
-				social change. It gives students a way to strengthen their skills, gain
-				experience, receive mentorship, and give back to the community through
-				software.
+				Code the Change YYC is a student-led initiative at the University of
+				Calgary where students passionate about technology volunteer their
+				skills to develop software solutions that drive meaningful social
+				change. Through hands-on projects and mentorship, students gain
+				practical experience, strengthen their technical skills, and make a
+				positive impact in their communities.
 			</p>
 		)
 	},
@@ -37,9 +38,12 @@ const FAQ_ITEMS = [
 		question: "Who can participate?",
 		answer: (
 			<p>
-				Canadian students interested in software development and open to
-				collaborating with a team can participate. Hackathons are a great fit
-				for first-time and experienced hackers alike.
+				Hack the Change is open to all students across Canada, regardless of
+				experience level. As defined by MLH, students include anyone currently
+				attending a school, college, university, bootcamp, or similar
+				educational program, as well as those who graduated within the past 12
+				months. Whether you're a first-time hacker or an experienced developer,
+				everyone is welcome to participate!
 			</p>
 		)
 	},
@@ -82,8 +86,9 @@ const FAQ_ITEMS = [
 		question: "Will the event be in person?",
 		answer: (
 			<p>
-				Hack the Change will be held in person at the University of Calgary. The
-				opening and closing ceremonies will be streamed on Twitch.
+				Hack the Change 2026 will be held entirely in person at the University
+				of Calgary, including the opening ceremony, workshops, project judging,
+				and closing ceremony.
 			</p>
 		)
 	},

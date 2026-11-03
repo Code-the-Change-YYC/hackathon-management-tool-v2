@@ -13,9 +13,14 @@ import {
 	getCurrentEvent,
 	getTodayFutureEvents
 } from "@/lib/participant-events";
-import type { JudgingRound } from "@/lib/participant-judging";
+import {
+	getUpcomingJudging,
+	type JudgingProgress,
+	type TeamJudging
+} from "@/lib/participant-judging";
 import type { RouterOutputs } from "@/trpc/react";
 import { CurrentEventBanner } from "../CurrentEventBanner";
+import { TeamJudgingBanner } from "../judging/TeamJudgingBanner";
 import { JudgingStatus } from "./JudgingStatus";
 import { SubmissionCountdown } from "./SubmissionCountdown";
 
@@ -35,19 +40,19 @@ export function DashboardView({
 	firstName,
 	events,
 	settings,
-	rounds
+	progress,
+	judging
 }: {
 	firstName: string;
 	events: DashboardEvent[];
 	settings: Settings;
-	rounds: JudgingRound[];
+	progress: JudgingProgress;
+	judging: TeamJudging;
 }) {
 	const now = useCurrentTime();
 	const currentEvent = getCurrentEvent(events, now);
 	const upcomingEvents = getTodayFutureEvents(events, now);
-	const roundName = rounds.find(
-		(round) => round.id === settings?.currentRoundId
-	)?.name;
+	const upcomingJudging = getUpcomingJudging(judging, now);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -55,7 +60,11 @@ export function DashboardView({
 				description={getDescription(settings?.startDate ?? null, now)}
 				title={`Welcome, ${firstName}!`}
 			/>
-			<CurrentEventBanner colour="red" event={currentEvent} />
+			{upcomingJudging ? (
+				<TeamJudgingBanner judging={upcomingJudging} />
+			) : (
+				<CurrentEventBanner colour="red" event={currentEvent} />
+			)}
 			<div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
 				<Card>
 					<CardHeader>
@@ -92,10 +101,7 @@ export function DashboardView({
 						</Card>
 						<Card>
 							<CardContent>
-								<JudgingStatus
-									phase={settings?.judgingPhase ?? "not_started"}
-									roundName={roundName}
-								/>
+								<JudgingStatus now={now} progress={progress} />
 							</CardContent>
 						</Card>
 					</div>

@@ -22,7 +22,7 @@ export default function Requirements() {
 			imageAlt="Requirements"
 			imageSrc="/svgs/landingPage/requirements_illustration.webp"
 			paragraphs={[
-				"Open to all Canadian students, at the university, college, or high school level."
+				"Open to all students across Canada, at the university, college, or high school level."
 			]}
 			titleColor="text-awesomer-purple"
 			titleHighlight="Requirements"

@@ -9,42 +9,47 @@
  * conflict, and `ensureNotInTeam` is backstopped by a unique index on
  * member.userId (isDuplicateMembershipError recognizes that race via the
  * Postgres error code/constraint name and turns it into a friendly error).
- * `join`/`acceptInvite` take a per-team Postgres advisory lock before
- * counting members against MAX_TEAM_SIZE, so concurrent joins to the same
- * team can't both slip past the cap.
+ * `join` takes a per-team Postgres advisory lock before counting members
+ * against MAX_TEAM_SIZE, so concurrent joins to the same team can't both
+ * slip past the cap.
  *
- * Only owners can invite or update team details (besides app admins).
- * When the owner leaves, the earliest-joined remaining member becomes owner;
- * a team left with zero members is deleted.
+ * Only owners can update team details (besides app admins). When the owner
+ * leaves, the earliest-joined remaining member becomes owner; a team left
+ * with zero members is deleted.
  */
 
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { addDays, isValid } from "date-fns";
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { isValid } from "date-fns";
+import { and, asc, desc, eq, isNull, not, sql } from "drizzle-orm";
 import { z } from "zod";
 import { resolveAvatarSrc } from "@/lib/avatars";
 import { tryCatch } from "@/lib/utils";
 import {
 	joinTeamSchema,
+	prescreenSchema,
 	registerTeamSchema,
 	TEAM_CODE_LENGTH,
 	teamNameSchema
 } from "@/lib/validation/team";
+import { submittedScorecards } from "@/server/api/judging-results";
+import { getAssignmentScoring } from "@/server/api/participant-judging";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
+import { hackathonSettings } from "@/server/db/admin-schema";
+import { member, organization } from "@/server/db/auth-schema";
 import {
-	invitation,
-	member,
-	organization,
-	user
-} from "@/server/db/auth-schema";
-import { hackathonSettings } from "@/server/db/schema";
-import { MEMBER_ROLES, type TeamRanking } from "@/types/types";
+	judgingAssignments,
+	judgingRounds,
+	judgingScores,
+	judgingTableJudges,
+	judgingVotes
+} from "@/server/db/judging-schema";
+import { MEMBER_ROLES, Role, type TeamRanking } from "@/types/types";
 
 type TeamMetadata = {
 	devpostLink?: string | null;
@@ -125,6 +130,17 @@ function parseDeadline(value: string | null | undefined): Date | null {
 	return isValid(date) ? date : null;
 }
 
+// Only participants are on teams. Sign-ups find a team before onboarding
+// makes them participants, so this turns away the other app roles instead.
+function ensureCanBeOnTeam(role: string | null | undefined) {
+	if (role === Role.JUDGE || role === Role.ADMIN) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Only participants can be on a team"
+		});
+	}
+}
+
 async function ensureNotInTeam(db: typeof dbType, userId: string) {
 	const existing = await db.query.member.findFirst({
 		where: eq(member.userId, userId)
@@ -150,15 +166,56 @@ async function getUserMembership(db: typeof dbType, userId: string) {
 	return membership;
 }
 
-async function deleteTeamAndInvitations(
-	tx: Parameters<Parameters<typeof dbType.transaction>[0]>[0],
-	organizationId: string
-) {
+type Transaction = Parameters<Parameters<typeof dbType.transaction>[0]>[0];
+
+// Scores and final-round votes are judges' work, and every team's ranking is
+// normalized against them, so an assignment that has either has to stay.
+const hasJudgingResults = sql`(
+	EXISTS (SELECT 1 FROM ${judgingScores} WHERE ${judgingScores.assignmentId} = ${judgingAssignments.id})
+	OR EXISTS (SELECT 1 FROM ${judgingVotes} WHERE ${judgingVotes.assignmentId} = ${judgingAssignments.id})
+)`;
+
+const JUDGED_TEAM_MESSAGE =
+	"This team has judging scores or final-round votes, so it can’t be deleted.";
+
+async function isTeamJudged(tx: Transaction, organizationId: string) {
+	const [judged] = await tx
+		.select({ id: judgingAssignments.id })
+		.from(judgingAssignments)
+		.where(
+			and(eq(judgingAssignments.teamId, organizationId), hasJudgingResults)
+		)
+		.limit(1);
+	return Boolean(judged);
+}
+
+// Only for teams without judging results: their slots in the schedule free up.
+async function deleteTeam(tx: Transaction, organizationId: string) {
 	await tx
-		.delete(invitation)
-		.where(eq(invitation.organizationId, organizationId));
+		.delete(judgingAssignments)
+		.where(eq(judgingAssignments.teamId, organizationId));
 	await tx.delete(member).where(eq(member.organizationId, organizationId));
-	await tx.delete(organization).where(eq(organization.id, organizationId));
+	return tx
+		.delete(organization)
+		.where(eq(organization.id, organizationId))
+		.returning({ id: organization.id });
+}
+
+async function fetchTeamRankings(db: typeof dbType): Promise<TeamRanking[]> {
+	const result = await db.execute(sql<TeamRanking>`
+		SELECT o.id, o.name,
+			COALESCE(AVG(card.main_score), 0)::float8 AS "totalScore",
+			COUNT(card.judge_id)::int AS "submittedScorecards",
+			(SELECT COUNT(*)::int FROM ${judgingAssignments} a
+				INNER JOIN ${judgingTableJudges} tj ON tj.table_id = a.table_id
+				WHERE a.team_id = o.id) AS "expectedScorecards"
+		FROM ${organization} o
+		LEFT JOIN ${submittedScorecards} card ON card.team_id = o.id
+		GROUP BY o.id, o.name
+		ORDER BY "totalScore" DESC, o.name ASC, o.id ASC
+	`);
+
+	return result as unknown as TeamRanking[];
 }
 
 export const teamsRouter = createTRPCRouter({
@@ -209,42 +266,129 @@ export const teamsRouter = createTRPCRouter({
 		return teams;
 	}),
 
-	setPrescreen: adminProcedure
-		.input(
-			z.object({
-				teamId: z.string(),
-				status: z.enum(["passed", "failed"]),
-				comments: z.string().min(1, "Comments are required")
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			const team = await ctx.db.query.organization.findFirst({
-				where: eq(organization.id, input.teamId)
-			});
-			if (!team) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Team not found"
-				});
-			}
-			if (team.prescreenStatus !== "pending") {
-				throw new TRPCError({
-					code: "CONFLICT",
-					message: "Team has already been prescreened"
-				});
-			}
+	// Each panel round's column says whether the team was fully scored there:
+	// null when it isn't scheduled in that round. finalist stays null until
+	// finalists are picked.
+	getTeamsWithMembers: adminProcedure.query(async ({ ctx }) => {
+		const [rows, rounds, judged, scoring] = await Promise.all([
+			ctx.db.query.organization.findMany({
+				orderBy: [desc(organization.createdAt)],
+				columns: {
+					id: true,
+					name: true,
+					teamCode: true,
+					prescreenStatus: true,
+					prescreenComments: true
+				},
+				with: {
+					members: {
+						orderBy: [asc(member.createdAt)],
+						with: { user: { columns: { name: true, email: true } } }
+					}
+				}
+			}),
+			ctx.db.query.judgingRounds.findMany({
+				orderBy: [asc(judgingRounds.startTime)],
+				columns: { id: true, name: true, kind: true },
+				with: {
+					tables: {
+						columns: {},
+						with: { assignments: { columns: { id: true, teamId: true } } }
+					}
+				}
+			}),
+			ctx.db
+				.selectDistinct({ teamId: judgingAssignments.teamId })
+				.from(judgingAssignments)
+				.where(hasJudgingResults),
+			getAssignmentScoring(ctx.db)
+		]);
+		const judgedTeamIds = new Set(judged.map(({ teamId }) => teamId));
+		const scoredIds = new Set(
+			scoring
+				.filter((assignment) => assignment.scored)
+				.map(({ assignmentId }) => assignmentId)
+		);
 
-			const [updated] = await ctx.db
-				.update(organization)
-				.set({
-					prescreenStatus: input.status,
-					prescreenComments: input.comments,
-					prescreenedBy: ctx.session.user.id,
-					prescreenedAt: new Date()
-				})
-				.where(eq(organization.id, input.teamId))
-				.returning();
-			return updated;
+		const panelRounds = rounds
+			.filter((round) => round.kind !== "final")
+			.map((round) => {
+				// Each team's assignments in the round, and whether all are scored.
+				const teams = new Map<string, boolean>();
+				for (const { id, teamId } of round.tables.flatMap(
+					(table) => table.assignments
+				)) {
+					teams.set(teamId, (teams.get(teamId) ?? true) && scoredIds.has(id));
+				}
+				return { id: round.id, name: round.name, teams };
+			});
+		const finalistIds = new Set(
+			rounds
+				.filter((round) => round.kind === "final")
+				.flatMap((round) => round.tables)
+				.flatMap((table) => table.assignments.map(({ teamId }) => teamId))
+		);
+
+		return {
+			rounds: panelRounds.map(({ id, name }) => ({ id, name })),
+			teams: rows.map(({ members, ...team }) => ({
+				id: team.id,
+				name: team.name,
+				teamCode: team.teamCode,
+				prescreen: team.prescreenStatus,
+				feedback: team.prescreenComments,
+				// Judged teams can't be deleted.
+				judged: judgedTeamIds.has(team.id),
+				members: members.map(({ user }) => ({
+					name: user.name,
+					email: user.email
+				})),
+				// Whether every judge at the team's tables scored it, by round ID.
+				rounds: Object.fromEntries(
+					panelRounds.map(({ id, teams }) => [id, teams.get(team.id) ?? null])
+				),
+				finalist: finalistIds.size > 0 ? finalistIds.has(team.id) : null
+			}))
+		};
+	}),
+
+	// Feedback is only required when a team fails.
+	setPrescreen: adminProcedure
+		.input(prescreenSchema)
+		.mutation(async ({ ctx, input }) => {
+			return ctx.db.transaction(async (tx) => {
+				const [updated] = await tx
+					.update(organization)
+					.set({
+						prescreenStatus: input.status,
+						prescreenComments: input.comments || null,
+						prescreenedBy: ctx.session.user.id,
+						prescreenedAt: new Date()
+					})
+					.where(eq(organization.id, input.teamId))
+					.returning();
+				if (!updated) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Team not found"
+					});
+				}
+				// A failed team won't present, so slots judges haven't scored or
+				// ranked free up. The rest stay, but failed teams aren't ranked.
+				const removed =
+					input.status === "failed"
+						? await tx
+								.delete(judgingAssignments)
+								.where(
+									and(
+										eq(judgingAssignments.teamId, input.teamId),
+										not(hasJudgingResults)
+									)
+								)
+								.returning({ id: judgingAssignments.id })
+						: [];
+				return { ...updated, removedSlots: removed.length };
+			});
 		}),
 
 	getMyTeam: protectedProcedure.query(async ({ ctx }) => {
@@ -335,6 +479,7 @@ export const teamsRouter = createTRPCRouter({
 		.input(registerTeamSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
+			ensureCanBeOnTeam(ctx.session.user.role);
 			await ensureNotInTeam(ctx.db, userId);
 
 			const slug = input.name
@@ -394,6 +539,7 @@ export const teamsRouter = createTRPCRouter({
 		.input(joinTeamSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
+			ensureCanBeOnTeam(ctx.session.user.role);
 			await ensureNotInTeam(ctx.db, userId);
 
 			const team = await ctx.db.query.organization.findFirst({
@@ -444,154 +590,6 @@ export const teamsRouter = createTRPCRouter({
 			return data;
 		}),
 
-	invite: protectedProcedure
-		.input(
-			z.object({
-				email: z.string().email("Invalid email address")
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-
-			const ownerMembership = await ctx.db.query.member.findFirst({
-				where: and(
-					eq(member.userId, userId),
-					eq(member.role, MEMBER_ROLES.OWNER)
-				)
-			});
-			if (!ownerMembership) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Only team owners can send invitations"
-				});
-			}
-
-			const invitedUser = await ctx.db.query.user.findFirst({
-				where: eq(user.email, input.email)
-			});
-			if (invitedUser) {
-				const alreadyInTeam = await ctx.db.query.member.findFirst({
-					where: eq(member.userId, invitedUser.id)
-				});
-				if (alreadyInTeam) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: "That user is already a member of a team"
-					});
-				}
-			}
-
-			const existingInvite = await ctx.db.query.invitation.findFirst({
-				where: and(
-					eq(invitation.organizationId, ownerMembership.organizationId),
-					eq(invitation.email, input.email),
-					eq(invitation.status, "pending")
-				)
-			});
-			if (existingInvite) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "An invitation has already been sent to this email"
-				});
-			}
-
-			const [newInvitation] = await ctx.db
-				.insert(invitation)
-				.values({
-					id: crypto.randomUUID(),
-					organizationId: ownerMembership.organizationId,
-					email: input.email,
-					role: MEMBER_ROLES.MEMBER,
-					status: "pending",
-					expiresAt: addDays(new Date(), 7),
-					inviterId: userId
-				})
-				.returning();
-
-			return newInvitation;
-		}),
-
-	acceptInvite: protectedProcedure
-		.input(
-			z.object({
-				invitationId: z.string()
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-			await ensureNotInTeam(ctx.db, userId);
-
-			const inv = await ctx.db.query.invitation.findFirst({
-				where: and(
-					eq(invitation.id, input.invitationId),
-					eq(invitation.status, "pending")
-				)
-			});
-			if (!inv) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Invitation not found or already used"
-				});
-			}
-
-			const currentUser = await ctx.db.query.user.findFirst({
-				where: eq(user.id, userId)
-			});
-			if (!currentUser || currentUser.email !== inv.email) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "This invitation is not addressed to you"
-				});
-			}
-
-			if (inv.expiresAt < new Date()) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "This invitation has expired"
-				});
-			}
-
-			const { error } = await tryCatch(
-				ctx.db.transaction(async (tx) => {
-					await tx.execute(
-						sql`select pg_advisory_xact_lock(hashtext(${inv.organizationId}))`
-					);
-
-					const [row] = await tx
-						.select({ count: sql<number>`count(*)::int` })
-						.from(member)
-						.where(eq(member.organizationId, inv.organizationId));
-					if ((row?.count ?? 0) >= MAX_TEAM_SIZE) {
-						throw new TRPCError({
-							code: "BAD_REQUEST",
-							message: `This team is full (${MAX_TEAM_SIZE} members maximum)`
-						});
-					}
-
-					await tx.insert(member).values({
-						id: crypto.randomUUID(),
-						organizationId: inv.organizationId,
-						userId,
-						role: MEMBER_ROLES.MEMBER,
-						createdAt: new Date()
-					});
-
-					await tx
-						.update(invitation)
-						.set({ status: "accepted" })
-						.where(eq(invitation.id, inv.id));
-				})
-			);
-			if (error) {
-				if (isDuplicateMembershipError(error)) {
-					throw alreadyInTeamError();
-				}
-				throw error;
-			}
-
-			return { success: true };
-		}),
-
 	leave: protectedProcedure.mutation(async ({ ctx }) => {
 		const userId = ctx.session.user.id;
 		const { organizationId } = await getUserMembership(ctx.db, userId);
@@ -619,7 +617,11 @@ export const teamsRouter = createTRPCRouter({
 
 			const [earliest] = remainingMembers;
 			if (!earliest) {
-				await deleteTeamAndInvitations(tx, organizationId);
+				// A judged team stays without members, so its scores and votes,
+				// and the rankings built on them, don't change.
+				if (!(await isTeamJudged(tx, organizationId))) {
+					await deleteTeam(tx, organizationId);
+				}
 				return;
 			}
 
@@ -695,23 +697,33 @@ export const teamsRouter = createTRPCRouter({
 			}
 			return rows[0];
 		}),
-	getRankings: adminProcedure.query(async ({ ctx }) => {
-		const result = await ctx.db.execute(
-			sql<TeamRanking>`
-          SELECT 
-            o.id,
-            o.name,
-            COALESCE(SUM(s.value), 0) AS "totalScore"
-          FROM hackathon_organization o
-          LEFT JOIN hackathon_judging_assignment a 
-            ON a.team_id = o.id
-          LEFT JOIN hackathon_score s 
-            ON s.assignment_id = a.id
-          GROUP BY o.id, o.name
-          ORDER BY "totalScore" DESC
-        `
-		);
+	getRankings: adminProcedure.query(({ ctx }) => fetchTeamRankings(ctx.db)),
+	delete: adminProcedure
+		.input(z.object({ id: z.string() }))
+		.mutation(async ({ ctx, input }) => {
+			const deleted = await ctx.db.transaction(async (tx) => {
+				// Serialize with joins/leaves for this team.
+				await tx.execute(
+					sql`select pg_advisory_xact_lock(hashtext(${input.id}))`
+				);
 
-		return result as unknown as TeamRanking[];
-	})
+				if (await isTeamJudged(tx, input.id)) {
+					throw new TRPCError({
+						code: "CONFLICT",
+						message: JUDGED_TEAM_MESSAGE
+					});
+				}
+				const [row] = await deleteTeam(tx, input.id);
+				return row;
+			});
+
+			if (!deleted) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Team not found"
+				});
+			}
+
+			return { success: true, id: deleted.id };
+		})
 });

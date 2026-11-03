@@ -29,3 +29,28 @@ export const joinTeamSchema = z.object({ teamCode: teamCodeSchema });
 
 export type RegisterTeamValues = z.infer<typeof registerTeamSchema>;
 export type JoinTeamValues = z.infer<typeof joinTeamSchema>;
+
+export const prescreenFeedbackSchema = z
+	.string()
+	.trim()
+	.min(1, "Tell the team why they didn’t pass");
+
+export const prescreenFailFormSchema = z.object({
+	feedback: prescreenFeedbackSchema
+});
+
+// Passing needs no feedback; failing does.
+export const prescreenSchema = z.discriminatedUnion("status", [
+	z.object({
+		teamId: z.string(),
+		status: z.literal("passed"),
+		comments: z.string().trim().optional()
+	}),
+	z.object({
+		teamId: z.string(),
+		status: z.literal("failed"),
+		comments: prescreenFeedbackSchema
+	})
+]);
+
+export type PrescreenFailFormValues = z.infer<typeof prescreenFailFormSchema>;

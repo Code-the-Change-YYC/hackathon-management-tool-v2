@@ -1,88 +1,116 @@
+import { addMinutes } from "date-fns";
 import { getEventDate } from "drizzle/seedUtils";
-import { db } from "@/server/db";
 import {
-	hackathonSettings,
-	judgingAssignments,
-	judgingRoomStaff,
-	judgingRooms,
-	judgingRounds
-} from "@/server/db/schema";
-import { criteria, scores } from "@/server/db/scores-schema";
-import type { Organization, User } from "@/types/types";
+	DEFAULT_FINALIST_COUNT,
+	MAIN_CRITERION_MAX_SCORE,
+	MAX_PRESENTATION_MINUTES
+} from "@/lib/judging";
+import { db } from "@/server/db";
+import { hackathonSettings } from "@/server/db/admin-schema";
+import { judgingCriteria, judgingRounds } from "@/server/db/judging-schema";
 
-type SeedJudgingInput = {
-	judges: User[];
-	teams: Organization[];
-};
+const JUDGING_DELAY_MINUTES = 20;
+const MAIN_JUDGING_MINUTES = 180;
+const CHANGEOVER_MINUTES = 2;
+const PANEL_SIZE = 2;
 
-export async function seedJudging({ judges, teams }: SeedJudgingInput) {
-	console.log("\nCreating judging rounds...");
+export async function seedJudging() {
+	console.log("\nCreating judging rounds and criteria...");
 
-	const [round1] = await db
+	// No team has passed prescreening, so neither round has a schedule yet.
+	const submissionDeadline = getEventDate(1, 12);
+	const mainStart = addMinutes(submissionDeadline, JUDGING_DELAY_MINUTES);
+	const mainEnd = addMinutes(mainStart, MAIN_JUDGING_MINUTES);
+	// Finalists present at the closing ceremony.
+	const finalStart = getEventDate(1, 16, 30);
+	const rounds = await db
 		.insert(judgingRounds)
-		.values({
-			name: "Preliminary Round",
-			startTime: new Date(),
-			endTime: new Date(Date.now() + 3600 * 1000)
-		})
-		.returning();
-
-	const [round2] = await db
-		.insert(judgingRounds)
-		.values({
-			name: "Finals",
-			startTime: new Date(Date.now() + 7200 * 1000),
-			endTime: new Date(Date.now() + 10800 * 1000)
-		})
-		.returning();
-
-	if (round1) {
-		console.log("\nCreating hackathon settings...");
-		await db
-			.insert(hackathonSettings)
-			.values({
-				id: 1,
-				startDate: getEventDate(0, 8),
-				endDate: getEventDate(1, 20),
-				isActive: true,
-				currentRoundId: round1.id
-			})
-			.onConflictDoUpdate({
-				target: hackathonSettings.id,
-				set: {
-					startDate: getEventDate(0, 8),
-					endDate: getEventDate(1, 20),
-					isActive: true,
-					currentRoundId: round1.id
-				}
-			});
-	}
-
-	console.log("\nCreating main criteria and sidepots...");
-	const criteriaList = await db
-		.insert(criteria)
 		.values([
 			{
-				name: "Technical Execution",
+				name: "Main Judging",
+				kind: "panel",
+				startTime: mainStart,
+				endTime: mainEnd,
+				panelSize: PANEL_SIZE,
+				changeoverMinutes: CHANGEOVER_MINUTES
+			},
+			{
+				name: "Final Round",
+				kind: "final",
+				startTime: finalStart,
+				endTime: addMinutes(
+					finalStart,
+					DEFAULT_FINALIST_COUNT *
+						(MAX_PRESENTATION_MINUTES + CHANGEOVER_MINUTES) -
+						CHANGEOVER_MINUTES
+				),
+				presentationMinutes: MAX_PRESENTATION_MINUTES,
+				changeoverMinutes: CHANGEOVER_MINUTES
+			}
+		])
+		.returning();
+	const mainRound = rounds.find((round) => round.kind === "panel");
+	const finalRound = rounds.find((round) => round.kind === "final");
+	if (!mainRound || !finalRound) {
+		throw new Error("Failed to create judging rounds.");
+	}
+
+	await db.insert(hackathonSettings).values({
+		id: 1,
+		startDate: getEventDate(0, 8),
+		endDate: getEventDate(1, 20),
+		submissionDeadline,
+		isActive: true
+	});
+
+	const criteria = await db
+		.insert(judgingCriteria)
+		.values([
+			{
+				name: "Innovation & Creativity",
 				description:
-					"Quality of the implementation (working prototype, technical depth, stability)? Use of appropriate technology stack. Is the solution technically sound and well-built?",
+					"Is the idea original or a fresh take on existing solutions? Does it apply technology in a creative way to the problem it tackles?",
 				displayOrder: 1,
-				maxScore: 10,
+				maxScore: MAIN_CRITERION_MAX_SCORE,
 				isSidepot: false
 			},
 			{
-				name: "Innovation",
+				name: "Impact & Relevance to Prompt",
 				description:
-					"Is the idea original or a fresh take on existing solutions? Does it creatively apply technology to urban challenges (e.g., housing, mobility, disaster resilience, inclusivity)?",
+					"Does the solution clearly address the hackathon prompt? Could it make a meaningful, positive difference for the people it serves?",
 				displayOrder: 2,
-				maxScore: 10,
+				maxScore: MAIN_CRITERION_MAX_SCORE,
+				isSidepot: false
+			},
+			{
+				name: "Feasibility & Scalability",
+				description:
+					"Is the solution practical given real constraints (budget, infrastructure, etc.)? Could it scale beyond a demo into a real-world setting?",
+				displayOrder: 3,
+				maxScore: MAIN_CRITERION_MAX_SCORE,
+				isSidepot: false
+			},
+			{
+				name: "Technical Execution",
+				description:
+					"Quality of the implementation (working prototype, technical depth, stability). Use of appropriate technology stack. Is the solution technically sound and well-built?",
+				displayOrder: 4,
+				maxScore: MAIN_CRITERION_MAX_SCORE,
+				isSidepot: false
+			},
+			{
+				name: "User Experience & Design",
+				description:
+					"Is the solution intuitive, accessible and user-friendly? Is it aesthetically pleasing? Does the design of the product elevate its function and original idea?",
+				displayOrder: 5,
+				maxScore: MAIN_CRITERION_MAX_SCORE,
 				isSidepot: false
 			},
 			{
 				name: "Best use of AI",
 				description:
 					"How effectively does the solution use AI to address the challenge?",
-				displayOrder: 3,
+				displayOrder: 6,
 				maxScore: 5,
 				isSidepot: true
 			},
@@ -90,59 +118,15 @@ export async function seedJudging({ judges, teams }: SeedJudgingInput) {
 				name: "Best UI",
 				description:
 					"Is the solution intuitive, accessible and user-friendly? Is the solution aesthetically pleasing? Does the design of the product elevate its function and original idea?",
-				displayOrder: 4,
+				displayOrder: 7,
 				maxScore: 5,
 				isSidepot: true
 			}
 		])
 		.returning();
 
-	console.log("\nCreating judging assignments and random scores...");
-	const rounds = [round1, round2].filter(
-		(round): round is NonNullable<typeof round> => Boolean(round)
+	console.log(
+		`Created ${rounds.length} judging rounds and ${criteria.length} criteria`
 	);
-
-	for (const round of rounds) {
-		for (const judge of judges) {
-			// Give each judge their own room in every round.
-			const [room] = await db
-				.insert(judgingRooms)
-				.values({ roundId: round.id, roomLink: "https://zoom.us/" })
-				.returning();
-
-			if (!room) continue;
-
-			await db.insert(judgingRoomStaff).values({
-				roomId: room.id,
-				staffId: judge.id
-			});
-
-			for (const team of teams) {
-				const [assignment] = await db
-					.insert(judgingAssignments)
-					.values({
-						teamId: team.id,
-						roomId: room.id,
-						timeSlot: new Date()
-					})
-					.returning();
-
-				// Leave Team Six unscored so manual score creation can be tested.
-				if (assignment && team.slug !== "team-6") {
-					await db.insert(scores).values(
-						criteriaList.map((criterion) => ({
-							assignmentId: assignment.id,
-							judgeId: judge.id,
-							criteriaId: criterion.id,
-							value: criterion.isSidepot
-								? Math.floor(Math.random() * (criterion.maxScore + 1))
-								: 1 + Math.floor(Math.random() * 10)
-						}))
-					);
-				}
-			}
-		}
-	}
-
-	return { criteria: criteriaList, rounds };
+	return { criteria, mainRound, finalRound, submissionDeadline };
 }

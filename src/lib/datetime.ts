@@ -1,5 +1,5 @@
 import { tz } from "@date-fns/tz";
-import { format, isSameDay, isValid, parse } from "date-fns";
+import { eachDayOfInterval, format, isSameDay, isValid, parse } from "date-fns";
 
 // The hackathon is in person in Calgary, so every time is Calgary time no
 // matter where the code runs (servers are usually UTC) or who is viewing.
@@ -33,6 +33,14 @@ export function formatFullDate(value: DateValue) {
 	return format(value, "MMMM d, yyyy", { in: calgary });
 }
 
+export function formatShortDate(value: DateValue) {
+	return format(value, "MMM d, yyyy", { in: calgary });
+}
+
+export function formatMonthDay(value: DateValue) {
+	return format(value, "MMM d", { in: calgary });
+}
+
 export function formatDateTime(value: DateValue) {
 	return format(value, "MMM d, yyyy, h:mm a", { in: calgary });
 }
@@ -43,6 +51,10 @@ export function formatDateKey(value: DateValue) {
 
 export function isSameCalgaryDay(left: DateValue, right: DateValue) {
 	return isSameDay(left, right, { in: calgary });
+}
+
+export function eachCalgaryDay(start: DateValue, end: DateValue) {
+	return eachDayOfInterval({ start, end }, { in: calgary });
 }
 
 export function toDateTimeLocalValue(value?: Date | null) {
@@ -66,13 +78,4 @@ export function toTimeInputValue(value?: Date | null) {
 
 export function toDateInputValue(value?: Date | null) {
 	return value && isValid(value) ? formatDateKey(value) : "";
-}
-
-// Moves `existing` to the given day, keeping its time of day (midnight if unset).
-export function fromDateInputValue(value: string, existing?: Date | null) {
-	const time =
-		existing && isValid(existing)
-			? format(existing, TIME_INPUT_FORMAT, { in: calgary })
-			: "00:00";
-	return fromDateTimeLocalValue(`${value}T${time}`);
 }

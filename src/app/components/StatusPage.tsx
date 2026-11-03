@@ -64,7 +64,7 @@ export default function StatusPage(props: StatusPageProps) {
 	return (
 		<div className="flex min-h-svh flex-col bg-background text-foreground">
 			<main className="flex flex-1 items-center justify-center px-6 py-8 sm:py-12">
-				<Empty className="max-w-xl gap-4 p-0">
+				<Empty className="max-w-xl gap-4 border-none p-0">
 					<Image
 						alt={mascot.alt}
 						className="h-auto w-50 sm:w-72"

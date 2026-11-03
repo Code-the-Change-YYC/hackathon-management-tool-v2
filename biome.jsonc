@@ -6,6 +6,10 @@
 		"useIgnoreFile": true,
 		"clientKind": "git"
 	},
+	// Claude Code worktrees are full repo checkouts with their own root config.
+	"files": {
+		"includes": ["**", "!!**/.claude/worktrees"]
+	},
 	"assist": {
 		"enabled": true,
 		"actions": {
@@ -88,6 +92,10 @@
 					},
 					"correctness": {
 						"useExhaustiveDependencies": "off"
+					},
+					// The chart writes its own color config into a <style> tag.
+					"security": {
+						"noDangerouslySetInnerHtml": "off"
 					},
 					"suspicious": {
 						"noArrayIndexKey": "off",

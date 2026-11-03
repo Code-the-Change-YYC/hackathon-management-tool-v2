@@ -13,7 +13,7 @@ import {
 // The in-layout error state for a page whose server data failed to load.
 export default function PageError({ retry }: { retry: () => void }) {
 	return (
-		<Empty className="min-h-[70svh]">
+		<Empty className="min-h-[70svh] border-none">
 			<EmptyMedia>
 				<Image
 					alt="Our mascot puzzling over two disconnected computer cables"

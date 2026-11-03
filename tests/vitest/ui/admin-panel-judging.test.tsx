@@ -1,0 +1,698 @@
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within
+} from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FinalistsDialog } from "@/app/components/admin/judging/FinalistsDialog";
+import { FinalRound } from "@/app/components/admin/judging/FinalRound";
+import type {
+	Layout,
+	PanelRanking,
+	Team
+} from "@/app/components/admin/judging/judgingShared";
+import { PanelResults } from "@/app/components/admin/judging/PanelResults";
+import { PanelSchedule } from "@/app/components/admin/judging/PanelSchedule";
+import { ScheduleDialog } from "@/app/components/admin/judging/ScheduleDialog";
+import { formatTime } from "@/lib/datetime";
+import { judgingRound, judgingNow as now } from "../helpers/judging";
+
+const { mocks, mutation } = vi.hoisted(() => ({
+	mocks: {
+		preview: vi.fn(),
+		lateTeamSlots: vi.fn(),
+		addTeam: vi.fn(),
+		generate: vi.fn(),
+		removeTeam: vi.fn(),
+		setFinalists: vi.fn(),
+		reorderFinalists: vi.fn(),
+		setFinalJudges: vi.fn()
+	},
+	mutation: (mutate: () => void) => ({
+		useMutation: () => ({ mutate, isPending: false })
+	})
+}));
+vi.mock("@/hooks/use-refresh", () => ({
+	useRefresh: () => ({ isRefreshing: false, refresh: vi.fn() })
+}));
+vi.mock("@/trpc/react", () => ({
+	api: {
+		judgingTables: {
+			previewSchedule: { useQuery: mocks.preview },
+			generateSchedule: mutation(mocks.generate),
+			removeTeam: mutation(mocks.removeTeam),
+			previewLateTeamSlots: { useQuery: mocks.lateTeamSlots },
+			addTeam: mutation(mocks.addTeam),
+			assignJudge: mutation(vi.fn())
+		},
+		judgingResults: {
+			setFinalists: mutation(mocks.setFinalists),
+			reorderFinalists: mutation(mocks.reorderFinalists),
+			setFinalJudges: mutation(mocks.setFinalJudges)
+		}
+	}
+}));
+
+const round = judgingRound({
+	presentationMinutes: 8,
+	changeoverMinutes: 2,
+	publishedAt: null
+});
+const minutes = (count: number) => new Date(now.getTime() + count * 60_000);
+const team = (id: string) => ({ id, name: `Team ${id}` });
+const judge = (id: string, name: string) => ({
+	id: `seat-${id}`,
+	tableId: "table",
+	judgeId: id,
+	createdAt: now,
+	judge: { id, name, email: `${id}@example.com` }
+});
+const layout = {
+	round,
+	tables: [1, 2].map((tableNumber) => ({
+		id: `table-${tableNumber}`,
+		roundId: round.id,
+		tableNumber,
+		createdAt: now,
+		updatedAt: now,
+		judges:
+			tableNumber === 1
+				? [judge("a", "Ada"), judge("b", "Bo")]
+				: [judge("c", "Cy")],
+		assignments: [0, 10, 30].map((start) => ({
+			id: `${tableNumber}-${start}`,
+			teamId: `${tableNumber}${start}`,
+			tableId: `table-${tableNumber}`,
+			startsAt: minutes(start),
+			createdAt: now,
+			team: team(`${tableNumber}${start}`)
+		}))
+	}))
+} as unknown as Layout;
+const passedTeam = {
+	id: "late",
+	name: "Late",
+	prescreenStatus: "passed"
+} as Team;
+
+function renderSchedule(
+	props: Partial<Parameters<typeof PanelSchedule>[0]> = {}
+) {
+	return render(
+		<PanelSchedule
+			hasScores={false}
+			judges={[]}
+			layout={layout}
+			round={round}
+			teams={[passedTeam]}
+			{...props}
+		/>
+	);
+}
+
+function changeNumber(label: string, value: string) {
+	const input = within(screen.getByRole("dialog")).getByLabelText(label);
+	fireEvent.change(input, { target: { value } });
+	fireEvent.blur(input);
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	mocks.preview.mockReturnValue({
+		data: {
+			judgeCount: 20,
+			teamCount: 50,
+			result: {
+				ok: true,
+				schedule: {
+					presentationMinutes: 5,
+					waveCount: 10,
+					tables: Array.from({ length: 5 }, () => ({
+						judgeIds: ["", "", "", ""]
+					})),
+					breaks: [{ startsAt: minutes(42) }],
+					endsAt: minutes(170)
+				}
+			}
+		},
+		error: null,
+		isPlaceholderData: false
+	});
+	mocks.lateTeamSlots.mockReturnValue({
+		data: {
+			first: { tableId: "table-2", tableNumber: 2, startsAt: minutes(40) },
+			second: { tableId: "table-1", tableNumber: 1, startsAt: minutes(50) }
+		},
+		error: null
+	});
+});
+
+describe("schedule dialog", () => {
+	it("previews the computed schedule and generates with the entered settings", async () => {
+		render(
+			<ScheduleDialog hasSchedule={false} onClose={vi.fn()} round={round} />
+		);
+		expect(screen.getByText("5 tables · 5-minute presentations")).toBeVisible();
+		expect(screen.getByText(/50 teams · 20 judges/)).toBeVisible();
+		changeNumber("Judges per table", "3");
+		expect(mocks.preview).toHaveBeenLastCalledWith(
+			expect.objectContaining({ roundId: round.id, panelSize: 3 }),
+			expect.objectContaining({ enabled: true })
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+		await waitFor(() =>
+			expect(mocks.generate).toHaveBeenCalledWith({
+				roundId: round.id,
+				panelSize: 3,
+				changeoverMinutes: 2,
+				breakMinutes: 10,
+				maxBlockMinutes: 50,
+				confirm: false
+			})
+		);
+	});
+
+	it("explains a schedule that doesn't fit and won't generate it", () => {
+		mocks.preview.mockReturnValue({
+			data: {
+				judgeCount: 7,
+				teamCount: 50,
+				result: {
+					ok: false,
+					message: "Two tables of 4 need at least 8 judges."
+				}
+			},
+			error: null,
+			isPlaceholderData: false
+		});
+		render(
+			<ScheduleDialog hasSchedule={false} onClose={vi.fn()} round={round} />
+		);
+		expect(
+			screen.getByText("Two tables of 4 need at least 8 judges.")
+		).toBeVisible();
+		expect(screen.getByRole("button", { name: "Generate" })).toBeDisabled();
+	});
+
+	it("flags an empty setting on submit instead of generating", async () => {
+		render(
+			<ScheduleDialog hasSchedule={false} onClose={vi.fn()} round={round} />
+		);
+		changeNumber("Break length (min)", "");
+		fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+		expect(await screen.findByText("Enter a number.")).toBeVisible();
+		expect(mocks.generate).not.toHaveBeenCalled();
+	});
+
+	it("warns before regenerating a published round, then confirms it", async () => {
+		render(
+			<ScheduleDialog
+				hasSchedule
+				onClose={vi.fn()}
+				round={{ ...round, publishedAt: now }}
+			/>
+		);
+		expect(
+			screen.getByText(/teams have already seen their current times/)
+		).toBeVisible();
+		fireEvent.click(screen.getByRole("button", { name: "Regenerate" }));
+		await waitFor(() =>
+			expect(mocks.generate).toHaveBeenCalledWith(
+				expect.objectContaining({ confirm: true })
+			)
+		);
+	});
+});
+
+describe("panel schedule", () => {
+	it("shows tables with their judges and free time as a break", () => {
+		renderSchedule();
+		expect(screen.getByText("2 tables · 8-minute presentations")).toBeVisible();
+		expect(
+			screen.getByRole("columnheader", { name: /Table 1\s*Ada, Bo/ })
+		).toBeVisible();
+		expect(screen.getByText(/Break · 4:20 AM – 4:30 AM/)).toBeVisible();
+	});
+
+	it("removes a team only after confirmation", async () => {
+		renderSchedule();
+		fireEvent.click(
+			screen.getAllByRole("button", {
+				name: "Remove Team 10 from the schedule"
+			})[0] as HTMLElement
+		);
+		const dialog = await screen.findByRole("alertdialog");
+		expect(mocks.removeTeam).not.toHaveBeenCalled();
+		fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+		await waitFor(() =>
+			expect(mocks.removeTeam).toHaveBeenCalledWith({
+				roundId: round.id,
+				teamId: "10"
+			})
+		);
+	});
+
+	it("opens the add team and move judge dialogs", async () => {
+		renderSchedule();
+		fireEvent.click(screen.getByRole("button", { name: "Add team" }));
+		expect(
+			await screen.findByRole("dialog", { name: "Add a team" })
+		).toBeVisible();
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		fireEvent.click(screen.getByRole("button", { name: "Move judge" }));
+		expect(
+			await screen.findByRole("dialog", { name: "Move a judge" })
+		).toBeVisible();
+	});
+
+	it("shows a late team's times before adding it to them", async () => {
+		renderSchedule();
+		fireEvent.click(screen.getByRole("button", { name: "Add team" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add a team" });
+		expect(
+			within(dialog).getByText(
+				`${formatTime(minutes(40))} at Table 2, then ${formatTime(minutes(50))} at Table 1`
+			)
+		).toBeVisible();
+		fireEvent.click(within(dialog).getByRole("combobox", { name: "Team" }));
+		fireEvent.click(await screen.findByRole("option", { name: "Late" }));
+		fireEvent.click(within(dialog).getByRole("button", { name: "Add team" }));
+		await waitFor(() =>
+			expect(mocks.addTeam).toHaveBeenCalledWith({
+				roundId: round.id,
+				teamId: "late",
+				first: expect.objectContaining({
+					tableId: "table-2",
+					startsAt: minutes(40)
+				}),
+				second: expect.objectContaining({
+					tableId: "table-1",
+					startsAt: minutes(50)
+				})
+			})
+		);
+	});
+
+	it("won't add a late team when no free pair is left", async () => {
+		mocks.lateTeamSlots.mockReturnValue({ data: null, error: null });
+		renderSchedule();
+		fireEvent.click(screen.getByRole("button", { name: "Add team" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add a team" });
+		expect(
+			within(dialog).getByText(
+				"There are no back-to-back free slots left at two different tables."
+			)
+		).toBeVisible();
+		expect(
+			within(dialog).getByRole("button", { name: "Add team" })
+		).toBeDisabled();
+	});
+
+	it("marks slots that have started so their gaps don't read as free", () => {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(minutes(5));
+		try {
+			renderSchedule();
+		} finally {
+			vi.useRealTimers();
+		}
+		const [, startedRow, nextRow] = screen.getAllByRole("row");
+		expect(startedRow).toHaveTextContent("(started)");
+		expect(nextRow).not.toHaveTextContent("(started)");
+	});
+
+	it("won't regenerate a scored round", () => {
+		renderSchedule({ hasScores: true });
+		expect(screen.getByRole("button", { name: "Regenerate" })).toBeDisabled();
+	});
+
+	it("offers to generate a schedule once teams have passed prescreening", async () => {
+		renderSchedule({ layout: undefined });
+		expect(screen.getByText("No schedule yet")).toBeVisible();
+		fireEvent.click(screen.getByRole("button", { name: "Generate schedule" }));
+		expect(
+			await screen.findByRole("dialog", { name: "Generate schedule" })
+		).toBeVisible();
+	});
+
+	it("points to prescreening when no team has passed", () => {
+		renderSchedule({ layout: undefined, teams: [] });
+		expect(
+			screen.getByText("No teams have passed prescreening yet.")
+		).toBeVisible();
+		expect(
+			screen.getByRole("link", { name: "Prescreen teams" })
+		).toHaveAttribute("href", "/admin/teams");
+	});
+});
+
+const finalRound = judgingRound({
+	id: "final",
+	name: "Final Round",
+	kind: "final",
+	presentationMinutes: 10,
+	publishedAt: null
+});
+
+const ranking: PanelRanking[] = ["A", "B", "C"].map((name, index) => ({
+	teamId: name.toLowerCase(),
+	teamName: `Team ${name}`,
+	normalizedScore: 1 - index,
+	rawAverage: 4 - index,
+	scorecardCount: 4,
+	expectedScorecards: 4
+}));
+
+function renderResults(
+	props: Partial<Parameters<typeof PanelResults>[0]> = {}
+) {
+	return render(
+		<PanelResults
+			finalRound={finalRound}
+			finalRoundHasScores={false}
+			hasFinalists={false}
+			onFinalistsSaved={vi.fn()}
+			rankings={{ main: ranking, failedTeamNames: [], sidepots: [] }}
+			{...props}
+		/>
+	);
+}
+
+describe("panel results", () => {
+	it("ranks teams and opens the finalist picker", async () => {
+		renderResults();
+		const topRow = screen.getByText("Team A").closest("tr") as HTMLElement;
+		expect(topRow).toHaveTextContent("1Team A1.004.004/4");
+		fireEvent.click(screen.getByRole("button", { name: "Pick finalists" }));
+		expect(
+			await screen.findByRole("dialog", { name: "Pick finalists" })
+		).toBeVisible();
+	});
+
+	it("names teams left out for failing pre-screening", () => {
+		renderResults({
+			rankings: {
+				main: ranking,
+				failedTeamNames: ["Hello World"],
+				sidepots: []
+			}
+		});
+		expect(
+			screen.getByText(
+				"Not ranked because they failed pre-screening: Hello World."
+			)
+		).toBeInTheDocument();
+	});
+
+	it("waits for a final round before picking finalists", () => {
+		renderResults({ finalRound: undefined });
+		expect(
+			screen.getByRole("button", { name: "Pick finalists" })
+		).toBeDisabled();
+	});
+
+	it("switches to a sidepot's ranking", async () => {
+		renderResults({
+			rankings: {
+				main: ranking,
+				failedTeamNames: [],
+				sidepots: [
+					{
+						criterionId: "best-ui",
+						name: "Best UI",
+						ranking: ranking.slice().reverse()
+					}
+				]
+			}
+		});
+		expect(screen.getAllByRole("row")[1]).toHaveTextContent("Team A");
+		fireEvent.click(screen.getByRole("tab", { name: "Best UI" }));
+		await waitFor(() =>
+			expect(screen.getAllByRole("row")[1]).toHaveTextContent("Team C")
+		);
+	});
+
+	it("won't change finalists once the final round is scored", () => {
+		renderResults({ hasFinalists: true, finalRoundHasScores: true });
+		expect(
+			screen.getByRole("button", { name: "Change finalists" })
+		).toBeDisabled();
+	});
+});
+
+describe("finalists dialog", () => {
+	function renderDialog() {
+		return render(
+			<FinalistsDialog
+				finalRound={finalRound}
+				hasFinalists={false}
+				onClose={vi.fn()}
+				onSaved={vi.fn()}
+				ranking={ranking}
+			/>
+		);
+	}
+
+	it("pre-selects the top teams", () => {
+		renderDialog();
+		expect(screen.getByText("Finalists · 3 selected")).toBeVisible();
+		fireEvent.click(screen.getByRole("checkbox", { name: /Team C/ }));
+		expect(screen.getByText("Finalists · 2 selected")).toBeVisible();
+	});
+
+	it("only picks finalists, leaving times to the final round", () => {
+		renderDialog();
+		expect(screen.queryByLabelText("Starts")).not.toBeInTheDocument();
+		expect(
+			screen.queryByLabelText("Presentation (min)")
+		).not.toBeInTheDocument();
+	});
+
+	it("requires a finalist, then saves them in rank order", async () => {
+		renderDialog();
+		for (const name of [/Team A/, /Team B/, /Team C/]) {
+			fireEvent.click(screen.getByRole("checkbox", { name }));
+		}
+		fireEvent.click(screen.getByRole("button", { name: "Save finalists" }));
+		expect(
+			await screen.findByText("Pick at least one finalist.")
+		).toBeVisible();
+		expect(mocks.setFinalists).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("checkbox", { name: /Team C/ }));
+		fireEvent.click(screen.getByRole("checkbox", { name: /Team A/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Save finalists" }));
+		await waitFor(() =>
+			expect(mocks.setFinalists).toHaveBeenCalledWith({ teamIds: ["a", "c"] })
+		);
+	});
+});
+
+describe("final round presentation order", () => {
+	const finalLayout = {
+		round: finalRound,
+		tables: [
+			{
+				...layout.tables[0],
+				assignments: ["A", "B", "C"].map((name, index) => ({
+					id: `final-${name}`,
+					teamId: name.toLowerCase(),
+					tableId: "table-1",
+					startsAt: minutes(index * 12),
+					createdAt: now,
+					team: team(name)
+				}))
+			}
+		]
+	} as unknown as Layout;
+
+	function names() {
+		return screen
+			.getAllByRole("listitem")
+			.map((item) => item.textContent?.match(/Team [A-C]/)?.[0]);
+	}
+
+	it("reorders finalists, previewing their new times, then saves", () => {
+		render(
+			<FinalRound
+				judges={[]}
+				layout={finalLayout}
+				results={null}
+				round={finalRound}
+				scoresReleased={false}
+			/>
+		);
+		expect(
+			screen.queryByRole("button", { name: "Move Team A later" })
+		).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Reorder" }));
+		expect(
+			screen.getByRole("button", { name: "Move Team A earlier" })
+		).toBeDisabled();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Move Team C earlier" })
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Move Team A later" }));
+		expect(names()).toEqual(["Team C", "Team A", "Team B"]);
+		expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(
+			formatTime(finalRound.startTime)
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Save order" }));
+		expect(mocks.reorderFinalists).toHaveBeenCalledWith({
+			assignmentIds: ["final-C", "final-A", "final-B"]
+		});
+	});
+
+	it("discards a new order on cancel", () => {
+		render(
+			<FinalRound
+				judges={[]}
+				layout={finalLayout}
+				results={null}
+				round={finalRound}
+				scoresReleased={false}
+			/>
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Reorder" }));
+		fireEvent.click(screen.getByRole("button", { name: "Move Team A later" }));
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		expect(names()).toEqual(["Team A", "Team B", "Team C"]);
+		expect(mocks.reorderFinalists).not.toHaveBeenCalled();
+	});
+});
+
+describe("final round results", () => {
+	const result = (
+		teamName: string,
+		points: number,
+		rank: number,
+		tied = false
+	) => ({
+		teamId: teamName,
+		teamName,
+		points,
+		placeVotes: [0, 0, 0],
+		panelScore: 0.5,
+		rank,
+		tied
+	});
+
+	it("waits for the first ballot before ranking", () => {
+		render(
+			<FinalRound
+				judges={[]}
+				results={{
+					results: [result("Team A", 0, 1, true), result("Team B", 0, 1, true)],
+					ballots: [{ judgeId: "j1", judgeName: "Dara", teamNames: [] }]
+				}}
+				round={finalRound}
+				scoresReleased={false}
+			/>
+		);
+		expect(screen.getByText("No ballots yet")).toBeVisible();
+		const ballots = screen.getByRole("region", { name: "Ballots" });
+		expect(ballots).toHaveTextContent("0/1 ballots in");
+		expect(
+			within(ballots).getByRole("row", { name: /Dara/ })
+		).toHaveTextContent("Not submitted");
+	});
+
+	it("ranks by points, flags ties and lists each judge's ballot", () => {
+		render(
+			<FinalRound
+				judges={[]}
+				results={{
+					results: [
+						result("Team A", 5, 1),
+						result("Team B", 3, 2, true),
+						result("Team C", 3, 2, true),
+						result("Team D", 1, 4)
+					],
+					ballots: [
+						{
+							judgeId: "j1",
+							judgeName: "Dara",
+							teamNames: ["Team A", "Team B", "Team D"]
+						},
+						{ judgeId: "j2", judgeName: "Sam", teamNames: [] }
+					]
+				}}
+				round={finalRound}
+				scoresReleased={false}
+			/>
+		);
+		const results = screen.getByRole("region", { name: "Results" });
+		const rows = within(results).getAllByRole("row").slice(1);
+		expect(rows.map((row) => row.textContent)).toEqual([
+			expect.stringMatching(/^1Team A5/),
+			expect.stringMatching(/^2Team BTied3/),
+			expect.stringMatching(/^2Team CTied3/),
+			expect.stringMatching(/^4Team D1/)
+		]);
+		expect(results).toHaveTextContent("Decide their order in deliberation.");
+		const ballots = screen.getByRole("region", { name: "Ballots" });
+		expect(ballots).toHaveTextContent("1/2 ballots in");
+		expect(
+			within(ballots).getByRole("row", { name: /Dara/ })
+		).toHaveTextContent("DaraTeam ATeam BTeam D");
+		expect(within(ballots).getByRole("row", { name: /Sam/ })).toHaveTextContent(
+			"Not submitted"
+		);
+	});
+
+	it("seats judges at the final table, keeping those who have ranked", async () => {
+		const judge = (id: string, name: string) =>
+			({ id, name }) as Parameters<typeof FinalRound>[0]["judges"][number];
+		render(
+			<FinalRound
+				judges={[judge("j1", "Dara"), judge("j2", "Sam"), judge("j3", "Ira")]}
+				results={{
+					results: [result("Team A", 3, 1)],
+					ballots: [
+						{ judgeId: "j1", judgeName: "Dara", teamNames: ["Team A"] },
+						{ judgeId: "j2", judgeName: "Sam", teamNames: [] }
+					]
+				}}
+				round={finalRound}
+				scoresReleased={false}
+			/>
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Manage judges" }));
+		const dialog = await screen.findByRole("dialog", {
+			name: "Final table judges"
+		});
+		const box = (name: string | RegExp) =>
+			within(dialog).getByRole("checkbox", { name });
+		expect(box(/^Dara/)).toHaveAttribute("aria-disabled", "true");
+		expect(box("Sam")).toBeChecked();
+		expect(box("Ira")).not.toBeChecked();
+		fireEvent.click(box("Sam"));
+		fireEvent.click(box("Ira"));
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Save judges" })
+		);
+		await waitFor(() =>
+			expect(mocks.setFinalJudges).toHaveBeenCalledWith({
+				judgeIds: ["j1", "j3"]
+			})
+		);
+	});
+
+	it("locks the final table once scores are released", () => {
+		render(
+			<FinalRound
+				judges={[]}
+				results={{
+					results: [],
+					ballots: [{ judgeId: "j1", judgeName: "Dara", teamNames: [] }]
+				}}
+				round={finalRound}
+				scoresReleased
+			/>
+		);
+		expect(
+			screen.getByRole("button", { name: "Manage judges" })
+		).toBeDisabled();
+	});
+});

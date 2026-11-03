@@ -1,0 +1,221 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
+import { CheckboxField } from "@/app/components/forms/CheckboxField";
+import { NumberField } from "@/app/components/forms/NumberField";
+import { TextField } from "@/app/components/forms/TextField";
+import { Button } from "@/app/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@/app/components/ui/dialog";
+import {
+	Field,
+	FieldDescription,
+	FieldError,
+	FieldGroup,
+	FieldLabel
+} from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
+import { useRefresh } from "@/hooks/use-refresh";
+import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
+import {
+	CRITERION_DESCRIPTION_MAX_LENGTH,
+	CRITERION_NAME_MAX_LENGTH,
+	type CriterionFormInput,
+	type CriterionFormValues,
+	criterionFormSchema
+} from "@/lib/validation/judging";
+import { api } from "@/trpc/react";
+import type { Criterion } from "./judgingShared";
+
+function toFormInput(
+	criterion: Criterion | undefined,
+	nextDisplayOrder: number
+): CriterionFormInput {
+	return {
+		name: criterion?.name ?? "",
+		description: criterion?.description ?? "",
+		displayOrder: criterion?.displayOrder ?? nextDisplayOrder,
+		isSidepot: criterion?.isSidepot ?? false,
+		maxScore: criterion?.isSidepot
+			? criterion.maxScore
+			: MAIN_CRITERION_MAX_SCORE
+	};
+}
+
+export function CriterionDialog({
+	criterion,
+	locked,
+	nextDisplayOrder,
+	onClose
+}: {
+	criterion?: Criterion;
+	locked: boolean;
+	nextDisplayOrder: number;
+	onClose: () => void;
+}) {
+	const { isRefreshing, refresh } = useRefresh();
+	const form = useForm<CriterionFormInput, unknown, CriterionFormValues>({
+		defaultValues: toFormInput(criterion, nextDisplayOrder),
+		resolver: zodResolver(criterionFormSchema)
+	});
+	const isSidepot = useWatch({ control: form.control, name: "isSidepot" });
+	const callbacks = {
+		onSuccess: () =>
+			refresh(() => {
+				toast.success(criterion ? "Criterion updated." : "Criterion added.");
+				onClose();
+			}),
+		onError: (error: { message: string }) => toast.error(error.message)
+	};
+	const createCriterion = api.criteria.create.useMutation(callbacks);
+	const updateCriterion = api.criteria.update.useMutation(callbacks);
+	const isPending =
+		createCriterion.isPending || updateCriterion.isPending || isRefreshing;
+	const descriptionError = form.formState.errors.description;
+	// Once judges score, the type and maximum stay as they are.
+	const scaleLocked = Boolean(criterion && locked);
+	// Older main criteria can have another maximum, which saving resets.
+	const oldMainMax =
+		criterion && !criterion.isSidepot && !isSidepot
+			? criterion.maxScore
+			: MAIN_CRITERION_MAX_SCORE;
+
+	return (
+		<Dialog
+			disablePointerDismissal
+			onOpenChange={(open) => !open && onClose()}
+			open
+		>
+			<DialogContent className="sm:max-w-md">
+				<DialogHeader>
+					<DialogTitle>
+						{criterion ? "Edit criterion" : "Add criterion"}
+					</DialogTitle>
+				</DialogHeader>
+				<form
+					className="flex flex-col gap-6"
+					noValidate
+					onSubmit={form.handleSubmit(({ isSidepot, maxScore, ...values }) => {
+						const scale = scaleLocked ? {} : { isSidepot, maxScore };
+						if (criterion) {
+							updateCriterion.mutate({ id: criterion.id, ...values, ...scale });
+						} else {
+							createCriterion.mutate({ ...values, ...scale });
+						}
+					})}
+				>
+					<FieldGroup className="gap-5">
+						<TextField
+							control={form.control}
+							disabled={isPending}
+							label="Name"
+							maxLength={CRITERION_NAME_MAX_LENGTH}
+							name="name"
+							placeholder="Technical execution"
+						/>
+						<Field data-invalid={Boolean(descriptionError)}>
+							<FieldLabel htmlFor="criterion-description">
+								Description (optional)
+							</FieldLabel>
+							<Textarea
+								aria-invalid={Boolean(descriptionError)}
+								disabled={isPending}
+								id="criterion-description"
+								maxLength={CRITERION_DESCRIPTION_MAX_LENGTH}
+								placeholder="What should judges look for?"
+								{...form.register("description")}
+							/>
+							<FieldDescription>
+								Judges see this while scoring. Leave it blank for a general
+								prompt.
+							</FieldDescription>
+							<FieldError errors={[descriptionError]} />
+						</Field>
+						<CheckboxField
+							control={form.control}
+							disabled={isPending || scaleLocked}
+							name="isSidepot"
+						>
+							Sidepot
+							<span className="block text-muted-foreground">
+								A separate prize. It doesn’t count toward the ranking.
+							</span>
+						</CheckboxField>
+						<div className="grid gap-4 sm:grid-cols-2">
+							{scaleLocked && criterion ? (
+								<Field data-disabled>
+									<FieldLabel htmlFor="criterion-locked-max">
+										Maximum score
+									</FieldLabel>
+									<Input
+										disabled
+										id="criterion-locked-max"
+										readOnly
+										value={criterion.maxScore}
+									/>
+									<FieldDescription>
+										Locked once judges start scoring.
+									</FieldDescription>
+								</Field>
+							) : isSidepot ? (
+								<NumberField
+									control={form.control}
+									disabled={isPending}
+									label="Maximum score"
+									max={100}
+									min={1}
+									name="maxScore"
+								/>
+							) : (
+								<Field data-disabled>
+									<FieldLabel htmlFor="criterion-main-max">
+										Maximum score
+									</FieldLabel>
+									<Input
+										disabled
+										id="criterion-main-max"
+										readOnly
+										value={MAIN_CRITERION_MAX_SCORE}
+									/>
+									<FieldDescription>
+										{oldMainMax === MAIN_CRITERION_MAX_SCORE
+											? "Fixed for main criteria."
+											: `Now out of ${oldMainMax}. Saving changes it to ${MAIN_CRITERION_MAX_SCORE}.`}
+									</FieldDescription>
+								</Field>
+							)}
+							<div className="flex flex-col gap-2">
+								<NumberField
+									control={form.control}
+									disabled={isPending}
+									label="Display order"
+									min={0}
+									name="displayOrder"
+								/>
+								<FieldDescription>
+									Lowest first. Sidepots always go last.
+								</FieldDescription>
+							</div>
+						</div>
+					</FieldGroup>
+					<DialogFooter>
+						<Button disabled={isPending} type="submit">
+							{criterion ? "Save changes" : "Add criterion"}
+						</Button>
+						<Button onClick={onClose} type="button" variant="outline">
+							Cancel
+						</Button>
+					</DialogFooter>
+				</form>
+			</DialogContent>
+		</Dialog>
+	);
+}

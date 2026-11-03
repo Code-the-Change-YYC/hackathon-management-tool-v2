@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
 	Sidebar,
 	SidebarContent,
@@ -32,7 +33,9 @@ export function AppSidebar({
 	return (
 		<Sidebar className="border-none" collapsible="offcanvas">
 			<SidebarHeader className="px-6 pt-6 pb-4">
-				<HackathonLogo />
+				<Link className="self-start rounded-lg" href="/">
+					<HackathonLogo />
+				</Link>
 			</SidebarHeader>
 			<SidebarContent className="px-2">
 				{navGroups.map((group) => (

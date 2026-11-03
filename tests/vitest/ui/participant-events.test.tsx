@@ -91,18 +91,43 @@ describe("shared participant event and status components", () => {
 				.success
 		).toBe(true);
 	});
-	it("uses the configured phase and active round, rather than wall-clock time", () => {
+	it("shows the current judging stage from the clock and judging progress", () => {
+		const progress = {
+			startDate: new Date("2026-11-07T15:00:00Z"),
+			submissionDeadline: new Date("2026-11-08T15:00:00Z"),
+			prescreenComplete: true,
+			rounds: [
+				{
+					id: "panel",
+					name: "Panel Round",
+					kind: "panel" as const,
+					startTime: new Date("2026-11-08T17:00:00Z"),
+					endTime: new Date("2026-11-08T20:00:00Z"),
+					scoringComplete: false
+				}
+			],
+			scoresReleased: false
+		};
 		const { rerender } = render(
-			<JudgingStatus phase="judging" roundName="Final round" />
+			<JudgingStatus now={now} progress={progress} />
 		);
-		expect(screen.getByText("Judging: Final round")).toBeInTheDocument();
-		expect(screen.getByText("Judging: current").closest("li")).toHaveAttribute(
-			"aria-current",
-			"step"
-		);
-		rerender(<JudgingStatus phase="winners_announced" />);
+		expect(screen.getByText("Step 3 of 4")).toBeInTheDocument();
 		expect(
-			screen.getByText("Winners announced: current").closest("li")
+			screen.getByText("Panel Round: current").closest("li")
 		).toHaveAttribute("aria-current", "step");
+		rerender(
+			<JudgingStatus
+				now={now}
+				progress={{
+					...progress,
+					rounds: progress.rounds.map((round) => ({
+						...round,
+						scoringComplete: true
+					})),
+					scoresReleased: true
+				}}
+			/>
+		);
+		expect(screen.getByText("Winners announced")).toBeInTheDocument();
 	});
 });
