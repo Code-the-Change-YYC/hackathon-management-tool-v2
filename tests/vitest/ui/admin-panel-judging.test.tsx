@@ -22,6 +22,8 @@ import { judgingRound, judgingNow as now } from "../helpers/judging";
 const { mocks, mutation } = vi.hoisted(() => ({
 	mocks: {
 		preview: vi.fn(),
+		lateTeamSlots: vi.fn(),
+		addTeam: vi.fn(),
 		generate: vi.fn(),
 		removeTeam: vi.fn(),
 		setFinalists: vi.fn(),
@@ -41,7 +43,8 @@ vi.mock("@/trpc/react", () => ({
 			previewSchedule: { useQuery: mocks.preview },
 			generateSchedule: mutation(mocks.generate),
 			removeTeam: mutation(mocks.removeTeam),
-			addTeam: mutation(vi.fn()),
+			previewLateTeamSlots: { useQuery: mocks.lateTeamSlots },
+			addTeam: mutation(mocks.addTeam),
 			assignJudge: mutation(vi.fn())
 		},
 		judgingResults: {
@@ -136,6 +139,13 @@ beforeEach(() => {
 		},
 		error: null,
 		isPlaceholderData: false
+	});
+	mocks.lateTeamSlots.mockReturnValue({
+		data: {
+			first: { tableId: "table-2", tableNumber: 2, startsAt: minutes(40) },
+			second: { tableId: "table-1", tableNumber: 1, startsAt: minutes(50) }
+		},
+		error: null
 	});
 });
 
@@ -255,6 +265,62 @@ describe("panel schedule", () => {
 		expect(
 			await screen.findByRole("dialog", { name: "Move a judge" })
 		).toBeVisible();
+	});
+
+	it("shows a late team's times before adding it to them", async () => {
+		renderSchedule();
+		fireEvent.click(screen.getByRole("button", { name: "Add team" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add a team" });
+		expect(
+			within(dialog).getByText(
+				`${formatTime(minutes(40))} at Table 2, then ${formatTime(minutes(50))} at Table 1`
+			)
+		).toBeVisible();
+		fireEvent.click(within(dialog).getByRole("combobox", { name: "Team" }));
+		fireEvent.click(await screen.findByRole("option", { name: "Late" }));
+		fireEvent.click(within(dialog).getByRole("button", { name: "Add team" }));
+		await waitFor(() =>
+			expect(mocks.addTeam).toHaveBeenCalledWith({
+				roundId: round.id,
+				teamId: "late",
+				first: expect.objectContaining({
+					tableId: "table-2",
+					startsAt: minutes(40)
+				}),
+				second: expect.objectContaining({
+					tableId: "table-1",
+					startsAt: minutes(50)
+				})
+			})
+		);
+	});
+
+	it("won't add a late team when no free pair is left", async () => {
+		mocks.lateTeamSlots.mockReturnValue({ data: null, error: null });
+		renderSchedule();
+		fireEvent.click(screen.getByRole("button", { name: "Add team" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add a team" });
+		expect(
+			within(dialog).getByText(
+				"There are no back-to-back free slots left at two different tables."
+			)
+		).toBeVisible();
+		expect(
+			within(dialog).getByRole("button", { name: "Add team" })
+		).toBeDisabled();
+	});
+
+	it("marks slots that have started so their gaps don't read as free", () => {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(minutes(5));
+		try {
+			renderSchedule();
+		} finally {
+			vi.useRealTimers();
+		}
+		const [, startedRow, nextRow] = screen.getAllByRole("row");
+		expect(startedRow).toHaveTextContent("(started)");
+		expect(nextRow).not.toHaveTextContent("(started)");
 	});
 
 	it("won't regenerate a scored round", () => {

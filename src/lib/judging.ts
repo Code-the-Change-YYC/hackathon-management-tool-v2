@@ -68,6 +68,14 @@ export function getFinalRoundEndTime({
 // Teams are asked to arrive this long before their first presentation.
 export const ARRIVAL_BUFFER_MINUTES = 10;
 
+// Tables run ahead when a team no-shows, so judges can score a team this long
+// before its scheduled time.
+export const SCORING_OPENS_EARLY_MINUTES = 15;
+
+export function getScoringOpensAt(startsAt: Date) {
+	return addMinutes(startsAt, -SCORING_OPENS_EARLY_MINUTES);
+}
+
 const RUBRIC_BAND_LABELS = [
 	"Minimal",
 	"Developing",

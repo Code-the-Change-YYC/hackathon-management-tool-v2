@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server";
+import { addMinutes } from "date-fns";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
+import { ARRIVAL_BUFFER_MINUTES } from "@/lib/judging";
 import { buildPanelSchedule, findLateTeamSlots } from "@/lib/judging-schedule";
 import { submittedScorecards } from "@/server/api/judging-results";
 import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
@@ -123,6 +125,57 @@ async function getRoundTableIds(db: DbClient, roundId: string) {
 	});
 	return tables.map((table) => table.id);
 }
+
+type PanelRound = Awaited<ReturnType<typeof requirePanelRound>>;
+
+// The next free pair a late team could still arrive in time for.
+async function findOpenLateTeamSlots(db: DbClient, round: PanelRound) {
+	if (round.presentationMinutes === null) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Generate a schedule before adding teams."
+		});
+	}
+	const tables = await db.query.judgingTables.findMany({
+		where: eq(judgingTables.roundId, round.id),
+		columns: { id: true, tableNumber: true }
+	});
+	const assignments =
+		tables.length === 0
+			? []
+			: await db.query.judgingAssignments.findMany({
+					where: inArray(
+						judgingAssignments.tableId,
+						tables.map((table) => table.id)
+					),
+					columns: { teamId: true, tableId: true, startsAt: true }
+				});
+	const slots = findLateTeamSlots({
+		tableIds: tables.map((table) => table.id),
+		assignments,
+		slotMinutes: round.presentationMinutes + round.changeoverMinutes,
+		presentationMinutes: round.presentationMinutes,
+		windowEnd: round.endTime,
+		notBefore: addMinutes(new Date(), ARRIVAL_BUFFER_MINUTES)
+	});
+	const tableNumber = (tableId: string) =>
+		tables.find((table) => table.id === tableId)?.tableNumber ?? 0;
+	return {
+		assignments,
+		slots: slots && {
+			first: { ...slots.first, tableNumber: tableNumber(slots.first.tableId) },
+			second: {
+				...slots.second,
+				tableNumber: tableNumber(slots.second.tableId)
+			}
+		}
+	};
+}
+
+const LateTeamSlotSchema = z.object({
+	tableId: z.string().uuid(),
+	startsAt: z.coerce.date()
+});
 
 export const judgingTablesRouter = createTRPCRouter({
 	getLayoutByRound: adminProcedure
@@ -300,18 +353,27 @@ export const judgingTablesRouter = createTRPCRouter({
 			return { removed: assignments.length };
 		}),
 
-	// Places a late team in two back-to-back free slots at different tables.
+	previewLateTeamSlots: adminProcedure
+		.input(z.object({ roundId: z.string().uuid() }))
+		.query(async ({ ctx, input }) => {
+			const round = await requirePanelRound(ctx.db, input.roundId);
+			const { slots } = await findOpenLateTeamSlots(ctx.db, round);
+			return slots;
+		}),
+
+	// Places a late team in the slots the admin was shown, if they're still
+	// the next free pair.
 	addTeam: adminProcedure
-		.input(z.object({ roundId: z.string().uuid(), teamId: z.string() }))
+		.input(
+			z.object({
+				roundId: z.string().uuid(),
+				teamId: z.string(),
+				first: LateTeamSlotSchema,
+				second: LateTeamSlotSchema
+			})
+		)
 		.mutation(async ({ ctx, input }) => {
 			const round = await requirePanelRound(ctx.db, input.roundId);
-			if (round.presentationMinutes === null) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Generate a schedule before adding teams."
-				});
-			}
-
 			const team = await ctx.db.query.organization.findFirst({
 				where: eq(organization.id, input.teamId)
 			});
@@ -325,28 +387,13 @@ export const judgingTablesRouter = createTRPCRouter({
 				});
 			}
 
-			const tableIds = await getRoundTableIds(ctx.db, round.id);
-			const assignments =
-				tableIds.length === 0
-					? []
-					: await ctx.db.query.judgingAssignments.findMany({
-							where: inArray(judgingAssignments.tableId, tableIds),
-							columns: { teamId: true, tableId: true, startsAt: true }
-						});
+			const { assignments, slots } = await findOpenLateTeamSlots(ctx.db, round);
 			if (assignments.some((assignment) => assignment.teamId === team.id)) {
 				throw new TRPCError({
 					code: "CONFLICT",
 					message: "This team is already scheduled in this round."
 				});
 			}
-
-			const slots = findLateTeamSlots({
-				tableIds,
-				assignments,
-				slotMinutes: round.presentationMinutes + round.changeoverMinutes,
-				presentationMinutes: round.presentationMinutes,
-				windowEnd: round.endTime
-			});
 			if (!slots) {
 				throw new TRPCError({
 					code: "CONFLICT",
@@ -354,14 +401,28 @@ export const judgingTablesRouter = createTRPCRouter({
 						"There are no back-to-back free slots left at two different tables."
 				});
 			}
+			const sameSlot = (
+				slot: z.infer<typeof LateTeamSlotSchema>,
+				expected: z.infer<typeof LateTeamSlotSchema>
+			) =>
+				slot.tableId === expected.tableId &&
+				slot.startsAt.getTime() === expected.startsAt.getTime();
+			if (
+				!sameSlot(slots.first, input.first) ||
+				!sameSlot(slots.second, input.second)
+			) {
+				throw new TRPCError({
+					code: "CONFLICT",
+					message:
+						"Those slots are no longer the next free ones. Check the new times and add the team again."
+				});
+			}
 
-			return ctx.db
-				.insert(judgingAssignments)
-				.values([
-					{ teamId: team.id, ...slots.first },
-					{ teamId: team.id, ...slots.second }
-				])
-				.returning();
+			await ctx.db.insert(judgingAssignments).values([
+				{ teamId: team.id, ...input.first },
+				{ teamId: team.id, ...input.second }
+			]);
+			return slots;
 		}),
 
 	// Moves a judge to a table in the round, or removes them when tableId is null.

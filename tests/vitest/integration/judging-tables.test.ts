@@ -159,22 +159,85 @@ describe("judgingTables", () => {
 		expect(db.delete).not.toHaveBeenCalled();
 	});
 
-	it("adds a late team to back-to-back free slots at different tables", async () => {
-		db.query.organization.findFirst.mockResolvedValue({
-			id: "late-team",
-			prescreenStatus: "passed"
+	describe("adding a late team", () => {
+		const slots = {
+			first: { tableId: tableB, tableNumber: 2, startsAt: start },
+			second: {
+				tableId: tableA,
+				tableNumber: 1,
+				startsAt: addMinutes(start, 10)
+			}
+		};
+
+		beforeEach(() => {
+			db.query.judgingTables.findMany.mockResolvedValue([
+				{ id: tableA, tableNumber: 1 },
+				{ id: tableB, tableNumber: 2 }
+			]);
+			db.query.organization.findFirst.mockResolvedValue({
+				id: "late-team",
+				prescreenStatus: "passed"
+			});
+			db.query.judgingAssignments.findMany.mockResolvedValue([
+				{ teamId: "team-1", tableId: tableA, startsAt: start },
+				{ teamId: "team-1", tableId: tableB, startsAt: addMinutes(start, 10) }
+			]);
 		});
-		db.query.judgingAssignments.findMany.mockResolvedValue([
-			{ teamId: "team-1", tableId: tableA, startsAt: start },
-			{ teamId: "team-1", tableId: tableB, startsAt: addMinutes(start, 10) }
-		]);
-		await judgingTablesRouter
-			.createCaller(context())
-			.addTeam({ roundId, teamId: "late-team" });
-		expect(write.values).toHaveBeenCalledWith([
-			{ teamId: "late-team", tableId: tableB, startsAt: start },
-			{ teamId: "late-team", tableId: tableA, startsAt: addMinutes(start, 10) }
-		]);
+
+		it("previews back-to-back free slots at different tables", async () => {
+			await expect(
+				judgingTablesRouter
+					.createCaller(context())
+					.previewLateTeamSlots({ roundId })
+			).resolves.toEqual(slots);
+			expect(db.insert).not.toHaveBeenCalled();
+		});
+
+		it("adds the team to the previewed slots", async () => {
+			await expect(
+				judgingTablesRouter
+					.createCaller(context())
+					.addTeam({ roundId, teamId: "late-team", ...slots })
+			).resolves.toEqual(slots);
+			expect(write.values).toHaveBeenCalledWith([
+				{ teamId: "late-team", tableId: tableB, startsAt: start },
+				{
+					teamId: "late-team",
+					tableId: tableA,
+					startsAt: addMinutes(start, 10)
+				}
+			]);
+		});
+
+		it("refuses slots that are no longer the next free pair", async () => {
+			await expect(
+				judgingTablesRouter.createCaller(context()).addTeam({
+					roundId,
+					teamId: "late-team",
+					first: { tableId: tableA, startsAt: addMinutes(start, 20) },
+					second: { tableId: tableB, startsAt: addMinutes(start, 30) }
+				})
+			).rejects.toMatchObject({ code: "CONFLICT" });
+			expect(db.insert).not.toHaveBeenCalled();
+		});
+
+		it("skips slots that start before the team could arrive", async () => {
+			vi.useFakeTimers({ toFake: ["Date"] });
+			vi.setSystemTime(addMinutes(start, 5));
+			try {
+				// The free 0 and 10 slots are past or inside the arrival buffer.
+				await expect(
+					judgingTablesRouter
+						.createCaller(context())
+						.previewLateTeamSlots({ roundId })
+				).resolves.toMatchObject({
+					first: { startsAt: addMinutes(start, 20) },
+					second: { startsAt: addMinutes(start, 30) }
+				});
+			} finally {
+				vi.useRealTimers();
+			}
+		});
 	});
 
 	it("only moves judges to tables in the same round", async () => {

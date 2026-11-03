@@ -439,23 +439,23 @@ describe("dashboard team rows", () => {
 		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 	});
 
-	it("locks future teams and opens scoring when the slot starts", () => {
+	it("locks future teams and opens scoring 15 minutes before the slot", () => {
 		const team = assignment();
 		const { rerender } = render(
 			<JudgeTeamRow
 				assignment={team}
 				criteria={[main]}
-				currentTime={new Date(now.getTime() - 60_000)}
+				currentTime={new Date(now.getTime() - 16 * 60_000)}
 				scoresReleased={false}
 			/>
 		);
-		expect(screen.getByText("In 1 min")).toBeInTheDocument();
+		expect(screen.getByText("In 16 min")).toBeInTheDocument();
 		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 		rerender(
 			<JudgeTeamRow
 				assignment={team}
 				criteria={[main]}
-				currentTime={now}
+				currentTime={new Date(now.getTime() - 15 * 60_000)}
 				scoresReleased={false}
 			/>
 		);
@@ -507,7 +507,7 @@ describe("dashboard team rows", () => {
 					scores: [score("main", 1), score("sidepot", 4)]
 				})}
 				criteria={[main, { ...sidepot, name: "Best AI" }]}
-				currentTime={new Date(now.getTime() - 1)}
+				currentTime={new Date(now.getTime() - 60 * 60_000)}
 				scoresReleased={false}
 			/>
 		);
@@ -539,7 +539,7 @@ describe("dashboard team rows", () => {
 			<JudgeTeamRow
 				assignment={assignment({ scores: [score("main", 4)] })}
 				criteria={[main, { ...main, id: "technical", name: "Technical" }]}
-				currentTime={new Date(now.getTime() - 60_000)}
+				currentTime={new Date(now.getTime() - 60 * 60_000)}
 				scoresReleased={false}
 			/>
 		);

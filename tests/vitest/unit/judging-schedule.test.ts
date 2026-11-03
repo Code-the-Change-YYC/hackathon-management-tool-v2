@@ -224,7 +224,8 @@ describe("findLateTeamSlots", () => {
 		tableIds: ["t1", "t2"],
 		slotMinutes: 10,
 		presentationMinutes: 8,
-		windowEnd: at(180)
+		windowEnd: at(180),
+		notBefore: at(0)
 	};
 
 	it("uses back-to-back free slots at two different tables", () => {
@@ -260,6 +261,39 @@ describe("findLateTeamSlots", () => {
 		).toEqual({
 			first: { tableId: "t1", startsAt: at(50) },
 			second: { tableId: "t2", startsAt: at(60) }
+		});
+	});
+
+	it("skips free slots that start before notBefore", () => {
+		expect(
+			findLateTeamSlots({
+				...base,
+				notBefore: at(5),
+				assignments: [
+					{ tableId: "t1", startsAt: at(0) },
+					{ tableId: "t2", startsAt: at(10) },
+					{ tableId: "t1", startsAt: at(20) }
+				]
+			})
+		).toEqual({
+			first: { tableId: "t1", startsAt: at(10) },
+			second: { tableId: "t2", startsAt: at(20) }
+		});
+	});
+
+	it("goes past the last slot when every slot before notBefore is gone", () => {
+		expect(
+			findLateTeamSlots({
+				...base,
+				notBefore: at(65),
+				assignments: [
+					{ tableId: "t1", startsAt: at(0) },
+					{ tableId: "t2", startsAt: at(10) }
+				]
+			})
+		).toEqual({
+			first: { tableId: "t1", startsAt: at(70) },
+			second: { tableId: "t2", startsAt: at(80) }
 		});
 	});
 

@@ -1,5 +1,6 @@
 import { addMinutes, differenceInMinutes } from "date-fns";
 import { formatTime as formatClockTime, formatLongDate } from "@/lib/datetime";
+import { getScoringOpensAt } from "@/lib/judging";
 import type { RouterOutputs } from "@/trpc/react";
 
 export type JudgeAssignment =
@@ -37,7 +38,7 @@ export function getSlotStatus(startsAt: Date, currentTime: Date) {
 }
 
 export function isScoringOpen(assignment: JudgeAssignment, currentTime: Date) {
-	return assignment.startsAt <= currentTime;
+	return getScoringOpensAt(assignment.startsAt) <= currentTime;
 }
 
 export function getPresentationEnd(assignment: JudgeAssignment) {

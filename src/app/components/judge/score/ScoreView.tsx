@@ -10,6 +10,7 @@ import {
 	EmptyTitle
 } from "@/app/components/ui/empty";
 import { useCurrentTime } from "@/hooks/use-current-time";
+import { getScoringOpensAt } from "@/lib/judging";
 import {
 	type Criterion,
 	formatTime,
@@ -64,7 +65,8 @@ function JudgeScorecard({
 	if (!canScoreAssignment(assignment, currentTime))
 		return (
 			<ScoreMessage title="Scoring has not opened yet">
-				You can score this team from {formatTime(assignment.startsAt)}.
+				You can score this team from{" "}
+				{formatTime(getScoringOpensAt(assignment.startsAt))}.
 			</ScoreMessage>
 		);
 

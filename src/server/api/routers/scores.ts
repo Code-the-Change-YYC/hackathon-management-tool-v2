@@ -1,7 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { MAIN_CRITERION_MAX_SCORE } from "@/lib/judging";
+import {
+	getScoringOpensAt,
+	MAIN_CRITERION_MAX_SCORE,
+	SCORING_OPENS_EARLY_MINUTES
+} from "@/lib/judging";
 import { submittedScorecards } from "@/server/api/judging-results";
 import { areScoresReleased } from "@/server/api/participant-judging";
 import {
@@ -383,7 +387,7 @@ export const scoresRouter = createTRPCRouter({
 					message: "Complete every criterion for this round before submitting."
 				});
 			}
-			if (assignment.startsAt > new Date()) {
+			if (getScoringOpensAt(assignment.startsAt) > new Date()) {
 				const existing = await ctx.db.query.judgingScores.findFirst({
 					where: and(
 						eq(judgingScores.assignmentId, assignmentId),
@@ -393,7 +397,7 @@ export const scoresRouter = createTRPCRouter({
 				if (!existing)
 					throw new TRPCError({
 						code: "FORBIDDEN",
-						message: "Scoring opens at the team's scheduled time."
+						message: `Scoring opens ${SCORING_OPENS_EARLY_MINUTES} minutes before the team's scheduled time.`
 					});
 			}
 			const criteriaById = new Map(criteriaRows.map((row) => [row.id, row]));

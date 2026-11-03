@@ -201,7 +201,7 @@ export function FinalistRow({
 				<span className="shrink-0 font-semibold text-primary">
 					{formatPlace(place)}
 				</span>
-			) : isScoringOpen(assignment, currentTime) ? null : (
+			) : assignment.startsAt <= currentTime ? null : (
 				<span className="shrink-0 text-muted-foreground text-sm">
 					{getSlotStatus(assignment.startsAt, currentTime)}
 				</span>

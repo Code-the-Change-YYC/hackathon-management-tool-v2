@@ -162,6 +162,19 @@ describe("individual scorecard API", () => {
 		db.query.judgingScores.findFirst.mockResolvedValue({ judgeId: "judge-a" });
 		await expect(caller().createMany(valid)).resolves.toEqual([]);
 	});
+
+	it("opens scoring 15 minutes before the team's scheduled time", async () => {
+		db.query.judgingAssignments.findFirst.mockResolvedValue({
+			startsAt: new Date(Date.now() + 10 * 60_000),
+			table: {
+				roundId: "round",
+				judges: [{ judgeId: "judge-a" }],
+				round: { kind: "panel", publishedAt: new Date(0) }
+			}
+		});
+		db.query.judgingScores.findFirst.mockResolvedValue(undefined);
+		await expect(caller().createMany(valid)).resolves.toEqual([]);
+	});
 	it("prevents editing another judge's score through the single-score endpoint", async () => {
 		db.query.judgingScores.findFirst.mockResolvedValue(undefined);
 		await expect(

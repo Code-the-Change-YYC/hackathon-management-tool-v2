@@ -24,6 +24,7 @@ import {
 	TableHeader,
 	TableRow
 } from "@/app/components/ui/table";
+import { useCurrentTime } from "@/hooks/use-current-time";
 import { useRefresh } from "@/hooks/use-refresh";
 import { formatTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
@@ -106,6 +107,7 @@ export function PanelSchedule({
 }) {
 	const { confirm, dialogProps } = useConfirmDialog();
 	const { isRefreshing, refresh } = useRefresh();
+	const now = useCurrentTime();
 	const [openDialog, setOpenDialog] = useState<OpenDialog>(null);
 	const removeTeam = api.judgingTables.removeTeam.useMutation({
 		onError: (error) => toast.error(error.message),
@@ -217,9 +219,15 @@ export function PanelSchedule({
 									</TableCell>
 								</TableRow>
 							) : (
-								<TableRow key={row.startsAt.getTime()}>
+								<TableRow
+									className={cn(row.startsAt <= now && "bg-muted/50")}
+									key={row.startsAt.getTime()}
+								>
 									<TableCell className="px-3 py-2 tabular-nums">
 										{formatTime(row.startsAt)}
+										{row.startsAt <= now ? (
+											<span className="sr-only"> (started)</span>
+										) : null}
 									</TableCell>
 									{row.cells.map((assignment, index) => {
 										const status = assignment
@@ -269,7 +277,7 @@ export function PanelSchedule({
 													</span>
 												) : (
 													<span className="block py-1 pl-2 text-muted-foreground">
-														Free
+														{row.startsAt <= now ? "Unused" : "Free"}
 													</span>
 												)}
 											</TableCell>

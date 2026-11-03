@@ -181,13 +181,15 @@ export function buildPanelSchedule(
 
 type ExistingAssignment = { tableId: string; startsAt: Date };
 
-// Finds two back-to-back free slots at different tables for a late team.
+// Finds the earliest two back-to-back free slots at different tables for a
+// late team, starting no earlier than notBefore.
 export function findLateTeamSlots(input: {
 	tableIds: string[];
 	assignments: ExistingAssignment[];
 	slotMinutes: number;
 	presentationMinutes: number;
 	windowEnd: Date;
+	notBefore: Date;
 }) {
 	const times = [
 		...new Set(input.assignments.map((a) => a.startsAt.getTime()))
@@ -195,7 +197,14 @@ export function findLateTeamSlots(input: {
 	const last = times.at(-1);
 	if (last === undefined) return null;
 	const slotMs = input.slotMinutes * 60_000;
-	times.push(last + slotMs, last + slotMs * 2);
+	// Every slot after the last one is free, up to the end of the round.
+	for (
+		let time = last + slotMs;
+		time < input.windowEnd.getTime();
+		time += slotMs
+	) {
+		times.push(time);
+	}
 
 	const freeTables = (time: number) =>
 		input.tableIds.filter(
@@ -206,6 +215,7 @@ export function findLateTeamSlots(input: {
 		);
 
 	for (const time of times) {
+		if (time < input.notBefore.getTime()) continue;
 		const next = time + slotMs;
 		if (!times.includes(next)) continue;
 		if (
