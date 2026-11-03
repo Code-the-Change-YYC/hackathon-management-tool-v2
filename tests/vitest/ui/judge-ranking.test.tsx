@@ -108,7 +108,7 @@ describe("ranking finalists", () => {
 		expect(list.map((item) => item.textContent)).toEqual([
 			"1stCedar3 pts",
 			"2ndByte2 pts",
-			"3rdDelta1 pts"
+			"3rdDelta1 pt"
 		]);
 		fireEvent.click(screen.getByRole("button", { name: "Submit ranking" }));
 		await waitFor(() =>

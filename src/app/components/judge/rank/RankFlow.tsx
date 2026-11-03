@@ -144,7 +144,9 @@ function ReviewStep({
 										{finalist?.team.name}
 									</span>
 									<span className="shrink-0 text-muted-foreground text-sm tabular-nums">
-										{getBallotPoints(place)} pts
+										{getBallotPoints(place) === 1
+											? "1 pt"
+											: `${getBallotPoints(place)} pts`}
 									</span>
 									<RightLine
 										aria-hidden
