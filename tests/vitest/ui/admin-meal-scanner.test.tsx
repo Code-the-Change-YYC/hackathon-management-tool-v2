@@ -144,7 +144,8 @@ describe("admin meal scanner", () => {
 			})
 		);
 		expect(mocks.success).toHaveBeenCalledWith(
-			`Alex Chen checked in at ${formatTime(checkedInAt)}. Dietary restrictions: Halal, Gluten-free.`
+			`Alex Chen checked in at ${formatTime(checkedInAt)}. Dietary restrictions: Halal, Gluten-free.`,
+			{ duration: 10_000 }
 		);
 		expect(
 			screen.getByRole("textbox", { name: "Search attendees by name" })
@@ -185,6 +186,7 @@ describe("admin meal scanner", () => {
 		expect(mocks.error).toHaveBeenCalledWith(
 			`Sam Patel already checked in at ${formatTime(checkedInAt)}.`,
 			{
+				duration: 10_000,
 				style: {
 					background: "var(--destructive)",
 					borderColor: "var(--destructive)",
