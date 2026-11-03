@@ -123,6 +123,14 @@ export function PanelSchedule({
 	const unscheduledTeams = passedTeams.filter(
 		(team) => !scheduledTeamIds.has(team.id)
 	);
+	// Scores keep a team in the schedule, so only unscored teams can be removed.
+	const scoredTeamIds = new Set(
+		tables.flatMap((table) =>
+			table.assignments
+				.filter((assignment) => assignment.scoredJudgeCount > 0)
+				.map((assignment) => assignment.team.id)
+		)
+	);
 
 	async function requestRemove(assignment: Assignment) {
 		const confirmed = await confirm({
@@ -245,21 +253,19 @@ export function PanelSchedule({
 														) : (
 															assignment.team.name
 														)}
-														<Button
-															aria-label={`Remove ${assignment.team.name} from the schedule`}
-															className={cn(
-																status === "none" && "text-muted-foreground",
-																status === "complete" &&
-																	"hover:bg-white/20 hover:text-primary-foreground"
-															)}
-															disabled={removeTeam.isPending || isRefreshing}
-															onClick={() => void requestRemove(assignment)}
-															size="icon-xs"
-															title="Remove from the schedule"
-															variant="ghost"
-														>
-															<CloseLine />
-														</Button>
+														{scoredTeamIds.has(assignment.team.id) ? null : (
+															<Button
+																aria-label={`Remove ${assignment.team.name} from the schedule`}
+																className="text-muted-foreground"
+																disabled={removeTeam.isPending || isRefreshing}
+																onClick={() => void requestRemove(assignment)}
+																size="icon-xs"
+																title="Remove from the schedule"
+																variant="ghost"
+															>
+																<CloseLine />
+															</Button>
+														)}
 													</span>
 												) : (
 													<span className="block py-1 pl-2 text-muted-foreground">
