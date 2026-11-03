@@ -104,7 +104,7 @@ describe("admin teams procedures", () => {
 		expect(mocks.transaction).not.toHaveBeenCalled();
 	});
 
-	it("returns teams with member names, codes, and the rounds they advanced past", async () => {
+	it("returns teams with member names, codes, scoring and finalist status", async () => {
 		mocks.findMany.mockResolvedValue([
 			{
 				id: "team-1",
@@ -132,19 +132,47 @@ describe("admin teams procedures", () => {
 				name: "Round 1",
 				kind: "panel",
 				tables: [
-					{ assignments: [{ teamId: "team-1" }] },
-					{ assignments: [{ teamId: "team-2" }] }
+					{
+						assignments: [
+							{ id: "alpha-1", teamId: "team-1" },
+							{ id: "beta-1", teamId: "team-2" }
+						]
+					},
+					{
+						assignments: [
+							{ id: "beta-2", teamId: "team-2" },
+							{ id: "alpha-2", teamId: "team-1" }
+						]
+					}
 				]
 			},
 			{
 				id: "round-2",
 				name: "Round 2",
 				kind: "panel",
-				tables: [{ assignments: [{ teamId: "team-1" }] }, { assignments: [] }]
+				tables: [{ assignments: [] }]
 			},
-			{ id: "final", name: "Final Round", kind: "final", tables: [] }
+			{
+				id: "final",
+				name: "Final Round",
+				kind: "final",
+				tables: [{ assignments: [{ id: "final-1", teamId: "team-1" }] }]
+			}
 		]);
 		mocks.judged.mockResolvedValue([{ teamId: "team-1" }]);
+		// Alpha is scored at both tables; Beta is still missing one.
+		mocks.execute.mockResolvedValue(
+			[
+				["alpha-1", true],
+				["alpha-2", true],
+				["beta-1", true],
+				["beta-2", false]
+			].map(([assignmentId, scored]) => ({
+				assignmentId,
+				roundId: "round-1",
+				scored
+			}))
+		);
 
 		const api = await caller("admin");
 
@@ -165,7 +193,8 @@ describe("admin teams procedures", () => {
 						{ name: "Ada Lovelace", email: "alpha@example.com" },
 						{ name: "Alan Turing", email: "teammate@example.com" }
 					],
-					rounds: { "round-1": true, "round-2": null }
+					rounds: { "round-1": true, "round-2": null },
+					finalist: true
 				},
 				{
 					id: "team-2",
@@ -175,11 +204,11 @@ describe("admin teams procedures", () => {
 					feedback: null,
 					judged: false,
 					members: [],
-					rounds: { "round-1": false, "round-2": null }
+					rounds: { "round-1": false, "round-2": null },
+					finalist: false
 				}
 			]
 		});
-		expect(mocks.execute).not.toHaveBeenCalled();
 	});
 
 	it("returns rankings to admins", async () => {

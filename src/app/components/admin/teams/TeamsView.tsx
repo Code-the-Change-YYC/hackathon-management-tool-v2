@@ -59,6 +59,8 @@ function matchesFilters(team: Team, filters: FilterOption[]) {
 		switch (filter) {
 			case "prescreen":
 				return team.prescreen === "passed";
+			case "finalist":
+				return team.finalist === true;
 			case "lt-two":
 				return team.members.length < 2;
 			default:

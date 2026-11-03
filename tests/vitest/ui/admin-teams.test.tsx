@@ -61,7 +61,8 @@ const teams: Team[] = [
 		feedback: null,
 		judged: false,
 		members: [{ name: "Bea Smith", email: "beta@example.com" }],
-		rounds: { "round-1": false, "round-2": null }
+		rounds: { "round-1": false, "round-2": null },
+		finalist: null
 	},
 	{
 		id: "team-alpha",
@@ -74,7 +75,8 @@ const teams: Team[] = [
 			{ name: "Ada Lovelace", email: "alpha@example.com" },
 			{ name: "Alan Turing", email: "teammate@example.com" }
 		],
-		rounds: { "round-1": true, "round-2": null }
+		rounds: { "round-1": true, "round-2": null },
+		finalist: null
 	},
 	{
 		id: "team-charlie",
@@ -88,7 +90,8 @@ const teams: Team[] = [
 			{ name: "Cam", email: "cam@example.com" },
 			{ name: "Cal", email: "cal@example.com" }
 		],
-		rounds: { "round-1": false, "round-2": null }
+		rounds: { "round-1": false, "round-2": null },
+		finalist: null
 	},
 	{
 		id: "team-delta",
@@ -98,7 +101,8 @@ const teams: Team[] = [
 		feedback: null,
 		judged: false,
 		members: [],
-		rounds: { "round-1": false, "round-2": null }
+		rounds: { "round-1": false, "round-2": null },
+		finalist: null
 	}
 ];
 
@@ -172,7 +176,7 @@ describe("admin teams UI", () => {
 		fireEvent.change(search, { target: { value: "" } });
 		fireEvent.click(screen.getByRole("button", { name: "Filter teams" }));
 		fireEvent.click(
-			screen.getByRole("menuitemcheckbox", { name: "Passed Round 1" })
+			screen.getByRole("menuitemcheckbox", { name: "Scored in Round 1" })
 		);
 		expect(screen.getByText("Showing 1 of 4 teams")).toBeInTheDocument();
 		expect(screen.getByText("Alpha Labs")).toBeInTheDocument();
@@ -185,11 +189,32 @@ describe("admin teams UI", () => {
 			})
 		);
 		expect(
-			screen.getByLabelText("Remove filter: Passed Round 1")
+			screen.getByLabelText("Remove filter: Scored in Round 1")
 		).toBeInTheDocument();
 		expect(
 			screen.getByLabelText("Remove filter: Sort by: name Descending (Z-A)")
 		).toBeInTheDocument();
+	});
+
+	it("shows and filters finalists", () => {
+		render(
+			<TeamsView
+				rounds={rounds}
+				teams={teams.map((team) => ({
+					...team,
+					finalist: team.id === "team-alpha"
+				}))}
+			/>
+		);
+		expect(
+			screen.getByRole("columnheader", { name: "Finalist" })
+		).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Filter teams" }));
+		fireEvent.click(
+			screen.getByRole("menuitemcheckbox", { name: "Finalists" })
+		);
+		expect(screen.getByText("Showing 1 of 4 teams")).toBeInTheDocument();
+		expect(screen.getByText("Alpha Labs")).toBeInTheDocument();
 	});
 
 	it("shows the pre-screening breakdown", () => {

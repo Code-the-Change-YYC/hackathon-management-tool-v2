@@ -33,6 +33,7 @@ import {
 	teamNameSchema
 } from "@/lib/validation/team";
 import { submittedScorecards } from "@/server/api/judging-results";
+import { getAssignmentScoring } from "@/server/api/participant-judging";
 import {
 	adminProcedure,
 	createTRPCRouter,
@@ -265,11 +266,11 @@ export const teamsRouter = createTRPCRouter({
 		return teams;
 	}),
 
-	// A team advanced past a round when the next round schedules it, so a round
-	// stays empty (null) until the next one is scheduled. The final round gets
-	// no column because winners aren't recorded.
+	// Each panel round's column says whether the team was fully scored there:
+	// null when it isn't scheduled in that round. finalist stays null until
+	// finalists are picked.
 	getTeamsWithMembers: adminProcedure.query(async ({ ctx }) => {
-		const [rows, rounds, judged] = await Promise.all([
+		const [rows, rounds, judged, scoring] = await Promise.all([
 			ctx.db.query.organization.findMany({
 				orderBy: [desc(organization.createdAt)],
 				columns: {
@@ -292,33 +293,44 @@ export const teamsRouter = createTRPCRouter({
 				with: {
 					tables: {
 						columns: {},
-						with: { assignments: { columns: { teamId: true } } }
+						with: { assignments: { columns: { id: true, teamId: true } } }
 					}
 				}
 			}),
 			ctx.db
 				.selectDistinct({ teamId: judgingAssignments.teamId })
 				.from(judgingAssignments)
-				.where(hasJudgingResults)
+				.where(hasJudgingResults),
+			getAssignmentScoring(ctx.db)
 		]);
 		const judgedTeamIds = new Set(judged.map(({ teamId }) => teamId));
+		const scoredIds = new Set(
+			scoring
+				.filter((assignment) => assignment.scored)
+				.map(({ assignmentId }) => assignmentId)
+		);
 
-		const advancedTeamIds = rounds.flatMap((round, index) => {
-			if (round.kind === "final") return [];
-			const teamIds = (rounds[index + 1]?.tables ?? []).flatMap((table) =>
-				table.assignments.map((assignment) => assignment.teamId)
-			);
-			return [
-				{
-					id: round.id,
-					name: round.name,
-					teamIds: teamIds.length > 0 ? new Set(teamIds) : null
+		const panelRounds = rounds
+			.filter((round) => round.kind !== "final")
+			.map((round) => {
+				// Each team's assignments in the round, and whether all are scored.
+				const teams = new Map<string, boolean>();
+				for (const { id, teamId } of round.tables.flatMap(
+					(table) => table.assignments
+				)) {
+					teams.set(teamId, (teams.get(teamId) ?? true) && scoredIds.has(id));
 				}
-			];
-		});
+				return { id: round.id, name: round.name, teams };
+			});
+		const finalistIds = new Set(
+			rounds
+				.filter((round) => round.kind === "final")
+				.flatMap((round) => round.tables)
+				.flatMap((table) => table.assignments.map(({ teamId }) => teamId))
+		);
 
 		return {
-			rounds: advancedTeamIds.map(({ id, name }) => ({ id, name })),
+			rounds: panelRounds.map(({ id, name }) => ({ id, name })),
 			teams: rows.map(({ members, ...team }) => ({
 				id: team.id,
 				name: team.name,
@@ -331,13 +343,11 @@ export const teamsRouter = createTRPCRouter({
 					name: user.name,
 					email: user.email
 				})),
-				// Whether the team advanced past each round, by round ID.
+				// Whether every judge at the team's tables scored it, by round ID.
 				rounds: Object.fromEntries(
-					advancedTeamIds.map(({ id, teamIds }) => [
-						id,
-						teamIds ? teamIds.has(team.id) : null
-					])
-				)
+					panelRounds.map(({ id, teams }) => [id, teams.get(team.id) ?? null])
+				),
+				finalist: finalistIds.size > 0 ? finalistIds.has(team.id) : null
 			}))
 		};
 	}),

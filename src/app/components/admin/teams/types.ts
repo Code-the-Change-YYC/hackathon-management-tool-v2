@@ -4,7 +4,11 @@ type TeamsData = RouterOutputs["teams"]["getTeamsWithMembers"];
 export type Team = TeamsData["teams"][number];
 export type TeamRound = TeamsData["rounds"][number];
 
-export type FilterOption = "prescreen" | "lt-two" | `round:${string}`;
+export type FilterOption =
+	| "prescreen"
+	| "finalist"
+	| "lt-two"
+	| `round:${string}`;
 export type SortOption = "name-asc" | "name-desc";
 
 export function getFilterOptions(
@@ -14,8 +18,9 @@ export function getFilterOptions(
 		{ value: "prescreen", label: "Passed pre-screening" },
 		...rounds.map((round) => ({
 			value: `round:${round.id}` as const,
-			label: `Passed ${round.name}`
+			label: `Scored in ${round.name}`
 		})),
+		{ value: "finalist", label: "Finalists" },
 		{ value: "lt-two", label: "Less than 2 members" }
 	];
 }

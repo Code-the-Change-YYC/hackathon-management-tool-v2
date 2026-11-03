@@ -67,6 +67,7 @@ export function TeamsTable({ teams, rounds, onDelete }: TeamsTableProps) {
 								{round.name}
 							</TableHead>
 						))}
+						<TableHead className="min-w-28">Finalist</TableHead>
 						<TableHead className="min-w-52">Feedback</TableHead>
 						<TableHead className="min-w-64">Members</TableHead>
 						<TableHead className="w-12 pr-4">
@@ -95,6 +96,9 @@ export function TeamsTable({ teams, rounds, onDelete }: TeamsTableProps) {
 									<OptionalBooleanIcon value={team.rounds[round.id] ?? null} />
 								</TableCell>
 							))}
+							<TableCell>
+								<OptionalBooleanIcon value={team.finalist} />
+							</TableCell>
 							<TableCell className="whitespace-normal">
 								{team.feedback ?? "-"}
 							</TableCell>
