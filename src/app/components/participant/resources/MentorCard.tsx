@@ -18,6 +18,10 @@ export default function MentorCard({ mentor }: { mentor: Mentor }) {
 	const name = getString(fields.name)?.trim() ?? "Mentor";
 	const role = getString(fields.role)?.trim();
 	const discordUrl = getHttpUrl(fields.discord);
+	// Editors may enter a plain Discord username instead of a profile link
+	const discordHandle = discordUrl
+		? undefined
+		: getString(fields.discord)?.trim() || undefined;
 	const image = getAssetUrl(fields.image)?.trim();
 
 	const content = (
@@ -44,6 +48,12 @@ export default function MentorCard({ mentor }: { mentor: Mentor }) {
 				<div className="flex items-center gap-2 text-muted-foreground text-sm">
 					<DiscordFill aria-hidden="true" className="size-4 shrink-0" />
 					Message on Discord
+				</div>
+			) : null}
+			{discordHandle ? (
+				<div className="flex min-w-0 items-center gap-2 text-muted-foreground text-sm">
+					<DiscordFill aria-hidden="true" className="size-4 shrink-0" />
+					<span className="truncate">{discordHandle}</span>
 				</div>
 			) : null}
 		</>
