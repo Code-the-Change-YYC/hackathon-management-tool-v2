@@ -38,9 +38,9 @@ test.describe("admin meals", () => {
 	);
 
 	// Given active, draft, ended, and non-food events exist
-	// When I view the scanner banner
-	// Then it selects the earliest active, unended food event.
-	test("selects the next active unended food event", async ({
+	// When the earlier meal's configured last call has passed
+	// Then the scanner selects the next active meal.
+	test("selects the next meal after the previous last call", async ({
 		authenticatedPage: page,
 		createMeal
 	}) => {
@@ -54,7 +54,7 @@ test.describe("admin meals", () => {
 		const next = await createMeal({
 			title: "Next breakfast",
 			status: EventStatus.ACTIVE,
-			startTime: new Date(now + 30 * minute),
+			startTime: new Date(now + 10 * minute),
 			endTime: new Date(now + 90 * minute)
 		});
 		await createMeal({
@@ -84,6 +84,46 @@ test.describe("admin meals", () => {
 		await expect(
 			page.getByRole("heading", { name: later.title })
 		).toBeVisible();
+		await page.getByRole("button", { name: "Open scanner" }).click();
+		await expect(page.getByRole("dialog")).toContainText(`Meal: ${next.title}`);
+	});
+
+	// After a meal ends, the scanner stays on it until its configured last call.
+	test("keeps scanning the previous meal until last call ends", async ({
+		authenticatedPage: page,
+		createMeal
+	}) => {
+		const now = Date.now();
+		const previous = await createMeal({
+			title: "Previous dinner",
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - 90 * minute),
+			endTime: new Date(now - 30 * minute),
+			lastCallEndsAt: new Date(now + 15 * minute)
+		});
+		const next = await createMeal({
+			title: "Next breakfast",
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now + 30 * minute),
+			endTime: new Date(now + 90 * minute)
+		});
+		await page.goto(path);
+		await expect(
+			page.getByText(`Open scanner to scan meal tickets for ${previous.title}`)
+		).toBeVisible();
+		await page.getByRole("button", { name: "Open scanner" }).click();
+		await expect(page.getByRole("dialog")).toContainText(
+			`Meal: ${previous.title}`
+		);
+		await page
+			.getByRole("dialog")
+			.getByRole("button", { name: "Close" })
+			.click();
+
+		await db
+			.update(event)
+			.set({ lastCallEndsAt: new Date(now - 5 * minute) })
+			.where(eq(event.id, previous.id));
 		await page.getByRole("button", { name: "Open scanner" }).click();
 		await expect(page.getByRole("dialog")).toContainText(`Meal: ${next.title}`);
 	});

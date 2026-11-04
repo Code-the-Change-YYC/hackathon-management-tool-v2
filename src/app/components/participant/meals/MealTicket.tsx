@@ -13,7 +13,7 @@ type EventTicket = RouterOutputs["events"]["rotateParticipantEventTicket"];
 type TicketEvent = EventTicket["event"];
 
 function getMealTiming(
-	event: Pick<TicketEvent, "startTime" | "endTime">,
+	event: Pick<TicketEvent, "startTime" | "endTime" | "availableUntil">,
 	now: Date
 ) {
 	const endTime = formatTime(event.endTime);
@@ -23,7 +23,7 @@ function getMealTiming(
 	}
 
 	if (isAfter(now, event.endTime)) {
-		return `Ended at ${endTime}.`;
+		return `Still available until ${formatTime(event.availableUntil)}.`;
 	}
 
 	const minutesUntilStart = Math.max(

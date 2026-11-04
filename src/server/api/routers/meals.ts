@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
@@ -7,7 +7,10 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import { event } from "@/server/db/event-schema";
-import { createMealScannerLease } from "@/server/lib/event-tickets";
+import {
+	createMealScannerLease,
+	mealAvailabilityEnd
+} from "@/server/lib/event-tickets";
 import { EventStatus, EventType } from "@/types/types";
 
 export const mealsRouter = createTRPCRouter({
@@ -29,16 +32,15 @@ export const mealsRouter = createTRPCRouter({
 	}),
 
 	getNextMeal: protectedProcedure.query(async ({ ctx }) => {
-		const nextMeal = await ctx.db.query.event.findFirst({
+		const meals = await ctx.db.query.event.findMany({
 			where: and(
 				eq(event.type, EventType.FOOD),
-				eq(event.status, EventStatus.ACTIVE),
-				gt(event.endTime, new Date())
+				eq(event.status, EventStatus.ACTIVE)
 			),
-			orderBy: [asc(event.startTime)]
+			orderBy: [asc(event.startTime), asc(event.id)]
 		});
-
-		return nextMeal ?? null;
+		const now = new Date();
+		return meals.find((meal) => mealAvailabilityEnd(meal) > now) ?? null;
 	}),
 
 	beginMealScan: adminProcedure
@@ -48,11 +50,11 @@ export const mealsRouter = createTRPCRouter({
 				where: and(
 					eq(event.id, input.eventId),
 					eq(event.type, EventType.FOOD),
-					eq(event.status, EventStatus.ACTIVE),
-					gt(event.endTime, new Date())
+					eq(event.status, EventStatus.ACTIVE)
 				)
 			});
-			if (!meal) {
+			const availableUntil = meal ? mealAvailabilityEnd(meal) : null;
+			if (!meal || !availableUntil || availableUntil <= new Date()) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
 					message:
@@ -63,7 +65,7 @@ export const mealsRouter = createTRPCRouter({
 				lease: createMealScannerLease(
 					meal.id,
 					ctx.session.user.id,
-					meal.endTime
+					availableUntil
 				)
 			};
 		})

@@ -88,31 +88,54 @@ export function createEventFormSchema(hackathonDates: HackathonDates | null) {
 				navigationUrl: optionalText.pipe(eventNavigationUrlSchema.nullable()),
 				date: dateField(hackathonDates),
 				startTime: timeField("Choose a start time."),
-				endTime: timeField("Choose an end time.")
+				endTime: timeField("Choose an end time."),
+				lastCallEndTime: z.union([
+					timeField("Choose a last call end time."),
+					z.literal("")
+				])
 			})
 			.refine((data) => data.endTime > data.startTime, {
 				message: "End time must be after start time.",
 				path: ["endTime"]
 			})
-			// Both times fall on the one date, in Calgary time.
-			.transform(({ published, date, startTime, endTime, ...data }, ctx) => {
-				const start = fromDateTimeLocalValue(`${date}T${startTime}`);
-				const end = fromDateTimeLocalValue(`${date}T${endTime}`);
-				if (!start || !end) {
-					ctx.addIssue({
-						code: "custom",
-						message: "Choose a date.",
-						path: ["date"]
-					});
-					return z.NEVER;
+			.refine(
+				(data) =>
+					data.type !== EventType.FOOD ||
+					!data.lastCallEndTime ||
+					data.lastCallEndTime >= data.endTime,
+				{
+					message: "Last call must end at or after the meal end time.",
+					path: ["lastCallEndTime"]
 				}
-				return {
-					...data,
-					startTime: start,
-					endTime: end,
-					status: published ? EventStatus.ACTIVE : EventStatus.DRAFT
-				};
-			})
+			)
+			// Both times fall on the one date, in Calgary time.
+			.transform(
+				(
+					{ published, date, startTime, endTime, lastCallEndTime, ...data },
+					ctx
+				) => {
+					const start = fromDateTimeLocalValue(`${date}T${startTime}`);
+					const end = fromDateTimeLocalValue(`${date}T${endTime}`);
+					if (!start || !end) {
+						ctx.addIssue({
+							code: "custom",
+							message: "Choose a date.",
+							path: ["date"]
+						});
+						return z.NEVER;
+					}
+					return {
+						...data,
+						startTime: start,
+						endTime: end,
+						lastCallEndsAt:
+							data.type === EventType.FOOD && lastCallEndTime
+								? fromDateTimeLocalValue(`${date}T${lastCallEndTime}`)
+								: null,
+						status: published ? EventStatus.ACTIVE : EventStatus.DRAFT
+					};
+				}
+			)
 	);
 }
 
@@ -129,5 +152,6 @@ export const EMPTY_EVENT_FORM: EventFormInput = {
 	navigationUrl: "",
 	date: "",
 	startTime: "",
-	endTime: ""
+	endTime: "",
+	lastCallEndTime: ""
 };

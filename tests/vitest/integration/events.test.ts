@@ -32,7 +32,9 @@ let participant: Session;
 let originalSettings: typeof hackathonSettings.$inferSelect | undefined;
 const createdIds: string[] = [];
 
-async function addEvent(overrides: Partial<typeof input> = {}) {
+async function addEvent(
+	overrides: Partial<typeof input> & { lastCallEndsAt?: Date | null } = {}
+) {
 	const created = await admin.caller.events.addEvent({
 		...input,
 		...overrides
@@ -189,6 +191,74 @@ describe("events admin mutations", () => {
 			.from(eventTicket)
 			.where(eq(eventTicket.eventId, created.id));
 		expect(ticket?.expiresAt).toEqual(endTime);
+	});
+
+	it("defaults meal last call to its end and rejects overlapping meal starts", async () => {
+		const mealStart = new Date("2026-11-08T18:00:00Z");
+		const mealEnd = new Date("2026-11-08T19:00:00Z");
+		const first = await addEvent({
+			type: EventType.FOOD,
+			startTime: mealStart,
+			endTime: mealEnd,
+			lastCallEndsAt: new Date("2026-11-08T19:30:00Z")
+		});
+		const next = await addEvent({
+			type: EventType.FOOD,
+			startTime: new Date("2026-11-08T20:00:00Z"),
+			endTime: new Date("2026-11-08T21:00:00Z")
+		});
+		expect(next.lastCallEndsAt).toBeNull();
+
+		await expect(
+			admin.caller.events.addEvent({
+				...input,
+				type: EventType.FOOD,
+				startTime: new Date("2026-11-08T19:15:00Z"),
+				endTime: new Date("2026-11-08T19:45:00Z")
+			})
+		).rejects.toMatchObject({
+			code: "BAD_REQUEST",
+			message: expect.stringContaining("overlap")
+		});
+		await expect(
+			admin.caller.events.updateEvent({
+				...input,
+				id: next.id,
+				type: EventType.FOOD,
+				startTime: new Date("2026-11-08T19:15:00Z"),
+				endTime: new Date("2026-11-08T21:00:00Z")
+			})
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		await expect(
+			admin.caller.events.updateEvent({
+				...input,
+				id: first.id,
+				type: EventType.FOOD,
+				startTime: mealStart,
+				endTime: mealEnd,
+				lastCallEndsAt: new Date("2026-11-08T20:01:00Z")
+			})
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		await expect(
+			admin.caller.events.updateEvent({
+				...input,
+				id: first.id,
+				type: EventType.FOOD,
+				startTime: mealStart,
+				endTime: mealEnd,
+				lastCallEndsAt: new Date("2026-11-08T18:30:00Z")
+			})
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		await expect(
+			admin.caller.events.updateEvent({
+				...input,
+				id: first.id,
+				type: EventType.FOOD,
+				startTime: mealStart,
+				endTime: mealEnd,
+				lastCallEndsAt: next.startTime
+			})
+		).resolves.toMatchObject({ lastCallEndsAt: next.startTime });
 	});
 
 	it("deletes an event with its check-ins", async () => {

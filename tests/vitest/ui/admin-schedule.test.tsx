@@ -53,6 +53,7 @@ const lunch: AdminEvent = {
 	status: EventStatus.DRAFT,
 	startTime: new Date("2026-11-07T19:00:00Z"),
 	endTime: new Date("2026-11-07T20:00:00Z"),
+	lastCallEndsAt: null,
 	createdAt: new Date(),
 	updatedAt: new Date()
 };
@@ -162,8 +163,36 @@ describe("admin schedule", () => {
 				location: null,
 				navigationUrl: null,
 				startTime: new Date("2026-11-07T14:00:00-06:00"),
-				endTime: new Date("2026-11-07T15:00:00-06:00")
+				endTime: new Date("2026-11-07T15:00:00-06:00"),
+				lastCallEndsAt: null
 			})
+		);
+	});
+
+	it("offers a meal last call on creation and defaults it to the end time", async () => {
+		render(<ScheduleView events={[]} settings={null} />);
+		fireEvent.click(screen.getByRole("button", { name: "Add event" }));
+		expect(
+			screen.queryByLabelText("Last call ends (optional)")
+		).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("radio", { name: "Food" }));
+		expect(
+			screen.getByLabelText("Last call ends (optional)")
+		).toBeInTheDocument();
+		change("Title", "Breakfast");
+		change("Description", "Bagels");
+		await pickDay("Date", /November 7th, 2026/);
+		change("Starts", "09:00");
+		change("Ends", "10:00");
+		submit();
+		await waitFor(() =>
+			expect(mocks.add).toHaveBeenCalledWith(
+				expect.objectContaining({
+					type: EventType.FOOD,
+					lastCallEndsAt: null,
+					endTime: new Date("2026-11-07T10:00:00-06:00")
+				})
+			)
 		);
 	});
 
@@ -178,6 +207,7 @@ describe("admin schedule", () => {
 		).toHaveTextContent("Saturday, November 7, 2026");
 		expect(screen.getByLabelText("Starts")).toHaveValue("13:00");
 		expect(screen.getByLabelText("Ends")).toHaveValue("14:00");
+		expect(screen.getByLabelText("Last call ends (optional)")).toHaveValue("");
 		expect(
 			screen.getByRole("checkbox", { name: "Show on the participant schedule" })
 		).not.toBeChecked();
@@ -192,6 +222,29 @@ describe("admin schedule", () => {
 					status: EventStatus.DRAFT,
 					startTime: lunch.startTime,
 					endTime: lunch.endTime
+				})
+			)
+		);
+	});
+
+	it("lets admins set a later last call for food events", async () => {
+		render(<ScheduleView events={[lunch]} settings={null} />);
+		openMenu("Lunch");
+		fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
+		change("Last call ends (optional)", "13:00");
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		expect(
+			await screen.findByText(
+				"Last call must end at or after the meal end time."
+			)
+		).toBeInTheDocument();
+		expect(mocks.update).not.toHaveBeenCalled();
+		change("Last call ends (optional)", "14:30");
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await waitFor(() =>
+			expect(mocks.update).toHaveBeenCalledWith(
+				expect.objectContaining({
+					lastCallEndsAt: new Date("2026-11-07T14:30:00-06:00")
 				})
 			)
 		);

@@ -30,6 +30,7 @@ export const event = createTable(
 			.notNull(),
 		startTime: timestamp("start_time", { withTimezone: true }).notNull(),
 		endTime: timestamp("end_time", { withTimezone: true }).notNull(),
+		lastCallEndsAt: timestamp("last_call_ends_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
@@ -44,6 +45,10 @@ export const event = createTable(
 			sql`${table.type} in ('food', 'activity', 'project', 'ceremony')`
 		),
 		check("event_status_check", sql`${table.status} in ('draft', 'active')`),
+		check(
+			"event_last_call_check",
+			sql`${table.lastCallEndsAt} is null or (${table.type} = 'food' and ${table.lastCallEndsAt} >= ${table.endTime})`
+		),
 		index("event_type_status_start_time_idx").on(
 			table.type,
 			table.status,

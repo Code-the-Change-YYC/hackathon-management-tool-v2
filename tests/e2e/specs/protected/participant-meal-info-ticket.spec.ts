@@ -6,6 +6,7 @@ import { formatTime } from "@/lib/datetime";
 import type { AppRouter } from "@/server/api/root";
 import { db } from "@/server/db";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
+import { hashEventTicketToken } from "@/server/lib/event-tickets";
 import { EventStatus, EventType, Role } from "@/types/types";
 import { createTestUser, getTestUserCookies } from "../../../utils/auth";
 import {
@@ -135,6 +136,87 @@ test("shows an empty ticket with no QR when no active unended food meal exists",
 			where: eq(eventTicket.userId, authUser.id)
 		})
 	).toHaveLength(0);
+});
+
+// An ended meal remains the ticket until its configured last call.
+test("keeps an ended meal ticket usable until last call ends", async ({
+	authenticatedPage: page,
+	authUser,
+	createMeal,
+	baseURL
+}) => {
+	const now = Date.now();
+	const previous = await createMeal({
+		title: "Previous meal",
+		status: EventStatus.ACTIVE,
+		startTime: new Date(now - 90 * minute),
+		endTime: new Date(now - 30 * minute),
+		lastCallEndsAt: new Date(now + 15 * minute)
+	});
+	const next = await createMeal({
+		title: "Next meal",
+		status: EventStatus.ACTIVE,
+		startTime: new Date(now + 30 * minute),
+		endTime: new Date(now + 90 * minute)
+	});
+
+	await page.goto(mealInfoPath);
+	await expect(ticketSection(page)).toContainText(
+		`${previous.title} Ticket For`
+	);
+	await expect(ticketSection(page)).toContainText("Still available until");
+	const token = await readTicketToken(page);
+	const stored = await db.query.eventTicket.findFirst({
+		where: and(
+			eq(eventTicket.userId, authUser.id),
+			eq(eventTicket.eventId, previous.id)
+		)
+	});
+	expect(stored?.tokenHash).toBe(hashEventTicketToken(token));
+	expect(stored?.expiresAt).toEqual(previous.lastCallEndsAt);
+
+	const admin = await createTestUser({ role: Role.ADMIN });
+	try {
+		const origin = baseURL as string;
+		assertLocalE2EOrigin(origin);
+		const cookies = await getTestUserCookies(
+			admin.user.id,
+			new URL(origin).hostname
+		);
+		const client = createTRPCClient<AppRouter>({
+			links: [
+				httpLink({
+					url: `${origin}/api/trpc`,
+					transformer: superjson,
+					headers: {
+						cookie: cookies
+							.map(({ name, value }) => `${name}=${value}`)
+							.join("; ")
+					}
+				})
+			]
+		});
+		await expect(
+			client.events.redeemEventTicket.mutate({
+				eventId: previous.id,
+				token
+			})
+		).resolves.toMatchObject({ status: "checked_in" });
+
+		await page.reload();
+		await expect(ticketSection(page)).toContainText("Already checked in");
+		await expect(qrCode(page)).toHaveCount(0);
+
+		await db
+			.update(event)
+			.set({ lastCallEndsAt: new Date(now - 5 * minute) })
+			.where(eq(event.id, previous.id));
+		await page.reload();
+		await expect(ticketSection(page)).toContainText(`${next.title} Ticket For`);
+		await expect(qrCode(page)).toBeVisible();
+	} finally {
+		await admin.cleanup();
+	}
 });
 
 // Given I am a participant already checked in to the active meal

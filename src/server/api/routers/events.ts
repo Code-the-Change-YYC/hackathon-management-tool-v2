@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { formatDateKey, isSameCalgaryDay } from "@/lib/datetime";
 import { eventNavigationUrlSchema } from "@/lib/participant-events";
@@ -23,7 +23,8 @@ import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
 	createEventTicketToken,
 	hashEventTicketToken,
-	isValidMealScannerLease
+	isValidMealScannerLease,
+	mealAvailabilityEnd
 } from "@/server/lib/event-tickets";
 import {
 	EVENT_STATUSES,
@@ -45,7 +46,8 @@ const eventInputSchema = z
 		type: z.enum(EVENT_TYPES),
 		status: z.enum(EVENT_STATUSES),
 		startTime: z.coerce.date(),
-		endTime: z.coerce.date()
+		endTime: z.coerce.date(),
+		lastCallEndsAt: z.coerce.date().nullable().optional()
 	})
 	.refine((data) => data.endTime > data.startTime, {
 		message: "End time must be after start time.",
@@ -54,7 +56,17 @@ const eventInputSchema = z
 	.refine((data) => isSameCalgaryDay(data.startTime, data.endTime), {
 		message: "End time must be on the same day as the start time.",
 		path: ["endTime"]
-	});
+	})
+	.refine(
+		(data) =>
+			data.type !== EventType.FOOD ||
+			!data.lastCallEndsAt ||
+			data.lastCallEndsAt >= data.endTime,
+		{
+			message: "Last call must end at or after the meal end time.",
+			path: ["lastCallEndsAt"]
+		}
+	);
 
 async function assertDuringHackathon(db: typeof dbType, startTime: Date) {
 	const settings = await db.query.hackathonSettings.findFirst({
@@ -87,6 +99,36 @@ const ticketTokenSchema = z
 	.string()
 	.regex(EVENT_TICKET_TOKEN_PATTERN, "Invalid event ticket format.");
 
+function assertNoMealStartOverlap(
+	candidate: {
+		id?: string;
+		startTime: Date;
+		endTime: Date;
+		lastCallEndsAt: Date | null;
+	},
+	meals: {
+		id: string;
+		startTime: Date;
+		endTime: Date;
+		lastCallEndsAt: Date | null;
+	}[]
+) {
+	const lastCall = mealAvailabilityEnd(candidate);
+	const overlaps = meals.some(
+		(meal) =>
+			meal.id !== candidate.id &&
+			((meal.startTime >= candidate.startTime && meal.startTime < lastCall) ||
+				(candidate.startTime >= meal.startTime &&
+					candidate.startTime < mealAvailabilityEnd(meal)))
+	);
+	if (overlaps) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "A meal's last call cannot overlap another meal's start time."
+		});
+	}
+}
+
 function supportsQrTickets(type: EventType) {
 	return QR_EVENT_TYPES.some((qrType) => qrType === type);
 }
@@ -96,8 +138,24 @@ export const eventsRouter = createTRPCRouter({
 		.input(eventInputSchema)
 		.mutation(async ({ input, ctx }) => {
 			await assertDuringHackathon(ctx.db, input.startTime);
-			const [newEvent] = await ctx.db.insert(event).values(input).returning();
-			return newEvent;
+			return ctx.db.transaction(async (tx) => {
+				const values = {
+					...input,
+					lastCallEndsAt:
+						input.type === EventType.FOOD
+							? (input.lastCallEndsAt ?? null)
+							: null
+				};
+				if (values.type === EventType.FOOD) {
+					await tx.execute(sql`select pg_advisory_xact_lock(9917731)`);
+					const meals = await tx.query.event.findMany({
+						where: eq(event.type, EventType.FOOD)
+					});
+					assertNoMealStartOverlap(values, meals);
+				}
+				const [newEvent] = await tx.insert(event).values(values).returning();
+				return newEvent;
+			});
 		}),
 
 	updateEvent: adminProcedure
@@ -105,15 +163,43 @@ export const eventsRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input: { id, ...values } }) => {
 			await assertDuringHackathon(ctx.db, values.startTime);
 			return ctx.db.transaction(async (tx) => {
+				const current = await tx.query.event.findFirst({
+					where: eq(event.id, id)
+				});
+				if (!current) throw eventNotFound();
+				const updates = {
+					...values,
+					lastCallEndsAt:
+						values.type === EventType.FOOD
+							? (values.lastCallEndsAt ?? null)
+							: null
+				};
+				if (
+					updates.type === EventType.FOOD ||
+					current.type === EventType.FOOD
+				) {
+					await tx.execute(sql`select pg_advisory_xact_lock(9917731)`);
+					if (updates.type === EventType.FOOD) {
+						const meals = await tx.query.event.findMany({
+							where: eq(event.type, EventType.FOOD)
+						});
+						assertNoMealStartOverlap({ id, ...updates }, meals);
+					}
+				}
 				const [updated] = await tx
 					.update(event)
-					.set(values)
+					.set(updates)
 					.where(eq(event.id, id))
 					.returning();
 				if (!updated) throw eventNotFound();
 				await tx
 					.update(eventTicket)
-					.set({ expiresAt: updated.endTime })
+					.set({
+						expiresAt:
+							updated.type === EventType.FOOD
+								? mealAvailabilityEnd(updated)
+								: updated.endTime
+					})
 					.where(eq(eventTicket.eventId, id));
 				return updated;
 			});
@@ -176,7 +262,11 @@ export const eventsRouter = createTRPCRouter({
 				}
 
 				const now = new Date();
-				if (ticketEvent.endTime <= now) {
+				const availableUntil =
+					ticketEvent.type === EventType.FOOD
+						? mealAvailabilityEnd(ticketEvent)
+						: ticketEvent.endTime;
+				if (availableUntil <= now) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
 						message: "This event has ended."
@@ -207,7 +297,8 @@ export const eventsRouter = createTRPCRouter({
 					title: ticketEvent.title,
 					type: ticketEvent.type,
 					startTime: ticketEvent.startTime,
-					endTime: ticketEvent.endTime
+					endTime: ticketEvent.endTime,
+					availableUntil
 				};
 
 				if (attendance) {
@@ -225,13 +316,13 @@ export const eventsRouter = createTRPCRouter({
 						userId: ctx.session.user.id,
 						eventId: input.eventId,
 						tokenHash: hashEventTicketToken(token),
-						expiresAt: ticketEvent.endTime
+						expiresAt: availableUntil
 					})
 					.onConflictDoUpdate({
 						target: [eventTicket.userId, eventTicket.eventId],
 						set: {
 							tokenHash: hashEventTicketToken(token),
-							expiresAt: ticketEvent.endTime,
+							expiresAt: availableUntil,
 							updatedAt: now
 						}
 					});
@@ -268,7 +359,8 @@ export const eventsRouter = createTRPCRouter({
 						eventType: event.type,
 						eventStatus: event.status,
 						eventStartTime: event.startTime,
-						eventEndTime: event.endTime
+						eventEndTime: event.endTime,
+						eventLastCallEndsAt: event.lastCallEndsAt
 					})
 					.from(eventTicket)
 					.innerJoin(user, eq(eventTicket.userId, user.id))
@@ -324,6 +416,13 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
+				const availableUntil =
+					ticket.eventType === EventType.FOOD
+						? mealAvailabilityEnd({
+								endTime: ticket.eventEndTime,
+								lastCallEndsAt: ticket.eventLastCallEndsAt
+							})
+						: ticket.eventEndTime;
 				const canFinishMealLine =
 					ticket.eventType === EventType.FOOD &&
 					isValidMealScannerLease(
@@ -331,10 +430,12 @@ export const eventsRouter = createTRPCRouter({
 						ticket.eventId,
 						ctx.session.user.id,
 						now,
-						ticket.eventEndTime
+						availableUntil
 					);
 				if (
-					(ticket.expiresAt <= now || ticket.eventEndTime <= now) &&
+					(ticket.eventType === EventType.FOOD
+						? availableUntil <= now
+						: ticket.expiresAt <= now || ticket.eventEndTime <= now) &&
 					!canFinishMealLine
 				) {
 					throw new TRPCError({

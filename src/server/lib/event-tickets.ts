@@ -7,6 +7,12 @@ import {
 import { env } from "@/env";
 
 const SCANNER_GRACE_MS = 2 * 60 * 60 * 1000;
+export function mealAvailabilityEnd(meal: {
+	endTime: Date;
+	lastCallEndsAt: Date | null;
+}): Date {
+	return meal.lastCallEndsAt ?? meal.endTime;
+}
 
 function scannerSignature(payload: string) {
 	if (!env.BETTER_AUTH_SECRET)

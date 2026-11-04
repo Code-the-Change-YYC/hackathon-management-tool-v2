@@ -42,7 +42,7 @@ import {
 	type HackathonDates
 } from "@/lib/validation/event";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { EVENT_TYPES, EventStatus } from "@/types/types";
+import { EVENT_TYPES, EventStatus, EventType } from "@/types/types";
 
 export type AdminEvent = RouterOutputs["events"]["getAllEvents"][number];
 
@@ -57,7 +57,10 @@ function toFormInput(event?: AdminEvent): EventFormInput {
 		navigationUrl: event.navigationUrl ?? "",
 		date: toDateInputValue(event.startTime),
 		startTime: toTimeInputValue(event.startTime),
-		endTime: toTimeInputValue(event.endTime)
+		endTime: toTimeInputValue(event.endTime),
+		lastCallEndTime: event.lastCallEndsAt
+			? toTimeInputValue(event.lastCallEndsAt)
+			: ""
 	};
 }
 
@@ -81,7 +84,7 @@ export function EventDialog({
 			router.refresh();
 			onClose();
 		},
-		onError: () => toast.error("We couldn’t save this event. Please try again.")
+		onError: (error: { message: string }) => toast.error(error.message)
 	};
 	const addEvent = api.events.addEvent.useMutation(callbacks);
 	const updateEvent = api.events.updateEvent.useMutation(callbacks);
@@ -167,6 +170,14 @@ export function EventDialog({
 								name="endTime"
 							/>
 						</div>
+						{eventType === EventType.FOOD && (
+							<TimeField
+								control={form.control}
+								disabled={isPending}
+								label="Last call ends (optional)"
+								name="lastCallEndTime"
+							/>
+						)}
 						<div className="grid gap-4 sm:grid-cols-2">
 							<TextField
 								control={form.control}
