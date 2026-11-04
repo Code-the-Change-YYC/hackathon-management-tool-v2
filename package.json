@@ -12,7 +12,6 @@
 		"db:seed": "bun drizzle/seed.ts",
 		"db:up": "docker-compose up -d",
 		"db:generate": "drizzle-kit generate",
-		"db:dedupe-members": "bun drizzle/dedupe-members.ts",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"dev": "pnpm db:up && next dev",
