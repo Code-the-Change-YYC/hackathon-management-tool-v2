@@ -5,10 +5,13 @@ import { db } from "@/server/db";
 import { member } from "@/server/db/auth-schema";
 import { TeamFixtureTracker } from "../../utils/teams";
 import { createAuthenticatedCaller } from "../helpers/auth";
+import { runConcurrently } from "../helpers/concurrency";
+
+type TestCaller = Awaited<ReturnType<typeof createAuthenticatedCaller>>;
 
 async function fixtures(count: number) {
 	const teams = new TeamFixtureTracker();
-	const users: Awaited<ReturnType<typeof createAuthenticatedCaller>>[] = [];
+	const users: TestCaller[] = [];
 	onTestFinished(async () => {
 		await teams.cleanup();
 		for (const account of users) await account.cleanup();
@@ -16,21 +19,6 @@ async function fixtures(count: number) {
 	for (let index = 0; index < count; index++)
 		users.push(await createAuthenticatedCaller());
 	return { teams, users };
-}
-
-// Both callbacks wait on the same gate, so neither request finishes before the
-// competing request has been prepared. The routers use separate DB transactions.
-async function simultaneously<T>(requests: (() => Promise<T>)[]) {
-	let release!: () => void;
-	const gate = new Promise<void>((resolve) => {
-		release = resolve;
-	});
-	const pending = requests.map(async (request) => {
-		await gate;
-		return request();
-	});
-	release();
-	return Promise.allSettled(pending);
 }
 
 describe("HMTV2-62 team membership under concurrent joins", () => {
@@ -48,7 +36,7 @@ describe("HMTV2-62 team membership under concurrent joins", () => {
 			}))
 		);
 		const contenders = users.slice(4);
-		const results = await simultaneously(
+		const results = await runConcurrently(
 			contenders.map(
 				({ caller }) =>
 					() =>
@@ -86,7 +74,7 @@ describe("HMTV2-62 team membership under concurrent joins", () => {
 		const account = users[0];
 		assert(account);
 		const targets = [await teams.create("First"), await teams.create("Second")];
-		const results = await simultaneously(
+		const results = await runConcurrently(
 			targets.map(
 				(team) => () =>
 					account.caller.teams.join({ teamCode: team.teamCode as string })
