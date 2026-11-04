@@ -1,4 +1,3 @@
-import { PgDialect } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/db", () => ({ db: {} }));
@@ -21,11 +20,10 @@ const db = {
 	query: {
 		judgingAssignments: { findFirst: vi.fn() },
 		judgingCriteria: { findMany: vi.fn(), findFirst: vi.fn() },
-		judgingScores: { findMany: vi.fn(), findFirst: vi.fn() },
+		judgingScores: { findFirst: vi.fn() },
 		hackathonSettings: { findFirst: vi.fn() }
 	},
-	insert: vi.fn(),
-	update: vi.fn()
+	insert: vi.fn()
 };
 const write = {
 	values: vi.fn(),
@@ -51,7 +49,6 @@ beforeEach(() => {
 		}
 	});
 	db.query.judgingCriteria.findMany.mockResolvedValue(rubric);
-	db.query.judgingScores.findMany.mockResolvedValue([]);
 	db.insert.mockReturnValue(write);
 	write.values.mockReturnValue(write);
 	write.onConflictDoUpdate.mockReturnValue(write);
@@ -114,15 +111,10 @@ describe("individual scorecard API", () => {
 		).rejects.toMatchObject({ code: "BAD_REQUEST" });
 		expect(db.insert).not.toHaveBeenCalled();
 	});
-	it("rejects an unassigned judge for reads and writes", async () => {
-		const outsider = caller("outsider");
-		await expect(
-			outsider.getByAssignment({ assignmentId })
-		).rejects.toMatchObject({ code: "FORBIDDEN" });
-		await expect(outsider.createMany(valid)).rejects.toMatchObject({
+	it("rejects an unassigned judge's scorecard", async () => {
+		await expect(caller("outsider").createMany(valid)).rejects.toMatchObject({
 			code: "FORBIDDEN"
 		});
-		expect(db.query.judgingScores.findMany).not.toHaveBeenCalled();
 		expect(db.insert).not.toHaveBeenCalled();
 	});
 	it("does not let an unassigned admin contribute a scorecard", async () => {
@@ -130,22 +122,6 @@ describe("individual scorecard API", () => {
 			caller("admin", "admin").createMany(valid)
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
 	});
-	it("scopes assignment scores to the signed-in judge", async () => {
-		await caller().getByAssignment({ assignmentId });
-		const query = new PgDialect().sqlToQuery(
-			db.query.judgingScores.findMany.mock.calls[0]?.[0].where
-		);
-		expect(query.params).toEqual([assignmentId, "judge-a"]);
-	});
-	it("scopes raw scores to the current judge and keeps team averages organizer-only", async () => {
-		await caller().getAll();
-		const where = db.query.judgingScores.findMany.mock.lastCall?.[0].where;
-		expect(new PgDialect().sqlToQuery(where).params).toEqual(["judge-a"]);
-		await expect(caller().getAggregatedByTeam({})).rejects.toMatchObject({
-			code: "FORBIDDEN"
-		});
-	});
-
 	it("enforces scheduled availability while allowing later updates", async () => {
 		db.query.judgingAssignments.findFirst.mockResolvedValue({
 			startsAt: new Date(Date.now() + 3600000),
@@ -175,37 +151,14 @@ describe("individual scorecard API", () => {
 		db.query.judgingScores.findFirst.mockResolvedValue(undefined);
 		await expect(caller().createMany(valid)).resolves.toEqual([]);
 	});
-	it("prevents editing another judge's score through the single-score endpoint", async () => {
-		db.query.judgingScores.findFirst.mockResolvedValue(undefined);
-		await expect(
-			caller().update({ id: mainId, score: 2 })
-		).rejects.toMatchObject({ code: "NOT_FOUND" });
-		const where = db.query.judgingScores.findFirst.mock.lastCall?.[0].where;
-		expect(new PgDialect().sqlToQuery(where).params).toEqual([
-			mainId,
-			"judge-a"
-		]);
-		expect(db.update).not.toHaveBeenCalled();
-	});
 	it("closes scoring once scores are released", async () => {
 		db.query.hackathonSettings.findFirst.mockResolvedValue({
 			scoresReleased: true
 		});
-		db.query.judgingScores.findFirst.mockResolvedValue({
-			id: mainId,
-			assignmentId,
-			judgeId: "judge-a",
-			criteria: rubric[0]
-		});
-		const closed = {
+		await expect(caller().createMany(valid)).rejects.toMatchObject({
 			code: "FORBIDDEN",
 			message: "Scoring closed when the winners were announced."
-		};
-		await expect(caller().createMany(valid)).rejects.toMatchObject(closed);
-		await expect(
-			caller().update({ id: mainId, score: 2 })
-		).rejects.toMatchObject(closed);
+		});
 		expect(db.insert).not.toHaveBeenCalled();
-		expect(db.update).not.toHaveBeenCalled();
 	});
 });

@@ -11,7 +11,7 @@ import {
 	formatTime,
 	isSameCalgaryDay
 } from "@/lib/datetime";
-import type { RouterInputs, RouterOutputs } from "@/trpc/react";
+import type { RouterOutputs } from "@/trpc/react";
 
 export type Round = RouterOutputs["judgingRounds"]["getAll"][number];
 export type Assignment = RouterOutputs["judgingAssignments"]["getAll"][number];
@@ -25,10 +25,6 @@ export type Criterion = RouterOutputs["criteria"]["getAll"][number];
 export type PanelRankings = RouterOutputs["judgingResults"]["getPanelRanking"];
 export type PanelRanking = PanelRankings["main"][number];
 export type FinalResults = RouterOutputs["judgingResults"]["getFinalResults"];
-export type ScheduleSettings = Omit<
-	RouterInputs["judgingTables"]["previewSchedule"],
-	"roundId"
->;
 
 export function byNameThenId<T extends { id: string; name: string }>(
 	a: T,

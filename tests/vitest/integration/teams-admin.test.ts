@@ -92,9 +92,6 @@ describe("admin teams procedures", () => {
 				comments: "Looks good"
 			})
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
-		await expect(api.teams.getRankings()).rejects.toMatchObject({
-			code: "FORBIDDEN"
-		});
 		await expect(api.teams.delete({ id: "team-1" })).rejects.toMatchObject({
 			code: "FORBIDDEN"
 		});
@@ -209,19 +206,6 @@ describe("admin teams procedures", () => {
 				}
 			]
 		});
-	});
-
-	it("returns rankings to admins", async () => {
-		const rankings = [
-			{ id: "team-1", name: "Alpha", totalScore: 80 },
-			{ id: "team-2", name: "Beta", totalScore: 75 }
-		];
-		mocks.execute.mockResolvedValue(rankings);
-
-		const api = await caller("admin");
-
-		await expect(api.teams.getRankings()).resolves.toEqual(rankings);
-		expect(mocks.execute).toHaveBeenCalledOnce();
 	});
 
 	it("rejects failing a team without feedback", async () => {

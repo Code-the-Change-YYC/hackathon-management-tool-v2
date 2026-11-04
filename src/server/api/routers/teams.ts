@@ -20,7 +20,6 @@
 
 import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import { isValid } from "date-fns";
 import { and, asc, desc, eq, isNull, not, sql } from "drizzle-orm";
 import { z } from "zod";
 import { resolveAvatarSrc } from "@/lib/avatars";
@@ -32,7 +31,6 @@ import {
 	TEAM_CODE_LENGTH,
 	teamNameSchema
 } from "@/lib/validation/team";
-import { submittedScorecards } from "@/server/api/judging-results";
 import { getAssignmentScoring } from "@/server/api/participant-judging";
 import {
 	adminProcedure,
@@ -40,24 +38,14 @@ import {
 	protectedProcedure
 } from "@/server/api/trpc";
 import type { db as dbType } from "@/server/db";
-import { hackathonSettings } from "@/server/db/admin-schema";
 import { member, organization } from "@/server/db/auth-schema";
 import {
 	judgingAssignments,
 	judgingRounds,
 	judgingScores,
-	judgingTableJudges,
 	judgingVotes
 } from "@/server/db/judging-schema";
-import { MEMBER_ROLES, Role, type TeamRanking } from "@/types/types";
-
-type TeamMetadata = {
-	devpostLink?: string | null;
-};
-
-type HackathonMetadata = {
-	devpostSubmissionCloseAt?: string | null;
-};
+import { MEMBER_ROLES, Role } from "@/types/types";
 
 const MAX_TEAM_SIZE = 5;
 
@@ -101,33 +89,6 @@ function alreadyInTeamError(): TRPCError {
 		code: "BAD_REQUEST",
 		message: "You are already a member of a team"
 	});
-}
-
-function parseMetadata<T extends Record<string, unknown>>(
-	raw: string | null
-): T {
-	if (!raw) {
-		return {} as T;
-	}
-
-	try {
-		const parsed = JSON.parse(raw) as unknown;
-		if (typeof parsed === "object" && parsed !== null) {
-			return parsed as T;
-		}
-		return {} as T;
-	} catch {
-		return {} as T;
-	}
-}
-
-function parseDeadline(value: string | null | undefined): Date | null {
-	if (!value) {
-		return null;
-	}
-
-	const date = new Date(value);
-	return isValid(date) ? date : null;
 }
 
 // Only participants are on teams. Sign-ups find a team before onboarding
@@ -201,64 +162,7 @@ async function deleteTeam(tx: Transaction, organizationId: string) {
 		.returning({ id: organization.id });
 }
 
-async function fetchTeamRankings(db: typeof dbType): Promise<TeamRanking[]> {
-	const result = await db.execute(sql<TeamRanking>`
-		SELECT o.id, o.name,
-			COALESCE(AVG(card.main_score), 0)::float8 AS "totalScore",
-			COUNT(card.judge_id)::int AS "submittedScorecards",
-			(SELECT COUNT(*)::int FROM ${judgingAssignments} a
-				INNER JOIN ${judgingTableJudges} tj ON tj.table_id = a.table_id
-				WHERE a.team_id = o.id) AS "expectedScorecards"
-		FROM ${organization} o
-		LEFT JOIN ${submittedScorecards} card ON card.team_id = o.id
-		GROUP BY o.id, o.name
-		ORDER BY "totalScore" DESC, o.name ASC, o.id ASC
-	`);
-
-	return result as unknown as TeamRanking[];
-}
-
 export const teamsRouter = createTRPCRouter({
-	getMyDevpostSubmissionStatus: protectedProcedure.query(async ({ ctx }) => {
-		const membership = await getUserMembership(ctx.db, ctx.session.user.id);
-
-		const team = await ctx.db.query.organization.findFirst({
-			where: eq(organization.id, membership.organizationId)
-		});
-		if (!team) {
-			throw new TRPCError({
-				code: "NOT_FOUND",
-				message: "Team not found"
-			});
-		}
-
-		const settings = await ctx.db.query.hackathonSettings.findFirst({
-			where: eq(hackathonSettings.id, 1)
-		});
-
-		const teamMetadata = parseMetadata<TeamMetadata>(team.metadata);
-		const hackathonMetadata = parseMetadata<HackathonMetadata>(
-			settings?.metadata ?? null
-		);
-
-		const devpostLink = teamMetadata.devpostLink?.trim() || null;
-		const submissionCloseAt = parseDeadline(
-			hackathonMetadata.devpostSubmissionCloseAt
-		);
-		const now = new Date();
-		const isBeforeDeadline =
-			submissionCloseAt !== null && now.getTime() < submissionCloseAt.getTime();
-		const showWarning = isBeforeDeadline && !devpostLink;
-
-		return {
-			teamId: team.id,
-			teamName: team.name,
-			devpostLink,
-			submissionCloseAt,
-			showWarning
-		};
-	}),
-
 	getAll: adminProcedure.query(async ({ ctx }) => {
 		const teams = await ctx.db.query.organization.findMany({
 			orderBy: [desc(organization.createdAt)]
@@ -697,7 +601,6 @@ export const teamsRouter = createTRPCRouter({
 			}
 			return rows[0];
 		}),
-	getRankings: adminProcedure.query(({ ctx }) => fetchTeamRankings(ctx.db)),
 	delete: adminProcedure
 		.input(z.object({ id: z.string() }))
 		.mutation(async ({ ctx, input }) => {

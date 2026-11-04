@@ -57,12 +57,6 @@ export function eachCalgaryDay(start: DateValue, end: DateValue) {
 	return eachDayOfInterval({ start, end }, { in: calgary });
 }
 
-export function toDateTimeLocalValue(value?: Date | null) {
-	return value && isValid(value)
-		? format(value, DATE_TIME_INPUT_FORMAT, { in: calgary })
-		: "";
-}
-
 export function fromDateTimeLocalValue(value: string) {
 	const date = parse(value, DATE_TIME_INPUT_FORMAT, new Date(), {
 		in: calgary

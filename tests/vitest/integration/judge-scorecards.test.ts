@@ -1,4 +1,4 @@
-import { eq, type SQL } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import { getTableConfig, PgDialect } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { criteriaRouter } from "@/server/api/routers/criteria";
@@ -24,10 +24,7 @@ const mocks = vi.hoisted(() => ({
 	conflict: vi.fn(),
 	returning: vi.fn(),
 	set: vi.fn(),
-	where: vi.fn(),
-	from: vi.fn(),
-	join: vi.fn(),
-	groupBy: vi.fn()
+	where: vi.fn()
 }));
 vi.mock("@/server/better-auth", () => ({
 	auth: { api: { getSession: mocks.session } }
@@ -44,7 +41,6 @@ vi.mock("@/server/db", () => ({
 const assignmentId = "11111111-1111-4111-8111-111111111111";
 const criteriaId = "22222222-2222-4222-8222-222222222222";
 const roundId = "44444444-4444-4444-8444-444444444444";
-const scoreId = "33333333-3333-4333-8333-333333333333";
 const mainCriterion = {
 	id: criteriaId,
 	name: "Technical",
@@ -166,65 +162,6 @@ describe("individual judge scorecards", () => {
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
 		expect(mocks.insert).not.toHaveBeenCalled();
 	});
-	it("cannot update another judge's score", async () => {
-		mocks.query.judgingScores.findFirst.mockResolvedValue(undefined);
-		await expect(
-			(await caller()).update({ id: scoreId, score: 8 })
-		).rejects.toMatchObject({ code: "NOT_FOUND" });
-		const query = compile(
-			mocks.query.judgingScores.findFirst.mock.calls[0]?.[0].where
-		);
-		expect(query.params).toEqual([scoreId, "judge-a"]);
-		expect(query.sql).toContain('"judge_id"');
-		expect(mocks.update).not.toHaveBeenCalled();
-	});
-	it("checks bounds and current membership when updating an owned score", async () => {
-		mocks.query.judgingScores.findFirst.mockResolvedValue({
-			assignmentId,
-			criteria: mainCriterion
-		});
-		const api = await caller();
-		await expect(api.update({ id: scoreId, score: 6 })).rejects.toMatchObject({
-			code: "BAD_REQUEST"
-		});
-		mocks.query.judgingAssignments.findFirst.mockResolvedValue({
-			table: { judges: [] }
-		});
-		await expect(api.update({ id: scoreId, score: 3 })).rejects.toMatchObject({
-			code: "FORBIDDEN"
-		});
-		expect(mocks.update).not.toHaveBeenCalled();
-	});
-	it("updates an owned score with ownership also checked in the write", async () => {
-		mocks.query.judgingScores.findFirst.mockResolvedValue({
-			assignmentId,
-			criteria: mainCriterion
-		});
-		await (await caller()).update({ id: scoreId, score: 3 });
-		expect(mocks.set).toHaveBeenCalledWith({ value: 3 });
-		expect(compile(mocks.where.mock.calls[0]?.[0]).params).toEqual([
-			scoreId,
-			"judge-a"
-		]);
-	});
-	it("scopes judge reads while letting admins read every score", async () => {
-		const api = await caller();
-		await api.getAll();
-		await api.getByAssignment({ assignmentId });
-		await api.getByTeam({ teamId: "team" });
-		const [all, assignment, team] =
-			mocks.query.judgingScores.findMany.mock.calls.map(([query]) => query);
-		expect(compile(all.where).params).toEqual(["judge-a"]);
-		expect(compile(assignment.where).params).toEqual([assignmentId, "judge-a"]);
-		expect(compile(team.where(judgingScores, { eq })).params).toEqual([
-			"judge-a",
-			"team"
-		]);
-		await (await caller("admin", "admin")).getAll();
-		expect(
-			mocks.query.judgingScores.findMany.mock.lastCall?.[0].where
-		).toBeUndefined();
-	});
 	it("scopes dashboard nested scores to the requested judge", async () => {
 		mocks.query.judgingTableJudges.findMany.mockResolvedValue([
 			{ tableId: "table" }
@@ -260,30 +197,6 @@ describe("individual judge scorecards", () => {
 			code: "FORBIDDEN"
 		});
 		expect(mocks.insert).not.toHaveBeenCalled();
-	});
-	it("builds separate main totals per assignment and judge, excluding sidepots", async () => {
-		const select = {
-			from: mocks.from,
-			innerJoin: mocks.join,
-			where: mocks.where,
-			groupBy: mocks.groupBy
-		};
-		mocks.select.mockReturnValue(select);
-		mocks.from.mockReturnValue(select);
-		mocks.join.mockReturnValue(select);
-		mocks.where.mockReturnValue(select);
-		mocks.groupBy.mockResolvedValue([]);
-		await (await caller()).getJudgeTotals({ roundId: assignmentId });
-		const fields = mocks.select.mock.lastCall?.[0];
-		expect(compile(fields.mainTotal).sql).toContain(
-			'filter (where "hackathon_judging_criterion"."is_sidepot" = false)'
-		);
-		const filter = compile(mocks.where.mock.lastCall?.[0]);
-		expect(filter.params).toEqual([assignmentId, "judge-a"]);
-		expect(mocks.groupBy.mock.lastCall?.slice(0, 2)).toEqual([
-			judgingScores.assignmentId,
-			judgingScores.judgeId
-		]);
 	});
 	it("keeps main criteria on a five-point scale when created or updated", async () => {
 		const api = criteriaRouter.createCaller(await context("admin", "admin"));

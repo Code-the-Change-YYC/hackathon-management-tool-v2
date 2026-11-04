@@ -143,29 +143,6 @@ export const eventsRouter = createTRPCRouter({
 		});
 	}),
 
-	getEvent: adminProcedure
-		.input(eventIdSchema)
-		.query(async ({ input, ctx }) => {
-			const selectedEvent = await ctx.db.query.event.findFirst({
-				where: eq(event.id, input.id)
-			});
-			return selectedEvent ?? null;
-		}),
-
-	setEventStatus: adminProcedure
-		.input(eventIdSchema.extend({ status: z.enum(EVENT_STATUSES) }))
-		.mutation(async ({ input, ctx }) => {
-			const [updatedEvent] = await ctx.db
-				.update(event)
-				.set({ status: input.status })
-				.where(eq(event.id, input.id))
-				.returning();
-
-			if (!updatedEvent) throw eventNotFound();
-
-			return updatedEvent;
-		}),
-
 	rotateParticipantEventTicket: protectedProcedure
 		.input(z.object({ eventId: z.string().uuid() }))
 		.mutation(async ({ input, ctx }) => {
