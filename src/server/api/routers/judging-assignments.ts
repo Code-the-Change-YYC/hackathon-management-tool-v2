@@ -43,28 +43,6 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		});
 	}),
 
-	// Get assignments by round ID
-	getByRound: adminProcedure
-		.input(z.object({ roundId: z.string().uuid() }))
-		.query(async ({ ctx, input }) => {
-			const roundTables = await ctx.db
-				.select({ id: judgingTables.id })
-				.from(judgingTables)
-				.where(eq(judgingTables.roundId, input.roundId));
-			const tableIds = roundTables.map((table) => table.id);
-			if (tableIds.length === 0) return [];
-
-			return ctx.db.query.judgingAssignments.findMany({
-				where: inArray(judgingAssignments.tableId, tableIds),
-				with: {
-					team: true,
-					table: tableWithRoundAndJudges,
-					scores: true
-				},
-				orderBy: (rows, { asc }) => [asc(rows.startsAt)]
-			});
-		}),
-
 	// Get assignments at every table a judge sits at in published rounds, with only their own scores and votes
 	getByJudge: protectedProcedure
 		.input(z.object({ judgeId: z.string() }))
@@ -138,20 +116,6 @@ export const judgingAssignmentsRouter = createTRPCRouter({
 		}
 		return slotTimes;
 	}),
-
-	// Get assignments for a specific team
-	getByTeam: adminProcedure
-		.input(z.object({ teamId: z.string() }))
-		.query(async ({ ctx, input }) => {
-			return ctx.db.query.judgingAssignments.findMany({
-				where: eq(judgingAssignments.teamId, input.teamId),
-				with: {
-					table: { with: { round: true } },
-					scores: true
-				},
-				orderBy: (rows, { asc }) => [asc(rows.startsAt)]
-			});
-		}),
 
 	// The signed-in participant's team schedule, grouped by published round
 	getMine: protectedProcedure.query(async ({ ctx }) => {

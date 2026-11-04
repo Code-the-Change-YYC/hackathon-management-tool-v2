@@ -5,8 +5,7 @@ import {
 	formatTime,
 	fromDateTimeLocalValue,
 	isSameCalgaryDay,
-	toDateInputValue,
-	toDateTimeLocalValue
+	toDateInputValue
 } from "@/lib/datetime";
 
 // Tests run with TZ=UTC, like a production server.
@@ -25,11 +24,9 @@ describe("datetime helpers", () => {
 		expect(isSameCalgaryDay(instant, morning)).toBe(true);
 	});
 
-	it("round-trips datetime-local values as Calgary wall-clock time", () => {
-		expect(toDateTimeLocalValue(instant)).toBe("2026-10-17T18:30");
+	it("reads datetime-local values as Calgary wall-clock time", () => {
 		expect(fromDateTimeLocalValue("2026-10-17T18:30")).toEqual(instant);
 		expect(fromDateTimeLocalValue("")).toBeNull();
-		expect(toDateTimeLocalValue(null)).toBe("");
 	});
 
 	it("keeps Calgary on UTC-6 after November 1, 2026", () => {

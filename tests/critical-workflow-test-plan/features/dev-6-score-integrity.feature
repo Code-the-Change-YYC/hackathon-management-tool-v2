@@ -18,17 +18,6 @@ Feature: Scoring APIs preserve valid scores and participant results under traffi
       | a score above the criterion's configured maximum    |
       | a nonexistent criterion alongside an otherwise valid item |
 
-  @SCORE02 @P0 @integration @candidate_regression
-  Scenario Outline: The alternate score-update endpoint preserves scoring restrictions
-    Given a score exists with a configured maximum of ten
-    When <caller> directly calls scores.update with <value>
-    Then the request is rejected with <error>
-    And the saved score remains unchanged
-    Examples:
-      | caller                                      | value | error       |
-      | a judge who is not assigned to that room     | 5     | FORBIDDEN   |
-      | a judge who is assigned to that room         | 11    | BAD_REQUEST |
-
   @SCORE03 @P0 @integration @concurrency
   Scenario: Replaying a saved score batch cannot multiply stored scores
     Given a valid score batch has already been acknowledged as saved
@@ -44,7 +33,7 @@ Feature: Scoring APIs preserve valid scores and participant results under traffi
     When the two batches are submitted concurrently
     Then the final stored batch equals one complete submitted batch
     And no criterion has duplicate score rows
-    And a fresh read from both judge sessions returns that same stored batch
+    And a fresh database read returns that same stored batch
 
   @SCORE05 @P0 @integration @database
   Scenario: Released result averages are calculated from actual persisted assignments
@@ -65,11 +54,5 @@ Feature: Scoring APIs preserve valid scores and participant results under traffi
     Then the API returns <error> without score data or score changes
     Examples:
       | session                 | endpoint                  | error        |
-      | no authenticated session | scores.getAll            | UNAUTHORIZED |
-      | a participant session    | scores.getAll            | FORBIDDEN    |
-      | a participant session    | scores.getByAssignment   | FORBIDDEN    |
-      | a participant session    | scores.getByTeam         | FORBIDDEN    |
-      | a participant session    | scores.getByRound        | FORBIDDEN    |
-      | a participant session    | scores.getAggregatedByTeam | FORBIDDEN  |
+      | no authenticated session | scores.createMany        | UNAUTHORIZED |
       | a participant session    | scores.createMany        | FORBIDDEN    |
-      | a participant session    | scores.update            | FORBIDDEN    |

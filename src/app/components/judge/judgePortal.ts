@@ -1,5 +1,5 @@
 import { addMinutes, differenceInMinutes } from "date-fns";
-import { formatTime as formatClockTime, formatLongDate } from "@/lib/datetime";
+import { formatTime as formatClockTime } from "@/lib/datetime";
 import { getScoringOpensAt } from "@/lib/judging";
 import type { RouterOutputs } from "@/trpc/react";
 
@@ -17,10 +17,6 @@ export function sortCriteria(a: Criterion, b: Criterion) {
 
 export function formatTime(value?: Date | null) {
 	return value ? formatClockTime(value) : "Unscheduled";
-}
-
-export function formatDate(value?: Date | null) {
-	return value ? formatLongDate(value) : "Unscheduled";
 }
 
 export function formatDuration(minutes: number) {
@@ -164,14 +160,6 @@ export function getRankingState(
 	return round.startTime <= currentTime ? "open" : "upcoming";
 }
 
-export function getCriteriaScore(
-	assignment: JudgeAssignment,
-	criterionId: string
-) {
-	return assignment.scores.find((score) => score.criteriaId === criterionId)
-		?.value;
-}
-
 // The final round is ranked instead, so only panel teams have scorecards.
 export function getAssignmentCriteria(
 	assignment: JudgeAssignment,
@@ -251,52 +239,6 @@ export function getAssignmentTotal(
 		0
 	);
 	return { max, total };
-}
-
-export function getScoreTone(value: number, max: number) {
-	const percent = max > 0 ? value / max : 0;
-	if (percent >= 0.75) {
-		return "border-[#c8efbd] bg-[#eefbe9] text-[#317d15]";
-	}
-	if (percent >= 0.5) {
-		return "border-[#ffe5b2] bg-[#fff8e8] text-[#9f630b]";
-	}
-	if (percent >= 0.3) {
-		return "border-[#ffd2c9] bg-[#fff1ee] text-orange-800";
-	}
-	return "border-[#f6c8d6] bg-[#fff0f4] text-[#a70a38]";
-}
-
-export function hasDraftScore(
-	scores: Record<string, number>,
-	criterionId: string
-) {
-	return Object.hasOwn(scores, criterionId);
-}
-
-export function getDraftScore(
-	scores: Record<string, number>,
-	criterionId: string
-) {
-	return hasDraftScore(scores, criterionId) ? scores[criterionId] : undefined;
-}
-
-export function getScoreTextColor(value: number, max: number) {
-	const percent = max > 0 ? value / max : 0;
-	if (percent >= 0.75) return "text-judging-success-foreground";
-	if (percent >= 0.5) return "text-[#317d15]";
-	if (percent >= 0.3) return "text-[#9f630b]";
-	if (percent >= 0.15) return "text-orange-800";
-	return "text-[#a70a38]";
-}
-
-export function getScoreFillClass(value: number, max: number) {
-	const percent = max > 0 ? value / max : 0;
-	if (percent >= 0.75) return "bg-judging-success-foreground text-white";
-	if (percent >= 0.5) return "bg-[#317d15] text-white";
-	if (percent >= 0.3) return "bg-[#9f630b] text-white";
-	if (percent >= 0.15) return "bg-orange-800 text-white";
-	return "bg-[#a70a38] text-white";
 }
 
 export function getCriterionDescription(criterion: Criterion) {

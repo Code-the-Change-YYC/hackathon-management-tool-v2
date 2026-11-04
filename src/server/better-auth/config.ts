@@ -282,4 +282,3 @@ export const betterAuthDefaultConfig = {
 	}
 } satisfies BetterAuthOptions;
 export const auth = betterAuth(betterAuthDefaultConfig);
-export type Session = typeof auth.$Infer.Session;

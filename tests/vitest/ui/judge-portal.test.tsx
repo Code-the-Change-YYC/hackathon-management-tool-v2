@@ -6,7 +6,6 @@ import {
 	type Criterion,
 	getAssignmentCriteria,
 	getAssignmentTotal,
-	getDraftScore,
 	getJudgeTable,
 	getScoreOptions,
 	isAssignmentScored,
@@ -119,9 +118,7 @@ describe("judge portal scoring contract", () => {
 		});
 	});
 
-	it("distinguishes zero drafts from missing scores and preserves zero when editing", () => {
-		expect(getDraftScore({ main: 0 }, "main")).toBe(0);
-		expect(getDraftScore({}, "main")).toBeUndefined();
+	it("preserves a saved zero when editing", () => {
 		expect(getScoreOptions(main, false)[0]).toBe(1);
 		expect(getScoreOptions(main, false, 0)[0]).toBe(0);
 		expect(getScoreOptions(sidepot, true)).toEqual([0, 1, 2, 3, 4, 5]);

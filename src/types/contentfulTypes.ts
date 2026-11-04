@@ -11,7 +11,6 @@ interface AlumniFields {
 }
 
 type AlumniSkeleton = EntrySkeletonType<AlumniFields, "alumni">;
-export type Alumni = Entry<AlumniSkeleton>;
 
 interface JudgeFields {
 	judgeImg: EntryFieldTypes.AssetLink;
@@ -35,7 +34,6 @@ type HackathonSponsorSkeleton = EntrySkeletonType<
 	HackathonSponsorFields,
 	"hackathonSponsor"
 >;
-export type HackathonSponsor = Entry<HackathonSponsorSkeleton>;
 
 interface HackathonDetailsFields {
 	eventName: EntryFieldTypes.Symbol;
@@ -51,7 +49,6 @@ type HackathonDetailsSkeleton = EntrySkeletonType<
 	HackathonDetailsFields,
 	"hackathonDetails"
 >;
-export type HackathonDetails = Entry<HackathonDetailsSkeleton>;
 
 interface CeremonyDetailsFields {
 	openingCeremonyLocation: EntryFieldTypes.Symbol;
@@ -64,7 +61,6 @@ type CeremonyDetailsSkeleton = EntrySkeletonType<
 	CeremonyDetailsFields,
 	"ceremonyDetails"
 >;
-export type CeremonyDetails = Entry<CeremonyDetailsSkeleton>;
 
 export interface PastHackathonWinnerFields {
 	projectName: EntryFieldTypes.Symbol;

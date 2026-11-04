@@ -27,19 +27,14 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { success: mocks.toast } }));
 vi.mock("@/trpc/react", async () => {
-	const { useQuery, useMutation } = await import("@tanstack/react-query");
+	const { useMutation } = await import("@tanstack/react-query");
 	return {
 		api: {
 			useUtils: () => ({
 				scores: { invalidate: mocks.invalidate },
-				judgingAssignments: { getByJudge: { invalidate: mocks.invalidate } },
-				teams: { getRankings: { invalidate: mocks.invalidate } }
+				judgingAssignments: { getByJudge: { invalidate: mocks.invalidate } }
 			}),
 			scores: {
-				getByAssignment: {
-					useQuery: () =>
-						useQuery({ queryKey: ["scores"], queryFn: mocks.saved })
-				},
 				createMany: {
 					useMutation: () => useMutation({ mutationFn: mocks.submit })
 				}
