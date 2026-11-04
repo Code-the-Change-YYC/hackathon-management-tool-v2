@@ -1,58 +1,88 @@
 # Hackathon Management Tool V2
 
-## Previewing the project
+The web app behind [Hack the Change](https://hackthechangeyyc.ca), Code the Change YYC's in-person, two-day, for-charity hackathon in Calgary. Participants use it to sign up, form teams and follow the event, judges use it to score projects, and organizers use it to run everything from check-in and meals to judging results.
 
-First you want to make sure you have pnpm and docker installed (install Bun below if you don't have it already):
+## Tech stack
 
-    pnpm -v
+| Layer | Tool | Where it lives |
+| --- | --- | --- |
+| Framework | [Next.js](https://nextjs.org) (App Router) + [React](https://react.dev) | `src/app` |
+| API | [tRPC](https://trpc.io) + [TanStack Query](https://tanstack.com/query) | `src/server/api`, `src/trpc` |
+| Database | [PostgreSQL](https://www.postgresql.org) (via Docker) + [Drizzle ORM](https://orm.drizzle.team) | `src/server/db`, `drizzle/` |
+| Auth | [Better Auth](https://www.better-auth.com) (email/password, Google, email codes for judges) | `src/server/better-auth` |
+| UI | [Tailwind CSS](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) on [Base UI](https://base-ui.com) | `src/app/components` |
+| Forms & validation | [React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev) | `src/lib/validation` |
+| Email | [Resend](https://resend.com) | `src/server/email` |
+| Content | [Contentful](https://www.contentful.com) (landing page winners and judges, participant resources and mentors) | `src/server/contentful` |
+| Lint & format | [Biome](https://biomejs.dev), run on commit by [Lefthook](https://lefthook.dev) | `biome.jsonc`, `lefthook.yml` |
+| Tests | [Vitest](https://vitest.dev) (unit and integration) + [Playwright](https://playwright.dev) (end-to-end) | `tests/` |
 
-    docker -v
+## Getting set up
 
-Then you can run the project locally:
+### 1. Install the prerequisites
+
+- **Node.js 24**, the version CI uses.
+- **pnpm**: run `corepack enable` and the version pinned in `package.json` is used automatically.
+- **Docker**, which runs the local Postgres database.
+- **Bun**, which runs the database seed and a few maintenance scripts:
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+### 2. Install dependencies
 
 ```bash
 pnpm install
+```
 
-curl -fsSL https://bun.sh/install | bash
+This also installs the Lefthook git hooks, which format staged files on commit.
 
+### 3. Create your `.env`
 
-# then
-
+```bash
 cp .env.example .env
+```
 
-pnpm db:generate
+Most values work as-is for local development. You need to fill in two things:
+
+**Google sign-in (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).** Create your own credentials:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), create an OAuth client ID of type **Web application**.
+2. Add `http://localhost:3000/api/auth/callback/google` as an authorized redirect URI.
+3. Copy the client ID and secret into `.env`.
+
+**Contentful (`CONTENTFUL_SPACE_ID`, `CONTENTFUL_ACCESS_TOKEN`).** Ask a project lead for these so your content matches everyone else's.
+
+Leave `RESEND_API_KEY` empty. Without it, emails such as verification and sign-in codes are printed to the dev server's terminal instead of being sent. With a real key, the app sends real emails to whatever address you sign up with.
+
+### 4. Set up the database
+
+```bash
+pnpm db:up
 pnpm db:push
+pnpm db:seed
+```
+
+`db:up` starts Postgres in Docker, `db:push` creates the tables from the Drizzle schema, and `db:seed` fills the database with sample users, teams, events and judging rounds. Re-run `db:push` whenever the schema in `src/server/db` changes.
+
+> [!WARNING]
+> `db:seed` wipes the database before seeding it.
+
+### 5. Start the app
+
+```bash
 pnpm dev
 ```
 
-## Google sign-in setup
+Open [http://localhost:3000](http://localhost:3000). `pnpm dev` also starts the database container if it isn't already running.
 
-Create a Google OAuth 2.0 Web application credential in Google Cloud Console. Add
-`{BETTER_AUTH_URL}/api/auth/callback/google` as an authorized redirect URI (for
-local development, this is `http://localhost:3000/api/auth/callback/google`),
-then set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`.
+### Sample logins
 
-## I want to add a new model to my DB, what do I do?
+The seed creates one account per role, all with the password `Password123!`:
 
-1. Create a new file in `src/server/db`
-2. Define your model using Drizzle's schema syntax
-3. Run `pnpm db:push` to apply the changes to your DB
-
-## What's next? How do I make an app with this?
-
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
-
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
-
-- [Next.js](https://nextjs.org)
-- [BetterAuth.js](https://www.better-auth.com/docs/integrations/next)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
-
-## Learn More
-
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
-
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+| Role | Email |
+| --- | --- |
+| Admin | `admin@hackathon.com` |
+| Judge | `judge@hackathon.com` |
+| Participant | `participant@hackathon.com` |
