@@ -10,19 +10,17 @@ export const metadata: Metadata = {
 
 export default async function MealsPage() {
 	await requireRole([Role.ADMIN]);
-	const [meals, nextMeal, ticketsScanned, dietary] = await Promise.all([
+	const [meals, nextMeal, analytics] = await Promise.all([
 		api.meals.getAllMeals(),
 		api.meals.getNextMeal(),
-		api.events.getMealAttendanceCount(),
-		api.users.getDietaryAnalytics()
+		api.meals.getAttendanceAnalytics()
 	]);
 
 	return (
 		<MealsView
-			dietary={dietary}
+			analytics={analytics}
 			meals={meals}
 			scannerMealId={nextMeal?.id}
-			ticketsScanned={ticketsScanned}
 		/>
 	);
 }

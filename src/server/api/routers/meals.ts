@@ -2,11 +2,16 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import {
+	DIETARY_RESTRICTIONS,
+	toDietaryRestrictions
+} from "@/lib/validation/signup";
+import {
 	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
-import { event } from "@/server/db/event-schema";
+import { user } from "@/server/db/auth-schema";
+import { event, eventAttendance } from "@/server/db/event-schema";
 import { createMealScannerLease } from "@/server/lib/event-tickets";
 import { EventStatus, EventType } from "@/types/types";
 
@@ -45,6 +50,68 @@ export const mealsRouter = createTRPCRouter({
 			where: eq(event.type, EventType.FOOD),
 			orderBy: [asc(event.startTime)]
 		});
+	}),
+
+	getAttendanceAnalytics: adminProcedure.query(async ({ ctx }) => {
+		const [meals, attendances] = await Promise.all([
+			ctx.db.query.event.findMany({
+				columns: { id: true, title: true, startTime: true },
+				where: eq(event.type, EventType.FOOD),
+				orderBy: [asc(event.startTime)]
+			}),
+			ctx.db
+				.select({
+					eventId: eventAttendance.eventId,
+					userId: eventAttendance.userId,
+					dietaryRestrictions: user.dietaryRestrictions
+				})
+				.from(eventAttendance)
+				.innerJoin(event, eq(eventAttendance.eventId, event.id))
+				.innerJoin(user, eq(eventAttendance.userId, user.id))
+				.where(eq(event.type, EventType.FOOD))
+		]);
+
+		const emptyCounts = () =>
+			Object.fromEntries(
+				DIETARY_RESTRICTIONS.map((restriction) => [restriction, 0])
+			) as Record<(typeof DIETARY_RESTRICTIONS)[number], number>;
+		const summary = meals.map((meal) => ({
+			...meal,
+			scans: 0,
+			restrictions: emptyCounts()
+		}));
+		const byId = new Map(summary.map((meal) => [meal.id, meal]));
+		const uniqueAttendees = new Map<
+			string,
+			ReturnType<typeof toDietaryRestrictions>
+		>();
+
+		for (const attendance of attendances) {
+			const meal = byId.get(attendance.eventId);
+			if (!meal) continue;
+			meal.scans += 1;
+			const restrictions = toDietaryRestrictions(
+				attendance.dietaryRestrictions
+			);
+			for (const restriction of restrictions)
+				meal.restrictions[restriction] += 1;
+			uniqueAttendees.set(attendance.userId, restrictions);
+		}
+
+		const overallRestrictions = emptyCounts();
+		for (const restrictions of uniqueAttendees.values()) {
+			for (const restriction of restrictions)
+				overallRestrictions[restriction] += 1;
+		}
+
+		return {
+			overall: {
+				scans: attendances.length,
+				uniqueAttendees: uniqueAttendees.size,
+				restrictions: overallRestrictions
+			},
+			meals: summary
+		};
 	}),
 
 	getActiveMeals: protectedProcedure.query(async ({ ctx }) => {

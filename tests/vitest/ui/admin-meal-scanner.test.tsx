@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 		participant: { id: "new", name: "Alex Chen" }
 	},
 	invalidate: vi.fn(),
+	invalidateAnalytics: vi.fn(),
 	scrollTo: vi.fn(),
 	success: vi.fn(),
 
@@ -45,7 +46,10 @@ vi.mock("sonner", () => ({
 vi.mock("@/trpc/react", () => ({
 	api: {
 		useUtils: () => ({
-			events: { getEventAttendees: { invalidate: mocks.invalidate } }
+			events: { getEventAttendees: { invalidate: mocks.invalidate } },
+			meals: {
+				getAttendanceAnalytics: { invalidate: mocks.invalidateAnalytics }
+			}
 		}),
 		events: {
 			getEventAttendees: {
@@ -66,6 +70,7 @@ vi.mock("@/trpc/react", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.invalidate.mockResolvedValue(undefined);
+	mocks.invalidateAnalytics.mockResolvedValue(undefined);
 	mocks.attendees = [
 		{ id: "a1", userId: "new", userName: "Alex Chen", createdAt: checkedInAt },
 		{ id: "a2", userId: "older", userName: "Sam Patel", createdAt: checkedInAt }
@@ -125,6 +130,7 @@ describe("admin meal scanner", () => {
 		expect(mocks.success).toHaveBeenCalledWith(
 			`Alex Chen checked in at ${formatTime(checkedInAt)}.`
 		);
+		expect(mocks.invalidateAnalytics).toHaveBeenCalledOnce();
 		expect(
 			screen.getByRole("textbox", { name: "Search attendees by name" })
 		).toHaveValue("");
@@ -159,6 +165,7 @@ describe("admin meal scanner", () => {
 				behavior: "smooth"
 			})
 		);
+		expect(mocks.invalidateAnalytics).not.toHaveBeenCalled();
 		expect(mocks.error).toHaveBeenCalledWith(
 			`Sam Patel already checked in at ${formatTime(checkedInAt)}.`,
 			{

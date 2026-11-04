@@ -33,9 +33,77 @@ test.describe("admin meals", () => {
 			await expect(
 				page.getByRole("heading", { name: "Meal Analytics" })
 			).toBeVisible();
-			await expect(page.getByText("Meal tickets scanned")).toBeVisible();
+			await expect(
+				page.getByRole("table", {
+					name: "Scans and dietary restrictions for Entire event"
+				})
+			).toBeVisible();
 		}
 	);
+
+	// Given two meals and an attendee for the second meal
+	// When I switch the analytics filter
+	// Then the single summary table shows each meal or the event totals.
+	test("filters meal analytics between meals and the entire event", async ({
+		authenticatedPage: page,
+		createMeal
+	}) => {
+		const now = Date.now();
+		const breakfast = await createMeal({
+			title: "Analytics breakfast",
+			startTime: new Date(now + minute),
+			endTime: new Date(now + 60 * minute)
+		});
+		const lunch = await createMeal({
+			title: "Analytics lunch",
+			startTime: new Date(now + 120 * minute),
+			endTime: new Date(now + 180 * minute)
+		});
+		const participant = await createTestUser({
+			name: "Analytics Tester",
+			dietaryRestrictions: ["halal"]
+		});
+		try {
+			await db.insert(eventAttendance).values({
+				eventId: lunch.id,
+				userId: participant.user.id
+			});
+			await page.goto(path);
+			await page.getByRole("combobox", { name: "Meal" }).click();
+			await page
+				.getByRole("option", { name: new RegExp(breakfast.title) })
+				.click();
+			const breakfastRow = page
+				.getByRole("table", {
+					name: new RegExp(
+						`Scans and dietary restrictions for ${breakfast.title}`
+					)
+				})
+				.getByRole("row", { name: new RegExp(breakfast.title) });
+			await expect(breakfastRow.getByRole("cell").nth(1)).toHaveText("0");
+			await page.getByRole("combobox", { name: "Meal" }).click();
+			await page.getByRole("option", { name: new RegExp(lunch.title) }).click();
+			const lunchTable = page.getByRole("table", {
+				name: new RegExp(`Scans and dietary restrictions for ${lunch.title}`)
+			});
+			const lunchRow = lunchTable.getByRole("row", {
+				name: new RegExp(lunch.title)
+			});
+			await expect(lunchRow.getByRole("cell").nth(1)).toHaveText("1");
+			await expect(lunchRow.getByRole("cell").nth(2)).toHaveText("1");
+			await expect(page.getByRole("table")).toHaveCount(1);
+			await expect(page.getByText(participant.user.email)).toHaveCount(0);
+			await page.getByRole("combobox", { name: "Meal" }).click();
+			await page.getByRole("option", { name: "Entire event" }).click();
+			await expect(
+				page.getByRole("table", {
+					name: "Scans and dietary restrictions for Entire event"
+				})
+			).toBeVisible();
+		} finally {
+			await participant.cleanup();
+		}
+	});
 
 	// Given active, draft, ended, and non-food events exist
 	// When I view the scanner banner

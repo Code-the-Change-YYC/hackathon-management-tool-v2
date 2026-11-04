@@ -24,13 +24,11 @@ type Meal = RouterOutputs["meals"]["getAllMeals"][number];
 export function MealsView({
 	meals,
 	scannerMealId,
-	ticketsScanned,
-	dietary
+	analytics
 }: {
 	meals: Meal[];
 	scannerMealId?: string;
-	ticketsScanned: number;
-	dietary: RouterOutputs["users"]["getDietaryAnalytics"];
+	analytics: RouterOutputs["meals"]["getAttendanceAnalytics"];
 }) {
 	const now = useCurrentTime();
 	const [openScannerMeal, setOpenScannerMeal] = useState<{
@@ -107,7 +105,7 @@ export function MealsView({
 					/>
 				</CardContent>
 			</Card>
-			<MealAnalytics dietary={dietary} ticketsScanned={ticketsScanned} />
+			<MealAnalytics initialData={analytics} />
 			{openScannerMeal && (
 				<Dialog
 					onOpenChange={(open) => {

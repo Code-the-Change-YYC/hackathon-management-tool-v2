@@ -8,7 +8,7 @@ import {
 	onTestFinished
 } from "vitest";
 import { db } from "@/server/db";
-import { event, eventTicket } from "@/server/db/event-schema";
+import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
 	createEventTicketToken,
 	hashEventTicketToken,
@@ -179,6 +179,93 @@ describe("meal ticket check-in gate", () => {
 				token: ticket.token
 			})
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
+	});
+});
+
+describe("meals.getAttendanceAnalytics", () => {
+	beforeAll(() => {
+		assertE2EDatabaseSafety();
+	});
+
+	it("counts scans per meal and restrictions once per unique attendee overall, including empty meals", async () => {
+		const fixtures = new EventFixtureTracker();
+		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
+		const first = await createAuthenticatedCaller({
+			role: Role.PARTICIPANT,
+			dietaryRestrictions: ["halal", "gluten_free"]
+		});
+		const second = await createAuthenticatedCaller({
+			role: Role.PARTICIPANT,
+			dietaryRestrictions: ["vegan"]
+		});
+		onTestFinished(async () => {
+			await fixtures.cleanup();
+			await first.cleanup();
+			await second.cleanup();
+			await admin.cleanup();
+		});
+		const now = Date.now();
+		const breakfast = await fixtures.create({
+			title: "Analytics breakfast",
+			type: EventType.FOOD,
+			startTime: new Date(now + hour),
+			endTime: new Date(now + 2 * hour)
+		});
+		const lunch = await fixtures.create({
+			title: "Analytics lunch",
+			type: EventType.FOOD,
+			startTime: new Date(now + 3 * hour),
+			endTime: new Date(now + 4 * hour)
+		});
+		const empty = await fixtures.create({
+			title: "Analytics empty meal",
+			type: EventType.FOOD,
+			startTime: new Date(now + 5 * hour),
+			endTime: new Date(now + 6 * hour)
+		});
+		const nonFood = await fixtures.create({
+			title: "Analytics activity",
+			type: EventType.ACTIVITY,
+			startTime: new Date(now + 7 * hour),
+			endTime: new Date(now + 8 * hour)
+		});
+		const baseline = await admin.caller.meals.getAttendanceAnalytics();
+		await db.insert(eventAttendance).values([
+			{ eventId: breakfast.id, userId: first.user.id },
+			{ eventId: breakfast.id, userId: second.user.id },
+			{ eventId: lunch.id, userId: first.user.id },
+			{ eventId: nonFood.id, userId: second.user.id }
+		]);
+		const analytics = await admin.caller.meals.getAttendanceAnalytics();
+		expect(
+			analytics.meals.find((meal) => meal.id === breakfast.id)
+		).toMatchObject({
+			scans: 2,
+			restrictions: { halal: 1, gluten_free: 1, vegan: 1 }
+		});
+		expect(analytics.meals.find((meal) => meal.id === lunch.id)).toMatchObject({
+			scans: 1,
+			restrictions: { halal: 1, gluten_free: 1, vegan: 0 }
+		});
+		expect(analytics.meals.find((meal) => meal.id === empty.id)).toMatchObject({
+			scans: 0,
+			restrictions: { halal: 0, vegan: 0 }
+		});
+		expect(analytics.meals.some((meal) => meal.id === nonFood.id)).toBe(false);
+		expect(analytics.overall.scans - baseline.overall.scans).toBe(3);
+		expect(
+			analytics.overall.uniqueAttendees - baseline.overall.uniqueAttendees
+		).toBe(2);
+		expect(
+			analytics.overall.restrictions.halal - baseline.overall.restrictions.halal
+		).toBe(1);
+		expect(
+			analytics.overall.restrictions.gluten_free -
+				baseline.overall.restrictions.gluten_free
+		).toBe(1);
+		expect(
+			analytics.overall.restrictions.vegan - baseline.overall.restrictions.vegan
+		).toBe(1);
 	});
 });
 

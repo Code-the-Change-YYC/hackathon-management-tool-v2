@@ -66,7 +66,12 @@ export default function MealScanner({
 						} else {
 							toast.success(message);
 						}
-						await utils.events.getEventAttendees.invalidate({ eventId });
+						await Promise.all([
+							utils.events.getEventAttendees.invalidate({ eventId }),
+							...(!alreadyCheckedIn
+								? [utils.meals.getAttendanceAnalytics.invalidate()]
+								: [])
+						]);
 						onScanResult(result.participant.id, alreadyCheckedIn);
 					},
 					onError: (error) => {
