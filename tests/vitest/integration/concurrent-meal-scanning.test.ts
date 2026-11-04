@@ -6,6 +6,7 @@ import { eventAttendance } from "@/server/db/event-schema";
 import { EventStatus, EventType, Role } from "@/types/types";
 import { EventFixtureTracker } from "../../utils/events";
 import { createAuthenticatedCaller } from "../helpers/auth";
+import { runConcurrently } from "../helpers/concurrency";
 
 it("HMTV2-79 PART07: independent scanners redeem one current ticket exactly once", async () => {
 	const events = new EventFixtureTracker();
@@ -31,19 +32,20 @@ it("HMTV2-79 PART07: independent scanners redeem one current ticket exactly once
 		eventId: meal.id
 	});
 	assert(ticket.status === "active");
-	let release!: () => void;
-	const gate = new Promise<void>((resolve) => {
-		release = resolve;
+	const results = await runConcurrently(
+		admins.map(
+			({ caller }) =>
+				() =>
+					caller.events.redeemEventTicket({
+						eventId: meal.id,
+						token: ticket.token
+					})
+		)
+	);
+	const outcomes = results.map((result) => {
+		assert(result.status === "fulfilled");
+		return result.value;
 	});
-	const pending = admins.map(async ({ caller }) => {
-		await gate;
-		return caller.events.redeemEventTicket({
-			eventId: meal.id,
-			token: ticket.token
-		});
-	});
-	release();
-	const outcomes = await Promise.all(pending);
 	expect(outcomes.map((result) => result.status).sort()).toEqual([
 		"already_checked_in",
 		"checked_in"
