@@ -120,6 +120,37 @@ describe("admin schedule", () => {
 		).toBeInTheDocument();
 	});
 
+	it.each([
+		"Add event",
+		"Edit event"
+	])("keeps the %s heading outside the scrollable form", async (mode) => {
+		render(<ScheduleView events={[lunch]} settings={null} />);
+		if (mode === "Add event") {
+			fireEvent.click(screen.getByRole("button", { name: "Add event" }));
+		} else {
+			openMenu("Lunch");
+			fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
+		}
+		const dialog = screen.getByRole("dialog");
+		const fields = dialog.querySelector(".overflow-y-auto");
+		expect(fields).toBeInTheDocument();
+		expect(fields).toContainElement(within(dialog).getByLabelText("Title"));
+		expect(fields).not.toContainElement(
+			within(dialog).getByRole("heading", { name: mode })
+		);
+		expect(fields).toContainElement(
+			within(dialog).getByRole("button", {
+				name: mode === "Add event" ? "Add event" : "Save changes"
+			})
+		);
+		expect(fields).toContainElement(
+			within(dialog).getByRole("button", { name: "Cancel" })
+		);
+		expect(fields).not.toContainElement(
+			within(dialog).getByRole("button", { name: "Close" })
+		);
+	});
+
 	it("marks hidden events and shows their location", () => {
 		render(<ScheduleView events={[lunch]} settings={null} />);
 		expect(screen.getByText("Hidden")).toBeInTheDocument();

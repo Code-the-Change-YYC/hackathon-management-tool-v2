@@ -98,12 +98,12 @@ export function EventDialog({
 			onOpenChange={(open) => !open && onClose()}
 			open
 		>
-			<DialogContent className="sm:max-w-xl">
+			<DialogContent className="max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle>{event ? "Edit event" : "Add event"}</DialogTitle>
 				</DialogHeader>
 				<form
-					className="flex flex-col gap-6"
+					className="min-h-0"
 					noValidate
 					onSubmit={form.handleSubmit((values) =>
 						event
@@ -111,118 +111,120 @@ export function EventDialog({
 							: addEvent.mutate(values)
 					)}
 				>
-					<FieldGroup className="gap-4">
-						<TextField
-							control={form.control}
-							disabled={isPending}
-							label="Title"
-							maxLength={EVENT_TITLE_MAX_LENGTH}
-							name="title"
-						/>
-						<Field>
-							<FieldLabel id="event-type-label">Type</FieldLabel>
-							<RadioGroup
-								aria-labelledby="event-type-label"
-								className="grid-cols-2 sm:grid-cols-4"
+					<div className="h-full min-h-0 overflow-y-auto pr-1">
+						<FieldGroup className="gap-4">
+							<TextField
+								control={form.control}
 								disabled={isPending}
-								onValueChange={(type) => form.setValue("type", type)}
-								value={eventType}
+								label="Title"
+								maxLength={EVENT_TITLE_MAX_LENGTH}
+								name="title"
+							/>
+							<Field>
+								<FieldLabel id="event-type-label">Type</FieldLabel>
+								<RadioGroup
+									aria-labelledby="event-type-label"
+									className="grid-cols-2 sm:grid-cols-4"
+									disabled={isPending}
+									onValueChange={(type) => form.setValue("type", type)}
+									value={eventType}
+								>
+									{EVENT_TYPES.map((type) => (
+										<Radio.Root
+											className={cn(
+												"flex min-w-0 cursor-pointer items-center gap-1.5 rounded-lg border border-input p-1.5 pr-2 text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-checked:font-medium data-disabled:opacity-50 data-checked:ring-1",
+												EVENT_TYPE_THEMES[type].selectedClassName
+											)}
+											key={type}
+											value={type}
+										>
+											<EventTypeIcon
+												className="size-7 rounded-md p-1.5"
+												type={type}
+											/>
+											<span className="truncate">
+												{EVENT_TYPE_THEMES[type].label}
+											</span>
+										</Radio.Root>
+									))}
+								</RadioGroup>
+							</Field>
+							<DateField
+								control={form.control}
+								disabled={isPending}
+								label="Date"
+								max={hackathonDates?.end}
+								min={hackathonDates?.start}
+								name="date"
+							/>
+							<div className="grid gap-4 sm:grid-cols-2">
+								<TimeField
+									control={form.control}
+									disabled={isPending}
+									label="Starts"
+									name="startTime"
+								/>
+								<TimeField
+									control={form.control}
+									disabled={isPending}
+									label="Ends"
+									name="endTime"
+								/>
+							</div>
+							{eventType === EventType.FOOD && (
+								<TimeField
+									control={form.control}
+									disabled={isPending}
+									label="Last call ends (optional)"
+									name="lastCallEndTime"
+								/>
+							)}
+							<div className="grid gap-4 sm:grid-cols-2">
+								<TextField
+									control={form.control}
+									disabled={isPending}
+									label="Location"
+									maxLength={EVENT_LOCATION_MAX_LENGTH}
+									name="location"
+									placeholder="Room or venue"
+								/>
+								<TextField
+									control={form.control}
+									disabled={isPending}
+									label="URL (optional)"
+									name="navigationUrl"
+									placeholder="https://"
+									type="url"
+								/>
+							</div>
+							<Field data-invalid={Boolean(descriptionError)}>
+								<FieldLabel htmlFor="event-description">Description</FieldLabel>
+								<Textarea
+									aria-invalid={Boolean(descriptionError)}
+									disabled={isPending}
+									id="event-description"
+									maxLength={EVENT_DESCRIPTION_MAX_LENGTH}
+									{...form.register("description")}
+								/>
+								<FieldError errors={[descriptionError]} />
+							</Field>
+							<CheckboxField
+								control={form.control}
+								disabled={isPending}
+								name="published"
 							>
-								{EVENT_TYPES.map((type) => (
-									<Radio.Root
-										className={cn(
-											"flex min-w-0 cursor-pointer items-center gap-1.5 rounded-lg border border-input p-1.5 pr-2 text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-checked:font-medium data-disabled:opacity-50 data-checked:ring-1",
-											EVENT_TYPE_THEMES[type].selectedClassName
-										)}
-										key={type}
-										value={type}
-									>
-										<EventTypeIcon
-											className="size-7 rounded-md p-1.5"
-											type={type}
-										/>
-										<span className="truncate">
-											{EVENT_TYPE_THEMES[type].label}
-										</span>
-									</Radio.Root>
-								))}
-							</RadioGroup>
-						</Field>
-						<DateField
-							control={form.control}
-							disabled={isPending}
-							label="Date"
-							max={hackathonDates?.end}
-							min={hackathonDates?.start}
-							name="date"
-						/>
-						<div className="grid gap-4 sm:grid-cols-2">
-							<TimeField
-								control={form.control}
-								disabled={isPending}
-								label="Starts"
-								name="startTime"
-							/>
-							<TimeField
-								control={form.control}
-								disabled={isPending}
-								label="Ends"
-								name="endTime"
-							/>
-						</div>
-						{eventType === EventType.FOOD && (
-							<TimeField
-								control={form.control}
-								disabled={isPending}
-								label="Last call ends (optional)"
-								name="lastCallEndTime"
-							/>
-						)}
-						<div className="grid gap-4 sm:grid-cols-2">
-							<TextField
-								control={form.control}
-								disabled={isPending}
-								label="Location"
-								maxLength={EVENT_LOCATION_MAX_LENGTH}
-								name="location"
-								placeholder="Room or venue"
-							/>
-							<TextField
-								control={form.control}
-								disabled={isPending}
-								label="URL (optional)"
-								name="navigationUrl"
-								placeholder="https://"
-								type="url"
-							/>
-						</div>
-						<Field data-invalid={Boolean(descriptionError)}>
-							<FieldLabel htmlFor="event-description">Description</FieldLabel>
-							<Textarea
-								aria-invalid={Boolean(descriptionError)}
-								disabled={isPending}
-								id="event-description"
-								maxLength={EVENT_DESCRIPTION_MAX_LENGTH}
-								{...form.register("description")}
-							/>
-							<FieldError errors={[descriptionError]} />
-						</Field>
-						<CheckboxField
-							control={form.control}
-							disabled={isPending}
-							name="published"
-						>
-							Show on the participant schedule
-						</CheckboxField>
-					</FieldGroup>
-					<DialogFooter>
-						<Button disabled={isPending} type="submit">
-							{event ? "Save changes" : "Add event"}
-						</Button>
-						<Button onClick={onClose} type="button" variant="outline">
-							Cancel
-						</Button>
-					</DialogFooter>
+								Show on the participant schedule
+							</CheckboxField>
+						</FieldGroup>
+						<DialogFooter className="mt-6">
+							<Button disabled={isPending} type="submit">
+								{event ? "Save changes" : "Add event"}
+							</Button>
+							<Button onClick={onClose} type="button" variant="outline">
+								Cancel
+							</Button>
+						</DialogFooter>
+					</div>
 				</form>
 			</DialogContent>
 		</Dialog>
