@@ -2,6 +2,7 @@
 
 import { Badge } from "@/app/components/ui/badge";
 import { formatDateTime } from "@/lib/datetime";
+import { cn } from "@/lib/utils";
 import {
 	DIETARY_RESTRICTION_LABELS,
 	toDietaryRestrictions
@@ -23,6 +24,7 @@ export default function MealAttendees({
 		return <div className="text-medium-grey text-sm">No attendees yet.</div>;
 	}
 
+	const latestAttendanceId = getMealAttendees.data[0]?.id;
 	const query = search.trim().toLowerCase();
 	const attendees = getMealAttendees.data.filter((attendee) =>
 		attendee.userName.toLowerCase().includes(query)
@@ -39,17 +41,23 @@ export default function MealAttendees({
 	return (
 		<ul className="flex flex-col gap-2">
 			{attendees.map((attendee) => {
+				const isLatest = attendee.id === latestAttendanceId;
 				const restrictions = toDietaryRestrictions(
 					attendee.dietaryRestrictions
 				);
 				return (
 					<li
-						className="rounded-md border border-medium-grey p-2"
+						className={cn(
+							"rounded-md border border-medium-grey p-2",
+							!isLatest && "mx-4"
+						)}
 						data-attendee-id={attendee.userId}
 						key={attendee.id}
 					>
 						<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-							<span className="font-medium">{attendee.userName}</span>
+							<span className={cn("font-medium", isLatest && "font-semibold")}>
+								{attendee.userName}
+							</span>
 							{restrictions.length > 0 && (
 								<div className="ml-auto flex flex-wrap justify-end gap-1">
 									{restrictions.map((restriction) => (

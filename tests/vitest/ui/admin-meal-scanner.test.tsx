@@ -115,9 +115,24 @@ describe("admin meal scanner", () => {
 		const search = screen.getByRole("textbox", {
 			name: "Search attendees by name"
 		});
+		expect(screen.getByText("Alex Chen").closest("li")).not.toHaveClass("mx-4");
+		expect(screen.getByText("Alex Chen")).toHaveClass("font-semibold");
+		expect(
+			screen.getByText("Alex Chen").closest("li")?.lastElementChild
+		).toHaveClass("text-xs");
+		expect(screen.getByText("Sam Patel").closest("li")).toHaveClass("mx-4");
+		expect(screen.getByText("Sam Patel")).not.toHaveClass("font-semibold");
+		expect(
+			screen.getByText("Sam Patel").closest("li")?.lastElementChild
+		).toHaveClass("text-xs");
 		fireEvent.change(search, { target: { value: "  PATEL " } });
-		expect(screen.getByText("Sam Patel")).toBeInTheDocument();
+		expect(screen.getByText("Sam Patel").closest("li")).toHaveClass("mx-4");
+		expect(screen.getByText("Sam Patel")).toHaveClass("font-medium");
+		expect(screen.getByText("Sam Patel")).not.toHaveClass("font-semibold");
 		expect(screen.queryByText("Alex Chen")).not.toBeInTheDocument();
+		fireEvent.change(search, { target: { value: "  ALEX " } });
+		expect(screen.getByText("Alex Chen").closest("li")).not.toHaveClass("mx-4");
+		expect(screen.getByText("Alex Chen")).toHaveClass("font-semibold");
 		fireEvent.change(search, { target: { value: "nobody" } });
 		expect(screen.getByText("No matching attendees.")).toBeInTheDocument();
 		expect(
