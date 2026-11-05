@@ -103,8 +103,7 @@ describe("shared participant event and status components", () => {
 					name: "Panel Round",
 					kind: "panel" as const,
 					startTime: new Date("2026-11-08T17:00:00Z"),
-					endTime: new Date("2026-11-08T20:00:00Z"),
-					scoringComplete: false
+					endTime: new Date("2026-11-08T20:00:00Z")
 				}
 			],
 			scoresReleased: false
@@ -118,15 +117,8 @@ describe("shared participant event and status components", () => {
 		).toHaveAttribute("aria-current", "step");
 		rerender(
 			<JudgingStatus
-				now={now}
-				progress={{
-					...progress,
-					rounds: progress.rounds.map((round) => ({
-						...round,
-						scoringComplete: true
-					})),
-					scoresReleased: true
-				}}
+				now={new Date("2026-11-08T20:00:00Z")}
+				progress={{ ...progress, scoresReleased: true }}
 			/>
 		);
 		expect(screen.getByText("Winners announced")).toBeInTheDocument();

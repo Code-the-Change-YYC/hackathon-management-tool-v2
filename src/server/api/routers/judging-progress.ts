@@ -16,44 +16,31 @@ import { judgingRounds } from "@/server/db/judging-schema";
 export const judgingProgressRouter = createTRPCRouter({
 	// What participants need to work out the current judging stage
 	get: protectedProcedure.query(async ({ ctx }): Promise<JudgingProgress> => {
-		const [settings, rounds, anyTeam, pendingTeam, scoring] = await Promise.all(
-			[
-				ctx.db.query.hackathonSettings.findFirst({
-					where: eq(hackathonSettings.id, 1)
-				}),
-				ctx.db.query.judgingRounds.findMany({
-					columns: {
-						id: true,
-						name: true,
-						kind: true,
-						startTime: true,
-						endTime: true
-					}
-				}),
-				ctx.db.query.organization.findFirst({ columns: { id: true } }),
-				ctx.db.query.organization.findFirst({
-					where: eq(organization.prescreenStatus, "pending"),
-					columns: { id: true }
-				}),
-				getAssignmentScoring(ctx.db)
-			]
-		);
+		const [settings, rounds, anyTeam, pendingTeam] = await Promise.all([
+			ctx.db.query.hackathonSettings.findFirst({
+				where: eq(hackathonSettings.id, 1)
+			}),
+			ctx.db.query.judgingRounds.findMany({
+				columns: {
+					id: true,
+					name: true,
+					kind: true,
+					startTime: true,
+					endTime: true
+				}
+			}),
+			ctx.db.query.organization.findFirst({ columns: { id: true } }),
+			ctx.db.query.organization.findFirst({
+				where: eq(organization.prescreenStatus, "pending"),
+				columns: { id: true }
+			})
+		]);
 
 		return {
 			startDate: settings?.startDate ?? null,
 			submissionDeadline: settings?.submissionDeadline ?? null,
 			prescreenComplete: anyTeam !== undefined && pendingTeam === undefined,
-			rounds: rounds.map((round) => {
-				const assignments = scoring.filter(
-					(assignment) => assignment.roundId === round.id
-				);
-				return {
-					...round,
-					scoringComplete:
-						assignments.length > 0 &&
-						assignments.every((assignment) => assignment.scored)
-				};
-			}),
+			rounds,
 			scoresReleased: areScoresReleased(settings)
 		};
 	}),

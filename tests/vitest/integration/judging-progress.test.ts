@@ -28,52 +28,36 @@ beforeEach(() => {
 });
 
 describe("judgingProgress.get", () => {
-	it("completes rounds and pre-screening from scoring and team decisions", async () => {
+	it("returns the rounds and completes pre-screening from team decisions", async () => {
 		db.query.hackathonSettings.findFirst.mockResolvedValue({
 			startDate: null,
 			submissionDeadline: start,
 			scoresReleased: true
 		});
-		const round = (id: string) => ({
-			id,
-			name: id,
+		const round = {
+			id: "panel",
+			name: "Panel Round",
 			kind: "panel",
 			startTime: start,
 			endTime: start
-		});
-		db.query.judgingRounds.findMany.mockResolvedValue([
-			round("scored"),
-			round("partly-scored"),
-			round("empty")
-		]);
+		};
+		db.query.judgingRounds.findMany.mockResolvedValue([round]);
 		// Some team exists, and none is still pending.
 		db.query.organization.findFirst
 			.mockResolvedValueOnce({ id: "team-1" })
 			.mockResolvedValueOnce(undefined);
-		db.execute.mockResolvedValue([
-			{ assignmentId: "a1", roundId: "scored", scored: true },
-			{ assignmentId: "a2", roundId: "partly-scored", scored: true },
-			{ assignmentId: "a3", roundId: "partly-scored", scored: false }
-		]);
 
-		const progress = await caller().get();
-		expect(progress).toMatchObject({
+		expect(await caller().get()).toEqual({
+			startDate: null,
 			submissionDeadline: start,
 			prescreenComplete: true,
+			rounds: [round],
 			scoresReleased: true
 		});
-		expect(
-			progress.rounds.map(({ id, scoringComplete }) => [id, scoringComplete])
-		).toEqual([
-			["scored", true],
-			["partly-scored", false],
-			["empty", false]
-		]);
 	});
 	it("keeps pre-screening open while a team is pending", async () => {
 		db.query.judgingRounds.findMany.mockResolvedValue([]);
 		db.query.organization.findFirst.mockResolvedValue({ id: "team-1" });
-		db.execute.mockResolvedValue([]);
 		expect(await caller().get()).toMatchObject({
 			prescreenComplete: false,
 			scoresReleased: false
