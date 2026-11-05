@@ -155,6 +155,16 @@ export function RegisteredUsersView({
 		onError: (error) => toast.error(error.message)
 	});
 
+	const mealOptIn = api.users.update.useMutation({
+		onSuccess: ({ wantsFood }) => {
+			toast.success(
+				wantsFood ? "Meal opt-in enabled." : "Meal opt-in disabled."
+			);
+			refresh();
+		},
+		onError: (error) => toast.error(error.message)
+	});
+
 	const resendAccessEmail = api.judges.resendAccessEmail.useMutation({
 		onSuccess: (_, { id }) => {
 			const judge = participants.find((participant) => participant.id === id);
@@ -332,11 +342,15 @@ export function RegisteredUsersView({
 						</div>
 
 						<ParticipantsTable
+							mealOptInPending={mealOptIn.isPending}
 							onCheckIn={(participant, checkedIn) =>
 								checkIn.mutate({ id: participant.id, checkedIn })
 							}
 							onDelete={setDeleting}
 							onEdit={setEditing}
+							onMealOptIn={(participant, wantsFood) =>
+								mealOptIn.mutate({ id: participant.id, wantsFood })
+							}
 							onResendAccessEmail={(participant) =>
 								resendAccessEmail.mutate({ id: participant.id })
 							}

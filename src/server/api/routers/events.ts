@@ -83,6 +83,16 @@ const notCheckedIn = () =>
 		message: "This participant has not checked in yet."
 	});
 
+function mealPreferenceRequired(wantsFood: boolean | null | undefined) {
+	return new TRPCError({
+		code: "FORBIDDEN",
+		message:
+			wantsFood === false
+				? "You opted out of meals during onboarding."
+				: "Complete your meal preferences during onboarding to receive a meal ticket."
+	});
+}
+
 const ticketTokenSchema = z
 	.string()
 	.regex(EVENT_TICKET_TOKEN_PATTERN, "Invalid event ticket format.");
@@ -166,6 +176,16 @@ export const eventsRouter = createTRPCRouter({
 						code: "BAD_REQUEST",
 						message: "This event does not support QR tickets."
 					});
+				}
+
+				if (ticketEvent.type === EventType.FOOD) {
+					const participant = await tx.query.user.findFirst({
+						where: eq(user.id, ctx.session.user.id),
+						columns: { wantsFood: true }
+					});
+					if (participant?.wantsFood !== true) {
+						throw mealPreferenceRequired(participant?.wantsFood);
+					}
 				}
 
 				if (ticketEvent.status !== EventStatus.ACTIVE) {
@@ -260,6 +280,7 @@ export const eventsRouter = createTRPCRouter({
 						participantDietaryRestrictions: user.dietaryRestrictions,
 						participantRole: user.role,
 						participantCheckedIn: user.checkedIn,
+						participantWantsFood: user.wantsFood,
 						eventTitle: event.title,
 						eventType: event.type,
 						eventStatus: event.status,
@@ -289,6 +310,13 @@ export const eventsRouter = createTRPCRouter({
 
 				if (!ticket.participantCheckedIn) {
 					throw notCheckedIn();
+				}
+
+				if (
+					ticket.eventType === EventType.FOOD &&
+					ticket.participantWantsFood !== true
+				) {
+					throw mealPreferenceRequired(ticket.participantWantsFood);
 				}
 
 				if (ticket.eventId !== input.eventId) {

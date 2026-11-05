@@ -4,6 +4,7 @@ import { createTRPCContext } from "@/server/api/trpc";
 
 const mocks = vi.hoisted(() => ({
 	eventStarts: vi.fn(),
+	finalRound: vi.fn(),
 	insertValues: vi.fn(),
 	session: vi.fn()
 }));
@@ -14,6 +15,7 @@ vi.mock("@/server/better-auth", () => ({
 
 vi.mock("@/server/db", () => ({
 	db: {
+		query: { judgingRounds: { findFirst: mocks.finalRound } },
 		select: () => ({ from: mocks.eventStarts }),
 		insert: () => ({ values: mocks.insertValues })
 	}
@@ -119,7 +121,40 @@ describe("hackathonSettings.setScoresReleased", () => {
 		expect(mocks.insertValues).not.toHaveBeenCalled();
 	});
 
+	it("rejects releasing scores without a final round", async () => {
+		mocks.finalRound.mockResolvedValue(undefined);
+		const api = await caller();
+
+		await expect(
+			api.hackathonSettings.setScoresReleased({ released: true })
+		).rejects.toMatchObject({
+			code: "BAD_REQUEST",
+			message: "Add a final round before releasing scores."
+		});
+		expect(mocks.insertValues).not.toHaveBeenCalled();
+	});
+
+	it("rejects releasing scores before the final round ends", async () => {
+		mocks.finalRound.mockResolvedValue({
+			endTime: new Date(Date.now() + 60_000)
+		});
+		const api = await caller();
+
+		await expect(
+			api.hackathonSettings.setScoresReleased({ released: true })
+		).rejects.toMatchObject({
+			code: "BAD_REQUEST",
+			message: expect.stringMatching(
+				/^Scores can be released once the final round ends at /
+			)
+		});
+		expect(mocks.insertValues).not.toHaveBeenCalled();
+	});
+
 	it.each([true, false])("sets released to %s", async (released) => {
+		mocks.finalRound.mockResolvedValue({
+			endTime: new Date(Date.now() - 60_000)
+		});
 		const api = await caller();
 
 		await api.hackathonSettings.setScoresReleased({ released });
@@ -127,6 +162,20 @@ describe("hackathonSettings.setScoresReleased", () => {
 		expect(mocks.insertValues).toHaveBeenCalledWith({
 			id: 1,
 			scoresReleased: released
+		});
+	});
+
+	it("hides scores even before the final round ends", async () => {
+		mocks.finalRound.mockResolvedValue({
+			endTime: new Date(Date.now() + 60_000)
+		});
+		const api = await caller();
+
+		await api.hackathonSettings.setScoresReleased({ released: false });
+
+		expect(mocks.insertValues).toHaveBeenCalledWith({
+			id: 1,
+			scoresReleased: false
 		});
 	});
 });

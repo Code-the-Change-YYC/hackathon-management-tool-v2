@@ -8,16 +8,24 @@ import {
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardDescription, CardHeader } from "@/app/components/ui/card";
+import { useCurrentTime } from "@/hooks/use-current-time";
 import { useRefresh } from "@/hooks/use-refresh";
+import { getScoreReleaseBlocker } from "@/lib/judging";
 import { api } from "@/trpc/react";
 
 export function ScoreRelease({
 	released,
-	ballotsComplete
+	ballotsComplete,
+	finalRoundEndTime
 }: {
 	released: boolean;
 	ballotsComplete: boolean;
+	finalRoundEndTime: Date | null;
 }) {
+	const releaseBlocker = getScoreReleaseBlocker(
+		finalRoundEndTime,
+		useCurrentTime()
+	);
 	const { confirm, dialogProps } = useConfirmDialog();
 	const { isRefreshing, refresh } = useRefresh();
 	const setReleased = api.hackathonSettings.setScoresReleased.useMutation({
@@ -73,7 +81,8 @@ export function ScoreRelease({
 						<CardDescription>
 							{released
 								? "Teams can see their panel-round scores."
-								: "Teams can’t see any scores until you release them, usually once the winners are announced."}
+								: (releaseBlocker ??
+									"Teams can’t see any scores until you release them, usually once the winners are announced.")}
 						</CardDescription>
 					</div>
 					{released ? (
@@ -87,7 +96,7 @@ export function ScoreRelease({
 						</Button>
 					) : (
 						<Button
-							disabled={busy}
+							disabled={busy || Boolean(releaseBlocker)}
 							onClick={() => void requestRelease()}
 							size="sm"
 						>

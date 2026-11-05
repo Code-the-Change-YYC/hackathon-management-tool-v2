@@ -11,6 +11,7 @@ import { TicketTeeth } from "./TicketTeeth";
 
 type EventTicket = RouterOutputs["events"]["issueParticipantEventTicket"];
 type TicketEvent = EventTicket["event"];
+type Meal = RouterOutputs["meals"]["getNextMeal"];
 
 function getMealTiming(
 	event: Pick<TicketEvent, "startTime" | "endTime">,
@@ -38,7 +39,17 @@ function getMealTiming(
 	return `Runs from ${formatTime(event.startTime)} to ${endTime}.`;
 }
 
-function getTicketDescription(ticket: EventTicket | null, now: Date) {
+function getTicketDescription(
+	ticket: EventTicket | null,
+	meal: Meal,
+	mealPreference: boolean | null,
+	now: Date
+) {
+	if (mealPreference !== true) {
+		return meal
+			? getMealTiming(meal, now)
+			: "There is no upcoming meal ticket available.";
+	}
 	if (!ticket) {
 		return "There is no upcoming meal ticket available.";
 	}
@@ -53,11 +64,23 @@ function getTicketDescription(ticket: EventTicket | null, now: Date) {
 interface MealTicketProps {
 	displayName: string;
 	ticket: EventTicket | null;
+	meal: Meal;
+	mealPreference: boolean | null;
 }
 
-export function MealTicket({ displayName, ticket }: MealTicketProps) {
-	const ticketMealName = ticket?.event.title ?? "Meal";
-	const ticketDescription = getTicketDescription(ticket, useCurrentTime());
+export function MealTicket({
+	displayName,
+	ticket,
+	meal,
+	mealPreference
+}: MealTicketProps) {
+	const ticketMealName = ticket?.event.title ?? meal?.title ?? "Meal";
+	const ticketDescription = getTicketDescription(
+		ticket,
+		meal,
+		mealPreference,
+		useCurrentTime()
+	);
 
 	return (
 		<section
@@ -110,15 +133,20 @@ export function MealTicket({ displayName, ticket }: MealTicketProps) {
 					<div className="absolute right-0 bottom-0 @min-[40rem]/meal-ticket:hidden size-6 translate-x-1/2 translate-y-1/2 rounded-full bg-background" />
 					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 @min-[40rem]/meal-ticket:block hidden size-6 rounded-full bg-background" />
 					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 @min-[40rem]/meal-ticket:block hidden size-6 translate-y-1/2 rounded-full bg-background" />
-					{ticket?.status === EventTicketStatus.ACTIVE ? (
+					{mealPreference === true &&
+					ticket?.status === EventTicketStatus.ACTIVE ? (
 						<div className="aspect-square h-full max-h-full max-w-full">
 							<StyledQRCode value={ticket.token} />
 						</div>
 					) : (
 						<p className="max-w-44 text-center font-medium text-dark-grey text-sm">
-							{ticket?.status === EventTicketStatus.ALREADY_CHECKED_IN
-								? "Already checked in"
-								: "No ticket available"}
+							{mealPreference === false
+								? "You opted out of meals during onboarding. Please see an event staff member if you change your mind."
+								: mealPreference === null
+									? "Complete your meal preferences during onboarding to receive a meal ticket."
+									: ticket?.status === EventTicketStatus.ALREADY_CHECKED_IN
+										? "Already checked in"
+										: "No ticket available"}
 						</p>
 					)}
 				</div>

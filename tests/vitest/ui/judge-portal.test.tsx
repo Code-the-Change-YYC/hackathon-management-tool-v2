@@ -195,6 +195,19 @@ function expectTableCard(tableName: string, roundName: string) {
 	expect(card).toHaveTextContent("Sam");
 }
 
+// Once judges have final-round assignments, this card replaces the table card.
+function expectFinalRoundCard() {
+	const card = screen.getByRole("region", {
+		name: "It’s time for the final round of judging"
+	});
+	expect(
+		within(card).getByRole("button", { name: "Go to final round" })
+	).toBeVisible();
+	expect(
+		screen.queryByRole("region", { name: "Table 1" })
+	).not.toBeInTheDocument();
+}
+
 describe("judge dashboard", () => {
 	it("shows an empty state before any teams are assigned", () => {
 		render(
@@ -346,7 +359,7 @@ describe("judge dashboard", () => {
 		expect(
 			within(finalsRegion).queryByRole("link", { name: /Finalist/ })
 		).not.toBeInTheDocument();
-		expectTableCard("Table 1", "Round 1");
+		expectFinalRoundCard();
 
 		rerender(
 			<DashboardView
@@ -365,7 +378,7 @@ describe("judge dashboard", () => {
 			"1st"
 		);
 		expect(screen.getByRole("link", { name: "Change ranking" })).toBeVisible();
-		expectTableCard("Table 1", "Round 1");
+		expectFinalRoundCard();
 	});
 
 	it("shows no table card for a judge only in the final round", () => {
