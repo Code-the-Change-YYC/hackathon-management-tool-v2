@@ -298,6 +298,25 @@ describe("users.update", () => {
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
 	});
 
+	it("lets admins change meal opt-in for a participant", async () => {
+		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
+		const participant = await createTestUser({
+			role: Role.PARTICIPANT,
+			wantsFood: false
+		});
+		onTestFinished(async () => {
+			await participant.cleanup();
+			await admin.cleanup();
+		});
+
+		await expect(
+			admin.caller.users.update({ id: participant.user.id, wantsFood: true })
+		).resolves.toMatchObject({ wantsFood: true });
+		expect(
+			await db.query.user.findFirst({ where: eq(user.id, participant.user.id) })
+		).toMatchObject({ wantsFood: true });
+	});
+
 	it("validates paired names and missing users", async () => {
 		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
 		onTestFinished(admin.cleanup);

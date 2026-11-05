@@ -232,6 +232,7 @@ export const usersRouter = createTRPCRouter({
 					program: z.enum(PROGRAMS).optional().nullable(),
 					completedRegistration: z.boolean().optional(),
 					checkedIn: z.boolean().optional(),
+					wantsFood: z.boolean().optional(),
 					banned: z.boolean().optional()
 				})
 				.superRefine(({ firstName, lastName }, ctx) => {

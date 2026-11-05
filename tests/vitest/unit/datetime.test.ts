@@ -7,6 +7,7 @@ import {
 	isSameCalgaryDay,
 	toDateInputValue
 } from "@/lib/datetime";
+import { getEventDate } from "../../../drizzle/seedUtils";
 
 // Tests run with TZ=UTC, like a production server.
 // 6:30 PM on October 17 in Calgary (MDT, UTC-6).
