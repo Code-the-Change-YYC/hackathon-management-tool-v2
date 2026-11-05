@@ -2,6 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import { formatDateKey, isSameCalgaryDay } from "@/lib/datetime";
+import {
+	createEventTicketToken,
+	hashEventTicketToken,
+	isValidMealScannerLease
+} from "@/lib/event-tickets";
 import { eventNavigationUrlSchema } from "@/lib/participant-events";
 import {
 	EVENT_DESCRIPTION_MAX_LENGTH,
@@ -20,11 +25,6 @@ import type { db as dbType } from "@/server/db";
 import { hackathonSettings } from "@/server/db/admin-schema";
 import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
-import {
-	createEventTicketToken,
-	hashEventTicketToken,
-	isValidMealScannerLease
-} from "@/server/lib/event-tickets";
 import {
 	EVENT_STATUSES,
 	EVENT_TICKET_TOKEN_PATTERN,

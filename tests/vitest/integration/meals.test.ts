@@ -8,14 +8,14 @@ import {
 	it,
 	onTestFinished
 } from "vitest";
-import { db } from "@/server/db";
-import { user } from "@/server/db/auth-schema";
-import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
 	createEventTicketToken,
 	hashEventTicketToken,
 	isValidMealScannerLease
-} from "@/server/lib/event-tickets";
+} from "@/lib/event-tickets";
+import { db } from "@/server/db";
+import { user } from "@/server/db/auth-schema";
+import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import { EventStatus, EventTicketStatus, EventType, Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
 import { EventFixtureTracker } from "../../utils/events";

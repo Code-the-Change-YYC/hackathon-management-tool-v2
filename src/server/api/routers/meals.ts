@@ -1,13 +1,13 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, desc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
+import { createMealScannerLease } from "@/lib/event-tickets";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
 import { event, eventAttendance } from "@/server/db/event-schema";
-import { createMealScannerLease } from "@/server/lib/event-tickets";
 import { EventStatus, EventType } from "@/types/types";
 
 export const mealsRouter = createTRPCRouter({
