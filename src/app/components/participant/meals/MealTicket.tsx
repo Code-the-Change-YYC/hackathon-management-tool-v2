@@ -1,154 +1,146 @@
 "use client";
 
-import { differenceInMinutes, isAfter, isWithinInterval } from "date-fns";
-import Image from "next/image";
+import {
+	CheckCircleFill,
+	ForbidCircleFill,
+	QuestionFill,
+	TicketFill,
+	TimeFill,
+	TimeLine
+} from "@mingcute/react";
+import { differenceInMinutes, isAfter, isBefore } from "date-fns";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { formatTime } from "@/lib/datetime";
 import type { RouterOutputs } from "@/trpc/react";
 import { EventTicketStatus } from "@/types/types";
+import { EmptyTicketQRCode } from "./EmptyTicketQRCode";
+import { MealIllustrations } from "./MealIllustrations";
 import { StyledQRCode } from "./StyledQRCode";
-import { TicketTeeth } from "./TicketTeeth";
 
 type EventTicket = RouterOutputs["events"]["issueParticipantEventTicket"];
-type TicketEvent = EventTicket["event"];
 type Meal = RouterOutputs["meals"]["getNextMeal"];
 
-function getMealTiming(
-	event: Pick<TicketEvent, "startTime" | "endTime">,
+type TicketState =
+	| { kind: "active"; token: string }
+	| { kind: "checkedIn"; checkedInAt: Date }
+	| { kind: "ended" | "optedOut" | "notSetUp" | "noMeals" | "admin" };
+
+type EmptyTicketKind = Exclude<TicketState["kind"], "active">;
+
+const EMPTY_TICKETS = {
+	checkedIn: { icon: CheckCircleFill, label: "Checked in" },
+	ended: { icon: TimeFill, label: "Meal ended" },
+	optedOut: { icon: ForbidCircleFill, label: "Opted out" },
+	notSetUp: { icon: QuestionFill, label: "Not set up" },
+	noMeals: { icon: TicketFill, label: "No meals" },
+	admin: { icon: TicketFill, label: "Preview" }
+} satisfies Record<EmptyTicketKind, Parameters<typeof EmptyTicketQRCode>[0]>;
+
+function getTicketState(
+	ticket: EventTicket | null,
+	mealPreference: boolean | null,
+	isAdmin: boolean,
 	now: Date
-) {
-	const endTime = formatTime(event.endTime);
-
-	if (isWithinInterval(now, { start: event.startTime, end: event.endTime })) {
-		return `Being served until ${endTime}.`;
+): TicketState {
+	if (isAdmin) return { kind: "admin" };
+	if (mealPreference === false) return { kind: "optedOut" };
+	if (mealPreference === null) return { kind: "notSetUp" };
+	if (!ticket) return { kind: "noMeals" };
+	if (ticket.status === EventTicketStatus.ALREADY_CHECKED_IN) {
+		return { kind: "checkedIn", checkedInAt: ticket.checkedInAt };
 	}
+	// Tickets are only issued for meals that haven't ended, but the page can
+	// stay open past the end time.
+	if (isAfter(now, ticket.event.endTime)) return { kind: "ended" };
+	return { kind: "active", token: ticket.token };
+}
 
-	if (isAfter(now, event.endTime)) {
-		return `Ended at ${endTime}.`;
+function getDescription(state: TicketState) {
+	switch (state.kind) {
+		case "active":
+			return "Show this QR code to a Code the Change member at the meal.";
+		case "checkedIn":
+			return `You checked in at ${formatTime(state.checkedInAt)}. Enjoy your meal!`;
+		case "ended":
+			return "This meal has ended. Refresh to see your next ticket.";
+		case "optedOut":
+			return "You aren't opted in for meals. See an event staff member if you changed your mind.";
+		case "notSetUp":
+			return "Complete your meal preferences during onboarding to get a meal ticket.";
+		case "noMeals":
+			return "There are no more meals scheduled.";
+		case "admin":
+			return "Admins don't get meal tickets. Participants see their QR code here.";
 	}
+}
+
+function getMealTiming(meal: { startTime: Date; endTime: Date }, now: Date) {
+	const endTime = formatTime(meal.endTime);
+
+	if (isAfter(now, meal.endTime)) return `Ended at ${endTime}`;
+	if (!isBefore(now, meal.startTime)) return `Being served until ${endTime}`;
 
 	const minutesUntilStart = Math.max(
 		1,
-		differenceInMinutes(event.startTime, now, { roundingMethod: "round" })
+		differenceInMinutes(meal.startTime, now, { roundingMethod: "round" })
 	);
-
 	if (minutesUntilStart <= 60) {
-		return `Starts in ${minutesUntilStart} min and runs until ${endTime}.`;
+		return `Starts in ${minutesUntilStart} min · until ${endTime}`;
 	}
-
-	return `Runs from ${formatTime(event.startTime)} to ${endTime}.`;
-}
-
-function getTicketDescription(
-	ticket: EventTicket | null,
-	meal: Meal,
-	mealPreference: boolean | null,
-	now: Date
-) {
-	if (mealPreference !== true) {
-		return meal
-			? getMealTiming(meal, now)
-			: "There is no upcoming meal ticket available.";
-	}
-	if (!ticket) {
-		return "There is no upcoming meal ticket available.";
-	}
-
-	if (ticket.status === EventTicketStatus.ALREADY_CHECKED_IN) {
-		return `You checked in at ${formatTime(ticket.checkedInAt)}.`;
-	}
-
-	return `Present this QR code to a Code the Change member scanning tickets at the door to receive your meal. ${getMealTiming(ticket.event, now)}`;
-}
-
-interface MealTicketProps {
-	displayName: string;
-	ticket: EventTicket | null;
-	meal: Meal;
-	mealPreference: boolean | null;
+	return `${formatTime(meal.startTime)} – ${endTime}`;
 }
 
 export function MealTicket({
 	displayName,
 	ticket,
-	meal,
-	mealPreference
-}: MealTicketProps) {
-	const ticketMealName = ticket?.event.title ?? meal?.title ?? "Meal";
-	const ticketDescription = getTicketDescription(
-		ticket,
-		meal,
-		mealPreference,
-		useCurrentTime()
-	);
+	meal: nextMeal,
+	mealPreference,
+	isAdmin
+}: {
+	displayName: string;
+	ticket: EventTicket | null;
+	meal: Meal;
+	mealPreference: boolean | null;
+	isAdmin: boolean;
+}) {
+	const now = useCurrentTime();
+	const meal = ticket?.event ?? nextMeal;
+	const state = getTicketState(ticket, mealPreference, isAdmin, now);
 
 	return (
-		<section
-			aria-label="Meal ticket"
-			className="@container/meal-ticket flex flex-col gap-4"
-		>
-			<div className="relative flex @min-[40rem]/meal-ticket:h-62.25 @min-[40rem]/meal-ticket:flex-row flex-col overflow-hidden bg-pastel-pink">
-				<TicketTeeth position="top" />
-				<TicketTeeth position="bottom" />
-				<TicketTeeth position="left" />
-				<TicketTeeth position="right" />
-
-				<div className="@min-[40rem]/meal-ticket:order-1 order-2 flex @min-[40rem]/meal-ticket:h-full h-98.5 min-w-0 flex-1 @min-[34rem]/meal-ticket:flex-row flex-col">
-					<div className="flex min-w-0 @min-[40rem]/meal-ticket:flex-1 flex-col justify-start @min-[40rem]/meal-ticket:justify-center gap-2 @min-[40rem]/meal-ticket:px-10 px-6 @min-[40rem]/meal-ticket:py-6 pt-8 pb-2">
+		<section aria-label="Meal ticket" className="@container/meal-ticket">
+			{/* The stub comes last so screen readers reach the name first, but
+			    it sits on top in the stacked layout. */}
+			<div className="ticket-teeth-y @min-[40rem]/meal-ticket:ticket-teeth-x flex @min-[40rem]/meal-ticket:h-62.25 @min-[40rem]/meal-ticket:flex-row flex-col-reverse">
+				<div className="ticket-notch-top @min-[40rem]/meal-ticket:ticket-notch-right flex min-w-0 flex-1 @min-[40rem]/meal-ticket:flex-row flex-col @min-[40rem]/meal-ticket:items-center @min-[40rem]/meal-ticket:gap-6 gap-4 bg-pastel-pink px-4 @min-[40rem]/meal-ticket:pr-2 @min-[40rem]/meal-ticket:pb-0 pb-6 @min-[40rem]/meal-ticket:pl-10">
+					<div className="flex @min-[40rem]/meal-ticket:min-w-48 min-w-0 flex-1 flex-col gap-2 @min-[40rem]/meal-ticket:px-0 px-2 @min-[40rem]/meal-ticket:py-6 pt-6">
 						<p className="font-semibold text-dark-pink text-xs uppercase">
-							{ticketMealName} Ticket For
+							{meal?.title ?? "Meal"} Ticket For
 						</p>
 						<p className="wrap-break-word font-medium text-dark-grey text-xl">
 							{displayName}
 						</p>
-						<p className="max-w-sm text-dark-grey/70 text-sm leading-6">
-							{ticketDescription}
+						{meal && (
+							<p className="flex items-center gap-1.5 font-medium text-dark-grey text-sm">
+								<TimeLine aria-hidden className="size-4 shrink-0" />
+								{getMealTiming(meal, now)}
+							</p>
+						)}
+						<p className="max-w-sm text-muted-foreground text-sm">
+							{getDescription(state)}
 						</p>
 					</div>
-
-					<div className="flex min-h-0 min-w-0 flex-1 items-start @min-[40rem]/meal-ticket:items-center @min-[40rem]/meal-ticket:justify-start justify-center overflow-hidden">
-						<div className="-translate-x-4 @min-[40rem]/meal-ticket:-translate-x-6 flex w-fit items-center">
-							<Image
-								alt="Pizza slice"
-								className="@min-[40rem]/meal-ticket:h-60 h-63.5 @min-[40rem]/meal-ticket:w-63.25 w-63.5 shrink-0 object-contain"
-								height={232}
-								loading="eager"
-								src="/svgs/pizza.svg"
-								width={292}
-							/>
-							<Image
-								alt="Cola can"
-								className="-ml-20 @min-[34rem]/meal-ticket:-ml-24 @min-[40rem]/meal-ticket:h-60 h-53.25 @min-[40rem]/meal-ticket:w-61.25 w-53.25 shrink-0 object-contain"
-								height={249}
-								loading="eager"
-								src="/svgs/cola.svg"
-								width={254}
-							/>
-						</div>
-					</div>
+					<MealIllustrations className="@min-[40rem]/meal-ticket:w-[min(25rem,55%)] w-full min-w-0 max-w-100 self-center" />
 				</div>
 
-				<div className="relative @min-[40rem]/meal-ticket:order-2 order-1 flex @min-[40rem]/meal-ticket:h-full h-90.25 @min-[40rem]/meal-ticket:w-62.25 w-full shrink-0 items-center justify-center border-white/80 @min-[40rem]/meal-ticket:border-b-0 border-b-4 @min-[40rem]/meal-ticket:border-l-4 border-dashed bg-pastel-pink/60 @min-[40rem]/meal-ticket:p-9 px-8 py-11">
-					<div className="-translate-x-1/2 absolute bottom-0 left-0 @min-[40rem]/meal-ticket:hidden size-6 translate-y-1/2 rounded-full bg-background" />
-					<div className="absolute right-0 bottom-0 @min-[40rem]/meal-ticket:hidden size-6 translate-x-1/2 translate-y-1/2 rounded-full bg-background" />
-					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 @min-[40rem]/meal-ticket:block hidden size-6 rounded-full bg-background" />
-					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 @min-[40rem]/meal-ticket:block hidden size-6 translate-y-1/2 rounded-full bg-background" />
-					{mealPreference === true &&
-					ticket?.status === EventTicketStatus.ACTIVE ? (
-						<div className="aspect-square h-full max-h-full max-w-full">
-							<StyledQRCode value={ticket.token} />
-						</div>
-					) : (
-						<p className="max-w-44 text-center font-medium text-dark-grey text-sm">
-							{mealPreference === false
-								? "You opted out of meals during onboarding. Please see an event staff member if you change your mind."
-								: mealPreference === null
-									? "Complete your meal preferences during onboarding to receive a meal ticket."
-									: ticket?.status === EventTicketStatus.ALREADY_CHECKED_IN
-										? "Already checked in"
-										: "No ticket available"}
-						</p>
-					)}
+				<div className="ticket-notch-bottom @min-[40rem]/meal-ticket:ticket-notch-left flex shrink-0 justify-center border-white/80 @min-[40rem]/meal-ticket:border-b-0 border-b-4 @min-[40rem]/meal-ticket:border-l-4 border-dashed bg-pastel-pink @min-[40rem]/meal-ticket:p-5 px-8 py-7">
+					<div className="aspect-square @min-[40rem]/meal-ticket:h-full @min-[40rem]/meal-ticket:w-auto w-full max-w-76">
+						{state.kind === "active" ? (
+							<StyledQRCode value={state.token} />
+						) : (
+							<EmptyTicketQRCode {...EMPTY_TICKETS[state.kind]} />
+						)}
+					</div>
 				</div>
 			</div>
 		</section>

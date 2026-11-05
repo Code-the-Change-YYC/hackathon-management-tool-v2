@@ -165,6 +165,61 @@
 	filter: drop-shadow(0 3px 0 var(--color-awesomer-purple));
 }
 
+/*
+ * Meal ticket edges. Masks punch half-circle holes the page shows through:
+ * teeth along two opposite edges, and notches at the corners where the stub
+ * meets the rest of the ticket. A gradient draws one circle, so each mask is
+ * two layers, one per edge or corner, that together cover the element. Teeth
+ * repeat with `round` so a whole number of them fits each edge.
+ */
+@utility ticket-teeth-x {
+	mask:
+		radial-gradient(circle 10px at 0 50%, #0000 95%, #000) left top / 51% 28px
+		no-repeat round,
+		radial-gradient(circle 10px at 100% 50%, #0000 95%, #000) right top / 51%
+		28px no-repeat round;
+}
+
+@utility ticket-teeth-y {
+	mask:
+		radial-gradient(circle 10px at 50% 0, #0000 95%, #000) left top / 28px 51%
+		round no-repeat,
+		radial-gradient(circle 10px at 50% 100%, #0000 95%, #000) left bottom / 28px
+		51% round no-repeat;
+}
+
+@utility ticket-notch-top {
+	mask:
+		radial-gradient(circle 12px at 0 0, #0000 95%, #000) left / 51% 100%
+		no-repeat,
+		radial-gradient(circle 12px at 100% 0, #0000 95%, #000) right / 51% 100%
+		no-repeat;
+}
+
+@utility ticket-notch-bottom {
+	mask:
+		radial-gradient(circle 12px at 0 100%, #0000 95%, #000) left / 51% 100%
+		no-repeat,
+		radial-gradient(circle 12px at 100% 100%, #0000 95%, #000) right / 51% 100%
+		no-repeat;
+}
+
+@utility ticket-notch-left {
+	mask:
+		radial-gradient(circle 12px at 0 0, #0000 95%, #000) top / 100% 51%
+		no-repeat,
+		radial-gradient(circle 12px at 0 100%, #0000 95%, #000) bottom / 100% 51%
+		no-repeat;
+}
+
+@utility ticket-notch-right {
+	mask:
+		radial-gradient(circle 12px at 100% 0, #0000 95%, #000) top / 100% 51%
+		no-repeat,
+		radial-gradient(circle 12px at 100% 100%, #0000 95%, #000) bottom / 100% 51%
+		no-repeat;
+}
+
 /* Inline purple text link that underlines on hover */
 @utility link {
 	@apply cursor-pointer font-medium text-purple-800 underline-offset-4 hover:underline;

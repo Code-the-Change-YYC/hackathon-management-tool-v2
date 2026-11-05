@@ -36,19 +36,19 @@ for (const timing of [
 		name: "ongoing",
 		startMinutes: -15,
 		expected: (_start: Date, end: Date) =>
-			`Being served until ${formatTime(end)}.`
+			`Being served until ${formatTime(end)}`
 	},
 	{
 		name: "within 60 minutes",
 		startMinutes: 30,
 		expected: (_start: Date, end: Date) =>
-			`Starts in 30 min and runs until ${formatTime(end)}.`
+			`Starts in 30 min · until ${formatTime(end)}`
 	},
 	{
 		name: "later than 60 minutes",
 		startMinutes: 120,
 		expected: (start: Date, end: Date) =>
-			`Runs from ${formatTime(start)} to ${formatTime(end)}.`
+			`${formatTime(start)} – ${formatTime(end)}`
 	}
 ]) {
 	// Given I am a participant with no check-in for an active food meal
@@ -82,7 +82,7 @@ for (const timing of [
 		await expect(ticket).toContainText(
 			timing.expected(meal.startTime, meal.endTime)
 		);
-		await expect(ticket).toContainText("Present this QR code");
+		await expect(ticket).toContainText("Show this QR code");
 		const token = await readTicketToken(page);
 		expect(token).not.toContain(authUser.id);
 		expect(token).not.toContain(authUser.email);
@@ -92,7 +92,7 @@ for (const timing of [
 
 // Given only an ended meal, a draft future meal, and an active non-food event exist
 // When I navigate to /participant/meals as a participant
-// Then I see "There is no upcoming meal ticket available." and "No ticket available"
+// Then I see "There are no more meals scheduled." and "No meals"
 // And no QR code is displayed or event ticket created for me.
 test("shows an empty ticket with no QR when no active unended food meal exists", async ({
 	authenticatedPage: page,
@@ -126,10 +126,10 @@ test("shows an empty ticket with no QR when no active unended food meal exists",
 
 	await page.goto(mealInfoPath);
 	await expect(ticketSection(page)).toContainText(
-		"There is no upcoming meal ticket available."
+		"There are no more meals scheduled."
 	);
 	await expect(
-		ticketSection(page).getByText("No ticket available", { exact: true })
+		ticketSection(page).getByText("No meals", { exact: true })
 	).toBeVisible();
 	await expect(qrCode(page)).toHaveCount(0);
 	expect(
@@ -162,7 +162,7 @@ test("shows an opt-out message instead of a meal QR while keeping meal details",
 	await expect(ticket).toContainText(`${meal.title} Ticket For`);
 	await expect(ticket).toContainText("Being served until");
 	await expect(ticket).toContainText(
-		"You opted out of meals during onboarding. Please see an event staff member if you change your mind."
+		"You aren't opted in for meals. See an event staff member if you changed your mind."
 	);
 	await expect(qrCode(page)).toHaveCount(0);
 	expect(
@@ -197,7 +197,7 @@ test("shows an onboarding message instead of a QR for an unanswered meal prefere
 	const ticket = ticketSection(page);
 	await expect(ticket).toContainText(`${meal.title} Ticket For`);
 	await expect(ticket).toContainText(
-		"Complete your meal preferences during onboarding to receive a meal ticket."
+		"Complete your meal preferences during onboarding to get a meal ticket."
 	);
 	await expect(qrCode(page)).toHaveCount(0);
 	expect(
@@ -212,7 +212,7 @@ test("shows an onboarding message instead of a QR for an unanswered meal prefere
 
 // Given I am a participant already checked in to the active meal
 // When I navigate to /participant/meals
-// Then I see "Already checked in" and my check-in time
+// Then I see "Checked in" and my check-in time
 // And neither a QR code nor instructions to present one are displayed.
 test("shows an existing check-in timestamp instead of a QR", async ({
 	authenticatedPage: page,
@@ -236,13 +236,13 @@ test("shows an existing check-in timestamp instead of a QR", async ({
 
 	await page.goto(mealInfoPath);
 	await expect(
-		ticketSection(page).getByText("Already checked in", { exact: true })
+		ticketSection(page).getByText("Checked in", { exact: true })
 	).toBeVisible();
 	await expect(ticketSection(page)).toContainText(
 		`You checked in at ${formatTime(checkedInAt)}.`
 	);
 	await expect(qrCode(page)).toHaveCount(0);
-	await expect(ticketSection(page)).not.toContainText("Present this QR code");
+	await expect(ticketSection(page)).not.toContainText("Show this QR code");
 });
 
 // Given I am a participant with an active meal ticket and no check-in
@@ -336,7 +336,7 @@ test("a second tab shows the same QR, and the first tab's code redeems once", as
 
 		await page.reload();
 		await expect(
-			ticketSection(page).getByText("Already checked in", { exact: true })
+			ticketSection(page).getByText("Checked in", { exact: true })
 		).toBeVisible();
 		await expect(ticketSection(page)).toContainText(
 			`You checked in at ${formatTime(redeemed.checkedInAt)}.`

@@ -16,7 +16,7 @@ export function MealsSkeleton() {
 			/>
 			<div className="flex flex-col gap-6">
 				<div className="@container/meal-ticket">
-					<Skeleton className="@min-[40rem]/meal-ticket:h-62.25 h-188.75 rounded-none" />
+					<Skeleton className="@min-[40rem]/meal-ticket:h-62.25 h-172 rounded-none" />
 				</div>
 				<Card>
 					<CardHeader>
