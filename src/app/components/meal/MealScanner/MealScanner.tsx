@@ -4,10 +4,15 @@ import { type IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import { useRef } from "react";
 import { toast } from "sonner";
 import { formatTime } from "@/lib/datetime";
+import {
+	DIETARY_RESTRICTION_LABELS,
+	toDietaryRestrictions
+} from "@/lib/validation/signup";
 import { api } from "@/trpc/react";
 import { EVENT_TICKET_TOKEN_PATTERN } from "@/types/types";
 
 const RECENT_SCAN_WINDOW_MS = 10_000;
+const SCAN_TOAST_DURATION_MS = 10_000;
 
 function isEventTicketToken(value: string): boolean {
 	return EVENT_TICKET_TOKEN_PATTERN.test(value);
@@ -40,7 +45,9 @@ export default function MealScanner({
 			recentScansRef.current.set(token, now);
 
 			if (!isEventTicketToken(token)) {
-				toast.error("This QR code is not a valid event ticket.");
+				toast.error("This QR code is not a valid event ticket.", {
+					duration: SCAN_TOAST_DURATION_MS
+				});
 				window.setTimeout(() => {
 					recentScansRef.current.delete(token);
 				}, RECENT_SCAN_WINDOW_MS);
@@ -52,11 +59,18 @@ export default function MealScanner({
 				{
 					onSuccess: async (result) => {
 						const alreadyCheckedIn = result.status === "already_checked_in";
+						const restrictions = toDietaryRestrictions(
+							result.participant.dietaryRestrictions
+						).map((restriction) => DIETARY_RESTRICTION_LABELS[restriction]);
 						const message = alreadyCheckedIn
 							? `${result.participant.name} already checked in at ${formatTime(result.checkedInAt)}.`
 							: `${result.participant.name} checked in at ${formatTime(result.checkedInAt)}.`;
+						const messageWithRestrictions = restrictions.length
+							? `${message} Dietary restrictions: ${restrictions.join(", ")}.`
+							: message;
 						if (alreadyCheckedIn) {
-							toast.error(message, {
+							toast.error(messageWithRestrictions, {
+								duration: SCAN_TOAST_DURATION_MS,
 								style: {
 									background: "var(--destructive)",
 									borderColor: "var(--destructive)",
@@ -64,13 +78,15 @@ export default function MealScanner({
 								}
 							});
 						} else {
-							toast.success(message);
+							toast.success(messageWithRestrictions, {
+								duration: SCAN_TOAST_DURATION_MS
+							});
 						}
 						await utils.events.getEventAttendees.invalidate({ eventId });
 						onScanResult(result.participant.id, alreadyCheckedIn);
 					},
 					onError: (error) => {
-						toast.error(error.message);
+						toast.error(error.message, { duration: SCAN_TOAST_DURATION_MS });
 						window.setTimeout(() => {
 							recentScansRef.current.delete(token);
 						}, RECENT_SCAN_WINDOW_MS);

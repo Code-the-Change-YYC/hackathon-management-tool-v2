@@ -9,12 +9,17 @@ const mocks = vi.hoisted(() => ({
 		id: string;
 		userId: string;
 		userName: string;
+		dietaryRestrictions: string[];
 		createdAt: Date;
 	}[],
 	result: {
 		status: "checked_in" as "checked_in" | "already_checked_in",
 		checkedInAt: new Date("2026-11-08T18:00:00Z"),
-		participant: { id: "new", name: "Alex Chen" }
+		participant: {
+			id: "new",
+			name: "Alex Chen",
+			dietaryRestrictions: ["halal", "gluten_free"]
+		}
 	},
 	invalidate: vi.fn(),
 	scrollTo: vi.fn(),
@@ -67,13 +72,29 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.invalidate.mockResolvedValue(undefined);
 	mocks.attendees = [
-		{ id: "a1", userId: "new", userName: "Alex Chen", createdAt: checkedInAt },
-		{ id: "a2", userId: "older", userName: "Sam Patel", createdAt: checkedInAt }
+		{
+			id: "a1",
+			userId: "new",
+			userName: "Alex Chen",
+			dietaryRestrictions: ["halal", "gluten_free"],
+			createdAt: checkedInAt
+		},
+		{
+			id: "a2",
+			userId: "older",
+			userName: "Sam Patel",
+			dietaryRestrictions: [],
+			createdAt: checkedInAt
+		}
 	];
 	mocks.result = {
 		status: "checked_in",
 		checkedInAt,
-		participant: { id: "new", name: "Alex Chen" }
+		participant: {
+			id: "new",
+			name: "Alex Chen",
+			dietaryRestrictions: ["halal", "gluten_free"]
+		}
 	};
 	Object.defineProperty(HTMLElement.prototype, "scrollTo", {
 		configurable: true,
@@ -94,9 +115,24 @@ describe("admin meal scanner", () => {
 		const search = screen.getByRole("textbox", {
 			name: "Search attendees by name"
 		});
+		expect(screen.getByText("Alex Chen").closest("li")).not.toHaveClass("mx-4");
+		expect(screen.getByText("Alex Chen")).toHaveClass("font-semibold");
+		expect(
+			screen.getByText("Alex Chen").closest("li")?.lastElementChild
+		).toHaveClass("text-xs");
+		expect(screen.getByText("Sam Patel").closest("li")).toHaveClass("mx-4");
+		expect(screen.getByText("Sam Patel")).not.toHaveClass("font-semibold");
+		expect(
+			screen.getByText("Sam Patel").closest("li")?.lastElementChild
+		).toHaveClass("text-xs");
 		fireEvent.change(search, { target: { value: "  PATEL " } });
-		expect(screen.getByText("Sam Patel")).toBeInTheDocument();
+		expect(screen.getByText("Sam Patel").closest("li")).toHaveClass("mx-4");
+		expect(screen.getByText("Sam Patel")).toHaveClass("font-medium");
+		expect(screen.getByText("Sam Patel")).not.toHaveClass("font-semibold");
 		expect(screen.queryByText("Alex Chen")).not.toBeInTheDocument();
+		fireEvent.change(search, { target: { value: "  ALEX " } });
+		expect(screen.getByText("Alex Chen").closest("li")).not.toHaveClass("mx-4");
+		expect(screen.getByText("Alex Chen")).toHaveClass("font-semibold");
 		fireEvent.change(search, { target: { value: "nobody" } });
 		expect(screen.getByText("No matching attendees.")).toBeInTheDocument();
 		expect(
@@ -123,12 +159,15 @@ describe("admin meal scanner", () => {
 			})
 		);
 		expect(mocks.success).toHaveBeenCalledWith(
-			`Alex Chen checked in at ${formatTime(checkedInAt)}.`
+			`Alex Chen checked in at ${formatTime(checkedInAt)}. Dietary restrictions: Halal, Gluten-free.`,
+			{ duration: 10_000 }
 		);
 		expect(
 			screen.getByRole("textbox", { name: "Search attendees by name" })
 		).toHaveValue("");
 		expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Alex Chen");
+		expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Halal");
+		expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Gluten-free");
 	});
 
 	// Given a participant already checked in and is lower in the attendee list
@@ -138,7 +177,7 @@ describe("admin meal scanner", () => {
 		mocks.result = {
 			status: "already_checked_in",
 			checkedInAt,
-			participant: { id: "older", name: "Sam Patel" }
+			participant: { id: "older", name: "Sam Patel", dietaryRestrictions: [] }
 		};
 		render(<Meal mealId="meal-1" />);
 		const attendee = screen.getByText("Sam Patel").closest("li");
@@ -162,6 +201,7 @@ describe("admin meal scanner", () => {
 		expect(mocks.error).toHaveBeenCalledWith(
 			`Sam Patel already checked in at ${formatTime(checkedInAt)}.`,
 			{
+				duration: 10_000,
 				style: {
 					background: "var(--destructive)",
 					borderColor: "var(--destructive)",

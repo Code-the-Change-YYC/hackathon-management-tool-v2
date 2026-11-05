@@ -262,6 +262,7 @@ export const eventsRouter = createTRPCRouter({
 						expiresAt: eventTicket.expiresAt,
 						participantName: user.name,
 						participantEmail: user.email,
+						participantDietaryRestrictions: user.dietaryRestrictions,
 						participantRole: user.role,
 						participantCheckedIn: user.checkedIn,
 						eventTitle: event.title,
@@ -375,7 +376,8 @@ export const eventsRouter = createTRPCRouter({
 					participant: {
 						id: ticket.userId,
 						name: ticket.participantName,
-						email: ticket.participantEmail
+						email: ticket.participantEmail,
+						dietaryRestrictions: ticket.participantDietaryRestrictions
 					},
 					event: {
 						id: ticket.eventId,
@@ -395,6 +397,7 @@ export const eventsRouter = createTRPCRouter({
 					userId: eventAttendance.userId,
 					eventId: eventAttendance.eventId,
 					userName: user.name,
+					dietaryRestrictions: user.dietaryRestrictions,
 					createdAt: eventAttendance.createdAt,
 					updatedAt: eventAttendance.updatedAt
 				})
