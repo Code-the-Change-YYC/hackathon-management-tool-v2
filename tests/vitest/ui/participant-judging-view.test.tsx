@@ -22,16 +22,14 @@ const progress: JudgingProgress = {
 			name: "Panel Round",
 			kind: "panel",
 			startTime: new Date("2026-11-08T17:00:00Z"),
-			endTime: new Date("2026-11-08T20:00:00Z"),
-			scoringComplete: false
+			endTime: new Date("2026-11-08T20:00:00Z")
 		},
 		{
 			id: "round-1",
 			name: "Final Round",
 			kind: "final",
 			startTime: new Date("2026-11-08T22:00:00Z"),
-			endTime: new Date("2026-11-08T23:00:00Z"),
-			scoringComplete: false
+			endTime: new Date("2026-11-08T23:00:00Z")
 		}
 	],
 	scoresReleased: false
@@ -126,31 +124,23 @@ describe("participant judging stages", () => {
 			"completed"
 		);
 	});
-	it("starts each round at its start time and completes it once every team is scored", () => {
+	it("starts each round at its start time and completes it at its end time", () => {
 		expect(stageStates({})).toMatchObject({
 			"round-0": "current",
 			"round-1": "upcoming",
 			winners: "upcoming"
 		});
-		expect(
-			stageStates({
-				rounds: progress.rounds.map((round) => ({
-					...round,
-					scoringComplete: true
-				}))
-			})
-		).toMatchObject({ "round-0": "completed", "round-1": "upcoming" });
+		expect(stageStates({}, new Date("2026-11-08T20:00:00Z"))).toMatchObject({
+			"round-0": "completed",
+			"round-1": "upcoming"
+		});
 	});
 	it("waits for the release after the last round, then completes the winners stage", () => {
-		const scored = progress.rounds.map((round) => ({
-			...round,
-			scoringComplete: true
-		}));
 		const afterFinal = new Date("2026-11-09T00:00:00Z");
-		expect(stageStates({ rounds: scored }, afterFinal).winners).toBe("current");
-		expect(
-			stageStates({ rounds: scored, scoresReleased: true }, afterFinal).winners
-		).toBe("completed");
+		expect(stageStates({}, afterFinal).winners).toBe("current");
+		expect(stageStates({ scoresReleased: true }, afterFinal).winners).toBe(
+			"completed"
+		);
 	});
 });
 

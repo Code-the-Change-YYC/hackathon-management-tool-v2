@@ -32,9 +32,7 @@ export type JudgingProgress = {
 	submissionDeadline: Date | null;
 	// Every team has passed or failed pre-screening.
 	prescreenComplete: boolean;
-	// scoringComplete: every judge has scored every team in the round, or
-	// ranked the finalists in the final round.
-	rounds: (JudgingRound & { scoringComplete: boolean })[];
+	rounds: JudgingRound[];
 	scoresReleased: boolean;
 };
 
@@ -121,8 +119,8 @@ function submissionsDescription(deadline: Date | null, closed: boolean) {
 		: `Submit your project by ${when}.`;
 }
 
-// Submissions follow the clock. Pre-screening and each round complete once
-// every team is decided or scored, and winners once scores are released.
+// Submissions and rounds follow the clock. Pre-screening completes once every
+// team is decided, and winners once scores are released.
 export function judgingStages(
 	progress: JudgingProgress,
 	now: Date
@@ -141,11 +139,9 @@ export function judgingStages(
 		return prescreenComplete ? "completed" : "current";
 	}
 
-	function roundState(
-		round: JudgingProgress["rounds"][number]
-	): JudgingStageState {
+	function roundState(round: JudgingRound): JudgingStageState {
 		if (round.startTime > now) return "upcoming";
-		return round.scoringComplete ? "completed" : "current";
+		return hasPassed(round.endTime, now) ? "completed" : "current";
 	}
 
 	const roundStages: JudgingStage[] = sortRounds(progress.rounds).map(
