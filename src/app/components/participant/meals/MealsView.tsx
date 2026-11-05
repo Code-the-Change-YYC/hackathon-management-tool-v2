@@ -8,7 +8,7 @@ import { DietaryRestriction } from "./DietaryRestriction";
 import { MealScheduleSection } from "./MealScheduleSection";
 import { MealTicket } from "./MealTicket";
 
-type Ticket = RouterOutputs["events"]["rotateParticipantEventTicket"];
+type Ticket = RouterOutputs["events"]["issueParticipantEventTicket"];
 type Meal = RouterOutputs["meals"]["getActiveMeals"][number];
 
 export function MealsView({

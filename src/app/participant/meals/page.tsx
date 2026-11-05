@@ -20,7 +20,7 @@ export default async function MealsPage() {
 	// Admins don't have meal tickets, but can still view this page.
 	const ticket =
 		nextMeal && isParticipant && user.checkedIn
-			? await api.events.rotateParticipantEventTicket({ eventId: nextMeal.id })
+			? await api.events.issueParticipantEventTicket({ eventId: nextMeal.id })
 			: null;
 
 	return (

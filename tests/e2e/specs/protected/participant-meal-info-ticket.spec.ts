@@ -173,13 +173,14 @@ test("shows an existing check-in timestamp instead of a QR", async ({
 });
 
 // Given I am a participant with an active meal ticket and no check-in
-// When I capture the rendered QR code and reload the page
-// Then the new QR contains a different token and the old token cannot be redeemed
-// And an admin can redeem the current token exactly once through the real backend
+// When I capture the rendered QR code, then open Meals in a second tab and reload
+// Then every view shows the same QR code
+// And an admin can redeem the first tab's code exactly once through the real backend
 // And reloading afterward shows my check-in instead of a QR code.
-test("reload rotates the QR: the old token is rejected and the current token redeems once", async ({
+test("a second tab shows the same QR, and the first tab's code redeems once", async ({
 	authenticatedPage: page,
 	authUser,
+	context,
 	createMeal,
 	baseURL
 }) => {
@@ -188,18 +189,21 @@ test("reload rotates the QR: the old token is rejected and the current token red
 	assertLocalE2EOrigin(origin);
 	const now = Date.now();
 	const meal = await createMeal({
-		title: "Rotating ticket meal",
+		title: "Two-tab ticket meal",
 		status: EventStatus.ACTIVE,
 		startTime: new Date(now - 15 * minute),
 		endTime: new Date(now + 60 * minute)
 	});
 	await page.goto(mealInfoPath);
-	const oldToken = await readTicketToken(page);
-	await expectStoredTicket(oldToken, authUser.id, meal);
-	await page.reload();
-	const currentToken = await readTicketToken(page);
-	expect(currentToken).not.toBe(oldToken);
-	await expectStoredTicket(currentToken, authUser.id, meal);
+	const token = await readTicketToken(page);
+	await expectStoredTicket(token, authUser.id, meal);
+	const secondTab = await context.newPage();
+	await secondTab.goto(mealInfoPath);
+	expect(await readTicketToken(secondTab)).toBe(token);
+	await secondTab.reload();
+	expect(await readTicketToken(secondTab)).toBe(token);
+	await secondTab.close();
+	await expectStoredTicket(token, authUser.id, meal);
 
 	const admin = await createTestUser({ role: Role.ADMIN });
 	try {
@@ -225,26 +229,9 @@ test("reload rotates the QR: the old token is rejected and the current token red
 				})
 			]
 		});
-		await expect(
-			client.events.redeemEventTicket.mutate({
-				eventId: meal.id,
-				token: oldToken
-			})
-		).rejects.toMatchObject({
-			data: { code: "NOT_FOUND" },
-			message: "This event ticket is invalid or has been replaced."
-		});
-		const attendanceWhere = and(
-			eq(eventAttendance.userId, authUser.id),
-			eq(eventAttendance.eventId, meal.id)
-		);
-		expect(
-			await db.query.eventAttendance.findMany({ where: attendanceWhere })
-		).toHaveLength(0);
-
 		const redeemed = await client.events.redeemEventTicket.mutate({
 			eventId: meal.id,
-			token: currentToken
+			token
 		});
 		expect(redeemed).toMatchObject({
 			status: "checked_in",
@@ -257,7 +244,7 @@ test("reload rotates the QR: the old token is rejected and the current token red
 		});
 		const repeatScan = await client.events.redeemEventTicket.mutate({
 			eventId: meal.id,
-			token: currentToken
+			token
 		});
 		expect(repeatScan).toMatchObject({
 			status: "already_checked_in",
@@ -266,7 +253,10 @@ test("reload rotates the QR: the old token is rejected and the current token red
 			participant: { id: authUser.id, name: authUser.name }
 		});
 		const attendance = await db.query.eventAttendance.findMany({
-			where: attendanceWhere
+			where: and(
+				eq(eventAttendance.userId, authUser.id),
+				eq(eventAttendance.eventId, meal.id)
+			)
 		});
 		expect(attendance).toHaveLength(1);
 		expect(attendance[0]?.id).toBe(redeemed.attendanceId);

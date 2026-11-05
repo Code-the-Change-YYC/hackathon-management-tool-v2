@@ -9,7 +9,7 @@ import { EventTicketStatus } from "@/types/types";
 import { StyledQRCode } from "./StyledQRCode";
 import { TicketTeeth } from "./TicketTeeth";
 
-type EventTicket = RouterOutputs["events"]["rotateParticipantEventTicket"];
+type EventTicket = RouterOutputs["events"]["issueParticipantEventTicket"];
 type TicketEvent = EventTicket["event"];
 
 function getMealTiming(

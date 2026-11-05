@@ -143,7 +143,7 @@ export const eventsRouter = createTRPCRouter({
 		});
 	}),
 
-	rotateParticipantEventTicket: protectedProcedure
+	issueParticipantEventTicket: protectedProcedure
 		.input(z.object({ eventId: z.string().uuid() }))
 		.mutation(async ({ input, ctx }) => {
 			if (ctx.session.user.role !== Role.PARTICIPANT) {
@@ -183,17 +183,6 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				await tx
-					.select({ id: eventTicket.id })
-					.from(eventTicket)
-					.where(
-						and(
-							eq(eventTicket.userId, ctx.session.user.id),
-							eq(eventTicket.eventId, input.eventId)
-						)
-					)
-					.for("update");
-
 				const attendance = await tx.query.eventAttendance.findFirst({
 					columns: { createdAt: true },
 					where: and(
@@ -218,19 +207,25 @@ export const eventsRouter = createTRPCRouter({
 					} as const;
 				}
 
-				const token = createEventTicketToken();
+				const token = createEventTicketToken(
+					input.eventId,
+					ctx.session.user.id
+				);
+				const tokenHash = hashEventTicketToken(token);
 				await tx
 					.insert(eventTicket)
 					.values({
 						userId: ctx.session.user.id,
 						eventId: input.eventId,
-						tokenHash: hashEventTicketToken(token),
+						tokenHash,
 						expiresAt: ticketEvent.endTime
 					})
 					.onConflictDoUpdate({
 						target: [eventTicket.userId, eventTicket.eventId],
+						// Same hash on every visit; this only replaces rows from
+						// random tokens or an older secret.
 						set: {
-							tokenHash: hashEventTicketToken(token),
+							tokenHash,
 							expiresAt: ticketEvent.endTime,
 							updatedAt: now
 						}
