@@ -103,6 +103,7 @@ export function JudgingView({
 
 			<ScoreRelease
 				ballotsComplete={areBallotsComplete(finalResults)}
+				finalRoundEndTime={finalRound?.endTime ?? null}
 				released={scoresReleased}
 			/>
 

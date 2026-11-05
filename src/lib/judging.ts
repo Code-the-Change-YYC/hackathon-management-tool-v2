@@ -1,4 +1,5 @@
 import { addMinutes } from "date-fns";
+import { formatDateTime } from "@/lib/datetime";
 
 // There is one panel round, which splits judges into tables and is scored on
 // the rubric, and one final round, where every judge ranks the finalists.
@@ -63,6 +64,19 @@ export function getFinalRoundEndTime({
 		startTime,
 		count * (presentationMinutes + changeoverMinutes) - changeoverMinutes
 	);
+}
+
+// Scores can't be released while finalists are still presenting or being
+// ranked, so release waits until the final round has ended.
+export function getScoreReleaseBlocker(
+	finalRoundEndTime: Date | null | undefined,
+	currentTime: Date
+) {
+	if (!finalRoundEndTime) return "Add a final round before releasing scores.";
+	if (currentTime < finalRoundEndTime) {
+		return `Scores can be released once the final round ends at ${formatDateTime(finalRoundEndTime)}.`;
+	}
+	return null;
 }
 
 // Teams are asked to arrive this long before their first presentation.

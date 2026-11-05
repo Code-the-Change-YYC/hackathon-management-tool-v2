@@ -9,6 +9,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ScoreRelease } from "@/app/components/admin/judging/ScoreRelease";
 
 const mocks = vi.hoisted(() => ({ setReleased: vi.fn() }));
+vi.mock("@/hooks/use-current-time", () => ({
+	useCurrentTime: () => new Date("2026-11-08T18:00:00-06:00")
+}));
 vi.mock("@/hooks/use-refresh", () => ({
 	useRefresh: () => ({ isRefreshing: false, refresh: vi.fn() })
 }));
@@ -22,13 +25,21 @@ vi.mock("@/trpc/react", () => ({
 	}
 }));
 
+const finalRoundEnded = new Date("2026-11-08T17:00:00-06:00");
+
 beforeEach(() => {
 	vi.clearAllMocks();
 });
 
 describe("score release", () => {
 	it("releases scores after confirmation", async () => {
-		render(<ScoreRelease ballotsComplete released={false} />);
+		render(
+			<ScoreRelease
+				ballotsComplete
+				finalRoundEndTime={finalRoundEnded}
+				released={false}
+			/>
+		);
 		expect(screen.getByText("Not released")).toBeVisible();
 
 		fireEvent.click(screen.getByRole("button", { name: "Release scores" }));
@@ -46,7 +57,13 @@ describe("score release", () => {
 		);
 	});
 	it("warns when judges are still ranking the finalists", async () => {
-		render(<ScoreRelease ballotsComplete={false} released={false} />);
+		render(
+			<ScoreRelease
+				ballotsComplete={false}
+				finalRoundEndTime={finalRoundEnded}
+				released={false}
+			/>
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Release scores" }));
 		const dialog = await screen.findByRole("alertdialog");
 		expect(
@@ -55,8 +72,40 @@ describe("score release", () => {
 		fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
 		expect(mocks.setReleased).not.toHaveBeenCalled();
 	});
+	it("can't release scores before the final round ends", () => {
+		render(
+			<ScoreRelease
+				ballotsComplete
+				finalRoundEndTime={new Date("2026-11-08T19:00:00-06:00")}
+				released={false}
+			/>
+		);
+		expect(
+			screen.getByText(/Scores can be released once the final round ends at/)
+		).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "Release scores" })
+		).toBeDisabled();
+	});
+	it("can't release scores without a final round", () => {
+		render(
+			<ScoreRelease ballotsComplete finalRoundEndTime={null} released={false} />
+		);
+		expect(
+			screen.getByText("Add a final round before releasing scores.")
+		).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "Release scores" })
+		).toBeDisabled();
+	});
 	it("hides released scores after confirmation", async () => {
-		render(<ScoreRelease ballotsComplete released />);
+		render(
+			<ScoreRelease
+				ballotsComplete
+				finalRoundEndTime={finalRoundEnded}
+				released
+			/>
+		);
 		expect(screen.getByText("Released")).toBeVisible();
 
 		fireEvent.click(screen.getByRole("button", { name: "Hide scores" }));

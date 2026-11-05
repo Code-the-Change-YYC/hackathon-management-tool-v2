@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { getScoreReleaseBlocker } from "@/lib/judging";
 import {
 	countEventsOutside,
 	eventsOutsideMessage,
@@ -13,6 +14,7 @@ import {
 } from "@/server/api/trpc";
 import { hackathonSettings } from "@/server/db/admin-schema";
 import { event } from "@/server/db/event-schema";
+import { judgingRounds } from "@/server/db/judging-schema";
 
 export const hackathonSettingsRouter = createTRPCRouter({
 	// Get current hackathon settings
@@ -27,6 +29,17 @@ export const hackathonSettingsRouter = createTRPCRouter({
 	setScoresReleased: adminProcedure
 		.input(z.object({ released: z.boolean() }))
 		.mutation(async ({ ctx, input }) => {
+			if (input.released) {
+				const finalRound = await ctx.db.query.judgingRounds.findFirst({
+					where: eq(judgingRounds.kind, "final"),
+					columns: { endTime: true }
+				});
+				const blocker = getScoreReleaseBlocker(finalRound?.endTime, new Date());
+				if (blocker) {
+					throw new TRPCError({ code: "BAD_REQUEST", message: blocker });
+				}
+			}
+
 			const [updated] = await ctx.db
 				.insert(hackathonSettings)
 				.values({ id: 1, scoresReleased: input.released })
