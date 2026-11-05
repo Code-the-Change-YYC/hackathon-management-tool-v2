@@ -126,6 +126,26 @@ describe("admin schedule", () => {
 		expect(screen.getByText("Dining Hall")).toBeInTheDocument();
 	});
 
+	it("keeps the title and close button outside the scrolling form", () => {
+		render(<ScheduleView events={[]} settings={null} />);
+		fireEvent.click(screen.getByRole("button", { name: "Add event" }));
+		const dialog = screen.getByRole("dialog");
+		const form = within(dialog)
+			.getByRole("button", { name: "Add event" })
+			.closest("form");
+		expect(dialog).toHaveClass("overflow-hidden");
+		expect(form).toHaveClass("overflow-y-auto");
+		expect(form).toContainElement(
+			within(dialog).getByRole("button", { name: "Cancel" })
+		);
+		expect(form).not.toContainElement(
+			within(dialog).getByRole("heading", { name: "Add event" })
+		);
+		expect(form).not.toContainElement(
+			within(dialog).getByRole("button", { name: "Close" })
+		);
+	});
+
 	it("validates and adds an event in Calgary time", async () => {
 		render(<ScheduleView events={[]} settings={null} />);
 		fireEvent.click(screen.getByRole("button", { name: "Add event" }));

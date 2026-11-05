@@ -101,12 +101,12 @@ export function EventDialog({
 			onOpenChange={(open) => !open && onClose()}
 			open
 		>
-			<DialogContent className="sm:max-w-xl">
+			<DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle>{event ? "Edit event" : "Add event"}</DialogTitle>
 				</DialogHeader>
 				<form
-					className="flex flex-col gap-6"
+					className="flex min-h-0 flex-col gap-6 overflow-y-auto overscroll-contain"
 					noValidate
 					onSubmit={form.handleSubmit((values) =>
 						event
