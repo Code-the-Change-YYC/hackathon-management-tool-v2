@@ -325,11 +325,8 @@ export const eventsRouter = createTRPCRouter({
 						participantDietaryRestrictions: user.dietaryRestrictions,
 						participantRole: user.role,
 						participantCheckedIn: user.checkedIn,
-<<<<<<< HEAD
 						participantWantsFood: user.wantsFood,
-=======
 						eventMealRounds: event.mealRounds,
->>>>>>> bb6d1a6 (add meal rounds for people to get seconds)
 						eventTitle: event.title,
 						eventType: event.type,
 						eventStatus: event.status,

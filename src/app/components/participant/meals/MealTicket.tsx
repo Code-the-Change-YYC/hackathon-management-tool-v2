@@ -110,17 +110,10 @@ function getTicketDescription(
 	}
 
 	if (ticket.status === EventTicketStatus.ALREADY_CHECKED_IN) {
-		return ticket.scanLimit > 1
-			? `You have used all ${ticket.scanLimit} meal scans. Last checked in at ${formatTime(ticket.checkedInAt)}.`
-			: `You checked in at ${formatTime(ticket.checkedInAt)}.`;
+		return `You checked in at ${formatTime(ticket.checkedInAt)}.`;
 	}
 
-	const remaining = ticket.scanLimit - ticket.scansUsed;
-	const allowance =
-		ticket.scanLimit > 1
-			? ` You have ${remaining} ${remaining === 1 ? "scan" : "scans"} remaining.`
-			: "";
-	return `Present this QR code to a Code the Change member scanning tickets at the door to receive your meal.${allowance} ${getMealTiming(ticket.event, now)}`;
+	return `Present this QR code to a Code the Change member scanning tickets at the door to receive your meal. ${getMealTiming(ticket.event, now)}`;
 }
 
 interface MealTicketProps {
