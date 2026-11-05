@@ -312,6 +312,42 @@ describe("admin teams UI", () => {
 		).toBeInTheDocument();
 	});
 
+	it("splits pre-screening into batches by team name", async () => {
+		render(<TeamsView rounds={rounds} teams={teams} />);
+
+		fireEvent.click(
+			screen.getByRole("combobox", { name: "Number of batches" })
+		);
+		const twoBatches = await screen.findByRole("option", { name: "2 batches" });
+		fireEvent.pointerDown(twoBatches);
+		fireEvent.pointerUp(twoBatches);
+		fireEvent.click(twoBatches);
+
+		expect(
+			screen.queryByRole("button", { name: "Start pre-screening" })
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByText("Alpha Labs to Beta Builders · 1 of 2 left")
+		).toBeInTheDocument();
+		expect(
+			screen.getByText("Charlie Crew to Delta Devs · 1 of 2 left")
+		).toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: "Start batch 2" }));
+		const dialog = screen.getByRole("dialog", {
+			name: "Pre-screen batch 2 of 2"
+		});
+		expect(within(dialog).getByText("Team 2 of 2")).toBeInTheDocument();
+		expect(
+			within(dialog).getByRole("heading", { name: "Delta Devs" })
+		).toBeInTheDocument();
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Pass" }));
+		expect(
+			screen.getByRole("dialog", { name: "Batch 2 complete" })
+		).toBeInTheDocument();
+	});
+
 	it("requires confirmation before deleting a team", async () => {
 		render(<TeamsView rounds={rounds} teams={teams} />);
 		openTeamMenu("Beta Builders");
