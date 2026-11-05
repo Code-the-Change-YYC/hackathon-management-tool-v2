@@ -15,7 +15,7 @@ test.describe("admin meals", () => {
 
 	// Given I am signed in as an admin
 	// When I visit /admin/meals
-	// Then I see the scanner banner, meal schedule, and analytics.
+	// Then I see the scanner banner, meal check-ins, and analytics.
 	test(
 		"shows the admin meals sections",
 		{ tag: "@smoke" },
@@ -28,12 +28,14 @@ test.describe("admin meals", () => {
 				page.getByRole("heading", { name: "Scan meal tickets" })
 			).toBeVisible();
 			await expect(
-				page.getByRole("heading", { name: "Meal Schedule" })
+				page.getByRole("heading", { name: "Meal Check-ins" })
 			).toBeVisible();
 			await expect(
 				page.getByRole("heading", { name: "Meal Analytics" })
 			).toBeVisible();
-			await expect(page.getByText("Meal tickets scanned")).toBeVisible();
+			await expect(
+				page.getByRole("heading", { name: "Dietary Restrictions" })
+			).toBeVisible();
 		}
 	);
 
@@ -191,19 +193,16 @@ test.describe("admin meals", () => {
 		await expect(
 			dialog.getByRole("heading", { name: "Scan meal tickets" })
 		).toBeVisible();
-		await expect(
-			dialog.getByRole("heading", { name: "Attendees" })
-		).toBeVisible();
 		await dialog.getByRole("button", { name: "Close" }).click();
 		await expect(dialog).toHaveCount(0);
 		await expect(page).toHaveURL(path);
 	});
 
 	// Given many participants checked in at different times
-	// When I open the scanner on a narrow screen and search or scroll the attendees
-	// Then the newest check-in is first, the search filters names, and the dialog header stays still.
+	// When I expand the meal on a narrow screen and search its check-ins
+	// Then the newest check-in is first and the search filters names.
 	test(
-		"keeps the header fixed while searching and scrolling attendees",
+		"lists and searches a meal's check-ins",
 		{ tag: "@responsive" },
 		async ({ authenticatedPage: page, createMeal }) => {
 			const now = Date.now();
@@ -229,38 +228,24 @@ test.describe("admin meals", () => {
 				);
 				await page.setViewportSize({ width: 390, height: 700 });
 				await page.goto(path);
-				await page.getByRole("button", { name: "Open scanner" }).click();
-				const dialog = page.getByRole("dialog");
-				const rows = dialog.getByRole("listitem");
+				const trigger = page.getByRole("button", { name: /Crowded lunch/ });
+				await expect(trigger).toContainText("12 checked in");
+				await trigger.click();
+				const search = page.getByRole("textbox", {
+					name: "Search check-ins by name"
+				});
+				const rows = page
+					.getByRole("region", { name: /Crowded lunch/ })
+					.getByRole("listitem");
 				await expect(rows).toHaveCount(12);
 				await expect(rows.first()).toContainText("Scan Tester 11");
-				const search = dialog.getByRole("textbox", {
-					name: "Search attendees by name"
-				});
 				await search.fill("  tester 2 ");
 				await expect(rows).toHaveCount(1);
 				await expect(rows.first()).toContainText("Scan Tester 2");
 				await search.fill("nobody");
-				await expect(dialog.getByText("No matching attendees.")).toBeVisible();
+				await expect(page.getByText("No matching check-ins.")).toBeVisible();
 				await search.fill("");
 				await expect(rows).toHaveCount(12);
-				const header = dialog.getByRole("heading", {
-					name: "Scan meal tickets"
-				});
-				const headerTop = await header.evaluate(
-					(element) => element.getBoundingClientRect().top
-				);
-				const list = dialog.locator("div.overflow-y-auto");
-				const scrollTop = await list.evaluate((element) => {
-					element.scrollTop = element.scrollHeight;
-					return element.scrollTop;
-				});
-				expect(scrollTop).toBeGreaterThan(0);
-				expect(
-					await header.evaluate(
-						(element) => element.getBoundingClientRect().top
-					)
-				).toBe(headerTop);
 			} finally {
 				for (const participant of participants) await participant.cleanup();
 			}

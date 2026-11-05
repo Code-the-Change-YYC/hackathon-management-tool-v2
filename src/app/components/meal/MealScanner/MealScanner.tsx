@@ -20,12 +20,10 @@ function isEventTicketToken(value: string): boolean {
 
 export default function MealScanner({
 	eventId,
-	scannerLease,
-	onScanResult
+	scannerLease
 }: {
 	eventId: string;
 	scannerLease?: string;
-	onScanResult: (userId: string, alreadyCheckedIn: boolean) => void;
 }) {
 	const recentScansRef = useRef<Map<string, number>>(new Map());
 	const utils = api.useUtils();
@@ -82,8 +80,7 @@ export default function MealScanner({
 								duration: SCAN_TOAST_DURATION_MS
 							});
 						}
-						await utils.events.getEventAttendees.invalidate({ eventId });
-						onScanResult(result.participant.id, alreadyCheckedIn);
+						await utils.meals.getMealCheckIns.invalidate();
 					},
 					onError: (error) => {
 						toast.error(error.message, { duration: SCAN_TOAST_DURATION_MS });

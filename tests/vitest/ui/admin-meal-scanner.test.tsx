@@ -1,17 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import Meal from "@/app/components/meal/MealScanner/Meal";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import MealScanner from "@/app/components/meal/MealScanner/MealScanner";
 import { formatTime } from "@/lib/datetime";
 
 const checkedInAt = new Date("2026-11-08T18:00:00Z");
 const mocks = vi.hoisted(() => ({
-	attendees: [] as {
-		id: string;
-		userId: string;
-		userName: string;
-		dietaryRestrictions: string[];
-		createdAt: Date;
-	}[],
 	result: {
 		status: "checked_in" as "checked_in" | "already_checked_in",
 		checkedInAt: new Date("2026-11-08T18:00:00Z"),
@@ -22,9 +15,7 @@ const mocks = vi.hoisted(() => ({
 		}
 	},
 	invalidate: vi.fn(),
-	scrollTo: vi.fn(),
 	success: vi.fn(),
-
 	error: vi.fn()
 }));
 
@@ -50,12 +41,9 @@ vi.mock("sonner", () => ({
 vi.mock("@/trpc/react", () => ({
 	api: {
 		useUtils: () => ({
-			events: { getEventAttendees: { invalidate: mocks.invalidate } }
+			meals: { getMealCheckIns: { invalidate: mocks.invalidate } }
 		}),
 		events: {
-			getEventAttendees: {
-				useQuery: () => ({ data: mocks.attendees })
-			},
 			redeemEventTicket: {
 				useMutation: () => ({
 					mutate: (
@@ -71,22 +59,6 @@ vi.mock("@/trpc/react", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.invalidate.mockResolvedValue(undefined);
-	mocks.attendees = [
-		{
-			id: "a1",
-			userId: "new",
-			userName: "Alex Chen",
-			dietaryRestrictions: ["halal", "gluten_free"],
-			createdAt: checkedInAt
-		},
-		{
-			id: "a2",
-			userId: "older",
-			userName: "Sam Patel",
-			dietaryRestrictions: [],
-			createdAt: checkedInAt
-		}
-	];
 	mocks.result = {
 		status: "checked_in",
 		checkedInAt,
@@ -96,118 +68,45 @@ beforeEach(() => {
 			dietaryRestrictions: ["halal", "gluten_free"]
 		}
 	};
-	Object.defineProperty(HTMLElement.prototype, "scrollTo", {
-		configurable: true,
-		value: mocks.scrollTo
-	});
-});
-
-afterEach(() => {
-	Reflect.deleteProperty(HTMLElement.prototype, "scrollTo");
 });
 
 describe("admin meal scanner", () => {
-	// Given multiple attendees have checked in
-	// When I search by part of a name in a different case
-	// Then only matching people remain, or an empty search message is shown.
-	it("filters attendee names without changing the scanner", () => {
-		render(<Meal mealId="meal-1" />);
-		const search = screen.getByRole("textbox", {
-			name: "Search attendees by name"
-		});
-		expect(screen.getByText("Alex Chen").closest("li")).not.toHaveClass("mx-4");
-		expect(screen.getByText("Alex Chen")).toHaveClass("font-semibold");
-		expect(
-			screen.getByText("Alex Chen").closest("li")?.lastElementChild
-		).toHaveClass("text-xs");
-		expect(screen.getByText("Sam Patel").closest("li")).toHaveClass("mx-4");
-		expect(screen.getByText("Sam Patel")).not.toHaveClass("font-semibold");
-		expect(
-			screen.getByText("Sam Patel").closest("li")?.lastElementChild
-		).toHaveClass("text-xs");
-		fireEvent.change(search, { target: { value: "  PATEL " } });
-		expect(screen.getByText("Sam Patel").closest("li")).toHaveClass("mx-4");
-		expect(screen.getByText("Sam Patel")).toHaveClass("font-medium");
-		expect(screen.getByText("Sam Patel")).not.toHaveClass("font-semibold");
-		expect(screen.queryByText("Alex Chen")).not.toBeInTheDocument();
-		fireEvent.change(search, { target: { value: "  ALEX " } });
-		expect(screen.getByText("Alex Chen").closest("li")).not.toHaveClass("mx-4");
-		expect(screen.getByText("Alex Chen")).toHaveClass("font-semibold");
-		fireEvent.change(search, { target: { value: "nobody" } });
-		expect(screen.getByText("No matching attendees.")).toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: "Simulate QR scan" })
-		).toBeInTheDocument();
-	});
-
-	// Given a participant has a new valid ticket and a name filter is active
+	// Given a participant has a new valid ticket
 	// When their QR code is scanned
-	// Then the filter is cleared, a named and timed toast appears, and the list scrolls to the top.
-	it("shows a new check-in at the top", async () => {
-		render(<Meal mealId="meal-1" />);
-		fireEvent.change(
-			screen.getByRole("textbox", { name: "Search attendees by name" }),
-			{
-				target: { value: "Sam" }
-			}
-		);
+	// Then a named and timed toast appears and the meal check-ins refresh.
+	it("announces a new check-in and refreshes check-ins", async () => {
+		render(<MealScanner eventId="meal-1" />);
 		fireEvent.click(screen.getByRole("button", { name: "Simulate QR scan" }));
-		await waitFor(() =>
-			expect(mocks.scrollTo).toHaveBeenCalledWith({
-				top: 0,
-				behavior: "smooth"
-			})
-		);
+		await waitFor(() => expect(mocks.invalidate).toHaveBeenCalled());
 		expect(mocks.success).toHaveBeenCalledWith(
 			`Alex Chen checked in at ${formatTime(checkedInAt)}. Dietary restrictions: Halal, Gluten-free.`,
 			{ duration: 10_000 }
 		);
-		expect(
-			screen.getByRole("textbox", { name: "Search attendees by name" })
-		).toHaveValue("");
-		expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Alex Chen");
-		expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Halal");
-		expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Gluten-free");
 	});
 
-	// Given a participant already checked in and is lower in the attendee list
+	// Given a participant already checked in
 	// When their ticket is scanned again
-	// Then a red toast shows the original check-in time and the list scrolls to that participant.
-	it("scrolls to an already checked-in attendee", async () => {
+	// Then a red toast shows the original check-in time.
+	it("warns about an already checked-in attendee", async () => {
 		mocks.result = {
 			status: "already_checked_in",
 			checkedInAt,
 			participant: { id: "older", name: "Sam Patel", dietaryRestrictions: [] }
 		};
-		render(<Meal mealId="meal-1" />);
-		const attendee = screen.getByText("Sam Patel").closest("li");
-		const list = attendee?.parentElement?.parentElement;
-		if (!attendee || !list)
-			throw new Error("Expected a scrollable attendee list");
-		list.scrollTop = 40;
-		vi.spyOn(list, "getBoundingClientRect").mockReturnValue({
-			top: 10
-		} as DOMRect);
-		vi.spyOn(attendee, "getBoundingClientRect").mockReturnValue({
-			top: 110
-		} as DOMRect);
+		render(<MealScanner eventId="meal-1" />);
 		fireEvent.click(screen.getByRole("button", { name: "Simulate QR scan" }));
 		await waitFor(() =>
-			expect(mocks.scrollTo).toHaveBeenCalledWith({
-				top: 140,
-				behavior: "smooth"
-			})
-		);
-		expect(mocks.error).toHaveBeenCalledWith(
-			`Sam Patel already checked in at ${formatTime(checkedInAt)}.`,
-			{
-				duration: 10_000,
-				style: {
-					background: "var(--destructive)",
-					borderColor: "var(--destructive)",
-					color: "var(--primary-foreground)"
+			expect(mocks.error).toHaveBeenCalledWith(
+				`Sam Patel already checked in at ${formatTime(checkedInAt)}.`,
+				{
+					duration: 10_000,
+					style: {
+						background: "var(--destructive)",
+						borderColor: "var(--destructive)",
+						color: "var(--primary-foreground)"
+					}
 				}
-			}
+			)
 		);
 	});
 });

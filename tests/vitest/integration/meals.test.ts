@@ -82,10 +82,12 @@ describe("concurrent meal scanning", () => {
 		});
 		expect(rows).toHaveLength(1);
 		expect(rows[0]?.id).toBe(outcomes[0]?.attendanceId);
-		for (const admin of admins)
+		for (const admin of admins) {
+			const meals = await admin.caller.meals.getMealCheckIns();
 			expect(
-				await admin.caller.events.getEventAttendees({ eventId: meal.id })
+				meals.find((current) => current.id === meal.id)?.attendance
 			).toHaveLength(1);
+		}
 	});
 });
 
@@ -317,7 +319,7 @@ describe("meal ticket check-in gate", () => {
 	});
 });
 
-describe("meals.getAllMeals", () => {
+describe("meals.getMealCheckIns", () => {
 	let mealFixtures: EventFixtureTracker;
 
 	beforeAll(() => {
@@ -331,7 +333,7 @@ describe("meals.getAllMeals", () => {
 	it("rejects callers without a session", async () => {
 		const caller = createUnauthenticatedCaller();
 
-		await expect(caller.meals.getAllMeals()).rejects.toMatchObject({
+		await expect(caller.meals.getMealCheckIns()).rejects.toMatchObject({
 			code: "UNAUTHORIZED"
 		});
 	});
@@ -354,7 +356,7 @@ describe("meals.getAllMeals", () => {
 		});
 		onTestFinished(cleanup);
 
-		const meals = await caller.meals.getAllMeals();
+		const meals = await caller.meals.getMealCheckIns();
 		const trackedIds = new Set([earlierMeal.id, laterMeal.id]);
 		const trackedMeals = meals.filter((meal) => trackedIds.has(meal.id));
 
