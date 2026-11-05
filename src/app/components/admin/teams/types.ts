@@ -33,3 +33,21 @@ export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 export function formatMemberNames(team: Team) {
 	return team.members.map((member) => member.name || member.email).join(", ");
 }
+
+export function byName(a: Team, b: Team) {
+	return a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
+}
+
+export const MAX_PRESCREEN_BATCHES = 8;
+
+// Consecutive runs of teams by name, as even in size as possible, so every
+// admin who picks the same count sees the same batches.
+export function splitIntoBatches(teams: Team[], count: number) {
+	const sorted = [...teams].sort(byName);
+	return Array.from({ length: count }, (_, index) =>
+		sorted.slice(
+			Math.floor((index * sorted.length) / count),
+			Math.floor(((index + 1) * sorted.length) / count)
+		)
+	);
+}

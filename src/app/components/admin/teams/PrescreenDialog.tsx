@@ -35,11 +35,7 @@ import {
 	prescreenFailFormSchema
 } from "@/lib/validation/team";
 import { api } from "@/trpc/react";
-import { formatMemberNames, type Team } from "./types";
-
-function byName(a: Team, b: Team) {
-	return a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
-}
+import { byName, formatMemberNames, type Team } from "./types";
 
 function StatusLabel({ status }: { status: Team["prescreen"] }) {
 	switch (status) {
@@ -69,11 +65,19 @@ function StatusLabel({ status }: { status: Team["prescreen"] }) {
 
 type PrescreenDialogProps = {
 	teams: Team[];
+	batch: number;
+	batchCount: number;
 	onClose: () => void;
 };
 
-// Steps through teams by name, starting at the first one not yet pre-screened.
-export function PrescreenDialog({ teams, onClose }: PrescreenDialogProps) {
+// Steps through one batch's teams by name, starting at the first one not yet
+// pre-screened.
+export function PrescreenDialog({
+	teams,
+	batch,
+	batchCount,
+	onClose
+}: PrescreenDialogProps) {
 	const queue = [...teams].sort(byName);
 	const [currentId, setCurrentId] = useState(
 		() => (queue.find((team) => team.prescreen === "pending") ?? queue[0])?.id
@@ -100,6 +104,8 @@ export function PrescreenDialog({ teams, onClose }: PrescreenDialogProps) {
 	const pendingCount = queue.filter(
 		(entry) => entry.prescreen === "pending"
 	).length;
+	const isBatched = batchCount > 1;
+	const everyTeam = isBatched ? "Every team in this batch" : "Every team";
 
 	function showTeam(id: string | undefined) {
 		setCurrentId(id);
@@ -169,9 +175,13 @@ export function PrescreenDialog({ teams, onClose }: PrescreenDialogProps) {
 				{isDone || !team ? (
 					<>
 						<DialogHeader>
-							<DialogTitle>Pre-screening complete</DialogTitle>
+							<DialogTitle>
+								{isBatched
+									? `Batch ${batch} complete`
+									: "Pre-screening complete"}
+							</DialogTitle>
 							<DialogDescription>
-								Every team has been pre-screened.
+								{everyTeam} has been pre-screened.
 							</DialogDescription>
 						</DialogHeader>
 						<Image
@@ -199,11 +209,15 @@ export function PrescreenDialog({ teams, onClose }: PrescreenDialogProps) {
 				) : (
 					<>
 						<DialogHeader>
-							<DialogTitle>Pre-screen teams</DialogTitle>
+							<DialogTitle>
+								{isBatched
+									? `Pre-screen batch ${batch} of ${batchCount}`
+									: "Pre-screen teams"}
+							</DialogTitle>
 							<DialogDescription>
 								{pendingCount === 0
-									? "Every team has been pre-screened."
-									: `${pendingCount.toLocaleString()} ${pendingCount === 1 ? "team" : "teams"} left to pre-screen.`}
+									? `${everyTeam} has been pre-screened.`
+									: `${pendingCount.toLocaleString()} ${pendingCount === 1 ? "team" : "teams"} left to pre-screen${isBatched ? " in this batch" : ""}.`}
 							</DialogDescription>
 						</DialogHeader>
 

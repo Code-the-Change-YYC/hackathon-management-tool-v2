@@ -27,6 +27,7 @@ import {
 	getFilterOptions,
 	SORT_OPTIONS,
 	type SortOption,
+	splitIntoBatches,
 	type Team,
 	type TeamRound
 } from "./types";
@@ -89,7 +90,8 @@ export function TeamsView({ teams, rounds }: TeamsViewProps) {
 	const [search, setSearch] = useState("");
 	const [filters, setFilters] = useState<FilterOption[]>([]);
 	const [sort, setSort] = useState<SortOption | null>(null);
-	const [isPrescreening, setIsPrescreening] = useState(false);
+	const [batchCount, setBatchCount] = useState(1);
+	const [prescreenBatch, setPrescreenBatch] = useState<number | null>(null);
 	const [deleting, setDeleting] = useState<Team | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 
@@ -106,6 +108,13 @@ export function TeamsView({ teams, rounds }: TeamsViewProps) {
 	);
 
 	const filterOptions = useMemo(() => getFilterOptions(rounds), [rounds]);
+
+	// Deleted teams can leave fewer teams than batches.
+	const effectiveBatchCount = Math.max(1, Math.min(batchCount, teams.length));
+	const prescreenTeams =
+		prescreenBatch === null
+			? null
+			: splitIntoBatches(teams, effectiveBatchCount)[prescreenBatch - 1];
 
 	const activeChips: ActiveChip[] = [
 		...filters.map((filter) => ({
@@ -175,7 +184,9 @@ export function TeamsView({ teams, rounds }: TeamsViewProps) {
 					title="Teams"
 				/>
 				<PrescreeningCard
-					onStart={() => setIsPrescreening(true)}
+					batchCount={effectiveBatchCount}
+					onBatchCountChange={setBatchCount}
+					onStart={setPrescreenBatch}
 					teams={teams}
 				/>
 				<Card>
@@ -220,10 +231,12 @@ export function TeamsView({ teams, rounds }: TeamsViewProps) {
 				</Card>
 			</div>
 
-			{isPrescreening ? (
+			{prescreenBatch !== null && prescreenTeams ? (
 				<PrescreenDialog
-					onClose={() => setIsPrescreening(false)}
-					teams={teams}
+					batch={prescreenBatch}
+					batchCount={effectiveBatchCount}
+					onClose={() => setPrescreenBatch(null)}
+					teams={prescreenTeams}
 				/>
 			) : null}
 
