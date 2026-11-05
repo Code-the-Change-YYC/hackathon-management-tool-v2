@@ -192,7 +192,7 @@ export function isCriterionScoreValid(
 	return (
 		value !== undefined &&
 		Number.isInteger(value) &&
-		value >= (criterion.isSidepot ? 0 : 1) &&
+		value >= 1 &&
 		value <= criterion.maxScore
 	);
 }
@@ -248,15 +248,9 @@ export function getCriterionDescription(criterion: Criterion) {
 		: `Evaluate how strongly this project demonstrates ${criterion.name.toLowerCase()} and how clearly that strength supports the team’s overall solution.`;
 }
 
-export function getScoreOptions(
-	criterion: Criterion,
-	includeZero: boolean,
-	currentScore?: number
-) {
-	const maxScore = criterion.maxScore;
-	const start = includeZero || currentScore === 0 ? 0 : 1;
+export function getScoreOptions(criterion: Criterion) {
 	return Array.from(
-		{ length: Math.max(0, maxScore - start + 1) },
-		(_, index) => start + index
+		{ length: Math.max(0, criterion.maxScore) },
+		(_, index) => index + 1
 	);
 }

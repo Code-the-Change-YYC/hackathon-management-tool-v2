@@ -99,8 +99,8 @@ const RUBRIC_BAND_LABELS = [
 ] as const;
 export type RubricBandLabel = (typeof RUBRIC_BAND_LABELS)[number];
 
-export function getRubricBands(maxScore: number, includeZero = false) {
-	const minScore = includeZero ? 0 : 1;
+export function getRubricBands(maxScore: number) {
+	const minScore = 1;
 	const scoreCount = Math.max(1, maxScore - minScore + 1);
 	const activeBands = RUBRIC_BAND_LABELS.slice(
 		0,

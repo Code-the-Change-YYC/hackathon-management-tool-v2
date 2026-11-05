@@ -69,12 +69,12 @@ describe("judge portal scoring contract", () => {
 		).toBe(false);
 		expect(
 			isAssignmentScored(
-				assignment({ scores: [score("sidepot", 0), score("main", 5)] }),
+				assignment({ scores: [score("sidepot", 1), score("main", 5)] }),
 				criteria
 			)
 		).toBe(true);
 	});
-	it("requires every answer and accepts an explicit sidepot zero", () => {
+	it("requires every answer and rejects zero for every criterion", () => {
 		expect(
 			isAssignmentScored(assignment({ scores: [score("main", 4)] }), [
 				main,
@@ -83,13 +83,19 @@ describe("judge portal scoring contract", () => {
 		).toBe(false);
 		expect(
 			isAssignmentScored(
-				assignment({ scores: [score("main", 4), score("sidepot", 0)] }),
+				assignment({ scores: [score("main", 4), score("sidepot", 1)] }),
 				[main, sidepot]
 			)
 		).toBe(true);
 		expect(
 			isAssignmentScored(
-				assignment({ scores: [score("main", 0), score("sidepot", 0)] }),
+				assignment({ scores: [score("main", 4), score("sidepot", 0)] }),
+				[main, sidepot]
+			)
+		).toBe(false);
+		expect(
+			isAssignmentScored(
+				assignment({ scores: [score("main", 0), score("sidepot", 1)] }),
 				[main, sidepot]
 			)
 		).toBe(false);
@@ -98,7 +104,7 @@ describe("judge portal scoring contract", () => {
 	it("keeps the existing completion rule when no main criteria exist", () => {
 		expect(isAssignmentScored(assignment(), [sidepot])).toBe(false);
 		expect(
-			isAssignmentScored(assignment({ scores: [score("sidepot", 0)] }), [
+			isAssignmentScored(assignment({ scores: [score("sidepot", 1)] }), [
 				sidepot
 			])
 		).toBe(true);
@@ -118,10 +124,9 @@ describe("judge portal scoring contract", () => {
 		});
 	});
 
-	it("preserves a saved zero when editing", () => {
-		expect(getScoreOptions(main, false)[0]).toBe(1);
-		expect(getScoreOptions(main, false, 0)[0]).toBe(0);
-		expect(getScoreOptions(sidepot, true)).toEqual([0, 1, 2, 3, 4, 5]);
+	it("offers 1 to the maximum for main and sidepot criteria", () => {
+		expect(getScoreOptions(main)).toEqual([1, 2, 3, 4, 5]);
+		expect(getScoreOptions(sidepot)).toEqual([1, 2, 3, 4, 5]);
 	});
 
 	it("orders teams by time then name", () => {

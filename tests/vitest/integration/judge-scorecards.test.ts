@@ -127,13 +127,16 @@ describe("individual judge scorecards", () => {
 		await (await caller()).createMany(input(value));
 		expect(mocks.insert).toHaveBeenCalledOnce();
 	});
-	it("retains the configured sidepot range, including zero", async () => {
+	it("scores sidepots from 1 to the configured maximum", async () => {
 		mocks.query.judgingCriteria.findMany.mockResolvedValue([
 			{ ...mainCriterion, isSidepot: true, maxScore: 5 }
 		]);
 		const api = await caller();
-		await api.createMany(input(0));
+		await api.createMany(input(1));
 		await api.createMany(input(5));
+		await expect(api.createMany(input(0))).rejects.toMatchObject({
+			code: "BAD_REQUEST"
+		});
 		await expect(api.createMany(input(6))).rejects.toMatchObject({
 			code: "BAD_REQUEST"
 		});

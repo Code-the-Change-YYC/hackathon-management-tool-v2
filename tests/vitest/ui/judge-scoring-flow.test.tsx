@@ -84,7 +84,7 @@ async function complete() {
 	await screen.findByRole("heading", { name: "Innovation" });
 	fireEvent.click(screen.getByRole("button", { name: "4 points" }));
 	await screen.findByRole("heading", { name: "Best AI" });
-	fireEvent.click(screen.getByRole("button", { name: "0 points" }));
+	fireEvent.click(screen.getByRole("button", { name: "1 point" }));
 	await screen.findByRole("heading", { name: "Review your scores" });
 }
 beforeEach(() => {
@@ -139,7 +139,7 @@ describe("individual judge scoring", () => {
 			screen.getByRole("button", { name: /Innovation/ })
 		).toHaveTextContent("4/5");
 		expect(screen.getByRole("button", { name: /Best AI/ })).toHaveTextContent(
-			"0/5"
+			"1/5"
 		);
 		expect(screen.getByRole("button", { name: "Submit scores" })).toBeEnabled();
 		expect(mocks.submit).not.toHaveBeenCalled();
@@ -191,7 +191,7 @@ describe("individual judge scoring", () => {
 		await screen.findByRole("heading", { name: "Best AI" });
 		expect(screen.getByText("2 of 2 · Side pot")).toBeInTheDocument();
 	});
-	it("accepts zero for a side pot", async () => {
+	it("scores a side pot from 1, without a zero option", async () => {
 		mocks.portal.mockReturnValue({
 			assignments: [assignment],
 			criteria: criteria.slice(1),
@@ -200,7 +200,10 @@ describe("individual judge scoring", () => {
 		});
 		mount();
 		await screen.findByRole("heading", { name: "Best AI" });
-		fireEvent.click(screen.getByRole("button", { name: "0 points" }));
+		expect(
+			screen.queryByRole("button", { name: "0 points" })
+		).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "1 point" }));
 		await screen.findByRole("heading", { name: "Review your scores" });
 		expect(screen.getByRole("button", { name: "Submit scores" })).toBeEnabled();
 	});
@@ -223,7 +226,7 @@ describe("individual judge scoring", () => {
 		expect(mocks.submit).toHaveBeenLastCalledWith(
 			[
 				{ assignmentId: "assignment", criteriaId: "main", score: 4 },
-				{ assignmentId: "assignment", criteriaId: "side", score: 0 }
+				{ assignmentId: "assignment", criteriaId: "side", score: 1 }
 			],
 			expect.anything()
 		);

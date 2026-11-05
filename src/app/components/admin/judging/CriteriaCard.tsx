@@ -114,7 +114,7 @@ export function CriteriaCard({
 									)}
 								</TableCell>
 								<TableCell className="px-3 py-3 tabular-nums">
-									{criterion.isSidepot ? 0 : 1}–{criterion.maxScore}
+									1–{criterion.maxScore}
 								</TableCell>
 								<TableCell className="px-3 py-3 text-right">
 									<DropdownMenu>
