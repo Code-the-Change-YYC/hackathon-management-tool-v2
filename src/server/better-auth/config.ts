@@ -78,6 +78,19 @@ export const betterAuthDefaultConfig = {
 		provider: "pg"
 	}),
 	trustedOrigins,
+	// Limits are per IP, and everyone on the venue Wi-Fi shares one, so the
+	// defaults (3 sign-ins per 10 seconds, 3 codes per minute) would lock out
+	// most of the room. Each code still only allows a few wrong guesses.
+	rateLimit: {
+		customRules: {
+			"/sign-in/*": { window: 10, max: 30 },
+			"/sign-up/*": { window: 10, max: 30 },
+			"/email-otp/send-verification-otp": { window: 60, max: 30 },
+			"/email-otp/verify-email": { window: 60, max: 30 },
+			"/email-otp/request-password-reset": { window: 60, max: 30 },
+			"/email-otp/reset-password": { window: 60, max: 30 }
+		}
+	},
 	emailAndPassword: {
 		enabled: true,
 		// Email sign-ups confirm their address with a one-time code before they
