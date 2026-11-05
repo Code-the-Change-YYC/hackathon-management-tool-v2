@@ -81,6 +81,11 @@ export function createEventFormSchema(hackathonDates: HackathonDates | null) {
 					.min(1, "Enter a description.")
 					.max(EVENT_DESCRIPTION_MAX_LENGTH),
 				type: z.enum(EVENT_TYPES, { message: "Choose a type." }),
+				mealRounds: z
+					.number()
+					.int()
+					.min(1, "Enter at least one scan.")
+					.max(2_147_483_647),
 				published: z.boolean(),
 				location: optionalText.pipe(
 					z.string().max(EVENT_LOCATION_MAX_LENGTH).nullable()
@@ -108,6 +113,7 @@ export function createEventFormSchema(hackathonDates: HackathonDates | null) {
 				}
 				return {
 					...data,
+					mealRounds: data.type === EventType.FOOD ? data.mealRounds : 1,
 					startTime: start,
 					endTime: end,
 					status: published ? EventStatus.ACTIVE : EventStatus.DRAFT
@@ -124,6 +130,7 @@ export const EMPTY_EVENT_FORM: EventFormInput = {
 	title: "",
 	description: "",
 	type: EventType.ACTIVITY,
+	mealRounds: 1,
 	published: true,
 	location: "",
 	navigationUrl: "",

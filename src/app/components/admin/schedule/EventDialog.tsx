@@ -27,6 +27,7 @@ import {
 	FieldGroup,
 	FieldLabel
 } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
 import { RadioGroup } from "@/app/components/ui/radio-group";
 import { Textarea } from "@/app/components/ui/textarea";
 import { toDateInputValue, toTimeInputValue } from "@/lib/datetime";
@@ -42,7 +43,7 @@ import {
 	type HackathonDates
 } from "@/lib/validation/event";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { EVENT_TYPES, EventStatus } from "@/types/types";
+import { EVENT_TYPES, EventStatus, EventType } from "@/types/types";
 
 export type AdminEvent = RouterOutputs["events"]["getAllEvents"][number];
 
@@ -52,6 +53,7 @@ function toFormInput(event?: AdminEvent): EventFormInput {
 		title: event.title,
 		description: event.description,
 		type: event.type,
+		mealRounds: event.mealRounds,
 		published: event.status === EventStatus.ACTIVE,
 		location: event.location ?? "",
 		navigationUrl: event.navigationUrl ?? "",
@@ -81,12 +83,16 @@ export function EventDialog({
 			router.refresh();
 			onClose();
 		},
-		onError: () => toast.error("We couldn’t save this event. Please try again.")
+		onError: (error: { message: string }) =>
+			toast.error(
+				error.message || "We couldn’t save this event. Please try again."
+			)
 	};
 	const addEvent = api.events.addEvent.useMutation(callbacks);
 	const updateEvent = api.events.updateEvent.useMutation(callbacks);
 	const isPending = addEvent.isPending || updateEvent.isPending;
 	const descriptionError = form.formState.errors.description;
+	const mealRoundsError = form.formState.errors.mealRounds;
 	const eventType = useWatch({ control: form.control, name: "type" });
 
 	return (
@@ -122,7 +128,10 @@ export function EventDialog({
 								aria-labelledby="event-type-label"
 								className="grid-cols-2 sm:grid-cols-4"
 								disabled={isPending}
-								onValueChange={(type) => form.setValue("type", type)}
+								onValueChange={(type) => {
+									form.setValue("type", type);
+									if (type !== EventType.FOOD) form.setValue("mealRounds", 1);
+								}}
 								value={eventType}
 							>
 								{EVENT_TYPES.map((type) => (
@@ -145,6 +154,23 @@ export function EventDialog({
 								))}
 							</RadioGroup>
 						</Field>
+						{eventType === EventType.FOOD && (
+							<Field data-invalid={Boolean(mealRoundsError)}>
+								<FieldLabel htmlFor="event-meal-rounds">
+									Meal rounds (scans per person)
+								</FieldLabel>
+								<Input
+									aria-invalid={Boolean(mealRoundsError)}
+									disabled={isPending}
+									id="event-meal-rounds"
+									min={1}
+									step={1}
+									type="number"
+									{...form.register("mealRounds", { valueAsNumber: true })}
+								/>
+								<FieldError errors={[mealRoundsError]} />
+							</Field>
+						)}
 						<DateField
 							control={form.control}
 							disabled={isPending}

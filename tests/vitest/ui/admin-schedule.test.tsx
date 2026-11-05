@@ -50,6 +50,7 @@ const lunch: AdminEvent = {
 	location: "Dining Hall",
 	navigationUrl: null,
 	type: EventType.FOOD,
+	mealRounds: 1,
 	status: EventStatus.DRAFT,
 	startTime: new Date("2026-11-07T19:00:00Z"),
 	endTime: new Date("2026-11-07T20:00:00Z"),
@@ -158,6 +159,7 @@ describe("admin schedule", () => {
 				title: "Trivia",
 				description: "Win prizes",
 				type: EventType.CEREMONY,
+				mealRounds: 1,
 				status: EventStatus.ACTIVE,
 				location: null,
 				navigationUrl: null,
@@ -167,12 +169,41 @@ describe("admin schedule", () => {
 		);
 	});
 
+	it("shows the meal allowance only for food events", async () => {
+		render(<ScheduleView events={[]} settings={null} />);
+		fireEvent.click(screen.getByRole("button", { name: "Add event" }));
+		expect(
+			screen.queryByRole("spinbutton", {
+				name: "Meal rounds (scans per person)"
+			})
+		).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("radio", { name: "Food" }));
+		const rounds = screen.getByRole("spinbutton", {
+			name: "Meal rounds (scans per person)"
+		});
+		expect(rounds).toHaveValue(1);
+		change("Meal rounds (scans per person)", "0");
+		fireEvent.click(screen.getByRole("button", { name: "Add event" }));
+		expect(
+			await screen.findByText("Enter at least one scan.")
+		).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("radio", { name: "Activity" }));
+		expect(
+			screen.queryByRole("spinbutton", {
+				name: "Meal rounds (scans per person)"
+			})
+		).not.toBeInTheDocument();
+	});
+
 	it("edits an existing event", async () => {
 		render(<ScheduleView events={[lunch]} settings={null} />);
 		openMenu("Lunch");
 		fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
 		expect(screen.getByLabelText("Title")).toHaveValue("Lunch");
 		expect(screen.getByRole("radio", { name: "Food" })).toBeChecked();
+		expect(
+			screen.getByRole("spinbutton", { name: "Meal rounds (scans per person)" })
+		).toHaveValue(1);
 		expect(
 			within(screen.getByRole("dialog")).getByLabelText("Date")
 		).toHaveTextContent("Saturday, November 7, 2026");
@@ -183,12 +214,14 @@ describe("admin schedule", () => {
 		).not.toBeChecked();
 
 		change("Location", "Atrium");
+		change("Meal rounds (scans per person)", "2");
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() =>
 			expect(mocks.update).toHaveBeenCalledWith(
 				expect.objectContaining({
 					id: lunch.id,
 					location: "Atrium",
+					mealRounds: 2,
 					status: EventStatus.DRAFT,
 					startTime: lunch.startTime,
 					endTime: lunch.endTime

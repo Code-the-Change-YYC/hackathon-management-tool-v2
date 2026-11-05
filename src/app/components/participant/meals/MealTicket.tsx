@@ -87,7 +87,48 @@ function getMealTiming(meal: { startTime: Date; endTime: Date }, now: Date) {
 	if (minutesUntilStart <= 60) {
 		return `Starts in ${minutesUntilStart} min · until ${endTime}`;
 	}
+<<<<<<< HEAD
 	return `${formatTime(meal.startTime)} – ${endTime}`;
+=======
+
+	return `Runs from ${formatTime(event.startTime)} to ${endTime}.`;
+}
+
+function getTicketDescription(
+	ticket: EventTicket | null,
+	meal: Meal,
+	mealPreference: boolean | null,
+	now: Date
+) {
+	if (mealPreference !== true) {
+		return meal
+			? getMealTiming(meal, now)
+			: "There is no upcoming meal ticket available.";
+	}
+	if (!ticket) {
+		return "There is no upcoming meal ticket available.";
+	}
+
+	if (ticket.status === EventTicketStatus.ALREADY_CHECKED_IN) {
+		return ticket.scanLimit > 1
+			? `You have used all ${ticket.scanLimit} meal scans. Last checked in at ${formatTime(ticket.checkedInAt)}.`
+			: `You checked in at ${formatTime(ticket.checkedInAt)}.`;
+	}
+
+	const remaining = ticket.scanLimit - ticket.scansUsed;
+	const allowance =
+		ticket.scanLimit > 1
+			? ` You have ${remaining} ${remaining === 1 ? "scan" : "scans"} remaining.`
+			: "";
+	return `Present this QR code to a Code the Change member scanning tickets at the door to receive your meal.${allowance} ${getMealTiming(ticket.event, now)}`;
+}
+
+interface MealTicketProps {
+	displayName: string;
+	ticket: EventTicket | null;
+	meal: Meal;
+	mealPreference: boolean | null;
+>>>>>>> 32c44ea (add meal rounds for people to get seconds)
 }
 
 export function MealTicket({
