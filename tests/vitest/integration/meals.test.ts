@@ -106,8 +106,14 @@ describe("meal ticket issuing", () => {
 	it("keeps the code on screen valid when Meals opens elsewhere", async () => {
 		const fixtures = new EventFixtureTracker();
 		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
-		const participant = await createAuthenticatedCaller({ checkedIn: true });
-		const teammate = await createAuthenticatedCaller({ checkedIn: true });
+		const participant = await createAuthenticatedCaller({
+			checkedIn: true,
+			wantsFood: true
+		});
+		const teammate = await createAuthenticatedCaller({
+			checkedIn: true,
+			wantsFood: true
+		});
 		onTestFinished(async () => {
 			await fixtures.cleanup();
 			await admin.cleanup();
@@ -293,7 +299,7 @@ describe("meal ticket opt-out", () => {
 			endTime: new Date(now + hour)
 		});
 		await expect(
-			participant.caller.events.rotateParticipantEventTicket({
+			participant.caller.events.issueParticipantEventTicket({
 				eventId: meal.id
 			})
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -310,11 +316,9 @@ describe("meal ticket opt-out", () => {
 			.update(user)
 			.set({ wantsFood: true })
 			.where(eq(user.id, participant.user.id));
-		const ticket = await participant.caller.events.rotateParticipantEventTicket(
-			{
-				eventId: meal.id
-			}
-		);
+		const ticket = await participant.caller.events.issueParticipantEventTicket({
+			eventId: meal.id
+		});
 		assert(ticket.status === EventTicketStatus.ACTIVE);
 		await db
 			.update(user)
@@ -350,7 +354,7 @@ describe("meal ticket opt-out", () => {
 			endTime: new Date(now + hour)
 		});
 		await expect(
-			participant.caller.events.rotateParticipantEventTicket({
+			participant.caller.events.issueParticipantEventTicket({
 				eventId: meal.id
 			})
 		).rejects.toMatchObject({
@@ -363,11 +367,9 @@ describe("meal ticket opt-out", () => {
 			.update(user)
 			.set({ wantsFood: true })
 			.where(eq(user.id, participant.user.id));
-		const ticket = await participant.caller.events.rotateParticipantEventTicket(
-			{
-				eventId: meal.id
-			}
-		);
+		const ticket = await participant.caller.events.issueParticipantEventTicket({
+			eventId: meal.id
+		});
 		assert(ticket.status === EventTicketStatus.ACTIVE);
 		await db
 			.update(user)
