@@ -87,41 +87,7 @@ function getMealTiming(meal: { startTime: Date; endTime: Date }, now: Date) {
 	if (minutesUntilStart <= 60) {
 		return `Starts in ${minutesUntilStart} min · until ${endTime}`;
 	}
-<<<<<<< HEAD
 	return `${formatTime(meal.startTime)} – ${endTime}`;
-=======
-
-	return `Runs from ${formatTime(event.startTime)} to ${endTime}.`;
-}
-
-function getTicketDescription(
-	ticket: EventTicket | null,
-	meal: Meal,
-	mealPreference: boolean | null,
-	now: Date
-) {
-	if (mealPreference !== true) {
-		return meal
-			? getMealTiming(meal, now)
-			: "There is no upcoming meal ticket available.";
-	}
-	if (!ticket) {
-		return "There is no upcoming meal ticket available.";
-	}
-
-	if (ticket.status === EventTicketStatus.ALREADY_CHECKED_IN) {
-		return `You checked in at ${formatTime(ticket.checkedInAt)}.`;
-	}
-
-	return `Present this QR code to a Code the Change member scanning tickets at the door to receive your meal. ${getMealTiming(ticket.event, now)}`;
-}
-
-interface MealTicketProps {
-	displayName: string;
-	ticket: EventTicket | null;
-	meal: Meal;
-	mealPreference: boolean | null;
->>>>>>> 32c44ea (add meal rounds for people to get seconds)
 }
 
 export function MealTicket({

@@ -225,7 +225,7 @@ test("keeps the standard QR ticket after the first of two scans", async ({
 		endTime: new Date(now + 60 * minute)
 	});
 	await page.goto(mealInfoPath);
-	const instructions = ticketSection(page).getByText(/Present this QR code/);
+	const instructions = ticketSection(page).getByText(/Show this QR code/);
 	const description = await instructions.textContent();
 	await expect(qrCode(page)).toBeVisible();
 

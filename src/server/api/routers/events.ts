@@ -1,9 +1,5 @@
 import { TRPCError } from "@trpc/server";
-<<<<<<< HEAD
-import { and, asc, eq } from "drizzle-orm";
-=======
 import { and, asc, count, desc, eq, gt } from "drizzle-orm";
->>>>>>> 32c44ea (add meal rounds for people to get seconds)
 import { z } from "zod";
 import { formatDateKey, isSameCalgaryDay } from "@/lib/datetime";
 import { eventNavigationUrlSchema } from "@/lib/participant-events";
@@ -226,9 +222,6 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-<<<<<<< HEAD
-				const attendance = await tx.query.eventAttendance.findFirst({
-=======
 				await tx
 					.select({ id: eventTicket.id })
 					.from(eventTicket)
@@ -241,7 +234,6 @@ export const eventsRouter = createTRPCRouter({
 					.for("update");
 
 				const attendance = await tx.query.eventAttendance.findMany({
->>>>>>> 32c44ea (add meal rounds for people to get seconds)
 					columns: { createdAt: true },
 					where: and(
 						eq(eventAttendance.userId, ctx.session.user.id),
