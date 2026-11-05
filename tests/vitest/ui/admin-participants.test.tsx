@@ -245,6 +245,37 @@ describe("admin users", () => {
 		expect(mocks.refresh).toHaveBeenCalledOnce();
 	});
 
+	it("lets staff change a participant's meal opt-in after onboarding", () => {
+		render(
+			<RegisteredUsersView
+				participants={participants.map((participant) =>
+					participant.id === "grace-id"
+						? { ...participant, role: Role.PARTICIPANT }
+						: participant
+				)}
+			/>
+		);
+
+		expect(
+			screen.getByRole("columnheader", { name: "Meal opt-in" })
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("checkbox", { name: "Meal opt-in for Ada Lovelace" })
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("checkbox", { name: "Meal opt-in for Linus Torvalds" })
+		).not.toBeInTheDocument();
+		const checkbox = screen.getByRole("checkbox", {
+			name: "Meal opt-in for Grace Hopper"
+		});
+		expect(checkbox).not.toBeChecked();
+		fireEvent.click(checkbox);
+		expect(mocks.mutate).toHaveBeenCalledWith({
+			id: "grace-id",
+			wantsFood: true
+		});
+	});
+
 	it("checks in participants only", () => {
 		renderUsers();
 

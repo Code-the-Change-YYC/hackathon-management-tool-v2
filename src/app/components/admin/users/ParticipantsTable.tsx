@@ -52,6 +52,8 @@ type ParticipantsTableProps = {
 	onResendAccessEmail: (participant: Participant) => void;
 	onDelete: (participant: Participant) => void;
 	onCheckIn: (participant: Participant, checkedIn: boolean) => void;
+	onMealOptIn: (participant: Participant, wantsFood: boolean) => void;
+	mealOptInPending: boolean;
 };
 
 export function ParticipantsTable({
@@ -59,7 +61,9 @@ export function ParticipantsTable({
 	onEdit,
 	onResendAccessEmail,
 	onDelete,
-	onCheckIn
+	onCheckIn,
+	onMealOptIn,
+	mealOptInPending
 }: ParticipantsTableProps) {
 	if (participants.length === 0) {
 		return (
@@ -93,7 +97,7 @@ export function ParticipantsTable({
 						<TableHead className="min-w-48">Completed Registration</TableHead>
 						<TableHead className="min-w-52">Institution</TableHead>
 						<TableHead className="min-w-44">Major</TableHead>
-						<TableHead className="min-w-44">Registered for Food</TableHead>
+						<TableHead className="min-w-44">Meal opt-in</TableHead>
 						<TableHead className="w-12 pr-4">
 							<span className="sr-only">Actions</span>
 						</TableHead>
@@ -145,10 +149,18 @@ export function ParticipantsTable({
 							<TableCell>{participant.institution ?? "-"}</TableCell>
 							<TableCell>{participant.major ?? "-"}</TableCell>
 							<TableCell>
-								{participant.registeredForFood === null ? (
-									"-"
+								{participant.role === Role.PARTICIPANT &&
+								participant.registeredForFood !== null ? (
+									<Checkbox
+										aria-label={`Meal opt-in for ${participant.firstName} ${participant.lastName}`}
+										checked={participant.registeredForFood}
+										disabled={mealOptInPending}
+										onCheckedChange={(checked) =>
+											onMealOptIn(participant, checked)
+										}
+									/>
 								) : (
-									<BooleanIcon value={participant.registeredForFood} />
+									"-"
 								)}
 							</TableCell>
 							<TableCell className="pr-4 text-right">
