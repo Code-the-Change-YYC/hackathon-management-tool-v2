@@ -32,7 +32,6 @@ export default async function MealsPage() {
 			meals={meals}
 			needsCheckIn={
 				isParticipant &&
-				mealPreference === true &&
 				!user.checkedIn &&
 				hasHackathonDayStarted(settings?.startDate)
 			}

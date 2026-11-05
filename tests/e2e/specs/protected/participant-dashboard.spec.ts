@@ -150,3 +150,25 @@ test.describe("not checked in", () => {
 		await expect(banner).toBeVisible();
 	});
 });
+
+for (const wantsFood of [false, null] as const) {
+	test.describe(`not checked in with meal preference ${wantsFood}`, () => {
+		test.use({
+			authUserOptions: { checkedIn: false, role: Role.PARTICIPANT, wantsFood }
+		});
+
+		test("shows the hackathon check-in banner on the meals page", async ({
+			authenticatedPage: page,
+			setSettings
+		}) => {
+			await setSettings({ startDate: minutesFromNow(-1) });
+			await page.goto("/participant/meals");
+			await expect(
+				page.getByRole("heading", { name: "Check in to the hackathon" })
+			).toBeVisible();
+			await expect(
+				page.getByRole("region", { name: "Meal ticket", exact: true })
+			).toHaveCount(0);
+		});
+	});
+}
