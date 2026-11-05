@@ -42,10 +42,10 @@ function getMealTiming(
 function getTicketDescription(
 	ticket: EventTicket | null,
 	meal: Meal,
-	optedOut: boolean,
+	mealPreference: boolean | null,
 	now: Date
 ) {
-	if (optedOut) {
+	if (mealPreference !== true) {
 		return meal
 			? getMealTiming(meal, now)
 			: "There is no upcoming meal ticket available.";
@@ -65,20 +65,20 @@ interface MealTicketProps {
 	displayName: string;
 	ticket: EventTicket | null;
 	meal: Meal;
-	optedOut: boolean;
+	mealPreference: boolean | null;
 }
 
 export function MealTicket({
 	displayName,
 	ticket,
 	meal,
-	optedOut
+	mealPreference
 }: MealTicketProps) {
 	const ticketMealName = ticket?.event.title ?? meal?.title ?? "Meal";
 	const ticketDescription = getTicketDescription(
 		ticket,
 		meal,
-		optedOut,
+		mealPreference,
 		useCurrentTime()
 	);
 
@@ -133,17 +133,20 @@ export function MealTicket({
 					<div className="absolute right-0 bottom-0 @min-[40rem]/meal-ticket:hidden size-6 translate-x-1/2 translate-y-1/2 rounded-full bg-background" />
 					<div className="-left-0.5 -translate-x-1/2 -translate-y-1/2 absolute top-0 @min-[40rem]/meal-ticket:block hidden size-6 rounded-full bg-background" />
 					<div className="-left-0.5 -translate-x-1/2 absolute bottom-0 @min-[40rem]/meal-ticket:block hidden size-6 translate-y-1/2 rounded-full bg-background" />
-					{!optedOut && ticket?.status === EventTicketStatus.ACTIVE ? (
+					{mealPreference === true &&
+					ticket?.status === EventTicketStatus.ACTIVE ? (
 						<div className="aspect-square h-full max-h-full max-w-full">
 							<StyledQRCode value={ticket.token} />
 						</div>
 					) : (
 						<p className="max-w-44 text-center font-medium text-dark-grey text-sm">
-							{optedOut
+							{mealPreference === false
 								? "You opted out of meals during onboarding. Please see an event staff member if you change your mind."
-								: ticket?.status === EventTicketStatus.ALREADY_CHECKED_IN
-									? "Already checked in"
-									: "No ticket available"}
+								: mealPreference === null
+									? "Complete your meal preferences during onboarding to receive a meal ticket."
+									: ticket?.status === EventTicketStatus.ALREADY_CHECKED_IN
+										? "Already checked in"
+										: "No ticket available"}
 						</p>
 					)}
 				</div>

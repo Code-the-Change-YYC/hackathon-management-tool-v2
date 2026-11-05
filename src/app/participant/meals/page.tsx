@@ -17,10 +17,10 @@ export default async function MealsPage() {
 		api.hackathonSettings.get()
 	]);
 	const isParticipant = user.role === Role.PARTICIPANT;
-	const optedOut = isParticipant && user.wantsFood === false;
-	// Admins and participants who opted out don't have meal tickets.
+	const mealPreference = isParticipant ? (user.wantsFood ?? null) : true;
+	// Only checked-in participants who explicitly opted in get meal tickets.
 	const ticket =
-		nextMeal && isParticipant && user.checkedIn && !optedOut
+		nextMeal && isParticipant && user.checkedIn && mealPreference === true
 			? await api.events.rotateParticipantEventTicket({ eventId: nextMeal.id })
 			: null;
 
@@ -28,15 +28,15 @@ export default async function MealsPage() {
 		<MealsView
 			dietaryRestrictions={user.dietaryRestrictions}
 			displayName={user.name?.trim() || "Participant"}
+			mealPreference={mealPreference}
 			meals={meals}
 			needsCheckIn={
 				isParticipant &&
-				!optedOut &&
+				mealPreference === true &&
 				!user.checkedIn &&
 				hasHackathonDayStarted(settings?.startDate)
 			}
 			nextMeal={nextMeal}
-			optedOut={optedOut}
 			ticket={ticket}
 		/>
 	);

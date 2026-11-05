@@ -34,7 +34,10 @@ describe("concurrent meal scanning", () => {
 
 	it("independent scanners redeem one current ticket exactly once", async () => {
 		const events = new EventFixtureTracker();
-		const participant = await createAuthenticatedCaller({ checkedIn: true });
+		const participant = await createAuthenticatedCaller({
+			checkedIn: true,
+			wantsFood: true
+		});
 		const admins = [
 			await createAuthenticatedCaller({ role: Role.ADMIN }),
 			await createAuthenticatedCaller({ role: Role.ADMIN })
@@ -105,7 +108,8 @@ describe("meal scanner lease", () => {
 		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
 		const participant = await createAuthenticatedCaller({
 			checkedIn: true,
-			role: Role.PARTICIPANT
+			role: Role.PARTICIPANT,
+			wantsFood: true
 		});
 		onTestFinished(async () => {
 			await fixtures.cleanup();
@@ -253,6 +257,63 @@ describe("meal ticket opt-out", () => {
 			})
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
 	});
+
+	it("rejects unanswered meal preferences even for an existing ticket", async () => {
+		const fixtures = new EventFixtureTracker();
+		const participant = await createAuthenticatedCaller({
+			checkedIn: true,
+			role: Role.PARTICIPANT,
+			wantsFood: null
+		});
+		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
+		onTestFinished(async () => {
+			await fixtures.cleanup();
+			await participant.cleanup();
+			await admin.cleanup();
+		});
+		const now = Date.now();
+		const meal = await fixtures.create({
+			title: "Unanswered meal preference",
+			type: EventType.FOOD,
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - hour),
+			endTime: new Date(now + hour)
+		});
+		await expect(
+			participant.caller.events.rotateParticipantEventTicket({
+				eventId: meal.id
+			})
+		).rejects.toMatchObject({
+			code: "FORBIDDEN",
+			message:
+				"Complete your meal preferences during onboarding to receive a meal ticket."
+		});
+
+		await db
+			.update(user)
+			.set({ wantsFood: true })
+			.where(eq(user.id, participant.user.id));
+		const ticket = await participant.caller.events.rotateParticipantEventTicket(
+			{
+				eventId: meal.id
+			}
+		);
+		assert(ticket.status === EventTicketStatus.ACTIVE);
+		await db
+			.update(user)
+			.set({ wantsFood: null })
+			.where(eq(user.id, participant.user.id));
+		await expect(
+			admin.caller.events.redeemEventTicket({
+				eventId: meal.id,
+				token: ticket.token
+			})
+		).rejects.toMatchObject({
+			code: "FORBIDDEN",
+			message:
+				"Complete your meal preferences during onboarding to receive a meal ticket."
+		});
+	});
 });
 
 describe("meal ticket check-in gate", () => {
@@ -267,7 +328,8 @@ describe("meal ticket check-in gate", () => {
 		const fixtures = new EventFixtureTracker();
 		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
 		const participant = await createAuthenticatedCaller({
-			role: Role.PARTICIPANT
+			role: Role.PARTICIPANT,
+			wantsFood: true
 		});
 		onTestFinished(async () => {
 			await fixtures.cleanup();

@@ -26,7 +26,8 @@ test.use({
 	authUserOptions: {
 		checkedIn: true,
 		name: "Meal Ticket Participant",
-		role: Role.PARTICIPANT
+		role: Role.PARTICIPANT,
+		wantsFood: true
 	}
 });
 
@@ -162,6 +163,41 @@ test("shows an opt-out message instead of a meal QR while keeping meal details",
 	await expect(ticket).toContainText("Being served until");
 	await expect(ticket).toContainText(
 		"You opted out of meals during onboarding. Please see an event staff member if you change your mind."
+	);
+	await expect(qrCode(page)).toHaveCount(0);
+	expect(
+		await db.query.eventTicket.findMany({
+			where: and(
+				eq(eventTicket.userId, authUser.id),
+				eq(eventTicket.eventId, meal.id)
+			)
+		})
+	).toHaveLength(0);
+});
+
+test("shows an onboarding message instead of a QR for an unanswered meal preference", async ({
+	authenticatedPage: page,
+	authUser,
+	createMeal
+}) => {
+	const now = Date.now();
+	const meal = await createMeal({
+		title: "Preferences lunch",
+		status: EventStatus.ACTIVE,
+		startTime: new Date(now - 15 * minute),
+		endTime: new Date(now + 45 * minute)
+	});
+	assertE2EDatabaseSafety();
+	await db
+		.update(user)
+		.set({ wantsFood: null })
+		.where(eq(user.id, authUser.id));
+
+	await page.goto(mealInfoPath);
+	const ticket = ticketSection(page);
+	await expect(ticket).toContainText(`${meal.title} Ticket For`);
+	await expect(ticket).toContainText(
+		"Complete your meal preferences during onboarding to receive a meal ticket."
 	);
 	await expect(qrCode(page)).toHaveCount(0);
 	expect(

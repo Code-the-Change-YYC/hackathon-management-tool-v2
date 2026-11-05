@@ -83,6 +83,16 @@ const notCheckedIn = () =>
 		message: "This participant has not checked in yet."
 	});
 
+function mealPreferenceRequired(wantsFood: boolean | null | undefined) {
+	return new TRPCError({
+		code: "FORBIDDEN",
+		message:
+			wantsFood === false
+				? "You opted out of meals during onboarding."
+				: "Complete your meal preferences during onboarding to receive a meal ticket."
+	});
+}
+
 const ticketTokenSchema = z
 	.string()
 	.regex(EVENT_TICKET_TOKEN_PATTERN, "Invalid event ticket format.");
@@ -173,11 +183,8 @@ export const eventsRouter = createTRPCRouter({
 						where: eq(user.id, ctx.session.user.id),
 						columns: { wantsFood: true }
 					});
-					if (participant?.wantsFood === false) {
-						throw new TRPCError({
-							code: "FORBIDDEN",
-							message: "You opted out of meals during onboarding."
-						});
+					if (participant?.wantsFood !== true) {
+						throw mealPreferenceRequired(participant?.wantsFood);
 					}
 				}
 
@@ -312,12 +319,9 @@ export const eventsRouter = createTRPCRouter({
 
 				if (
 					ticket.eventType === EventType.FOOD &&
-					ticket.participantWantsFood === false
+					ticket.participantWantsFood !== true
 				) {
-					throw new TRPCError({
-						code: "FORBIDDEN",
-						message: "You opted out of meals during onboarding."
-					});
+					throw mealPreferenceRequired(ticket.participantWantsFood);
 				}
 
 				if (ticket.eventId !== input.eventId) {
