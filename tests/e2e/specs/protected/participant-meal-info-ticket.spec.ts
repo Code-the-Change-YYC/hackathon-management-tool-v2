@@ -5,6 +5,7 @@ import superjson from "superjson";
 import { formatTime } from "@/lib/datetime";
 import type { AppRouter } from "@/server/api/root";
 import { db } from "@/server/db";
+import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import { EventStatus, EventType, Role } from "@/types/types";
 import { createTestUser, getTestUserCookies } from "../../../utils/auth";
@@ -133,6 +134,42 @@ test("shows an empty ticket with no QR when no active unended food meal exists",
 	expect(
 		await db.query.eventTicket.findMany({
 			where: eq(eventTicket.userId, authUser.id)
+		})
+	).toHaveLength(0);
+});
+
+test("shows an opt-out message instead of a meal QR while keeping meal details", async ({
+	authenticatedPage: page,
+	authUser,
+	createMeal
+}) => {
+	const now = Date.now();
+	const meal = await createMeal({
+		title: "Opt-out lunch",
+		status: EventStatus.ACTIVE,
+		startTime: new Date(now - 15 * minute),
+		endTime: new Date(now + 45 * minute)
+	});
+	assertE2EDatabaseSafety();
+	await db
+		.update(user)
+		.set({ wantsFood: false })
+		.where(eq(user.id, authUser.id));
+
+	await page.goto(mealInfoPath);
+	const ticket = ticketSection(page);
+	await expect(ticket).toContainText(`${meal.title} Ticket For`);
+	await expect(ticket).toContainText("Being served until");
+	await expect(ticket).toContainText(
+		"You opted out of meals during onboarding. Please see an event staff member if you change your mind."
+	);
+	await expect(qrCode(page)).toHaveCount(0);
+	expect(
+		await db.query.eventTicket.findMany({
+			where: and(
+				eq(eventTicket.userId, authUser.id),
+				eq(eventTicket.eventId, meal.id)
+			)
 		})
 	).toHaveLength(0);
 });

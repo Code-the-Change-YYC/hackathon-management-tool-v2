@@ -9,6 +9,7 @@ import {
 	onTestFinished
 } from "vitest";
 import { db } from "@/server/db";
+import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
 	createEventTicketToken,
@@ -188,6 +189,69 @@ describe("meal scanner lease", () => {
 				scannerLease: lease
 			})
 		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+	});
+});
+
+describe("meal ticket opt-out", () => {
+	beforeAll(() => {
+		assertE2EDatabaseSafety();
+	});
+
+	it("refuses to issue or redeem a food ticket after opting out", async () => {
+		const fixtures = new EventFixtureTracker();
+		const participant = await createAuthenticatedCaller({
+			checkedIn: true,
+			role: Role.PARTICIPANT,
+			wantsFood: false
+		});
+		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
+		onTestFinished(async () => {
+			await fixtures.cleanup();
+			await participant.cleanup();
+			await admin.cleanup();
+		});
+		const now = Date.now();
+		const meal = await fixtures.create({
+			title: "Opt-out meal",
+			type: EventType.FOOD,
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - hour),
+			endTime: new Date(now + hour)
+		});
+		await expect(
+			participant.caller.events.rotateParticipantEventTicket({
+				eventId: meal.id
+			})
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+		expect(
+			await db.query.eventTicket.findFirst({
+				where: and(
+					eq(eventTicket.userId, participant.user.id),
+					eq(eventTicket.eventId, meal.id)
+				)
+			})
+		).toBeUndefined();
+
+		await db
+			.update(user)
+			.set({ wantsFood: true })
+			.where(eq(user.id, participant.user.id));
+		const ticket = await participant.caller.events.rotateParticipantEventTicket(
+			{
+				eventId: meal.id
+			}
+		);
+		assert(ticket.status === EventTicketStatus.ACTIVE);
+		await db
+			.update(user)
+			.set({ wantsFood: false })
+			.where(eq(user.id, participant.user.id));
+		await expect(
+			admin.caller.events.redeemEventTicket({
+				eventId: meal.id,
+				token: ticket.token
+			})
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
 	});
 });
 

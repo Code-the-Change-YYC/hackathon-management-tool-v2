@@ -17,9 +17,10 @@ export default async function MealsPage() {
 		api.hackathonSettings.get()
 	]);
 	const isParticipant = user.role === Role.PARTICIPANT;
-	// Admins don't have meal tickets, but can still view this page.
+	const optedOut = isParticipant && user.wantsFood === false;
+	// Admins and participants who opted out don't have meal tickets.
 	const ticket =
-		nextMeal && isParticipant && user.checkedIn
+		nextMeal && isParticipant && user.checkedIn && !optedOut
 			? await api.events.rotateParticipantEventTicket({ eventId: nextMeal.id })
 			: null;
 
@@ -30,9 +31,12 @@ export default async function MealsPage() {
 			meals={meals}
 			needsCheckIn={
 				isParticipant &&
+				!optedOut &&
 				!user.checkedIn &&
 				hasHackathonDayStarted(settings?.startDate)
 			}
+			nextMeal={nextMeal}
+			optedOut={optedOut}
 			ticket={ticket}
 		/>
 	);

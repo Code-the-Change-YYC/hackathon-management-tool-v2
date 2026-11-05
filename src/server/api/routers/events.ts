@@ -168,6 +168,19 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
+				if (ticketEvent.type === EventType.FOOD) {
+					const participant = await tx.query.user.findFirst({
+						where: eq(user.id, ctx.session.user.id),
+						columns: { wantsFood: true }
+					});
+					if (participant?.wantsFood === false) {
+						throw new TRPCError({
+							code: "FORBIDDEN",
+							message: "You opted out of meals during onboarding."
+						});
+					}
+				}
+
 				if (ticketEvent.status !== EventStatus.ACTIVE) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
@@ -265,6 +278,7 @@ export const eventsRouter = createTRPCRouter({
 						participantDietaryRestrictions: user.dietaryRestrictions,
 						participantRole: user.role,
 						participantCheckedIn: user.checkedIn,
+						participantWantsFood: user.wantsFood,
 						eventTitle: event.title,
 						eventType: event.type,
 						eventStatus: event.status,
@@ -294,6 +308,16 @@ export const eventsRouter = createTRPCRouter({
 
 				if (!ticket.participantCheckedIn) {
 					throw notCheckedIn();
+				}
+
+				if (
+					ticket.eventType === EventType.FOOD &&
+					ticket.participantWantsFood === false
+				) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message: "You opted out of meals during onboarding."
+					});
 				}
 
 				if (ticket.eventId !== input.eventId) {

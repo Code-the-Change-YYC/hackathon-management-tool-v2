@@ -16,13 +16,17 @@ export function MealsView({
 	needsCheckIn,
 	ticket,
 	dietaryRestrictions,
-	meals
+	meals,
+	nextMeal,
+	optedOut
 }: {
 	displayName: string;
 	needsCheckIn: boolean;
 	ticket: Ticket | null;
 	dietaryRestrictions: string[];
 	meals: Meal[];
+	nextMeal: Meal | null;
+	optedOut: boolean;
 }) {
 	const now = useCurrentTime();
 
@@ -36,7 +40,12 @@ export function MealsView({
 				{needsCheckIn ? (
 					<CheckInBanner />
 				) : (
-					<MealTicket displayName={displayName} ticket={ticket} />
+					<MealTicket
+						displayName={displayName}
+						meal={nextMeal}
+						optedOut={optedOut}
+						ticket={ticket}
+					/>
 				)}
 				<DietaryRestriction dietaryRestrictions={dietaryRestrictions} />
 				<MealScheduleSection meals={meals} now={now} />
