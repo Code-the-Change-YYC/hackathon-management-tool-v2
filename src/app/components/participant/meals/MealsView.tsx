@@ -8,11 +8,12 @@ import { DietaryRestriction } from "./DietaryRestriction";
 import { MealScheduleSection } from "./MealScheduleSection";
 import { MealTicket } from "./MealTicket";
 
-type Ticket = RouterOutputs["events"]["rotateParticipantEventTicket"];
+type Ticket = RouterOutputs["events"]["issueParticipantEventTicket"];
 type Meal = RouterOutputs["meals"]["getActiveMeals"][number];
 
 export function MealsView({
 	displayName,
+	isAdmin,
 	needsCheckIn,
 	ticket,
 	dietaryRestrictions,
@@ -21,6 +22,7 @@ export function MealsView({
 	mealPreference
 }: {
 	displayName: string;
+	isAdmin: boolean;
 	needsCheckIn: boolean;
 	ticket: Ticket | null;
 	dietaryRestrictions: string[];
@@ -42,6 +44,7 @@ export function MealsView({
 				) : (
 					<MealTicket
 						displayName={displayName}
+						isAdmin={isAdmin}
 						meal={nextMeal}
 						mealPreference={mealPreference}
 						ticket={ticket}

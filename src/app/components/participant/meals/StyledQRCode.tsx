@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { QRCodePlaceholder } from "./QRCodePlaceholder";
 
 type StyledQRCodeProps = {
 	value: string;
@@ -70,12 +71,16 @@ export function StyledQRCode({ value }: StyledQRCodeProps) {
 		};
 	}, [value]);
 
+	// The placeholder shows until the library loads and draws the real code over it.
 	return (
-		<div
-			aria-label="Meal ticket QR code"
-			className="h-full w-full overflow-hidden rounded-2xl [&>svg]:h-full [&>svg]:w-full"
-			ref={containerRef}
-			role="img"
-		/>
+		<div className="relative size-full">
+			<QRCodePlaceholder className="absolute inset-0 size-full animate-pulse text-awesomer-purple/15" />
+			<div
+				aria-label="Meal ticket QR code"
+				className="relative size-full overflow-hidden rounded-2xl [&>svg]:size-full"
+				ref={containerRef}
+				role="img"
+			/>
+		</div>
 	);
 }

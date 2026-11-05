@@ -3,10 +3,7 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import Banner from "@/app/components/Banner";
-import MealScannerView from "@/app/components/meal/MealScanner/Meal";
 import PageHeader from "@/app/components/PageHeader";
-import { Schedule } from "@/app/components/Schedule";
-import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -17,19 +14,19 @@ import {
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { MealAnalytics } from "./MealAnalytics";
+import { MealCheckInsCard } from "./MealCheckInsCard";
+import MealScanner from "./MealScanner";
 import ScanMealTicketsImages from "./ScanMealTicketsImages";
 
-type Meal = RouterOutputs["meals"]["getAllMeals"][number];
+type MealWithCheckIns = RouterOutputs["meals"]["getMealCheckIns"][number];
 
 export function MealsView({
-	meals,
+	meals: initialMeals,
 	scannerMealId,
-	ticketsScanned,
 	dietary
 }: {
-	meals: Meal[];
+	meals: MealWithCheckIns[];
 	scannerMealId?: string;
-	ticketsScanned: number;
 	dietary: RouterOutputs["users"]["getDietaryAnalytics"];
 }) {
 	const now = useCurrentTime();
@@ -40,10 +37,15 @@ export function MealsView({
 	} | null>(null);
 	const openingRef = useRef(false);
 	const beginScan = api.meals.beginMealScan.useMutation();
+	const { data: meals } = api.meals.getMealCheckIns.useQuery(undefined, {
+		initialData: initialMeals,
+		refetchInterval: 15_000
+	});
 	const { data: scannerMeal, refetch } = api.meals.getNextMeal.useQuery(
 		undefined,
 		{
-			initialData: meals.find((meal) => meal.id === scannerMealId) ?? null,
+			initialData:
+				initialMeals.find((meal) => meal.id === scannerMealId) ?? null,
 			refetchInterval: 15_000,
 			refetchOnMount: "always"
 		}
@@ -79,7 +81,7 @@ export function MealsView({
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				description="Scan meal tickets, check meal times, and plan for dietary restrictions."
+				description="Scan meal tickets, see who checked in, and plan for dietary restrictions."
 				title="Meals"
 			/>
 			<Banner
@@ -94,20 +96,8 @@ export function MealsView({
 				onClick={openScanner}
 				title="Scan meal tickets"
 			/>
-			<Card>
-				<CardHeader>
-					<h2 className="font-medium text-xl">Meal Schedule</h2>
-				</CardHeader>
-				<CardContent>
-					<Schedule
-						emptyDescription="Check back soon for meal times."
-						emptyTitle="No meals have been scheduled yet"
-						items={meals}
-						now={now}
-					/>
-				</CardContent>
-			</Card>
-			<MealAnalytics dietary={dietary} ticketsScanned={ticketsScanned} />
+			<MealCheckInsCard meals={meals} now={now} />
+			<MealAnalytics dietary={dietary} meals={meals} now={now} />
 			{openScannerMeal && (
 				<Dialog
 					onOpenChange={(open) => {
@@ -115,17 +105,19 @@ export function MealsView({
 					}}
 					open
 				>
-					<DialogContent className="h-[min(90dvh,48rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-xl lg:max-w-4xl">
+					<DialogContent className="sm:max-w-md">
 						<DialogHeader>
 							<DialogTitle>Scan meal tickets</DialogTitle>
 							<DialogDescription>
 								{`Meal: ${openScannerMeal.title}`}
 							</DialogDescription>
 						</DialogHeader>
-						<MealScannerView
-							mealId={openScannerMeal.id}
-							scannerLease={openScannerMeal.lease}
-						/>
+						<div className="mx-auto w-full max-w-80 overflow-hidden rounded-lg">
+							<MealScanner
+								eventId={openScannerMeal.id}
+								scannerLease={openScannerMeal.lease}
+							/>
+						</div>
 					</DialogContent>
 				</Dialog>
 			)}

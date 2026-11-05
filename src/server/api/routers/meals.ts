@@ -1,20 +1,31 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, desc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import {
 	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure
 } from "@/server/api/trpc";
-import { event } from "@/server/db/event-schema";
+import { event, eventAttendance } from "@/server/db/event-schema";
 import { createMealScannerLease } from "@/server/lib/event-tickets";
 import { EventStatus, EventType } from "@/types/types";
 
 export const mealsRouter = createTRPCRouter({
-	getAllMeals: adminProcedure.query(async ({ ctx }) => {
+	getMealCheckIns: adminProcedure.query(async ({ ctx }) => {
 		return ctx.db.query.event.findMany({
 			where: eq(event.type, EventType.FOOD),
-			orderBy: [asc(event.startTime)]
+			orderBy: [asc(event.startTime)],
+			with: {
+				attendance: {
+					columns: { id: true, createdAt: true },
+					orderBy: [desc(eventAttendance.createdAt), desc(eventAttendance.id)],
+					with: {
+						user: {
+							columns: { id: true, name: true, dietaryRestrictions: true }
+						}
+					}
+				}
+			}
 		});
 	}),
 

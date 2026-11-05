@@ -342,8 +342,11 @@ export const usersRouter = createTRPCRouter({
 				)
 			);
 
+		let unrestrictedCount = 0;
+
 		for (const currentUser of users) {
 			const selected = new Set(currentUser.dietaryRestrictions);
+			if (selected.size === 0) unrestrictedCount++;
 
 			for (const restriction of DIETARY_RESTRICTIONS) {
 				if (selected.has(restriction)) {
@@ -362,6 +365,8 @@ export const usersRouter = createTRPCRouter({
 		}
 
 		return {
+			participantCount: users.length,
+			unrestrictedCount,
 			counts,
 			overlaps
 		};

@@ -55,11 +55,9 @@ describe("concurrent meal scanning", () => {
 			startTime: new Date(now - 60_000),
 			endTime: new Date(now + hour)
 		});
-		const ticket = await participant.caller.events.rotateParticipantEventTicket(
-			{
-				eventId: meal.id
-			}
-		);
+		const ticket = await participant.caller.events.issueParticipantEventTicket({
+			eventId: meal.id
+		});
 		assert(ticket.status === "active");
 		const results = await runConcurrently(
 			admins.map(
@@ -88,10 +86,88 @@ describe("concurrent meal scanning", () => {
 		});
 		expect(rows).toHaveLength(1);
 		expect(rows[0]?.id).toBe(outcomes[0]?.attendanceId);
-		for (const admin of admins)
+		for (const admin of admins) {
+			const meals = await admin.caller.meals.getMealCheckIns();
 			expect(
-				await admin.caller.events.getEventAttendees({ eventId: meal.id })
+				meals.find((current) => current.id === meal.id)?.attendance
 			).toHaveLength(1);
+		}
+	});
+});
+
+describe("meal ticket issuing", () => {
+	beforeAll(() => {
+		assertE2EDatabaseSafety();
+	});
+
+	// Given a checked-in participant with Meals open on their phone
+	// When they open Meals again on a laptop
+	// Then the phone's code still scans, and other meals and people get other codes.
+	it("keeps the code on screen valid when Meals opens elsewhere", async () => {
+		const fixtures = new EventFixtureTracker();
+		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
+		const participant = await createAuthenticatedCaller({
+			checkedIn: true,
+			wantsFood: true
+		});
+		const teammate = await createAuthenticatedCaller({
+			checkedIn: true,
+			wantsFood: true
+		});
+		onTestFinished(async () => {
+			await fixtures.cleanup();
+			await admin.cleanup();
+			await participant.cleanup();
+			await teammate.cleanup();
+		});
+		const now = Date.now();
+		const lunch = await fixtures.create({
+			title: "Two-device lunch",
+			type: EventType.FOOD,
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - hour),
+			endTime: new Date(now + hour)
+		});
+		const dinner = await fixtures.create({
+			title: "Two-device dinner",
+			type: EventType.FOOD,
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now + 2 * hour),
+			endTime: new Date(now + 3 * hour)
+		});
+
+		const phone = await participant.caller.events.issueParticipantEventTicket({
+			eventId: lunch.id
+		});
+		const laptop = await participant.caller.events.issueParticipantEventTicket({
+			eventId: lunch.id
+		});
+		const dinnerTicket =
+			await participant.caller.events.issueParticipantEventTicket({
+				eventId: dinner.id
+			});
+		const teammateTicket =
+			await teammate.caller.events.issueParticipantEventTicket({
+				eventId: lunch.id
+			});
+		assert(phone.status === EventTicketStatus.ACTIVE);
+		assert(laptop.status === EventTicketStatus.ACTIVE);
+		assert(dinnerTicket.status === EventTicketStatus.ACTIVE);
+		assert(teammateTicket.status === EventTicketStatus.ACTIVE);
+		expect(laptop.token).toBe(phone.token);
+		expect(
+			new Set([phone.token, dinnerTicket.token, teammateTicket.token]).size
+		).toBe(3);
+
+		await expect(
+			admin.caller.events.redeemEventTicket({
+				eventId: lunch.id,
+				token: phone.token
+			})
+		).resolves.toMatchObject({
+			status: "checked_in",
+			participant: { id: participant.user.id }
+		});
 	});
 });
 
@@ -124,7 +200,7 @@ describe("meal scanner lease", () => {
 			startTime: new Date(now - hour),
 			endTime: new Date(now + hour)
 		});
-		const token = createEventTicketToken();
+		const token = createEventTicketToken(meal.id, participant.user.id);
 		await db.insert(eventTicket).values({
 			eventId: meal.id,
 			userId: participant.user.id,
@@ -223,7 +299,7 @@ describe("meal ticket opt-out", () => {
 			endTime: new Date(now + hour)
 		});
 		await expect(
-			participant.caller.events.rotateParticipantEventTicket({
+			participant.caller.events.issueParticipantEventTicket({
 				eventId: meal.id
 			})
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -240,11 +316,9 @@ describe("meal ticket opt-out", () => {
 			.update(user)
 			.set({ wantsFood: true })
 			.where(eq(user.id, participant.user.id));
-		const ticket = await participant.caller.events.rotateParticipantEventTicket(
-			{
-				eventId: meal.id
-			}
-		);
+		const ticket = await participant.caller.events.issueParticipantEventTicket({
+			eventId: meal.id
+		});
 		assert(ticket.status === EventTicketStatus.ACTIVE);
 		await db
 			.update(user)
@@ -280,7 +354,7 @@ describe("meal ticket opt-out", () => {
 			endTime: new Date(now + hour)
 		});
 		await expect(
-			participant.caller.events.rotateParticipantEventTicket({
+			participant.caller.events.issueParticipantEventTicket({
 				eventId: meal.id
 			})
 		).rejects.toMatchObject({
@@ -293,11 +367,9 @@ describe("meal ticket opt-out", () => {
 			.update(user)
 			.set({ wantsFood: true })
 			.where(eq(user.id, participant.user.id));
-		const ticket = await participant.caller.events.rotateParticipantEventTicket(
-			{
-				eventId: meal.id
-			}
-		);
+		const ticket = await participant.caller.events.issueParticipantEventTicket({
+			eventId: meal.id
+		});
 		assert(ticket.status === EventTicketStatus.ACTIVE);
 		await db
 			.update(user)
@@ -346,7 +418,7 @@ describe("meal ticket check-in gate", () => {
 		});
 
 		await expect(
-			participant.caller.events.rotateParticipantEventTicket({
+			participant.caller.events.issueParticipantEventTicket({
 				eventId: meal.id
 			})
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -355,9 +427,9 @@ describe("meal ticket check-in gate", () => {
 			id: participant.user.id,
 			checkedIn: true
 		});
-		const ticket = await participant.caller.events.rotateParticipantEventTicket(
-			{ eventId: meal.id }
-		);
+		const ticket = await participant.caller.events.issueParticipantEventTicket({
+			eventId: meal.id
+		});
 		if (ticket.status !== EventTicketStatus.ACTIVE) {
 			throw new Error("Expected an active ticket");
 		}
@@ -375,7 +447,7 @@ describe("meal ticket check-in gate", () => {
 	});
 });
 
-describe("meals.getAllMeals", () => {
+describe("meals.getMealCheckIns", () => {
 	let mealFixtures: EventFixtureTracker;
 
 	beforeAll(() => {
@@ -389,7 +461,7 @@ describe("meals.getAllMeals", () => {
 	it("rejects callers without a session", async () => {
 		const caller = createUnauthenticatedCaller();
 
-		await expect(caller.meals.getAllMeals()).rejects.toMatchObject({
+		await expect(caller.meals.getMealCheckIns()).rejects.toMatchObject({
 			code: "UNAUTHORIZED"
 		});
 	});
@@ -412,7 +484,7 @@ describe("meals.getAllMeals", () => {
 		});
 		onTestFinished(cleanup);
 
-		const meals = await caller.meals.getAllMeals();
+		const meals = await caller.meals.getMealCheckIns();
 		const trackedIds = new Set([earlierMeal.id, laterMeal.id]);
 		const trackedMeals = meals.filter((meal) => trackedIds.has(meal.id));
 

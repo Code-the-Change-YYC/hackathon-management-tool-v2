@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { formatDateKey, isSameCalgaryDay } from "@/lib/datetime";
 import { eventNavigationUrlSchema } from "@/lib/participant-events";
@@ -153,7 +153,7 @@ export const eventsRouter = createTRPCRouter({
 		});
 	}),
 
-	rotateParticipantEventTicket: protectedProcedure
+	issueParticipantEventTicket: protectedProcedure
 		.input(z.object({ eventId: z.string().uuid() }))
 		.mutation(async ({ input, ctx }) => {
 			if (ctx.session.user.role !== Role.PARTICIPANT) {
@@ -203,17 +203,6 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				await tx
-					.select({ id: eventTicket.id })
-					.from(eventTicket)
-					.where(
-						and(
-							eq(eventTicket.userId, ctx.session.user.id),
-							eq(eventTicket.eventId, input.eventId)
-						)
-					)
-					.for("update");
-
 				const attendance = await tx.query.eventAttendance.findFirst({
 					columns: { createdAt: true },
 					where: and(
@@ -238,19 +227,25 @@ export const eventsRouter = createTRPCRouter({
 					} as const;
 				}
 
-				const token = createEventTicketToken();
+				const token = createEventTicketToken(
+					input.eventId,
+					ctx.session.user.id
+				);
+				const tokenHash = hashEventTicketToken(token);
 				await tx
 					.insert(eventTicket)
 					.values({
 						userId: ctx.session.user.id,
 						eventId: input.eventId,
-						tokenHash: hashEventTicketToken(token),
+						tokenHash,
 						expiresAt: ticketEvent.endTime
 					})
 					.onConflictDoUpdate({
 						target: [eventTicket.userId, eventTicket.eventId],
+						// Same hash on every visit; this only replaces rows from
+						// random tokens or an older secret.
 						set: {
-							tokenHash: hashEventTicketToken(token),
+							tokenHash,
 							expiresAt: ticketEvent.endTime,
 							updatedAt: now
 						}
@@ -414,36 +409,5 @@ export const eventsRouter = createTRPCRouter({
 					}
 				};
 			});
-		}),
-
-	getEventAttendees: adminProcedure
-		.input(z.object({ eventId: z.string().uuid() }))
-		.query(async ({ input, ctx }) => {
-			return ctx.db
-				.select({
-					id: eventAttendance.id,
-					userId: eventAttendance.userId,
-					eventId: eventAttendance.eventId,
-					userName: user.name,
-					dietaryRestrictions: user.dietaryRestrictions,
-					createdAt: eventAttendance.createdAt,
-					updatedAt: eventAttendance.updatedAt
-				})
-				.from(eventAttendance)
-				.innerJoin(user, eq(eventAttendance.userId, user.id))
-				.where(eq(eventAttendance.eventId, input.eventId))
-				.orderBy(desc(eventAttendance.createdAt), desc(eventAttendance.id));
-		}),
-
-	getMealAttendanceCount: adminProcedure.query(async ({ ctx }) => {
-		const [result] = await ctx.db
-			.select({
-				count: count(eventAttendance.id)
-			})
-			.from(eventAttendance)
-			.innerJoin(event, eq(eventAttendance.eventId, event.id))
-			.where(eq(event.type, EventType.FOOD));
-
-		return result?.count ?? 0;
-	})
+		})
 });
