@@ -251,6 +251,85 @@ test.describe("admin meals", () => {
 			}
 		}
 	);
+
+	test("stacks repeat scans with round counts and a total", async ({
+		authenticatedPage: page,
+		createMeal
+	}) => {
+		const now = Date.now();
+		const meal = await createMeal({
+			title: "Rounds chart lunch",
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - minute),
+			endTime: new Date(now + 60 * minute)
+		});
+		const singleRoundMeal = await createMeal({
+			title: "Single round chart lunch",
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - minute),
+			endTime: new Date(now + 60 * minute)
+		});
+		const participants = await Promise.all(
+			[0, 1, 2].map((index) =>
+				createTestUser({ name: `Rounds Tester ${index}` })
+			)
+		);
+		try {
+			const firstParticipant = participants[0];
+			if (!firstParticipant) throw new Error("Expected a participant");
+			await db.insert(eventAttendance).values([
+				...participants.flatMap(({ user }, index) =>
+					Array.from({ length: 3 - index }, () => ({
+						eventId: meal.id,
+						userId: user.id
+					}))
+				),
+				{ eventId: singleRoundMeal.id, userId: firstParticipant.user.id }
+			]);
+			await page.goto(path);
+			const chart = page.locator('[data-slot="chart"]').first();
+
+			const multiRoundTotal = chart.locator('text[fill="var(--foreground)"]', {
+				hasText: /^6$/
+			});
+			await expect(multiRoundTotal).toBeVisible();
+			const multiRoundY = await multiRoundTotal.getAttribute("y");
+			await expect(
+				chart.locator(`text[fill="white"][y="${multiRoundY}"]`, {
+					hasText: /^1$/
+				})
+			).toHaveCount(0);
+
+			const singleRoundTotal = chart.locator('text[fill="var(--foreground)"]', {
+				hasText: /^1$/
+			});
+			await expect(singleRoundTotal).toBeVisible();
+			const y = await singleRoundTotal.getAttribute("y");
+			await expect(chart.locator(`text[fill="white"][y="${y}"]`)).toHaveCount(
+				0
+			);
+			await chart.evaluate((element) => {
+				element.style.width = "280px";
+			});
+			await expect(chart.locator("svg.recharts-surface")).toHaveAttribute(
+				"width",
+				"280"
+			);
+			const narrowTotal = chart.locator('text[fill="var(--foreground)"]', {
+				hasText: /^6$/
+			});
+			await expect(narrowTotal).toBeVisible();
+			const narrowY = await narrowTotal.getAttribute("y");
+			await expect(
+				chart.locator(`text[fill="white"][y="${narrowY}"]`, {
+					hasText: /^1$/
+				})
+			).toHaveCount(0);
+			await expect(page.getByText("Round 3", { exact: true })).toBeVisible();
+		} finally {
+			for (const participant of participants) await participant.cleanup();
+		}
+	});
 });
 
 test.describe("participant access", () => {
