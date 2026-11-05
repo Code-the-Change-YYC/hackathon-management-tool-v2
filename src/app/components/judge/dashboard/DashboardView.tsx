@@ -25,7 +25,7 @@ import {
 	sortAssignments,
 	withBreaks
 } from "../judgePortal";
-import { JudgeTableCard } from "./JudgeTableCard";
+import { FinalRoundCard, JudgeTableCard } from "./JudgeTableCard";
 import { FinalistRow, JudgeTeamRow } from "./JudgeTeamRow";
 
 type Round = JudgeAssignment["table"]["round"];
@@ -192,6 +192,10 @@ function BallotCard({
 	);
 }
 
+function finalRoundSectionId(round: Round) {
+	return `round-${round.id}`;
+}
+
 function FinalRoundSection({
 	group,
 	currentTime,
@@ -204,7 +208,11 @@ function FinalRoundSection({
 	const titleId = `round-${group.round.id}-title`;
 
 	return (
-		<section aria-labelledby={titleId} className="flex flex-col gap-3">
+		<section
+			aria-labelledby={titleId}
+			className="flex scroll-mt-6 flex-col gap-3"
+			id={finalRoundSectionId(group.round)}
+		>
 			<div className="flex flex-wrap items-baseline justify-between gap-2">
 				<h2 className="m-0 font-medium text-xl" id={titleId}>
 					{group.round.name}
@@ -266,8 +274,10 @@ export function DashboardView({
 	const currentTime = useCurrentTime();
 	const groups = groupByRound(assignments, criteria);
 	// Every judge sits together for the final round, so only the panel round
-	// gets a table card.
+	// gets a table card. Judges only get final assignments once the round is
+	// published, and from then on the final round replaces the table card.
 	const panelGroup = groups.find((group) => group.round.kind === "panel");
+	const finalGroup = groups.find((group) => group.round.kind === "final");
 	const table = panelGroup && getJudgeTable(panelGroup.assignments, userId);
 
 	return (
@@ -276,8 +286,13 @@ export function DashboardView({
 				description="Score each team after their presentation, then rank the finalists."
 				title={`Hi, ${userName}!`}
 			/>
-			{panelGroup && table && (
-				<JudgeTableCard roundName={panelGroup.round.name} table={table} />
+			{finalGroup ? (
+				<FinalRoundCard sectionId={finalRoundSectionId(finalGroup.round)} />
+			) : (
+				panelGroup &&
+				table && (
+					<JudgeTableCard roundName={panelGroup.round.name} table={table} />
+				)
 			)}
 			<div className="flex flex-col gap-12">
 				{groups.length === 0 && <NoAssignments />}

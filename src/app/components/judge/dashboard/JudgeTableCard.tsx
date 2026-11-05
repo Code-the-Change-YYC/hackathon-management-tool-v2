@@ -1,9 +1,11 @@
+import { ArrowDownLine, TrophyLine } from "@mingcute/react";
 import { useId } from "react";
 import {
 	Avatar,
 	AvatarFallback,
 	AvatarImage
 } from "@/app/components/ui/avatar";
+import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { resolveAvatarSrc } from "@/lib/avatars";
@@ -95,6 +97,45 @@ export function JudgeTableCard({
 			<div className="sm:ml-auto">
 				<OtherJudges judges={table.otherJudges} />
 			</div>
+		</Card>
+	);
+}
+
+export function FinalRoundCard({ sectionId }: { sectionId: string }) {
+	const titleId = useId();
+
+	function scrollToFinalRound() {
+		const reduceMotion = window.matchMedia(
+			"(prefers-reduced-motion: reduce)"
+		).matches;
+		document.getElementById(sectionId)?.scrollIntoView({
+			behavior: reduceMotion ? "auto" : "smooth",
+			block: "start"
+		});
+	}
+
+	return (
+		<Card aria-labelledby={titleId} className={cardClass} role="region">
+			<div className="flex items-center gap-4">
+				<span
+					aria-hidden
+					className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-fuzzy-peach text-grapefruit"
+				>
+					<TrophyLine className="size-7" />
+				</span>
+				<div className="flex flex-col gap-1">
+					<h2 className="m-0 font-semibold text-xl" id={titleId}>
+						It’s time for the final round of judging
+					</h2>
+					<p className="m-0 text-muted-foreground text-sm">
+						Finalists will present to all judges for final judging.
+					</p>
+				</div>
+			</div>
+			<Button className="sm:ml-auto" onClick={scrollToFinalRound}>
+				Go to final round
+				<ArrowDownLine className="size-5" data-icon="inline-end" />
+			</Button>
 		</Card>
 	);
 }
