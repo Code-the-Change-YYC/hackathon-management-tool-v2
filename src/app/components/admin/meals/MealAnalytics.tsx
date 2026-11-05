@@ -15,13 +15,13 @@ import {
 } from "@/app/components/ui/chart";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { formatLongDate, formatTime } from "@/lib/datetime";
+import { mealRoundCounts } from "@/lib/meal-round-counts";
 import { cn } from "@/lib/utils";
 import {
 	DIETARY_RESTRICTION_LABELS,
 	DIETARY_RESTRICTIONS
 } from "@/lib/validation/signup";
 import type { RouterOutputs } from "@/trpc/react";
-import { mealRoundCounts } from "./meal-round-counts";
 
 type DietaryAnalytics = RouterOutputs["users"]["getDietaryAnalytics"];
 type MealWithCheckIns = RouterOutputs["meals"]["getMealCheckIns"][number];

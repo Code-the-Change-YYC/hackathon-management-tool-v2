@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mealRoundCounts } from "@/app/components/admin/meals/meal-round-counts";
+import { mealRoundCounts } from "@/lib/meal-round-counts";
 
 const scans = (...ids: string[]) => ids.map((id) => ({ user: { id } }));
 
