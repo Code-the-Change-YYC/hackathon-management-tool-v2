@@ -103,7 +103,11 @@ test("links to the full schedule and judging info", async ({
 
 test.describe("not checked in", () => {
 	test.use({
-		authUserOptions: { checkedIn: false, role: Role.PARTICIPANT }
+		authUserOptions: {
+			checkedIn: false,
+			role: Role.PARTICIPANT,
+			wantsFood: true
+		}
 	});
 
 	// Given I am a participant an admin has not checked in yet
