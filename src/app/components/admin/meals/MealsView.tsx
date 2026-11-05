@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import Banner from "@/app/components/Banner";
-import MealScanner from "@/app/components/meal/MealScanner/MealScanner";
 import PageHeader from "@/app/components/PageHeader";
 import {
 	Dialog,
@@ -16,6 +15,7 @@ import { useCurrentTime } from "@/hooks/use-current-time";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { MealAnalytics } from "./MealAnalytics";
 import { MealCheckInsCard } from "./MealCheckInsCard";
+import MealScanner from "./MealScanner";
 import ScanMealTicketsImages from "./ScanMealTicketsImages";
 
 type MealWithCheckIns = RouterOutputs["meals"]["getMealCheckIns"][number];

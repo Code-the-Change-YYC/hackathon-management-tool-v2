@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import MealScanner from "@/app/components/meal/MealScanner/MealScanner";
+import MealScanner from "@/app/components/admin/meals/MealScanner";
 import { formatTime } from "@/lib/datetime";
 
 const checkedInAt = new Date("2026-11-08T18:00:00Z");
