@@ -10,7 +10,7 @@ const mainId = "22222222-2222-4222-8222-222222222222";
 const sideId = "33333333-3333-4333-8333-333333333333";
 const valid = [
 	{ assignmentId, criteriaId: mainId, score: 4 },
-	{ assignmentId, criteriaId: sideId, score: 0 }
+	{ assignmentId, criteriaId: sideId, score: 1 }
 ];
 const rubric = [
 	{ id: mainId, maxScore: 5, isSidepot: false },
@@ -103,6 +103,7 @@ describe("individual scorecard API", () => {
 		],
 		["out of range", [{ ...valid[0], score: 6 }, valid[1]]],
 		["negative", [{ ...valid[0], score: -1 }, valid[1]]],
+		["zero sidepot", [valid[0], { ...valid[1], score: 0 }]],
 		["noninteger", [{ ...valid[0], score: 1.5 }, valid[1]]],
 		["mixed assignments", [valid[0], { ...valid[1], assignmentId: sideId }]]
 	])("rejects %s scorecards before writing", async (_label, input) => {

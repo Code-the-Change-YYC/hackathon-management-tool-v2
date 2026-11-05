@@ -85,7 +85,7 @@ function validateScore(
 	criterion: typeof judgingCriteria.$inferSelect,
 	value: number
 ) {
-	const min = criterion.isSidepot ? 0 : 1;
+	const min = 1;
 	const max = criterion.isSidepot
 		? criterion.maxScore
 		: MAIN_CRITERION_MAX_SCORE;
@@ -143,7 +143,7 @@ export const scoresRouter = createTRPCRouter({
 				z.object({
 					assignmentId: z.string().uuid(),
 					criteriaId: z.string().uuid(),
-					score: z.number().int().min(0)
+					score: z.number().int().min(1)
 				})
 			)
 		)

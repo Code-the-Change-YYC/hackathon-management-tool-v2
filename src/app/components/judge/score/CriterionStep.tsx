@@ -42,23 +42,21 @@ export function CriterionStep({
 					aria-labelledby={headingId}
 					className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(2.75rem,1fr))] gap-2"
 				>
-					{getScoreOptions(criterion, criterion.isSidepot, score).map(
-						(value) => (
-							<Button
-								aria-label={`${value} ${value === 1 ? "point" : "points"}`}
-								aria-pressed={value === score}
-								className="h-14 text-lg tabular-nums sm:h-16"
-								key={value}
-								onClick={() => onSelect(value)}
-								variant={value === score ? "default" : "outline"}
-							>
-								{value}
-							</Button>
-						)
-					)}
+					{getScoreOptions(criterion).map((value) => (
+						<Button
+							aria-label={`${value} ${value === 1 ? "point" : "points"}`}
+							aria-pressed={value === score}
+							className="h-14 text-lg tabular-nums sm:h-16"
+							key={value}
+							onClick={() => onSelect(value)}
+							variant={value === score ? "default" : "outline"}
+						>
+							{value}
+						</Button>
+					))}
 				</fieldset>
 				<div className="flex justify-between text-muted-foreground text-sm">
-					<span>{criterion.isSidepot ? "No evidence" : "Minimal"}</span>
+					<span>Minimal</span>
 					<span>Excellent</span>
 				</div>
 			</div>

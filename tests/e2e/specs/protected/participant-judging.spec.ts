@@ -86,7 +86,7 @@ async function assignTeam(user: User) {
 			assignmentId: assignment.id,
 			criteriaId: item.id,
 			judgeId: judge.user.id,
-			value: item.id === criterion.id ? 4 : item.isSidepot ? 0 : 1
+			value: item.id === criterion.id ? 4 : 1
 		}))
 	);
 
