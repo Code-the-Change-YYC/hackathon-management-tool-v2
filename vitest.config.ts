@@ -25,6 +25,9 @@ export default defineConfig({
 			{
 				extends: true,
 				test: {
+					// Integration files share singleton settings and the published rubric.
+					// Individual tests still release concurrent requests explicitly.
+					fileParallelism: false,
 					include: ["tests/vitest/integration/**/*.test.ts"],
 					name: "integration"
 				}
