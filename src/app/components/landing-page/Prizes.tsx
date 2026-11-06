@@ -74,7 +74,7 @@ const SIDE_POTS: SidePot[] = [
 		badgeStyles: "bg-mint-green text-medium-green"
 	},
 	{
-		name: "Best in Trust and Transparency",
+		name: "Best in Accessibility",
 		amount: "$100",
 		sponsor: "Clio",
 		icon: ShieldLine,

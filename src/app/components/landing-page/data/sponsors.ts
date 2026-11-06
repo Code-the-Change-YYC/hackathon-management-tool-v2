@@ -73,5 +73,23 @@ export const sponsors: Sponsor[] = [
 		scale: 1.15,
 		name: "Voltex Solutions",
 		url: "https://voltex.ca/"
+	},
+	{
+		id: "sponsor-9",
+		image: "/svgs/landingPage/sponsors/n8n-logo.png",
+		width: 380,
+		height: 200,
+		scale: 2.0,
+		name: "n8n.io",
+		url: "https://n8n.io/"
+	},
+	{
+		id: "sponsor-10",
+		image: "/svgs/landingPage/sponsors/keenable-logo.png",
+		width: 340,
+		height: 156,
+		scale: 1.0,
+		name: "Keenable.ai",
+		url: "https://keenable.ai/"
 	}
 ];
