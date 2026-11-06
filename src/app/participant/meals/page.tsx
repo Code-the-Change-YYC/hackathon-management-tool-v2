@@ -11,12 +11,13 @@ export const metadata: Metadata = {
 
 export default async function MealsPage() {
 	const { user } = await requireRole([Role.PARTICIPANT, Role.ADMIN]);
-	const [nextMeal, meals, settings] = await Promise.all([
+	const isParticipant = user.role === Role.PARTICIPANT;
+	const [nextMeal, meals, settings, teamCode] = await Promise.all([
 		api.meals.getNextMeal(),
 		api.meals.getActiveMeals(),
-		api.hackathonSettings.get()
+		api.hackathonSettings.get(),
+		isParticipant ? api.teams.getMyTeamCode() : null
 	]);
-	const isParticipant = user.role === Role.PARTICIPANT;
 	const mealPreference = user.wantsFood ?? null;
 	// Only checked-in participants who explicitly opted in get meal tickets.
 	const ticket =
@@ -37,6 +38,7 @@ export default async function MealsPage() {
 				hasHackathonDayStarted(settings?.startDate)
 			}
 			nextMeal={nextMeal}
+			teamCode={teamCode}
 			ticket={ticket}
 		/>
 	);

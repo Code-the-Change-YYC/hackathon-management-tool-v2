@@ -256,6 +256,20 @@ export const teamsRouter = createTRPCRouter({
 		};
 	}),
 
+	getMyTeamCode: protectedProcedure.query(async ({ ctx }) => {
+		const membership = await ctx.db.query.member.findFirst({
+			where: eq(member.userId, ctx.session.user.id),
+			columns: { organizationId: true }
+		});
+		if (!membership) return null;
+
+		const team = await ctx.db.query.organization.findFirst({
+			where: eq(organization.id, membership.organizationId),
+			columns: { teamCode: true }
+		});
+		return team?.teamCode ?? null;
+	}),
+
 	// Feedback is only required when a team fails.
 	setPrescreen: adminProcedure
 		.input(prescreenSchema)
