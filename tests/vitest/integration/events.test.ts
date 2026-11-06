@@ -32,7 +32,9 @@ let participant: Session;
 let originalSettings: typeof hackathonSettings.$inferSelect | undefined;
 const createdIds: string[] = [];
 
-async function addEvent(overrides: Partial<typeof input> = {}) {
+async function addEvent(
+	overrides: Partial<typeof input> & { mealRounds?: number } = {}
+) {
 	const created = await admin.caller.events.addEvent({
 		...input,
 		...overrides
@@ -154,6 +156,29 @@ describe("events admin mutations", () => {
 		await expect(
 			update({ startTime: start, endTime: new Date("2026-11-08T18:00:00Z") })
 		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+	});
+
+	it("rejects lowering a meal allowance below scans already recorded", async () => {
+		const meal = await addEvent({ type: EventType.FOOD, mealRounds: 2 });
+		await db.insert(eventAttendance).values([
+			{ userId: participant.user.id, eventId: meal.id },
+			{ userId: participant.user.id, eventId: meal.id }
+		]);
+		await expect(
+			admin.caller.events.updateEvent({
+				...input,
+				id: meal.id,
+				type: EventType.FOOD,
+				mealRounds: 1
+			})
+		).rejects.toMatchObject({
+			code: "BAD_REQUEST",
+			message: "The scan allowance cannot be lower than scans already used."
+		});
+		expect(
+			(await db.query.event.findFirst({ where: eq(event.id, meal.id) }))
+				?.mealRounds
+		).toBe(2);
 	});
 
 	it("updates an event and moves ticket expiry to the new end", async () => {

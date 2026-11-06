@@ -210,6 +210,36 @@ test("shows an onboarding message instead of a QR for an unanswered meal prefere
 	).toHaveLength(0);
 });
 
+// A meal with two permitted scans keeps the same ticket instructions after the first scan.
+test("keeps the standard QR ticket after the first of two scans", async ({
+	authenticatedPage: page,
+	authUser,
+	createMeal
+}) => {
+	const now = Date.now();
+	const meal = await createMeal({
+		title: "Second serving available",
+		mealRounds: 2,
+		status: EventStatus.ACTIVE,
+		startTime: new Date(now - 30 * minute),
+		endTime: new Date(now + 60 * minute)
+	});
+	await page.goto(mealInfoPath);
+	const instructions = ticketSection(page).getByText(/Show this QR code/);
+	const description = await instructions.textContent();
+	await expect(qrCode(page)).toBeVisible();
+
+	assertE2EDatabaseSafety();
+	await db
+		.insert(eventAttendance)
+		.values({ userId: authUser.id, eventId: meal.id });
+	await page.reload();
+	await expect(qrCode(page)).toBeVisible();
+	await expect(instructions).toHaveText(description ?? "");
+	await expect(ticketSection(page)).not.toContainText("remaining");
+	await expect(ticketSection(page)).not.toContainText("scans used");
+});
+
 // Given I am a participant already checked in to the active meal
 // When I navigate to /participant/meals
 // Then I see "Checked in" and my check-in time

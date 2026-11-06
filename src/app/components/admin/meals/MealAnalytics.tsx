@@ -15,6 +15,7 @@ import {
 } from "@/app/components/ui/chart";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { formatLongDate, formatTime } from "@/lib/datetime";
+import { mealRoundCounts } from "@/lib/meal-round-counts";
 import { cn } from "@/lib/utils";
 import {
 	DIETARY_RESTRICTION_LABELS,
@@ -27,10 +28,6 @@ type MealWithCheckIns = RouterOutputs["meals"]["getMealCheckIns"][number];
 
 const BAR_ROW_HEIGHT = 40;
 const MAX_TICK_LENGTH = 22;
-
-const checkInsChartConfig = {
-	checkIns: { label: "Checked in", color: "var(--primary)" }
-} satisfies ChartConfig;
 
 const dietaryChartConfig = {
 	count: { label: "Participants", color: "var(--primary)" }
@@ -57,13 +54,39 @@ function CheckInsPerMealCard({
 }) {
 	const points = meals
 		.filter((meal) => meal.startTime <= now)
-		.map((meal) => ({
-			id: meal.id,
-			title: meal.title,
-			startTime: meal.startTime,
-			checkIns: meal.attendance.length,
-			turnout: toPercent(meal.attendance.length, participantCount)
-		}));
+		.map((meal) => {
+			const rounds = mealRoundCounts(meal.attendance);
+
+			return {
+				id: meal.id,
+				title: meal.title,
+				startTime: meal.startTime,
+				rounds,
+
+				total: meal.attendance.length,
+				turnout: toPercent(rounds[0] ?? 0, participantCount),
+				...Object.fromEntries(
+					(rounds.length ? rounds : [0]).map((count, index) => [
+						`round${index + 1}`,
+						count
+					])
+				)
+			};
+		});
+	const roundCount = Math.max(1, ...points.map((point) => point.rounds.length));
+	const roundKeys = Array.from(
+		{ length: roundCount },
+		(_, index) => `round${index + 1}`
+	);
+	const checkInsChartConfig: ChartConfig = Object.fromEntries(
+		roundKeys.map((key, index) => [
+			key,
+			{
+				label: `Round ${index + 1}`,
+				color: `var(--chart-${(index % 5) + 1})`
+			}
+		])
+	);
 
 	return (
 		<Card>
@@ -77,6 +100,17 @@ function CheckInsPerMealCard({
 			</CardHeader>
 			{points.length > 0 && (
 				<CardContent>
+					<div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+						{roundKeys.map((key, index) => (
+							<span className="flex items-center gap-1.5" key={key}>
+								<span
+									className="size-2.5 rounded-sm"
+									style={{ backgroundColor: `var(--chart-${(index % 5) + 1})` }}
+								/>
+								Round {index + 1}
+							</span>
+						))}
+					</div>
 					<ChartContainer
 						className="aspect-auto w-full"
 						config={checkInsChartConfig}
@@ -85,14 +119,9 @@ function CheckInsPerMealCard({
 						<BarChart
 							data={points}
 							layout="vertical"
-							margin={{ left: 0, right: 40, top: 0, bottom: 0 }}
+							margin={{ left: 0, right: 64, top: 0, bottom: 0 }}
 						>
-							<XAxis
-								allowDecimals={false}
-								dataKey="checkIns"
-								hide
-								type="number"
-							/>
+							<XAxis allowDecimals={false} dataKey="total" hide type="number" />
 							<YAxis
 								axisLine={false}
 								dataKey="title"
@@ -105,17 +134,19 @@ function CheckInsPerMealCard({
 							<ChartTooltip
 								content={
 									<ChartTooltipContent
-										formatter={(value, _name, item) => (
+										formatter={(value, name, item) => (
 											<div className="flex flex-col gap-0.5">
 												<span>
 													<span className="font-medium font-mono tabular-nums">
-														{Number(value).toLocaleString()}
+														{name}: {Number(value).toLocaleString()}
 													</span>{" "}
-													checked in
+													scans
 												</span>
-												<span className="text-muted-foreground">
-													{item.payload.turnout}% of participants
-												</span>
+												{item.dataKey === "round1" && (
+													<span className="text-muted-foreground">
+														{item.payload.turnout}% of participants checked in
+													</span>
+												)}
 											</div>
 										)}
 										labelFormatter={(_, payload) => {
@@ -128,20 +159,85 @@ function CheckInsPerMealCard({
 								}
 								cursor={false}
 							/>
-							<Bar
-								barSize={20}
-								dataKey="checkIns"
-								fill="var(--color-checkIns)"
-								minPointSize={2}
-								radius={[0, 4, 4, 0]}
-							>
-								<LabelList
-									className="fill-foreground tabular-nums"
-									dataKey="checkIns"
-									offset={8}
-									position="right"
-								/>
-							</Bar>
+							{roundKeys.map((key, index) => (
+								<Bar
+									barSize={20}
+									dataKey={key}
+									fill={`var(--color-${key})`}
+									key={key}
+									name={`Round ${index + 1}`}
+									stackId="scans"
+								>
+									{index === 0 && (
+										<LabelList
+											content={({ x, y, width, height, index: rowIndex }) => {
+												const point = points[Number(rowIndex)];
+												if (
+													!point ||
+													typeof x !== "number" ||
+													typeof y !== "number" ||
+													typeof width !== "number" ||
+													typeof height !== "number"
+												)
+													return null;
+												const pixelsPerScan = width / (point.rounds[0] || 1);
+												const end = x + point.total * pixelsPerScan;
+												const labels: {
+													round: number;
+													text: string;
+													right: number;
+												}[] = [];
+												let scansThroughRound = 0;
+												if (point.rounds.length > 1) {
+													point.rounds.forEach((count, round) => {
+														scansThroughRound += count;
+														const text = count.toLocaleString();
+														// Keep white labels entirely within their own colored segment.
+														if (
+															count > 1 &&
+															count * pixelsPerScan >= text.length * 7 + 12
+														) {
+															labels.push({
+																round,
+																text,
+																right: x + scansThroughRound * pixelsPerScan - 6
+															});
+														}
+													});
+												}
+												return (
+													<>
+														{labels.map(({ round, text, right }) => (
+															<text
+																className="tabular-nums"
+																dominantBaseline="middle"
+																fill="white"
+																key={round}
+																textAnchor="end"
+																x={right}
+																y={y + height / 2}
+															>
+																{text}
+															</text>
+														))}
+														<text
+															className="tabular-nums"
+															dominantBaseline="middle"
+															fill="var(--foreground)"
+															textAnchor="start"
+															x={end + 8}
+															y={y + height / 2}
+														>
+															{point.total.toLocaleString()}
+														</text>
+													</>
+												);
+											}}
+											dataKey={key}
+										/>
+									)}
+								</Bar>
+							))}
 						</BarChart>
 					</ChartContainer>
 				</CardContent>

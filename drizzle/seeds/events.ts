@@ -20,8 +20,11 @@ type ScheduledEvent = {
 	start: [hour: number, minute: number];
 	end: [hour: number, minute: number];
 	status?: EventStatus;
+	mealRounds?: number;
 	// Share of participants who check in. Meals only count those who want food.
 	turnout?: number;
+	// Share of checked-in participants who return for a second serving.
+	secondRoundShare?: number;
 };
 
 const EVENT_SCHEDULE: ScheduledEvent[] = [
@@ -121,7 +124,9 @@ const EVENT_SCHEDULE: ScheduledEvent[] = [
 		day: 1,
 		start: [8, 0],
 		end: [9, 30],
-		turnout: 0.75
+		turnout: 0.75,
+		mealRounds: 2,
+		secondRoundShare: 0.15
 	},
 	{
 		title: "Workshop: Pitching Your Project",
@@ -184,6 +189,8 @@ export async function seedEvents(participants: User[]) {
 	console.log("\nCreating events and check-ins...");
 
 	const random = createRandom(3);
+	// Keep the original first-round turnout stable when adding repeat scans.
+	const repeatRandom = createRandom(4);
 	const now = new Date();
 
 	const events = await db
@@ -199,6 +206,7 @@ export async function seedEvents(participants: User[]) {
 					location: scheduledEvent.location,
 					navigationUrl: scheduledEvent.navigationUrl ?? null,
 					status: scheduledEvent.status ?? EventStatus.ACTIVE,
+					mealRounds: scheduledEvent.mealRounds ?? 1,
 					startTime: getEventDate(scheduledEvent.day, ...scheduledEvent.start),
 					endTime: getEventDate(scheduledEvent.day, ...scheduledEvent.end),
 					createdAt,
@@ -209,14 +217,15 @@ export async function seedEvents(participants: User[]) {
 		.returning();
 
 	// Only events that have already started have check-ins.
-	const turnoutByTitle = new Map(
+	const scheduleByTitle = new Map(
 		EVENT_SCHEDULE.map((scheduledEvent) => [
 			scheduledEvent.title,
-			scheduledEvent.turnout ?? 0
+			scheduledEvent
 		])
 	);
 	const attendance = events.flatMap((seededEvent) => {
-		const turnout = turnoutByTitle.get(seededEvent.title) ?? 0;
+		const schedule = scheduleByTitle.get(seededEvent.title);
+		const turnout = schedule?.turnout ?? 0;
 		if (turnout === 0 || seededEvent.startTime > now) return [];
 
 		const lastCheckIn = min([seededEvent.endTime, now]);
@@ -228,7 +237,7 @@ export async function seedEvents(participants: User[]) {
 			seededEvent.type === EventType.FOOD
 				? participants.filter((participant) => participant.wantsFood)
 				: participants;
-		return eligible
+		const firstRound = eligible
 			.filter(() => random.chance(turnout))
 			.map((participant) => {
 				const checkedInAt = addMinutes(
@@ -242,6 +251,25 @@ export async function seedEvents(participants: User[]) {
 					updatedAt: checkedInAt
 				};
 			});
+		const secondRoundShare = schedule?.secondRoundShare ?? 0;
+		const secondRound =
+			secondRoundShare > 0
+				? repeatRandom
+						.shuffle(firstRound)
+						.slice(0, Math.round(firstRound.length * secondRoundShare))
+						.map((checkIn) => {
+							const checkedInAt = min([
+								addMinutes(checkIn.createdAt, repeatRandom.int(5, 20)),
+								lastCheckIn
+							]);
+							return {
+								...checkIn,
+								createdAt: checkedInAt,
+								updatedAt: checkedInAt
+							};
+						})
+				: [];
+		return [...firstRound, ...secondRound];
 	});
 	if (attendance.length > 0) {
 		await db.insert(eventAttendance).values(attendance);

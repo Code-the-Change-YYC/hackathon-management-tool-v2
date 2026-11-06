@@ -10,7 +10,7 @@ export type EventFixtureInput = Pick<
 	Partial<
 		Pick<
 			typeof event.$inferInsert,
-			"description" | "location" | "status" | "type"
+			"description" | "location" | "mealRounds" | "status" | "type"
 		>
 	>;
 

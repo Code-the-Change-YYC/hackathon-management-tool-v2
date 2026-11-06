@@ -63,9 +63,11 @@ export default function MealScanner({
 						const message = alreadyCheckedIn
 							? `${result.participant.name} already checked in at ${formatTime(result.checkedInAt)}.`
 							: `${result.participant.name} checked in at ${formatTime(result.checkedInAt)}.`;
-						const messageWithRestrictions = restrictions.length
-							? `${message} Dietary restrictions: ${restrictions.join(", ")}.`
-							: message;
+						const allowance =
+							result.scanLimit > 1
+								? ` ${result.scansUsed} of ${result.scanLimit} scans used.`
+								: "";
+						const messageWithRestrictions = `${message}${allowance}${restrictions.length ? ` Dietary restrictions: ${restrictions.join(", ")}.` : ""}`;
 						if (alreadyCheckedIn) {
 							toast.error(messageWithRestrictions, {
 								duration: SCAN_TOAST_DURATION_MS,

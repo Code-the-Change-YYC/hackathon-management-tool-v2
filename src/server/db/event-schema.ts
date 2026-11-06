@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import {
 	check,
 	index,
+	integer,
 	text,
 	timestamp,
 	unique,
@@ -28,6 +29,7 @@ export const event = createTable(
 		status: text("status", { enum: EVENT_STATUSES })
 			.default(EventStatus.DRAFT)
 			.notNull(),
+		mealRounds: integer("meal_rounds").default(1).notNull(),
 		startTime: timestamp("start_time", { withTimezone: true }).notNull(),
 		endTime: timestamp("end_time", { withTimezone: true }).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -44,6 +46,7 @@ export const event = createTable(
 			sql`${table.type} in ('food', 'activity', 'project', 'ceremony')`
 		),
 		check("event_status_check", sql`${table.status} in ('draft', 'active')`),
+		check("event_meal_rounds_check", sql`${table.mealRounds} >= 1`),
 		index("event_type_status_start_time_idx").on(
 			table.type,
 			table.status,
@@ -72,7 +75,7 @@ export const eventAttendance = createTable(
 			.notNull()
 	},
 	(table) => [
-		unique("event_attendance_user_event_unique").on(table.userId, table.eventId)
+		index("event_attendance_user_event_idx").on(table.userId, table.eventId)
 	]
 );
 

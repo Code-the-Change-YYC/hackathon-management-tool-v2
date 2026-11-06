@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { and, eq } from "drizzle-orm";
 import { expect, type Page } from "playwright/test";
+import { hashEventTicketToken } from "@/lib/event-tickets";
 import { db } from "@/server/db";
 import { eventTicket } from "@/server/db/event-schema";
-import { hashEventTicketToken } from "@/server/lib/event-tickets";
 import { EVENT_TICKET_TOKEN_PATTERN } from "@/types/types";
 
 // Resolve the scanner's existing decoder through its dependency chain rather than

@@ -8,14 +8,14 @@ import {
 	it,
 	onTestFinished
 } from "vitest";
-import { db } from "@/server/db";
-import { user } from "@/server/db/auth-schema";
-import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
 	createEventTicketToken,
 	hashEventTicketToken,
 	isValidMealScannerLease
-} from "@/server/lib/event-tickets";
+} from "@/lib/event-tickets";
+import { db } from "@/server/db";
+import { user } from "@/server/db/auth-schema";
+import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import { EventStatus, EventTicketStatus, EventType, Role } from "@/types/types";
 import { assertE2EDatabaseSafety } from "../../e2e/db";
 import { EventFixtureTracker } from "../../utils/events";
@@ -444,6 +444,137 @@ describe("meal ticket check-in gate", () => {
 				token: ticket.token
 			})
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
+	});
+});
+
+describe("meal scan allowance", () => {
+	beforeAll(() => {
+		assertE2EDatabaseSafety();
+	});
+
+	it("allows one scan by default and another after increasing the allowance, never more than the limit", async () => {
+		const fixtures = new EventFixtureTracker();
+		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
+		const participant = await createAuthenticatedCaller({
+			role: Role.PARTICIPANT,
+			checkedIn: true,
+			wantsFood: true
+		});
+		onTestFinished(async () => {
+			await fixtures.cleanup();
+			await admin.cleanup();
+			await participant.cleanup();
+		});
+		const now = Date.now();
+		const meal = await fixtures.create({
+			title: "Second serving",
+			type: EventType.FOOD,
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - hour),
+			endTime: new Date(now + hour)
+		});
+		const getTicket = () =>
+			participant.caller.events.issueParticipantEventTicket({
+				eventId: meal.id
+			});
+		const firstTicket = await getTicket();
+		if (firstTicket.status !== EventTicketStatus.ACTIVE)
+			throw new Error("Expected an active ticket");
+		const scan = () =>
+			admin.caller.events.redeemEventTicket({
+				eventId: meal.id,
+				token: firstTicket.token
+			});
+		expect(await scan()).toMatchObject({
+			status: "checked_in",
+			scansUsed: 1,
+			scanLimit: 1
+		});
+		expect(await scan()).toMatchObject({
+			status: "already_checked_in",
+			scansUsed: 1
+		});
+		expect(await getTicket()).toMatchObject({
+			status: EventTicketStatus.ALREADY_CHECKED_IN,
+			scansUsed: 1
+		});
+
+		await db.update(event).set({ mealRounds: 2 }).where(eq(event.id, meal.id));
+		const secondTicket = await getTicket();
+		if (secondTicket.status !== EventTicketStatus.ACTIVE)
+			throw new Error("Expected another active ticket");
+		expect(secondTicket).toMatchObject({ scansUsed: 1, scanLimit: 2 });
+		const concurrent = await Promise.all([
+			admin.caller.events.redeemEventTicket({
+				eventId: meal.id,
+				token: secondTicket.token
+			}),
+			admin.caller.events.redeemEventTicket({
+				eventId: meal.id,
+				token: secondTicket.token
+			})
+		]);
+		expect(concurrent.map((result) => result.status).sort()).toEqual([
+			"already_checked_in",
+			"checked_in"
+		]);
+		expect(await getTicket()).toMatchObject({
+			status: EventTicketStatus.ALREADY_CHECKED_IN,
+			scansUsed: 2,
+			scanLimit: 2
+		});
+		expect(
+			await db.query.eventAttendance.findMany({
+				where: (attendance, { and, eq }) =>
+					and(
+						eq(attendance.userId, participant.user.id),
+						eq(attendance.eventId, meal.id)
+					)
+			})
+		).toHaveLength(2);
+	});
+});
+
+describe("non-meal ticket scans", () => {
+	beforeAll(() => {
+		assertE2EDatabaseSafety();
+	});
+
+	it("still accepts only one scan for an activity", async () => {
+		const fixtures = new EventFixtureTracker();
+		const admin = await createAuthenticatedCaller({ role: Role.ADMIN });
+		const participant = await createAuthenticatedCaller({
+			role: Role.PARTICIPANT,
+			checkedIn: true
+		});
+		onTestFinished(async () => {
+			await fixtures.cleanup();
+			await admin.cleanup();
+			await participant.cleanup();
+		});
+		const now = Date.now();
+		const activity = await fixtures.create({
+			title: "Activity check-in",
+			type: EventType.ACTIVITY,
+			status: EventStatus.ACTIVE,
+			startTime: new Date(now - hour),
+			endTime: new Date(now + hour)
+		});
+		const ticket = await participant.caller.events.issueParticipantEventTicket({
+			eventId: activity.id
+		});
+		if (ticket.status !== EventTicketStatus.ACTIVE)
+			throw new Error("Expected an active ticket");
+		const scan = () =>
+			admin.caller.events.redeemEventTicket({
+				eventId: activity.id,
+				token: ticket.token
+			});
+		expect(await scan()).toMatchObject({ status: "checked_in", scanLimit: 1 });
+		expect(await scan()).toMatchObject({
+			status: "already_checked_in",
+			scanLimit: 1
+		});
 	});
 });
 

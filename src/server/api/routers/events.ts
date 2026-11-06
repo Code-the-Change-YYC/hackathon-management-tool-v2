@@ -1,7 +1,12 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import { formatDateKey, isSameCalgaryDay } from "@/lib/datetime";
+import {
+	createEventTicketToken,
+	hashEventTicketToken,
+	isValidMealScannerLease
+} from "@/lib/event-tickets";
 import { eventNavigationUrlSchema } from "@/lib/participant-events";
 import {
 	EVENT_DESCRIPTION_MAX_LENGTH,
@@ -21,11 +26,6 @@ import { hackathonSettings } from "@/server/db/admin-schema";
 import { user } from "@/server/db/auth-schema";
 import { event, eventAttendance, eventTicket } from "@/server/db/event-schema";
 import {
-	createEventTicketToken,
-	hashEventTicketToken,
-	isValidMealScannerLease
-} from "@/server/lib/event-tickets";
-import {
 	EVENT_STATUSES,
 	EVENT_TICKET_TOKEN_PATTERN,
 	EVENT_TYPES,
@@ -43,9 +43,14 @@ const eventInputSchema = z
 		location: z.string().trim().max(EVENT_LOCATION_MAX_LENGTH).nullable(),
 		navigationUrl: eventNavigationUrlSchema.nullable(),
 		type: z.enum(EVENT_TYPES),
+		mealRounds: z.number().int().min(1).max(2_147_483_647).default(1),
 		status: z.enum(EVENT_STATUSES),
 		startTime: z.coerce.date(),
 		endTime: z.coerce.date()
+	})
+	.refine((data) => data.type === EventType.FOOD || data.mealRounds === 1, {
+		message: "Only meals can have multiple scans.",
+		path: ["mealRounds"]
 	})
 	.refine((data) => data.endTime > data.startTime, {
 		message: "End time must be after start time.",
@@ -121,6 +126,20 @@ export const eventsRouter = createTRPCRouter({
 					.where(eq(event.id, id))
 					.returning();
 				if (!updated) throw eventNotFound();
+				const [overLimit] = await tx
+					.select({ userId: eventAttendance.userId })
+					.from(eventAttendance)
+					.where(eq(eventAttendance.eventId, id))
+					.groupBy(eventAttendance.userId)
+					.having(gt(count(eventAttendance.id), updated.mealRounds))
+					.limit(1);
+				if (overLimit) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message:
+							"The scan allowance cannot be lower than scans already used."
+					});
+				}
 				await tx
 					.update(eventTicket)
 					.set({ expiresAt: updated.endTime })
@@ -203,12 +222,24 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				const attendance = await tx.query.eventAttendance.findFirst({
+				await tx
+					.select({ id: eventTicket.id })
+					.from(eventTicket)
+					.where(
+						and(
+							eq(eventTicket.userId, ctx.session.user.id),
+							eq(eventTicket.eventId, input.eventId)
+						)
+					)
+					.for("update");
+
+				const attendance = await tx.query.eventAttendance.findMany({
 					columns: { createdAt: true },
 					where: and(
 						eq(eventAttendance.userId, ctx.session.user.id),
 						eq(eventAttendance.eventId, input.eventId)
-					)
+					),
+					orderBy: [desc(eventAttendance.createdAt)]
 				});
 
 				const eventDetails = {
@@ -218,11 +249,15 @@ export const eventsRouter = createTRPCRouter({
 					startTime: ticketEvent.startTime,
 					endTime: ticketEvent.endTime
 				};
+				const scanLimit =
+					ticketEvent.type === EventType.FOOD ? ticketEvent.mealRounds : 1;
 
-				if (attendance) {
+				if (attendance.length >= scanLimit && attendance[0]) {
 					return {
 						status: EventTicketStatus.ALREADY_CHECKED_IN,
-						checkedInAt: attendance.createdAt,
+						checkedInAt: attendance[0].createdAt,
+						scansUsed: attendance.length,
+						scanLimit,
 						event: eventDetails
 					} as const;
 				}
@@ -254,6 +289,8 @@ export const eventsRouter = createTRPCRouter({
 				return {
 					status: EventTicketStatus.ACTIVE,
 					token,
+					scansUsed: attendance.length,
+					scanLimit,
 					event: eventDetails
 				} as const;
 			});
@@ -281,6 +318,7 @@ export const eventsRouter = createTRPCRouter({
 						participantRole: user.role,
 						participantCheckedIn: user.checkedIn,
 						participantWantsFood: user.wantsFood,
+						eventMealRounds: event.mealRounds,
 						eventTitle: event.title,
 						eventType: event.type,
 						eventStatus: event.status,
@@ -367,35 +405,43 @@ export const eventsRouter = createTRPCRouter({
 					});
 				}
 
-				const [record] = await tx
-					.insert(eventAttendance)
-					.values({
-						eventId: ticket.eventId,
-						userId: ticket.userId
-					})
-					.onConflictDoNothing({
-						target: [eventAttendance.userId, eventAttendance.eventId]
-					})
-					.returning();
-
-				const attendance =
-					record ??
-					(await tx.query.eventAttendance.findFirst({
-						where: and(
-							eq(eventAttendance.userId, ticket.userId),
-							eq(eventAttendance.eventId, ticket.eventId)
-						)
-					}));
+				// The locked ticket row serializes scans for this participant and event.
+				const previousScans = await tx.query.eventAttendance.findMany({
+					columns: { id: true, createdAt: true },
+					where: and(
+						eq(eventAttendance.userId, ticket.userId),
+						eq(eventAttendance.eventId, ticket.eventId)
+					),
+					orderBy: [desc(eventAttendance.createdAt)]
+				});
+				const scanLimit =
+					ticket.eventType === EventType.FOOD ? ticket.eventMealRounds : 1;
+				const alreadyCheckedIn = previousScans.length >= scanLimit;
+				const attendance = alreadyCheckedIn
+					? previousScans[0]
+					: (
+							await tx
+								.insert(eventAttendance)
+								.values({
+									eventId: ticket.eventId,
+									userId: ticket.userId
+								})
+								.returning()
+						)[0];
 				if (!attendance) {
 					throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 				}
 
 				return {
-					status: record
-						? ("checked_in" as const)
-						: ("already_checked_in" as const),
+					status: alreadyCheckedIn
+						? ("already_checked_in" as const)
+						: ("checked_in" as const),
 					attendanceId: attendance.id,
 					checkedInAt: attendance.createdAt,
+					scansUsed: alreadyCheckedIn
+						? previousScans.length
+						: previousScans.length + 1,
+					scanLimit,
 					participant: {
 						id: ticket.userId,
 						name: ticket.participantName,
