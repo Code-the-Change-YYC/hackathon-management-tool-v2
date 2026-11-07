@@ -19,7 +19,8 @@ export function MealsView({
 	dietaryRestrictions,
 	meals,
 	nextMeal,
-	mealPreference
+	mealPreference,
+	teamCode
 }: {
 	displayName: string;
 	isAdmin: boolean;
@@ -29,6 +30,7 @@ export function MealsView({
 	meals: Meal[];
 	nextMeal: Meal | null;
 	mealPreference: boolean | null;
+	teamCode: string | null;
 }) {
 	const now = useCurrentTime();
 
@@ -47,6 +49,7 @@ export function MealsView({
 						isAdmin={isAdmin}
 						meal={nextMeal}
 						mealPreference={mealPreference}
+						teamCode={teamCode}
 						ticket={ticket}
 					/>
 				)}

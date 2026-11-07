@@ -113,13 +113,20 @@ test.describe("admin meals", () => {
 		await expect(
 			page.getByRole("button", { name: "Check for meal" })
 		).toBeVisible();
-		await page.getByRole("button", { name: "Check for meal" }).click();
+		await Promise.all([
+			page.waitForResponse((response) =>
+				response.url().includes("meals.getNextMeal")
+			),
+			page.getByRole("button", { name: "Check for meal" }).click()
+		]);
 		await expect(page.getByRole("dialog")).toHaveCount(0);
 		await db
 			.update(event)
 			.set({ status: EventStatus.ACTIVE })
 			.where(eq(event.id, draft.id));
-		await page.getByRole("button", { name: "Check for meal" }).click();
+		await page
+			.getByRole("button", { name: /^(Check for meal|Open scanner)$/ })
+			.click();
 		await expect(page.getByRole("dialog")).toContainText(
 			`Meal: ${draft.title}`
 		);
