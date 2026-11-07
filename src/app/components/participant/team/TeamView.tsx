@@ -80,6 +80,7 @@ export function TeamView({ team }: { team: Team }) {
 					onEditName={() => open("edit")}
 					onInvite={() => open("invite")}
 					onLeave={() => open("leave")}
+					teamCode={team.teamCode}
 					teamName={team.name}
 				/>
 			) : (

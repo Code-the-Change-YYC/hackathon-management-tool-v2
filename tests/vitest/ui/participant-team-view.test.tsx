@@ -60,6 +60,7 @@ describe("participant team view", () => {
 		render(<TeamView team={team} />);
 		expect(screen.getByRole("heading", { name: "Team Alpha" })).toBeVisible();
 		expect(screen.getByText("2/5 Members")).toBeVisible();
+		expect(screen.getByText("ABC123")).toBeVisible();
 		expect(screen.getByText("Sam")).toBeVisible();
 		expect(
 			screen.getByRole("button", { name: "Edit team name" })

@@ -88,6 +88,7 @@ function InviteRow({ onInvite }: { onInvite: () => void }) {
 
 interface TeamTableProps {
 	teamName: string;
+	teamCode: string | null;
 	members: TeamMember[];
 	maxMembers: number;
 	canEditName: boolean;
@@ -98,6 +99,7 @@ interface TeamTableProps {
 
 export default function TeamTable({
 	teamName,
+	teamCode,
 	members,
 	maxMembers,
 	canEditName,
@@ -117,8 +119,21 @@ export default function TeamTable({
 						<h2 className="wrap-break-word font-medium @md:text-2xl @xl:text-3xl text-grey-800 text-xl @md:leading-8 @xl:leading-9 leading-7">
 							{teamName}
 						</h2>
-						<p className="font-medium text-muted-foreground text-xs uppercase">
-							{members.length}/{maxMembers} Members
+						<p className="flex flex-wrap gap-x-2 font-medium text-muted-foreground text-xs uppercase">
+							<span>
+								{members.length}/{maxMembers} Members
+							</span>
+							{teamCode && (
+								<>
+									<span aria-hidden="true">·</span>
+									<span>
+										Code:{" "}
+										<span className="font-semibold text-purple-800 tracking-wider">
+											{teamCode}
+										</span>
+									</span>
+								</>
+							)}
 						</p>
 					</div>
 				</div>
