@@ -135,13 +135,13 @@ export function MealTicket({
 					<MealIllustrations className="@min-[40rem]/meal-ticket:w-[min(25rem,55%)] w-full min-w-0 max-w-100 self-center" />
 				</div>
 
-				<div className="ticket-notch-bottom @min-[40rem]/meal-ticket:ticket-notch-left flex @min-[40rem]/meal-ticket:w-auto w-full min-w-0 shrink-0 flex-col items-center justify-center border-white/80 @min-[40rem]/meal-ticket:border-b-0 border-b-4 @min-[40rem]/meal-ticket:border-l-4 border-dashed bg-pastel-pink @min-[40rem]/meal-ticket:p-5 px-8 py-7">
+				<div className="ticket-notch-bottom @min-[40rem]/meal-ticket:ticket-notch-left flex @min-[40rem]/meal-ticket:w-62.25 w-full min-w-0 shrink-0 flex-col items-center justify-center border-white/80 @min-[40rem]/meal-ticket:border-b-0 border-b-4 @min-[40rem]/meal-ticket:border-l-4 border-dashed bg-pastel-pink @min-[40rem]/meal-ticket:p-5 px-8 py-7">
 					{state.kind === "active" && teamCode && (
 						<p className="shrink-0 font-semibold text-awesomer-purple text-xs uppercase leading-none tracking-wide">
 							{teamCode}
 						</p>
 					)}
-					<div className="aspect-square min-h-0 @min-[40rem]/meal-ticket:w-auto w-full min-w-0 max-w-76 @min-[40rem]/meal-ticket:flex-1">
+					<div className="aspect-square w-full @min-[40rem]/meal-ticket:max-w-[calc(100%-0.75rem)] max-w-76">
 						{state.kind === "active" ? (
 							<StyledQRCode value={state.token} />
 						) : (
