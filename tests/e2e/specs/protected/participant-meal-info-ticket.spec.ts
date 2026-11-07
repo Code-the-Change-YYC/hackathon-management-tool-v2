@@ -132,6 +132,7 @@ test("shows an empty ticket with no QR when no active unended food meal exists",
 		ticketSection(page).getByText("No meals", { exact: true })
 	).toBeVisible();
 	await expect(qrCode(page)).toHaveCount(0);
+
 	expect(
 		await db.query.eventTicket.findMany({
 			where: eq(eventTicket.userId, authUser.id)
@@ -165,6 +166,24 @@ test("shows an opt-out message instead of a meal QR while keeping meal details",
 		"You aren't opted in for meals. See an event staff member if you changed your mind."
 	);
 	await expect(qrCode(page)).toHaveCount(0);
+	for (const width of [1440, 375]) {
+		await page.setViewportSize({ width, height: 900 });
+		const placeholder = ticket
+			.getByText("Opted out", { exact: true })
+			.locator("..");
+		await expect(placeholder).toBeVisible();
+		const bounds = await placeholder.boundingBox();
+		const ticketBounds = await ticket.boundingBox();
+		expect(bounds).not.toBeNull();
+		expect(ticketBounds).not.toBeNull();
+		if (!bounds || !ticketBounds)
+			throw new Error("Ticket placeholder is missing");
+		expect(bounds.width).toBeGreaterThan(100);
+		expect(Math.abs(bounds.width - bounds.height)).toBeLessThan(2);
+		expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+			ticketBounds.x + ticketBounds.width
+		);
+	}
 	expect(
 		await db.query.eventTicket.findMany({
 			where: and(
